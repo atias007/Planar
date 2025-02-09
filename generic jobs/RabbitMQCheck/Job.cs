@@ -153,11 +153,12 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
+    private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server)
     {
         if (!healthCheck.IsValid) { return; }
+        if (string.IsNullOrEmpty(healthCheck.Host)) { return; }
 
-        var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
+        var proxy = RabbitMqProxy.GetProxy(healthCheck.Host, server, Logger);
 
         if (healthCheck.ClusterAlarm.GetValueOrDefault())
         {
@@ -228,9 +229,10 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeHealthCheck(HealthCheck healthCheck, Server server, ITriggerDetail trigger)
     {
-        foreach (var host in server.Hosts)
+        var checks = server.Hosts.Select(h => new HealthCheck(healthCheck, h));
+        foreach (var check in checks)
         {
-            await SafeInvokeCheck(healthCheck, hc => InvokeHealthCheckInner(hc, server, host), trigger);
+            await SafeInvokeCheck(check, hc => InvokeHealthCheckInner(hc, server), trigger);
         }
     }
 

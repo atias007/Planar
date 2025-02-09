@@ -92,6 +92,12 @@ internal class RabbitMqProxy
         var response = await _restClient.ExecuteAsync(request);
         var uri = _restClient.BuildUri(request);
 
+        if (response.StatusCode == System.Net.HttpStatusCode.NotAcceptable)
+        {
+            logger.LogInformation("health-check ({Name}) on host {Host} is not supported on this version of RabbitMQ", name, uri);
+            return;
+        }
+
         if (!response.IsSuccessful)
         {
             throw new CheckException($"{name} check on url '{uri}' failed. status code {response.StatusCode}", response.ErrorException);
