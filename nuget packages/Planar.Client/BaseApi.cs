@@ -13,9 +13,9 @@ namespace Planar.Client
 
 #if NETSTANDARD2_0
 
-        protected void ValidateMandatory(string value, string name)
+        protected static void ValidateMandatory(string value, string name)
 #else
-        protected void ValidateMandatory(string? value, string name)
+        protected static void ValidateMandatory(string? value, string name)
 #endif
         {
             if (string.IsNullOrWhiteSpace(value))

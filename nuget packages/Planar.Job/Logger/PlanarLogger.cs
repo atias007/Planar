@@ -11,13 +11,6 @@ namespace Planar.Job.Logger
         private static readonly object _locker = new object();
 
 #pragma warning disable IDE0060 // Remove unused parameter
-#if NETSTANDARD2_0
-
-        public IDisposable BeginScope<TState>(TState state) => default;
-
-#else
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
-#endif
 
 #pragma warning restore IDE0060 // Remove unused parameter
 
@@ -102,6 +95,14 @@ namespace Planar.Job.Logger
 
 #if NETSTANDARD2_0
 
+        public IDisposable BeginScope<TState>(TState state) => default;
+
+#else
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
+#endif
+
+#if NETSTANDARD2_0
+
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
 #else
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -122,6 +123,14 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger : BaseLogger, ILogger
     {
+#if NETSTANDARD2_0
+
+        public IDisposable BeginScope<TState>(TState state) => default;
+
+#else
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
+#endif
+
 #if NETSTANDARD2_0
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
