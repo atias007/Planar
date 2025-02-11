@@ -349,6 +349,25 @@ namespace Planar.Client
             return result.Id;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task WaitAsync(string id, string group, CancellationToken cancellationToken = default)
+
+#else
+        public async Task WaitAsync(string? id, string? group, CancellationToken cancellationToken = default)
+
+#endif
+
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(group, nameof(group));
+
+            var restRequest = new RestRequest("job/wait", Method.Get);
+            if (!string.IsNullOrWhiteSpace(id)) { restRequest.AddQueryParameter("id", id); }
+            if (!string.IsNullOrWhiteSpace(group)) { restRequest.AddQueryParameter("group", group); }
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
         public async Task ResumeAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));

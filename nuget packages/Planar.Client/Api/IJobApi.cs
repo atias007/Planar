@@ -275,6 +275,14 @@ namespace Planar.Client
             CancellationToken cancellationToken = default);
 #endif
 
+#if NETSTANDARD2_0
+
+        Task WaitAsync(string id, string group, CancellationToken cancellationToken = default);
+
+#else
+        Task WaitAsync(string? id, string? group, CancellationToken cancellationToken = default);
+#endif
+
         /// <summary>
         /// Resume Job
         /// </summary>
