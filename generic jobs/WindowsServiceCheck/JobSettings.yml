@@ -5,6 +5,7 @@ general:
 defaults:                                       # default values for all services. each service can override these values
   retry count: 1                                # the number of retry attemp in case of failure
   retry interval: 00:00:01                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
 
 #hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
 #  - group name: default
@@ -19,5 +20,8 @@ services:
     start service: true                        # start the service if it is stopped. the default is true
     start service timeout: 00:00:30            # the timeout for starting the service. the default is 30 seconds
     auto start mode: true                      # check for automatic start mode. the default is true
+    bind to triggers:                          # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
     allowed fail span: 00:05:00                # the time span which violation of the query will be considered ok
     active: true                               # the default is true

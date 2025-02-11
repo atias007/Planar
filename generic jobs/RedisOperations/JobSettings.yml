@@ -3,6 +3,11 @@ general:
   sequential processing: false                  # a flag to indicate if the keys should be processed sequentially or in parallel. the default is false
   stop running on fail: false                   # a flag to indicate if the job should stop running on fail in sequential processing. the default is false
 
+defaults:                                       # default values for all endpoints. each endpoint can override these values
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:05                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
+
 # server:                                      # the redis server parameters to be use. usualy this section defined in specific environment job settings
 #   endpoints: 
 #     - redis-server-1:6379

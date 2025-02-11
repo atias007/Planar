@@ -14,7 +14,13 @@ namespace Planar.Hook
 
         T AddUsers(Action<IMonitorUserBuilder> groupBuilder);
 
+#if NETSTANDARD2_0
+
+        T AddGlobalConfig(string key, string value);
+
+#else
         T AddGlobalConfig(string key, string? value);
+#endif
 
         T WithException(Exception ex);
 

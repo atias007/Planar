@@ -12,8 +12,6 @@ namespace Planar.Job.Logger
 
 #pragma warning disable IDE0060 // Remove unused parameter
 
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
-
 #pragma warning restore IDE0060 // Remove unused parameter
 
 #pragma warning disable IDE0060 // Remove unused parameter
@@ -47,6 +45,35 @@ namespace Planar.Job.Logger
         {
             var color = CliFormat.GetLogLineColor(message);
 
+#if NETSTANDARD2_0
+            switch (color)
+            {
+                case "red":
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    break;
+
+                case "wheat1":
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    break;
+
+                case "deepskyblue1":
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    break;
+
+                case "magenta1":
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                    break;
+
+                case "lightsalmon1":
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    break;
+
+                default:
+                    Console.ForegroundColor = ConsoleColor.White;
+                    break;
+            }
+#else
+
             Console.ForegroundColor = color switch
             {
                 "red" => ConsoleColor.Red,
@@ -56,6 +83,7 @@ namespace Planar.Job.Logger
                 "lightsalmon1" => ConsoleColor.DarkGreen,
                 _ => ConsoleColor.White,
             };
+#endif
         }
     }
 
@@ -65,7 +93,20 @@ namespace Planar.Job.Logger
         {
         }
 
+#if NETSTANDARD2_0
+
+        public IDisposable BeginScope<TState>(TState state) => default;
+
+#else
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
+#endif
+
+#if NETSTANDARD2_0
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+#else
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+#endif
         {
             if (!IsEnabled(logLevel)) { return; }
 
@@ -82,7 +123,20 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger : BaseLogger, ILogger
     {
+#if NETSTANDARD2_0
+
+        public IDisposable BeginScope<TState>(TState state) => default;
+
+#else
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
+#endif
+
+#if NETSTANDARD2_0
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+#else
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+#endif
         {
             if (!IsEnabled(logLevel)) { return; }
 

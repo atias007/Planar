@@ -51,13 +51,23 @@ namespace Planar.Hook
             return this;
         }
 
+#if NETSTANDARD2_0
+
+        public IMonitorDetailsBuilder AddDataMap(string key, string value)
+#else
         public IMonitorDetailsBuilder AddDataMap(string key, string? value)
+#endif
         {
             _monitorDetails.AddMergedJobDataMap(key, value);
             return this;
         }
 
+#if NETSTANDARD2_0
+
+        public IMonitorDetailsBuilder AddGlobalConfig(string key, string value)
+#else
         public IMonitorDetailsBuilder AddGlobalConfig(string key, string? value)
+#endif
         {
             _monitorDetails.AddGlobalConfig(key, value);
             return this;
@@ -183,7 +193,7 @@ namespace Planar.Hook
             return this;
         }
 
-        public IMonitorDetailsBuilder? WithTriggerGroup(string triggerGroup)
+        public IMonitorDetailsBuilder WithTriggerGroup(string triggerGroup)
         {
             _monitorDetails.TriggerGroup = triggerGroup;
             return this;
@@ -223,7 +233,13 @@ namespace Planar.Hook
             var offset = '0';
             for (var i = 0; i < 18; i++)
             {
+#if NETSTANDARD2_0
+                Random random = new Random(); // The using statement ensures proper disposal.
+                var num = random.Next(offset, offset + 10);
+                var @char = (char)num;
+#else
                 var @char = (char)RandomNumberGenerator.GetInt32(offset, offset + 10);
+#endif
                 result.Append(@char);
             }
 

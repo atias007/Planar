@@ -27,7 +27,13 @@ namespace Planar.Client.Api
 
         Task<int> AddAsync(AddMonitorRequest request, CancellationToken cancellationToken = default);
 
+#if NETSTANDARD2_0
+
+        Task UpdateAsync(int id, string propertyName, string propertyValue, CancellationToken cancellationToken = default);
+
+#else
         Task UpdateAsync(int id, string propertyName, string? propertyValue, CancellationToken cancellationToken = default);
+#endif
 
         Task DeleteAsync(int id, CancellationToken cancellationToken = default);
 

@@ -12,7 +12,7 @@ internal class Defaults : BaseDefault
     private Defaults()
     {
         RetryCount = 3;
-        RetryInterval = TimeSpan.FromSeconds(30);
+        RetryInterval = TimeSpan.FromSeconds(5);
         AllowedFailSpan = null;
     }
 

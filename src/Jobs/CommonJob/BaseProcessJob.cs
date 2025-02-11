@@ -23,7 +23,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
     protected bool _processKilled;
     private readonly StringBuilder _output = new();
     private readonly Timer _processMetricsTimer = new(1000);
-    private readonly object Locker = new();
+    private readonly Lock Locker = new();
     private string? _filename;
     private bool _listenOutput = true;
     private long _peakWorkingSet64;

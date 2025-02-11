@@ -47,7 +47,6 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterSpanCheck();
-        services.RegisterIntervalCheck();
     }
 
     private static List<Service> GetServicesWithHost(List<Service> services, IReadOnlyDictionary<string, HostsConfig> hosts)

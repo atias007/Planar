@@ -6,8 +6,14 @@ namespace Planar.Job
 {
     public interface ITriggerDetail
     {
+#if NETSTANDARD2_0
+        string CalendarName { get; }
+        string Description { get; }
+#else
         string? CalendarName { get; }
         string? Description { get; }
+#endif
+
         DateTimeOffset? EndTime { get; }
         DateTimeOffset? FinalFireTime { get; }
         bool HasMillisecondPrecision { get; }
@@ -22,6 +28,6 @@ namespace Planar.Job
         int? RetryNumber { get; }
         int? MaxRetries { get; }
         string Id { get; }
-        public TimeSpan? Timeout { get; }
+        TimeSpan? Timeout { get; }
     }
 }

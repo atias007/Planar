@@ -278,12 +278,13 @@ internal partial class Job : BaseCheckJob
 
     private static void ValidateFolder(Folder folder)
     {
-        ValidateRequired(folder.Name, "name", "folders");
-        ValidateMaxLength(folder.Name, 50, "name", "folders");
-
         var section = $"folders ({folder.Name})";
-        ValidateRequired(folder.Path, "path", "folders");
-        ValidateMaxLength(folder.Path, 1_000, "path", "folders");
+
+        ValidateRequired(folder.Name, "name", section);
+        ValidateMaxLength(folder.Name, 50, "name", section);
+
+        ValidateRequired(folder.Path, "path", section);
+        ValidateMaxLength(folder.Path, 1_000, "path", section);
 
         ValidateGreaterThenOrEquals(folder.MaxFiles, 0, "max files", section);
 

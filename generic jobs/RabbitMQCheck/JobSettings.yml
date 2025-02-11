@@ -19,16 +19,22 @@ defaults:                                       # default values for all RabbitM
 health check:                                   # the health check parameters
   cluster alarm: true                           # if true, the job will fail if the cluster alarm is raised
   local alarm: true                             # if true, the job will fail if the local alarm is raised
-  node mirror sync: true                        # if true, the job will fail if the node mirror sync is not ok
+  node mirror sync: true                        # if true, the job will fail if the node mirror sync is not ok (support only on RabbitMQ version below 4.0.0)
   node quorum critical: true                    # if true, the job will fail if the node quorum critical is not ok
   virtual hosts: true                           # if true, the job will fail if the virtual hosts are not ok
-  allowed fail span: 00:00:10                   # the time span which violation of health check will be considered ok
+  bind to triggers:                             # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+    - every-1-hour                            
+    - end-of-day
+  allowed fail span: 00:10:00                   # the time span which violation of health check will be considered ok
   active: true                                  # the default is true
 
 nodes:
   memory alarm: true                            # if true, the job will fail if the memory alarm is raised
   disk free alarm: true                         # if true, the job will fail if the disk free alarm is raised
-  allowed fail span: 00:00:10                   # the time span which violation of the node will be considered ok
+  bind to triggers:                             # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+    - every-1-hour                            
+    - end-of-day
+  allowed fail span: 00:10:00                   # the time span which violation of the node will be considered ok
   active: true                                  # the default is true
 
 queues:
@@ -38,5 +44,8 @@ queues:
     unacked: 10                                 # the minimum number of unacked messages in the queue
     consumers: null                             # the minimum number of consumers of the queue
     check state: true                           # if true, the job will fail if the queue state is not ok
-    allowed fail span: 00:00:10                 # the time span which violation of the queue will be considered ok
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
+    allowed fail span: 00:10:00                 # the time span which violation of the queue will be considered ok
     active: true                                # the default is true

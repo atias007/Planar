@@ -1,5 +1,4 @@
 ﻿--------------------------------------------------------
-
 PLAN FOR V 1.7.9
 ----------------
 
@@ -379,3 +378,4 @@ V 1.7.9
 - BUG: when you pause job with calendar. after restart the job resume. it should stay paused
 - api security headers
 - mqtt ver 5
+- migrate to .net 9

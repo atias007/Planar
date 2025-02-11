@@ -108,7 +108,7 @@ public abstract class BaseCheckJob : BaseJob
         where T : INamedCheckElement
     {
         var duplicates1 = items
-            .Where(x => !string.IsNullOrEmpty(x.Name))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .GroupBy(x => x.Name)
             .Where(g => g.Count() > 1)
             .Select(y => y.Key)
@@ -117,6 +117,16 @@ public abstract class BaseCheckJob : BaseJob
         if (duplicates1.Count != 0)
         {
             throw new InvalidDataException($"duplicated found at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    protected static void ValidateNullOrWhiteSpace(IEnumerable<string>? items, string sectionName)
+    {
+        var has = items?.Any(x => string.IsNullOrWhiteSpace(x)) ?? false;
+
+        if (has)
+        {
+            throw new InvalidDataException($"null or empty items found at '{sectionName}' section");
         }
     }
 
@@ -317,14 +327,14 @@ public abstract class BaseCheckJob : BaseJob
         logger.LogInformation(_general.ToString());
     }
 
-    protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
+    protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc, ITriggerDetail trigger)
                 where T : BaseDefault, ICheckElement
     {
         if (_general.SequentialProcessing)
         {
             foreach (var entity in entities)
             {
-                await SafeInvokeCheck(entity, checkFunc);
+                await SafeInvokeCheck(entity, checkFunc, trigger);
                 var notValidStatus = entity.CheckStatus.IsValidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
@@ -336,26 +346,36 @@ public abstract class BaseCheckJob : BaseJob
         }
         else
         {
-            var tasks = entities.Select(x => new Func<Task>(() => SafeInvokeCheck(x, checkFunc)));
+            var tasks = entities.Select(x => new Func<Task>(() => SafeInvokeCheck(x, checkFunc, trigger)));
             await TaskQueue.RunAsync(tasks, _general.MaxDegreeOfParallelism);
         }
     }
 
-    protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
+    protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc, ITriggerDetail trigger)
         where T : BaseDefault, ICheckElement
     {
         try
         {
             if (!entity.Active)
             {
-                Logger.LogInformation("skipping inactive check: '{Name}'", entity.Key);
+                Logger.LogInformation("skipping inactive check: '{Key}'", entity.Key);
                 entity.CheckStatus = CheckStatus.Inactive;
+                return;
+            }
+
+            var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
+            var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (bindNotIncludeCurrentTrigger)
+            {
+                Logger.LogInformation("skipping check '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
+                entity.CheckStatus = CheckStatus.Ignore;
                 return;
             }
 
             if (entity is IIntervalEntity intervalEntity && !IsIntervalElapsed(intervalEntity))
             {
-                Logger.LogInformation("skipping check '{Name}' due to its interval", intervalEntity.Key);
+                Logger.LogInformation("skipping check '{Key}' due to its interval", intervalEntity.Key);
                 entity.CheckStatus = CheckStatus.Ignore;
                 return;
             }
@@ -389,12 +409,12 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected IEnumerable<Task> SafeInvokeCheckInner<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
+    protected IEnumerable<Task> SafeInvokeCheckInner<T>(IEnumerable<T> entities, Func<T, Task> checkFunc, ITriggerDetail triggerDetail)
                 where T : BaseDefault, ICheckElement
     {
         foreach (var item in entities)
         {
-            yield return SafeInvokeCheck(item, checkFunc);
+            yield return SafeInvokeCheck(item, checkFunc, triggerDetail);
         }
     }
 

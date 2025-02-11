@@ -28,13 +28,22 @@ namespace Planar
         private const int _timeout = 12;
 
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
-
-        private static FailOverProxy? _failOverProxy;
         private static string _id = "none";
+
+#if NETSTANDARD2_0
+        private static FailOverProxy _failOverProxy;
+
+        private static IManagedMqttClient _mqttClient;
+
+        public static event EventHandler Connected;
+
+#else
+        private static FailOverProxy? _failOverProxy;
 
         private static IManagedMqttClient? _mqttClient;
 
         public static event EventHandler? Connected;
+#endif
 
         ////public static bool IsConnected => _mqttClient.IsConnected;
 
@@ -75,7 +84,12 @@ namespace Planar
             }
         }
 
+#if NETSTANDARD2_0
+
         public static async Task PublishAsync(MessageBrokerChannels channel, object message)
+#else
+        public static async Task PublishAsync(MessageBrokerChannels channel, object? message)
+#endif
         {
             var cloudEvent = CreateCloudEvent(channel, message);
             await PublishInnerAsync(cloudEvent);
@@ -157,14 +171,25 @@ namespace Planar
             return CreateCloudEvent(channel, string.Empty);
         }
 
+#if NETSTANDARD2_0
+
         private static CloudEvent CreateCloudEvent(MessageBrokerChannels channel, object message)
         {
+            const string Json = "application/json";
+#else
+        private static CloudEvent CreateCloudEvent(MessageBrokerChannels channel, object? message)
+        {
+#endif
             var cloudEvent = new CloudEvent
             {
                 Id = Convert.ToString((int)channel),
                 Type = channel.ToString(),
                 Time = DateTimeOffset.UtcNow,
+#if NETSTANDARD2_0
+                DataContentType = Json,
+#else
                 DataContentType = MediaTypeNames.Application.Json,
+#endif
                 Data = message,
                 Subject = _id,
                 Source = new Uri(Source)

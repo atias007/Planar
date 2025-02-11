@@ -4,15 +4,22 @@ namespace Planar.Hook
 {
     public interface IMonitor
     {
+#if NETSTANDARD2_0
+        IReadOnlyDictionary<string, string> GlobalConfig { get; }
+        string Exception { get; }
+        string MostInnerException { get; }
+        string MostInnerExceptionMessage { get; }
+#else
+        IReadOnlyDictionary<string, string?> GlobalConfig { get; }
+                string? Exception { get; }
+        string? MostInnerException { get; }
+        string? MostInnerExceptionMessage { get; }
+#endif
         int EventId { get; }
         string EventTitle { get; }
         string MonitorTitle { get; }
         IMonitorGroup Group { get; }
         IEnumerable<IMonitorUser> Users { get; }
-        IReadOnlyDictionary<string, string?> GlobalConfig { get; }
-        string? Exception { get; }
-        string? MostInnerException { get; }
-        string? MostInnerExceptionMessage { get; }
-        public string Environment { get; set; }
+        string Environment { get; set; }
     }
 }

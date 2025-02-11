@@ -40,7 +40,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(services, InvokeServicesInner);
+        await SafeInvokeCheck(services, InvokeServicesInner, context.TriggerDetails);
 
         Finalayze(services);
         Finalayze();
@@ -156,7 +156,7 @@ internal partial class Job : BaseCheckJob
 
         if (startType == ServiceStartMode.Manual && service.AutoStartMode)
         {
-            throw new CheckException($"service '{service.Name}' start type is {nameof(ServiceStartMode.Manual)}");
+            throw new CheckException($"service '{service.Name}' on host '{service.Host}' start type is {nameof(ServiceStartMode.Manual)}");
         }
 
         if (status == ServiceControllerStatus.Running)

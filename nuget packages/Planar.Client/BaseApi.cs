@@ -11,7 +11,12 @@ namespace Planar.Client
             _proxy = proxy;
         }
 
-        protected void ValidateMandatory(string? value, string name)
+#if NETSTANDARD2_0
+
+        protected static void ValidateMandatory(string value, string name)
+#else
+        protected static void ValidateMandatory(string? value, string name)
+#endif
         {
             if (string.IsNullOrWhiteSpace(value))
             {

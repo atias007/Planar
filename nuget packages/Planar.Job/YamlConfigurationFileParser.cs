@@ -10,13 +10,22 @@ namespace NetEscapades.Configuration.Yaml
 {
     internal sealed partial class YamlConfigurationFileParser
     {
+#if NETSTANDARD2_0
+        private readonly IDictionary<string, string> _data = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+#else
         private readonly IDictionary<string, string?> _data = new SortedDictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+#endif
 #pragma warning disable IDE0090 // Use 'new(...)'
         private readonly Stack<string> _context = new Stack<string>(); // dont change. need for .net standart
 #pragma warning restore IDE0090 // Use 'new(...)'
         private string _currentPath = string.Empty;
 
+#if NETSTANDARD2_0
+
+        public IDictionary<string, string> Parse(Stream input)
+#else
         public IDictionary<string, string?> Parse(Stream input)
+#endif
         {
             _data.Clear();
             _context.Clear();

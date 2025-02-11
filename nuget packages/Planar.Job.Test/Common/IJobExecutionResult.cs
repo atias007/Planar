@@ -20,10 +20,20 @@ namespace Planar.Job.Test
         int? EffectedRows { get; }
         bool Retry { get; }
         bool IsCanceled { get; }
+#if NETSTANDARD2_0
+        IReadOnlyDictionary<string, string> Data { get; }
+        string Log { get; }
+        Exception Exception { get; }
+        object Instance { get; }
+
+#else
         IReadOnlyDictionary<string, string?> Data { get; }
         string? Log { get; }
         Exception? Exception { get; }
-        AssertPlanarConstraint Assert { get; }
         object? Instance { get; }
+
+#endif
+
+        AssertPlanarConstraint Assert { get; }
     }
 }

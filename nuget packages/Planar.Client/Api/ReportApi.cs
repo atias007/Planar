@@ -22,7 +22,12 @@ namespace Planar.Client.Api
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task RunAsync(ReportNames report, ReportPeriods? period, string group, CancellationToken cancellationToken = default)
+#else
         public async Task RunAsync(ReportNames report, ReportPeriods? period, string? group, CancellationToken cancellationToken = default)
+#endif
         {
             var body = new
             {
@@ -37,7 +42,12 @@ namespace Planar.Client.Api
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
+#if NETSTANDARD2_0
+
+        public async Task RunAsync(ReportNames report, DateTime? fromDate, DateTime? toDate, string group, CancellationToken cancellationToken = default)
+#else
         public async Task RunAsync(ReportNames report, DateTime? fromDate, DateTime? toDate, string? group, CancellationToken cancellationToken = default)
+#endif
         {
             var body = new
             {
@@ -53,7 +63,12 @@ namespace Planar.Client.Api
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
+#if NETSTANDARD2_0
+
+        public async Task EnableAsync(ReportNames report, ReportPeriods period, string group, CancellationToken cancellationToken = default)
+#else
         public async Task EnableAsync(ReportNames report, ReportPeriods period, string? group, CancellationToken cancellationToken = default)
+#endif
         {
             var body = new
             {

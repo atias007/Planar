@@ -8,7 +8,12 @@ namespace Planar.CLI.CliGeneral
         private const string logRegex = @"^\[[0-2][0-9]:[0-5][0-9]:[0-5][0-9]\s(INF|WRN|ERR|DBG|TRC|CRT|NON)\]";
         private static readonly Regex _regex = new Regex(logRegex, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
+#if NETSTANDARD2_0
+
+        public static string GetLogLineColor(string line)
+#else
         public static string? GetLogLineColor(string? line)
+#endif
         {
             if (string.IsNullOrWhiteSpace(line)) { return null; }
 
@@ -25,6 +30,36 @@ namespace Planar.CLI.CliGeneral
 
         private static string GetColor(string level)
         {
+#if NETSTANDARD2_0
+            string lowerLevel = level.ToLower(); // Convert to lowercase once
+
+            switch (lowerLevel)
+            {
+                case "inf":
+                    return "white";
+
+                case "wrn":
+                    return "wheat1";
+
+                case "err":
+                    return "red";
+
+                case "dbg":
+                    return "deepskyblue1";
+
+                case "trc":
+                    return "lightsalmon1";
+
+                case "crt":
+                    return "magenta1";
+
+                case "non":
+                    return "white";
+
+                default: // Equivalent to the discard '_' case
+                    return "white";
+            }
+#else
             return level.ToLower() switch
             {
                 "inf" => "white",
@@ -36,6 +71,7 @@ namespace Planar.CLI.CliGeneral
                 "non" => "white",
                 _ => "white",
             };
+#endif
         }
     }
 }

@@ -57,8 +57,8 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
-        await SafeInvokeCheck(keys, InvokeKeyCheckInner);
+        await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner, context.TriggerDetails);
+        await SafeInvokeCheck(keys, InvokeKeyCheckInner, context.TriggerDetails);
 
         Finalayze(healthCheck);
         Finalayze(keys);

@@ -45,7 +45,14 @@ namespace Planar.Client
         /// </summary>
         /// <param name="filter"></param>
         /// <returns>IPagingResponse&lt;JobRowDetails&gt;</returns>
+
+#if NETSTANDARD2_0
+
+        Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter filter = null, CancellationToken cancellationToken = default);
+
+#else
         Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter? filter = null, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         /// Get Audit
@@ -147,14 +154,27 @@ namespace Planar.Client
         /// Add Job
         /// </summary>
         /// <returns>string</returns>
+#if NETSTANDARD2_0
+
+        Task<string> AddAsync(string folder, string jobFileName, CancellationToken cancellationToken = default);
+
+#else
         Task<string> AddAsync(string folder, string? jobFileName, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         /// Invoke Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
+
+#if NETSTANDARD2_0
+
+        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, CancellationToken cancellationToken = default);
+
+#else
         Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         /// Invoke Job, track progress and wait for completion
@@ -165,12 +185,23 @@ namespace Planar.Client
         /// <param name="data"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+#if NETSTANDARD2_0
+
+        Task TestAsync(
+            string id,
+            Func<RunningJobDetails, Task> callback,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string> data = null,
+            CancellationToken cancellationToken = default);
+
+#else
         Task TestAsync(
             string id,
             Func<RunningJobDetails, Task> callback,
             DateTime? nowOverrideValue = null,
             Dictionary<string, string>? data = null,
             CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         /// Pause Job
@@ -224,6 +255,17 @@ namespace Planar.Client
         /// <param name="data">Key/Value dictionary</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+#if NETSTANDARD2_0
+
+        Task<string> QueueInvokeAsync(
+            string id,
+            DateTime dueDate,
+            TimeSpan? timeout,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string> data = null,
+            CancellationToken cancellationToken = default);
+
+#else
         Task<string> QueueInvokeAsync(
             string id,
             DateTime dueDate,
@@ -231,6 +273,15 @@ namespace Planar.Client
             DateTime? nowOverrideValue = null,
             Dictionary<string, string>? data = null,
             CancellationToken cancellationToken = default);
+#endif
+
+#if NETSTANDARD2_0
+
+        Task WaitAsync(string id, string group, CancellationToken cancellationToken = default);
+
+#else
+        Task WaitAsync(string? id, string? group, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         /// Resume Job

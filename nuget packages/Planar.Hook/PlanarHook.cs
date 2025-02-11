@@ -13,11 +13,18 @@ namespace Planar.Hook
     public static class PlanarHook
     {
         public static PlanarHookDebugger Debugger { get; } = new PlanarHookDebugger();
+#if NETSTANDARD2_0
+        internal static string Environment { get; private set; }
+        private static string ContextBase64 { get; set; }
+
+#else
         internal static string Environment { get; private set; } = null!;
+        private static string? ContextBase64 { get; set; }
+
+#endif
         internal static RunningMode Mode { get; set; } = RunningMode.Debug;
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
-        private static string? ContextBase64 { get; set; }
         private static readonly Dictionary<int, string> _menuMapper = new Dictionary<int, string>();
 
         public static void Start<THook>()
@@ -154,22 +161,24 @@ namespace Planar.Hook
             while (!valid)
             {
                 if (!quiet) { Console.Write("Code: "); }
-                using var timer = new Timer(60_000);
-                timer.Elapsed += TimerElapsed;
-                timer.Start();
-                var selected = Console.ReadLine();
-                timer.Stop();
-                if (!int.TryParse(selected, out index))
+                using (var timer = new Timer(60_000))
                 {
-                    ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
-                }
-                else if (index > Debugger.MonitorProfiles.Count + Debugger.MonitorSystemProfiles.Count || index <= 0)
-                {
-                    ShowErrorMenu($"Selected value '{index}' is not exists");
-                }
-                else
-                {
-                    valid = true;
+                    timer.Elapsed += TimerElapsed;
+                    timer.Start();
+                    var selected = Console.ReadLine();
+                    timer.Stop();
+                    if (!int.TryParse(selected, out index))
+                    {
+                        ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
+                    }
+                    else if (index > Debugger.MonitorProfiles.Count + Debugger.MonitorSystemProfiles.Count || index <= 0)
+                    {
+                        ShowErrorMenu($"Selected value '{index}' is not exists");
+                    }
+                    else
+                    {
+                        valid = true;
+                    }
                 }
             }
 
@@ -227,7 +236,12 @@ namespace Planar.Hook
             }
         }
 
+#if NETSTANDARD2_0
+
+        private static Argument GetArgument(string key)
+#else
         private static Argument? GetArgument(string key)
+#endif
         {
             return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }

@@ -17,8 +17,15 @@ namespace Planar.Client.Serialize
                 }
                 else if (reader.TokenType == JsonToken.String)
                 {
+#if NETSTANDARD2_0
+                    var value = (string)reader.Value;
+                    if (string.IsNullOrWhiteSpace(value)) { return default; }
+                    return (T)Enum.Parse(typeof(T), value, ignoreCase: true);
+#else
                     var value = (string?)reader.Value;
+                    if (string.IsNullOrWhiteSpace(value)) { return default; }
                     return Enum.Parse<T>(value, ignoreCase: true);
+#endif
                 }
 
                 throw new JsonSerializationException($"Unexpected token when parsing enum: {reader.TokenType}");

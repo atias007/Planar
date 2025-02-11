@@ -15,7 +15,12 @@ namespace Planar.Client
         {
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<string> AddAsync(string folder, string jobFileName, CancellationToken cancellationToken = default)
+#else
         public async Task<string> AddAsync(string folder, string? jobFileName, CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(folder, nameof(folder));
             var body = new
@@ -168,7 +173,13 @@ namespace Planar.Client
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, CancellationToken cancellationToken = default)
+#else
         public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
+#endif
+
         {
             ValidateMandatory(id, nameof(id));
             var request = new
@@ -197,7 +208,12 @@ namespace Planar.Client
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter filter = null, CancellationToken cancellationToken = default)
+#else
         public async Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter? filter = null, CancellationToken cancellationToken = default)
+#endif
         {
             var f = filter ?? ListJobsFilter.Empty;
             var restRequest = new RestRequest("job", Method.Get);
@@ -270,7 +286,12 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
+#if NETSTANDARD2_0
+
+        public async Task PutDataAsync(string id, string key, string value, CancellationToken cancellationToken = default)
+#else
+		public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(id, nameof(id));
             ValidateMandatory(key, nameof(key));
@@ -293,6 +314,16 @@ namespace Planar.Client
             }
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<string> QueueInvokeAsync(
+            string id,
+            DateTime dueDate,
+            TimeSpan? timeout,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string> data = null,
+            CancellationToken cancellationToken = default)
+#else
         public async Task<string> QueueInvokeAsync(
             string id,
             DateTime dueDate,
@@ -300,6 +331,7 @@ namespace Planar.Client
             DateTime? nowOverrideValue = null,
             Dictionary<string, string>? data = null,
             CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(id, nameof(id));
             var request = new
@@ -315,6 +347,25 @@ namespace Planar.Client
                 .AddBody(request);
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
+        }
+
+#if NETSTANDARD2_0
+
+        public async Task WaitAsync(string id, string group, CancellationToken cancellationToken = default)
+
+#else
+        public async Task WaitAsync(string? id, string? group, CancellationToken cancellationToken = default)
+
+#endif
+
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(group, nameof(group));
+
+            var restRequest = new RestRequest("job/wait", Method.Get);
+            if (!string.IsNullOrWhiteSpace(id)) { restRequest.AddQueryParameter("id", id); }
+            if (!string.IsNullOrWhiteSpace(group)) { restRequest.AddQueryParameter("group", group); }
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task ResumeAsync(string id, CancellationToken cancellationToken = default)
@@ -369,7 +420,12 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
+#if NETSTANDARD2_0
+
+        public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, CancellationToken cancellationToken = default)
+#else
         public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(id, nameof(id));
             var invokeDate = DateTime.Now.AddSeconds(-1);
@@ -415,7 +471,12 @@ namespace Planar.Client
             return result.Id;
         }
 
+#if NETSTANDARD2_0
+
+        private static DateTime? GetEstimatedEndTime(RunningJobDetails data)
+#else
         private static DateTime? GetEstimatedEndTime(RunningJobDetails? data)
+#endif
         {
             if (data == null) { return null; }
             if (data.EstimatedEndTime == null) { return null; }
@@ -480,9 +541,15 @@ namespace Planar.Client
 
             try
             {
+#if NETSTANDARD2_0
+                var result = await _proxy.InvokeAsync<LastInstanceId>(restRequest, cancellationToken)
+                    ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
+
+#else
                 var result = await _proxy.InvokeAsync<LastInstanceId?>(restRequest, cancellationToken)
                     ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
 
+#endif
                 return result;
             }
             catch (PlanarConflictException)
@@ -530,12 +597,22 @@ namespace Planar.Client
             }
         }
 
+#if NETSTANDARD2_0
+
+        private async Task<(bool, RunningJobDetails)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+
+            RunningJobDetails runResult;
+#else
         private async Task<(bool, RunningJobDetails?)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
 
             RunningJobDetails? runResult;
+#endif
 
             try
             {
@@ -545,7 +622,7 @@ namespace Planar.Client
                 }
                 catch (PlanarNotFoundException)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(1000, cancellationToken);
                     runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
                 }
             }
@@ -557,7 +634,12 @@ namespace Planar.Client
             return (false, runResult);
         }
 
+#if NETSTANDARD2_0
+
+        private static void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails data, DateTime invokeDate, DateTime? estimateEnd)
+#else
         private static void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails? data, DateTime invokeDate, DateTime? estimateEnd)
+#endif
         {
             if (data == null) { return; }
 
@@ -568,7 +650,12 @@ namespace Planar.Client
             _ = callback(data);
         }
 
+#if NETSTANDARD2_0
+
+        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string> data, CancellationToken cancellationToken)
+#else
         private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string>? data, CancellationToken cancellationToken)
+#endif
         {
             var restRequest = new RestRequest("job/invoke", Method.Post)
                 .AddBody(new
@@ -598,12 +685,22 @@ namespace Planar.Client
             }
         }
 
+#if NETSTANDARD2_0
+
+        private async Task<(RunningJobDetails, DateTime?)> LongPollingGetRunningData(
+            Func<RunningJobDetails, Task> callback,
+            RunningJobDetails data,
+            string instanceId,
+            DateTime invokeDate,
+            CancellationToken cancellationToken)
+#else
         private async Task<(RunningJobDetails?, DateTime?)> LongPollingGetRunningData(
             Func<RunningJobDetails, Task> callback,
             RunningJobDetails? data,
             string instanceId,
             DateTime invokeDate,
             CancellationToken cancellationToken)
+#endif
         {
             var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)

@@ -8,8 +8,13 @@ namespace Planar.Job
 {
     internal class JobBackMapper
     {
+#if NETSTANDARD2_0
+        private readonly ILogger _logger;
+        private readonly BaseJobFactory _baseJobFactory;
+#else
         private readonly ILogger? _logger;
         private readonly BaseJobFactory? _baseJobFactory;
+#endif
 
         public JobBackMapper(ILogger logger, BaseJobFactory baseJobFactory)
         {
@@ -82,7 +87,11 @@ namespace Planar.Job
 
         private void SafePutJobDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
         {
+#if NETSTANDARD2_0
+            string value = null;
+#else
             string? value = null;
+#endif
             try
             {
                 if (!Consts.IsDataKeyValid(prop.Name))
@@ -104,7 +113,11 @@ namespace Planar.Job
 
         private void SafePutTiggerDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
         {
+#if NETSTANDARD2_0
+            string value = null;
+#else
             string? value = null;
+#endif
             try
             {
                 if (!Consts.IsDataKeyValid(prop.Name))

@@ -27,7 +27,11 @@ namespace Planar.Client.Entities
 
         public int ExceptionsCount { get; set; }
 
+#if NETSTANDARD2_0
+        public SortedDictionary<string, string> DataMap { get; set; } = new SortedDictionary<string, string>();
+#else
         public SortedDictionary<string, string?> DataMap { get; set; } = new SortedDictionary<string, string?>();
+#endif
 
         public int? EffectedRows { get; set; }
 

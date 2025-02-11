@@ -65,9 +65,16 @@ namespace Planar.Client
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter filter = null, CancellationToken cancellationToken = default)
+        {
+            if (filter == null) { filter = new LastHistoryFilter(); }
+#else
         public async Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter? filter = null, CancellationToken cancellationToken = default)
         {
             filter ??= new LastHistoryFilter();
+#endif
             var restRequest = new RestRequest("history/last", Method.Get);
             if (!string.IsNullOrEmpty(filter.JobId))
             {
@@ -128,9 +135,16 @@ namespace Planar.Client
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<PagingResponse<HistoryBasicDetails>> ListAsync(ListHistoryFilter filter = null, CancellationToken cancellationToken = default)
+        {
+            if (filter == null) { filter = new ListHistoryFilter(); }
+#else
         public async Task<PagingResponse<HistoryBasicDetails>> ListAsync(ListHistoryFilter? filter = null, CancellationToken cancellationToken = default)
         {
             filter ??= new ListHistoryFilter();
+#endif
 
             var restRequest = new RestRequest("history", Method.Get);
             restRequest.AddQueryDateScope(filter);
@@ -173,9 +187,16 @@ namespace Planar.Client
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<string> ODataAsync(ODataFilter filter = null, CancellationToken cancellationToken = default)
+        {
+            if (filter == null) { filter = new ODataFilter(); }
+#else
         public async Task<string> ODataAsync(ODataFilter? filter = null, CancellationToken cancellationToken = default)
         {
             filter ??= new ODataFilter();
+#endif
             var restRequest = new RestRequest("odata/historydata", Method.Get);
 
             if (!string.IsNullOrWhiteSpace(filter.Filter))

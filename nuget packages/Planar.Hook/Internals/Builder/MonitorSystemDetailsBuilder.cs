@@ -8,7 +8,12 @@ namespace Planar.Hook
         private const string development = "Development";
         private const string unitTest = "UnitTest";
 
+#if NETSTANDARD2_0
+
+        public IMonitorSystemDetailsBuilder AddGlobalConfig(string key, string value)
+#else
         public IMonitorSystemDetailsBuilder AddGlobalConfig(string key, string? value)
+#endif
         {
             _monitorDetails.AddGlobalConfig(key, value);
             return this;
@@ -79,7 +84,12 @@ namespace Planar.Hook
             return this;
         }
 
+#if NETSTANDARD2_0
+
+        public IMonitorSystemDetailsBuilder AddMessageParameter(string key, string value)
+#else
         public IMonitorSystemDetailsBuilder AddMessageParameter(string key, string? value)
+#endif
         {
             _monitorDetails.AddMessageParameter(key, value);
             return this;

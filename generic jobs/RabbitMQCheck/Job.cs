@@ -60,15 +60,15 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
 
         // health check
-        var healthCheckTask = InvokeHealthCheck(healthCheck, server);
+        var healthCheckTask = InvokeHealthCheck(healthCheck, server, context.TriggerDetails);
         tasks.Add(healthCheckTask);
 
         // nodes
-        var nodeCheckTask = SafeInvokeNodeCheck(node, server);
+        var nodeCheckTask = SafeInvokeNodeCheck(node, server, context.TriggerDetails);
         tasks.Add(nodeCheckTask);
 
         // queues
-        var queueTask = SafeInvokeQueueCheck(queues, server, defaults);
+        var queueTask = SafeInvokeQueueCheck(queues, server, defaults, context.TriggerDetails);
         tasks.Add(queueTask);
 
         await Task.WhenAll(tasks);
@@ -153,11 +153,12 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
+    private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server)
     {
         if (!healthCheck.IsValid) { return; }
+        if (string.IsNullOrEmpty(healthCheck.Host)) { return; }
 
-        var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
+        var proxy = RabbitMqProxy.GetProxy(healthCheck.Host, server, Logger);
 
         if (healthCheck.ClusterAlarm.GetValueOrDefault())
         {
@@ -226,11 +227,12 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private async Task InvokeHealthCheck(HealthCheck healthCheck, Server server)
+    private async Task InvokeHealthCheck(HealthCheck healthCheck, Server server, ITriggerDetail trigger)
     {
-        foreach (var host in server.Hosts)
+        var checks = server.Hosts.Select(h => new HealthCheck(healthCheck, h));
+        foreach (var check in checks)
         {
-            await SafeInvokeCheck(healthCheck, hc => InvokeHealthCheckInner(hc, server, host));
+            await SafeInvokeCheck(check, hc => InvokeHealthCheckInner(hc, server), trigger);
         }
     }
 
@@ -333,7 +335,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private async Task SafeInvokeQueueCheck(IEnumerable<Queue> queues, Server server, Defaults defaults)
+    private async Task SafeInvokeQueueCheck(IEnumerable<Queue> queues, Server server, Defaults defaults, ITriggerDetail trigger)
     {
         if (queues == null) { return; }
         if (!queues.Any()) { return; }
@@ -348,14 +350,14 @@ internal partial class Job : BaseCheckJob
 
         if (details == null) { return; }
 
-        await SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, details));
+        await SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, details), trigger);
     }
 
-    private async Task SafeInvokeNodeCheck(Node node, Server server)
+    private async Task SafeInvokeNodeCheck(Node node, Server server, ITriggerDetail trigger)
     {
         foreach (var host in server.Hosts)
         {
-            await SafeInvokeCheck(node, n => InvokeNodeCheckInner(n, server, host));
+            await SafeInvokeCheck(node, n => InvokeNodeCheckInner(n, server, host), trigger);
         }
     }
 }

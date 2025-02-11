@@ -35,7 +35,7 @@ internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
         Name = section.GetValue<string>("name") ?? string.Empty;
         HostGroupName = section.GetValue<string?>("host group name");
         Path = section.GetValue<string>("path") ?? string.Empty;
-        FilesPattern = section.GetValue<string?>("files pattern")?.Split(',').ToList();
+        FilesPattern = section.GetSection("files pattern").Get<string[]?>();
         IncludeSubdirectories = section.GetValue<bool>("include subdirectories");
         TotalSize = section.GetValue<string?>("total size");
         FileSize = section.GetValue<string?>("file size");

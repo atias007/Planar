@@ -39,6 +39,16 @@ namespace Planar.Common
             RefireCount = properties.RefireCount;
             Environment = properties.Environment;
 
+#if NETSTANDARD2_0
+            if (properties.GlobalSettings.Any())
+            {
+                JobSettings = new Dictionary<string, string>(properties.GlobalSettings);
+            }
+            else
+            {
+                JobSettings = new Dictionary<string, string>();
+            }
+#else
             if (properties.GlobalSettings.Any())
             {
                 JobSettings = new Dictionary<string, string?>(properties.GlobalSettings);
@@ -47,9 +57,14 @@ namespace Planar.Common
             {
                 JobSettings = new Dictionary<string, string?>();
             }
+#endif
         }
 
+#if NETSTANDARD2_0
+        public Dictionary<string, string> JobSettings { get; set; }
+#else
         public Dictionary<string, string?> JobSettings { get; set; }
+#endif
 
         public bool Recovering { get; private set; }
 
@@ -84,7 +99,11 @@ namespace Planar.Common
 
         public ITriggerDetail Trigger => _triggerDetail;
 
+#if NETSTANDARD2_0
+        public object Result { get; set; }
+#else
         public object? Result { get; set; }
+#endif
 
         public IDataMap MergedJobDataMap { get; internal set; }
 
@@ -109,7 +128,13 @@ namespace Planar.Common
             var offset = '0';
             for (var i = 0; i < 18; i++)
             {
+#if NETSTANDARD2_0
+                Random random = new Random(); // The using statement ensures proper disposal.
+                var num = random.Next(offset, offset + 10);
+                var @char = (char)num;
+#else
                 var @char = (char)RandomNumberGenerator.GetInt32(offset, offset + 10);
+#endif
                 result.Append(@char);
             }
 

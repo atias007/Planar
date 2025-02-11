@@ -4,11 +4,17 @@ namespace Planar.Client.Entities
 {
     public partial class ClusterNode
     {
+#if NETSTANDARD2_0
+        public string Server { get; set; }
+        public string InstanceId { get; set; }
+
+#else
         public string Server { get; set; } = null!;
+        public string InstanceId { get; set; } = null!;
+
+#endif
 
         public short Port { get; set; }
-
-        public string InstanceId { get; set; } = null!;
 
         public short ClusterPort { get; set; }
 

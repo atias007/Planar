@@ -40,7 +40,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(folders, InvokeFolderInnerAsync);
+        await SafeInvokeCheck(folders, InvokeFolderInnerAsync, context.TriggerDetails);
 
         Finilayze(folders);
         Finalayze();

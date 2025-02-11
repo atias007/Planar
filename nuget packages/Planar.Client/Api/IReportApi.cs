@@ -10,11 +10,21 @@ namespace Planar.Client.Api
     {
         Task<IEnumerable<ReportsStatus>> GetAsync(ReportNames report, CancellationToken cancellationToken = default);
 
+#if NETSTANDARD2_0
+
+        Task RunAsync(ReportNames report, ReportPeriods? period, string group, CancellationToken cancellationToken = default);
+
+        Task RunAsync(ReportNames report, DateTime? fromDate, DateTime? toDate, string group, CancellationToken cancellationToken = default);
+
+        Task EnableAsync(ReportNames report, ReportPeriods period, string group, CancellationToken cancellationToken = default);
+
+#else
         Task RunAsync(ReportNames report, ReportPeriods? period, string? group, CancellationToken cancellationToken = default);
 
         Task RunAsync(ReportNames report, DateTime? fromDate, DateTime? toDate, string? group, CancellationToken cancellationToken = default);
 
         Task EnableAsync(ReportNames report, ReportPeriods period, string? group, CancellationToken cancellationToken = default);
+#endif
 
         Task DisableAsync(ReportNames report, ReportPeriods period, CancellationToken cancellationToken = default);
 

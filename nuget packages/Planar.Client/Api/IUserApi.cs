@@ -8,7 +8,13 @@ namespace Planar.Client.Api
     {
         Task<string> AddAsync(User user, CancellationToken cancellationToken = default);
 
+#if NETSTANDARD2_0
+
+        Task UpdateAsync(string username, string propertyName, string propertyValue, CancellationToken cancellationToken = default);
+
+#else
         Task UpdateAsync(string username, string propertyName, string? propertyValue, CancellationToken cancellationToken = default);
+#endif
 
         Task<UserDetails> GetAsync(string username, CancellationToken cancellationToken = default);
 

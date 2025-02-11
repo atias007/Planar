@@ -29,7 +29,7 @@ public partial class Hook : BaseHook
         await SendMessage(list, monitorDetails);
     }
 
-    private static IEnumerable<string> GetPhoneNumbers(IEnumerable<IMonitorUser> users)
+    private static List<string> GetPhoneNumbers(IEnumerable<IMonitorUser> users)
     {
         var allPhones = users.Select(u => u.PhoneNumber1 ?? string.Empty).Union(
           users.Select(u => u.PhoneNumber2 ?? string.Empty)).Union(
@@ -98,7 +98,7 @@ public partial class Hook : BaseHook
             }
         }
 
-        if (aggregateException.Any())
+        if (aggregateException.Count != 0)
         {
             throw new AggregateException("Planar hooks has error", aggregateException);
         }

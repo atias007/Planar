@@ -14,6 +14,16 @@ namespace Planar.Job
         private const string EnvironmentPlaceholder = "{environment}";
         private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
 
+#if NETSTANDARD2_0
+
+        public static IDictionary<string, string> LoadJobSettings(Dictionary<string, string> globalSettings, Dictionary<string, string> overrideSettings)
+        {
+            // Load job global config
+            var final =
+                globalSettings == null ?
+                    new Dictionary<string, string>() :
+                    new Dictionary<string, string>(globalSettings);
+#else
         public static IDictionary<string, string?> LoadJobSettings(Dictionary<string, string?>? globalSettings, Dictionary<string, string?>? overrideSettings)
         {
             // Load job global config
@@ -21,6 +31,7 @@ namespace Planar.Job
                 globalSettings == null ?
                     new Dictionary<string, string?>() :
                     new Dictionary<string, string?>(globalSettings);
+#endif
 
             // Merge settings yml file
             var fullpath = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
@@ -35,14 +46,25 @@ namespace Planar.Job
                 final = final.Merge(overrideSettings);
             }
 
+#if NETSTANDARD2_0
+            var result = new SortedDictionary<string, string>(final);
+#else
             var result = new SortedDictionary<string, string?>(final);
+#endif
 
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        private static Dictionary<string, string> LoadJobSettingsFiles(string path)
+        {
+            var result = new Dictionary<string, string>();
+#else
         private static Dictionary<string, string?> LoadJobSettingsFiles(string path)
         {
             var result = new Dictionary<string, string?>();
+#endif
 
             // JobSettings.yml
             var files = GetFiles(path, SettingsFilename);
@@ -75,9 +97,16 @@ namespace Planar.Job
             return files;
         }
 
+#if NETSTANDARD2_0
+
+        private static Dictionary<string, string> ReadSettingsFile(string filename)
+        {
+            var dict = new Dictionary<string, string>();
+#else
         private static Dictionary<string, string?> ReadSettingsFile(string filename)
         {
             var dict = new Dictionary<string, string?>();
+#endif
 
             try
             {
@@ -85,7 +114,11 @@ namespace Planar.Job
                 var yml = File.ReadAllText(filename);
                 var parser = new YamlConfigurationFileParser();
                 var items = parser.Parse(yml.Trim());
+#if NETSTANDARD2_0
+                dict = new Dictionary<string, string>(items);
+#else
                 dict = new Dictionary<string, string?>(items);
+#endif
                 return dict;
             }
             catch (Exception ex)

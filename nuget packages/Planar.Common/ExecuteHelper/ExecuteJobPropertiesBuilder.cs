@@ -95,23 +95,39 @@ namespace Planar.Common
             return this;
         }
 
+#if NETSTANDARD2_0
+
+        public IExecuteJobPropertiesBuilder WithJobData(string key, object value)
+#else
         public IExecuteJobPropertiesBuilder WithJobData(string key, object? value)
+#endif
         {
             _properties.JobData.AddOrUpdate(key, value);
             return this;
         }
 
+#if NETSTANDARD2_0
+
+        public IExecuteJobPropertiesBuilder WithTriggerData(string key, object value)
+#else
         public IExecuteJobPropertiesBuilder WithTriggerData(string key, object? value)
+#endif
         {
             _properties.TriggerData.AddOrUpdate(key, value);
             return this;
         }
 
+#if NETSTANDARD2_0
+
+        public IExecuteJobPropertiesBuilder WithGlobalSettings(string key, object value)
+#else
         public IExecuteJobPropertiesBuilder WithGlobalSettings(string key, object? value)
+#endif
         {
             _properties.GlobalSettings.AddOrUpdate(key, PlanarConvert.ToString(value));
             return this;
         }
+
         public IExecuteJobPropertiesBuilder WithTriggerTimeout(TimeSpan timeout)
         {
             _properties.TriggerTimeout = timeout;

@@ -37,7 +37,12 @@ namespace Planar.Job.Test
 
         protected abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
+#if NETSTANDARD2_0
+
+        private static MethodInfo ValidateAndGetExecutionMethod(Type type)
+#else
         private static MethodInfo ValidateAndGetExecutionMethod(Type? type)
+#endif
         {
             if (type == null)
             {
@@ -87,8 +92,13 @@ namespace Planar.Job.Test
 
             // Serialize Job Context
             var json = JsonSerializer.Serialize(context);
+#if NETSTANDARD2_0
+            Exception jobException = null;
+            object baseJob = null;
+#else
             Exception? jobException = null;
             object? baseJob = null;
+#endif
 
             // Execute Job
             try
@@ -107,7 +117,12 @@ namespace Planar.Job.Test
             return log;
         }
 
+#if NETSTANDARD2_0
+
+        private static JobExecutionResult GetJobExecutionResult(MockJobExecutionContext context, object instance, Exception jobException, object baseJob)
+#else
         private static JobExecutionResult GetJobExecutionResult(MockJobExecutionContext context, object instance, Exception? jobException, object? baseJob)
+#endif
         {
             var duration = context.JobRunTime.TotalMilliseconds;
             var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);

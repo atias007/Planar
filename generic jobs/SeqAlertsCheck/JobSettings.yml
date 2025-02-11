@@ -1,0 +1,22 @@
+defaults:                                       # default values for all keys. each key can override these values
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:03                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
+
+# server:                                       # the seq server parameters to be use. usualy this section defined in specific environment job settings
+#   url: http://localhost:5341/
+#   api key: 00000000-0000-0000-0000-000000000000
+
+include alert ids:                              # a list of alert ids to be included in the check. the default is null (include all alerts)
+  - alert-129
+  - alert-130
+  - alert-131
+
+exclude alert ids:                              # a list of alert ids to be excluded in the check. the default is null (include all alerts)
+  - alert-129
+  - alert-130
+  - alert-131
+
+alert titles:                                   # a list of alert title to be display when alert has fail. the default is null (display the alert name)
+  alert_129: Too many errors (above 10) in purchase process in last 10 minutes
+  alert_163: Performance is high! (above 30 seconds) in search api

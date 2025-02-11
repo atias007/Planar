@@ -1,11 +1,9 @@
 ﻿using Core.JsonConvertors;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -39,7 +37,7 @@ namespace Planar.Startup
             services.AddHttpContextAccessor();
             services.UseHttpClientMetrics();
             services.AddFluentValidationAutoValidation();
-            services.AddValidatorsFromAssemblies(new[] { typeof(Program).Assembly, typeof(MainService).Assembly });
+            services.AddValidatorsFromAssemblies([typeof(Program).Assembly, typeof(MainService).Assembly]);
 
             var mvcBuilder = services.AddControllers()
                 .AddJsonOptions(o =>
@@ -53,7 +51,6 @@ namespace Planar.Startup
             if (AppSettings.General.SwaggerUI)
             {
                 services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
-                services.AddFluentValidationRulesToSwagger();
             }
 
             if (AppSettings.General.UseHttpsRedirect)

@@ -16,15 +16,26 @@ namespace Planar.Job
 {
     public abstract class BaseJob
     {
+#if NETSTANDARD2_0
+        private BaseJobFactory _baseJobFactory = null;
+        private IConfiguration _configuration = null;
+        private ILogger _logger = null;
+        private IServiceProvider _provider = null;
+        private Timer _timer;
+        private Version _version;
+        private AutoResetEvent _executeResetEvent;
+#else
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
-        private JobExecutionContext _context = new JobExecutionContext();
-        private bool _inConfiguration;
         private ILogger _logger = null!;
         private IServiceProvider _provider = null!;
         private Timer? _timer;
         private Version? _version;
         private AutoResetEvent? _executeResetEvent;
+#endif
+
+        private JobExecutionContext _context = new JobExecutionContext();
+        private bool _inConfiguration;
 
         protected IConfiguration Configuration
         {
@@ -62,7 +73,12 @@ namespace Planar.Job
 
         protected IServiceProvider ServiceProvider => _provider;
 
+#if NETSTANDARD2_0
+
+        protected Version Version
+#else
         protected Version? Version
+#endif
         {
             get { return _version; }
             set
@@ -89,10 +105,17 @@ namespace Planar.Job
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
+#if NETSTANDARD2_0
+            Exception initializeException = null;
+            try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
+            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
+            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
+#else
             Exception? initializeException = null;
             try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
             try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex; }
             try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
+#endif
 
             try
             {
@@ -173,7 +196,7 @@ namespace Planar.Job
             }
         }
 
-        public static string FormatTimeSpan(TimeSpan timeSpan)
+        private static string FormatTimeSpan(TimeSpan timeSpan)
         {
             if (timeSpan.TotalDays >= 1)
             {
@@ -298,7 +321,12 @@ namespace Planar.Job
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        protected static void ValidateMaxLength(string value, int length, string name)
+#else
         protected static void ValidateMaxLength(string? value, int length, string name)
+#endif
         {
             if (value != null && value.Length > length)
             {
@@ -326,12 +354,22 @@ namespace Planar.Job
             return _baseJobFactory.Now();
         }
 
+#if NETSTANDARD2_0
+
+        protected void PutJobData(string key, object value)
+#else
         protected void PutJobData(string key, object? value)
+#endif
         {
             PutJobDataAsync(key, value).Wait();
         }
 
+#if NETSTANDARD2_0
+
+        protected async Task PutJobDataAsync(string key, object value)
+#else
         protected async Task PutJobDataAsync(string key, object? value)
+#endif
         {
             ValidateSystemDataKey(key);
             ValidateMaxLength(Convert.ToString(value), 1000, "value");
@@ -345,7 +383,12 @@ namespace Planar.Job
             await _baseJobFactory.PutJobDataAsync(key, value);
         }
 
+#if NETSTANDARD2_0
+
+        protected void PutTriggerData(string key, object value)
+#else
         protected void PutTriggerData(string key, object? value)
+#endif
         {
             PutTriggerDataAsync(key, value).Wait();
         }
@@ -390,7 +433,12 @@ namespace Planar.Job
             await _baseJobFactory.ClearTriggerDataAsync();
         }
 
+#if NETSTANDARD2_0
+
+        protected async Task PutTriggerDataAsync(string key, object value)
+#else
         protected async Task PutTriggerDataAsync(string key, object? value)
+#endif
         {
             ValidateSystemDataKey(key);
             ValidateMaxLength(Convert.ToString(value), 1000, "value");
@@ -437,7 +485,12 @@ namespace Planar.Job
             }
         }
 
+#if NETSTANDARD2_0
+
+        private static void ValidateMinLength(string value, int length, string name)
+#else
         private static void ValidateMinLength(string? value, int length, string name)
+#endif
         {
             if (value != null && value.Length < length)
             {
@@ -445,7 +498,13 @@ namespace Planar.Job
             }
         }
 
+#if NETSTANDARD2_0
+
+        private static void ValidateRange(string value, int from, int to, string name)
+#else
         private static void ValidateRange(string? value, int from, int to, string name)
+#endif
+
         {
             ValidateMinLength(value, from, name);
             ValidateMaxLength(value, to, name);
@@ -522,7 +581,12 @@ namespace Planar.Job
                 {
                     var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
                     ctx.JobSettings = ctx.JobSettings.Merge(settings);
+
+#if NETSTANDARD2_0
+                    ctx.JobSettings = new Dictionary<string, string>(settings);
+#else
                     ctx.JobSettings = new Dictionary<string, string?>(settings);
+#endif
                 }
 
                 _context = ctx;
