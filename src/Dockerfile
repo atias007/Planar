@@ -7,7 +7,7 @@ EXPOSE 80
 EXPOSE 443
 
 # ---------------------------- Build Image -------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ["DatabaseMigrations/DatabaseMigrations.csproj", "DatabaseMigrations/"]
 COPY ["DatabaseMigrations.Factory/DatabaseMigrations.Factory.csproj", "DatabaseMigrations.Factory/"]
