@@ -3,7 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Globalization;
+using System.Management;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
 namespace WindowsServiceRestart;
@@ -39,7 +42,7 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
 
         using var client = new HttpClient();
-        await SafeInvokeOperation(services, InvokeServicesInner);
+        await SafeInvokeOperation(services, InvokeServiceInner);
 
         Finalayze();
     }
@@ -101,11 +104,6 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeServicesInner(Service service)
-    {
-        await Task.Run(() => InvokeServiceInner(service));
-    }
-
 #pragma warning disable CA1416 // Validate platform compatibility
 
     private void InvokeServiceInner(Service service)
@@ -140,50 +138,50 @@ internal partial class Job : BaseCheckJob
         {
             Logger.LogInformation("service '{Name}' on host '{Host}' is in running status. stop the service", service.Name, service.Host);
             controller.Stop();
-            controller.WaitForStatus(ServiceControllerStatus.Stopped, service.Timeout);
+            controller.WaitForStatus(ServiceControllerStatus.Stopped, service.StopTimeout);
             controller.Refresh();
             status = controller.Status;
         }
 
         if (status == ServiceControllerStatus.StopPending)
         {
-            Logger.LogInformation("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, service.Host, status);
-            controller.WaitForStatus(ServiceControllerStatus.StopPending, service.Timeout);
-            controller.Refresh();
-            status = controller.Status;
+            if (service.KillProcess)
+            {
+                Logger.LogInformation("service '{Name}' on host '{Host}' is in stop pending status for long time (timeout). kill the process", service.Name, service.Host);
+                KillServiceProcess(service.Name, service.Host);
+                controller.Refresh();
+                status = controller.Status;
+            }
+            else
+            {
+                throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in stop pending status for long time (timeout)");
+            }
         }
 
         if (status == ServiceControllerStatus.Stopped)
         {
             Logger.LogInformation("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, service.Host);
             controller.Start();
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.Timeout);
+            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartTimeout);
             controller.Refresh();
             status = controller.Status;
-            if (status == ServiceControllerStatus.Running)
-            {
-                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-                IncreaseEffectedRows();
-                return;
-            }
         }
 
         if (status == ServiceControllerStatus.Paused)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service", service.Name, service.Host);
             controller.Continue();
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.Timeout);
+            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartTimeout);
             controller.Refresh();
             status = controller.Status;
-            if (status == ServiceControllerStatus.Running)
-            {
-                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-                IncreaseEffectedRows();
-                return;
-            }
         }
 
-        if (status != ServiceControllerStatus.Running)
+        if (status == ServiceControllerStatus.Running)
+        {
+            Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
+            IncreaseEffectedRows();
+        }
+        else
         {
             throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} status");
         }
@@ -197,7 +195,52 @@ internal partial class Job : BaseCheckJob
         ValidateBase(service, section);
         ValidateMaxLength(service.Name, 255, "name", section);
         ValidateRequired(service.Name, "name", section);
-        ValidateGreaterThen(service.Timeout, TimeSpan.FromSeconds(5), "timeout", section);
-        ValidateLessThen(service.Timeout, TimeSpan.FromMinutes(5), "timeout", section);
+        ValidateGreaterThen(service.StartTimeout, TimeSpan.FromSeconds(5), "start timeout", section);
+        ValidateLessThen(service.StartTimeout, TimeSpan.FromMinutes(20), "start timeout", section);
+        ValidateGreaterThen(service.StopTimeout, TimeSpan.FromSeconds(5), "stop timeout", section);
+        ValidateLessThen(service.StopTimeout, TimeSpan.FromMinutes(20), "stop timeout", section);
+    }
+
+    private static void KillServiceProcess(string serviceName, string host)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            throw new PlatformNotSupportedException("This method is only supported on Windows.");
+        }
+
+        var options = new ConnectionOptions { EnablePrivileges = true };
+        var scope = new ManagementScope($"\\\\{host}\\root\\cimv2", options);
+        scope.Connect();
+
+        var query = new ObjectQuery($"SELECT * FROM Win32_Service WHERE Name='{serviceName}'");
+        using var searcher = new ManagementObjectSearcher(scope, query);
+        using var results = searcher.Get();
+
+        foreach (var item in results)
+        {
+            if (item == null) { continue; }
+
+            var processId = (uint)item["ProcessId"];
+
+            // use processid to kill process with taskkill
+            try
+            {
+                var processObjGetOpt = new ObjectGetOptions();
+                var processPath = new ManagementPath("Win32_Process");
+                using var processClass = new ManagementClass(scope, processPath, processObjGetOpt);
+                using var processInParams = processClass.GetMethodParameters("Create");
+                processInParams["CommandLine"] = $"cmd /c \"taskkill /f /pid {processId}\"";
+                using var outParams = processClass.InvokeMethod("Create", processInParams, null);
+                int returnCode = Convert.ToInt32(outParams["returnValue"], CultureInfo.CurrentCulture);
+                if (returnCode != 0)
+                {
+                    Console.WriteLine("Error killing process: " + returnCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
     }
 }

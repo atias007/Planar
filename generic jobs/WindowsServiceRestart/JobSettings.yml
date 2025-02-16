@@ -17,5 +17,7 @@ services:
       - localhost
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
     interval: 1.00:00:00                       # Interval
-    timeout: 00:01:00                          # the timeout for restart the service. the default is 1 minute
+    stop timeout: 00:00:30                     # the timeout for stop the service. the default is 30 seconds
+    start timeout: 00:00:30                    # the timeout for start the service. the default is 30 seconds
+    kill process: false                        # if stopping the service failed, kill the process. the default is false
     active: true                               # the default is true

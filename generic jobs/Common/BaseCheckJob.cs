@@ -450,6 +450,13 @@ public abstract class BaseCheckJob : BaseJob
         return default;
     }
 
+    protected Task SafeInvokeOperation<T>(IEnumerable<T> entities, Action<T> operationFunc)
+        where T : BaseOperation, ICheckElement
+    {
+        var asyncFunk = async (T entity) => await Task.Run(() => operationFunc(entity));
+        return SafeInvokeOperation(entities, asyncFunk);
+    }
+
     protected async Task SafeInvokeOperation<T>(IEnumerable<T> entities, Func<T, Task> operationFunc)
             where T : BaseOperation, ICheckElement
     {

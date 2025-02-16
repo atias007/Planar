@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Net;
 
 namespace HealthCheck;
 
@@ -44,10 +45,24 @@ internal partial class Job : BaseCheckJob
 
         endpoints = GetEndpointsWithHost(endpoints, hosts);
         EffectedRows = 0;
-        await SafeInvokeCheck(endpoints, InvokeEndpointInner, context.TriggerDetails);
+
+        using var client = CreateHttpClient(endpoints);
+
+        await SafeInvokeCheck(endpoints, e => InvokeEndpointInner(e, client), context.TriggerDetails);
 
         Finilayze(endpoints);
         Finalayze();
+    }
+
+    private static HttpClient CreateHttpClient(IEnumerable<Endpoint> endpoints)
+    {
+        var maxTimeoutSeconts = endpoints.Max(e => e.Timeout.TotalSeconds);
+        if (maxTimeoutSeconts <= 0) { maxTimeoutSeconts = 0; }
+        maxTimeoutSeconts += 10;
+        return new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(maxTimeoutSeconts),
+        };
     }
 
     private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IReadOnlyDictionary<string, HostsConfig> hosts)
@@ -139,19 +154,14 @@ internal partial class Job : BaseCheckJob
         return builder.Uri;
     }
 
-    private async Task InvokeEndpointInner(Endpoint endpoint)
+    private async Task InvokeEndpointInner(Endpoint endpoint, HttpClient client)
     {
         var uri = BuildUri(endpoint);
-
+        using var cs = new CancellationTokenSource(endpoint.Timeout);
         HttpResponseMessage response;
         try
         {
-            using var client = new HttpClient
-            {
-                Timeout = endpoint.Timeout
-            };
-
-            response = await client.GetAsync(uri);
+            response = await client.GetAsync(uri, cs.Token);
         }
         catch (TaskCanceledException)
         {
