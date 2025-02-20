@@ -53,7 +53,7 @@ internal partial class Job : BaseCheckJob
         ValidateDuplicateKeys(keys, "keys");
 
         EffectedRows = 0;
-        await SafeInvokeOperation(keys, InvokeKeyCheckInner);
+        await SafeInvokeOperation(keys, InvokeKeyCheckInner, context.TriggerDetails);
 
         Finalayze();
     }

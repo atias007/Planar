@@ -57,7 +57,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(alerts, InvokeAlertCheckInnerAsync, context.TriggerDetails);
+        await SafeInvokeCheck(alerts, InvokeAlertCheckInner, context.TriggerDetails);
 
         Finalayze(alerts);
         Finalayze();
@@ -171,11 +171,6 @@ internal partial class Job : BaseCheckJob
         var result = new Defaults(section);
         ValidateBase(result, "defaults");
         return result;
-    }
-
-    private async Task InvokeAlertCheckInnerAsync(SeqAlert alert)
-    {
-        await Task.Run(() => InvokeAlertCheckInner(alert));
     }
 
     private void InvokeAlertCheckInner(SeqAlert alert)

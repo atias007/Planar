@@ -40,7 +40,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(folders, InvokeFolderInnerAsync, context.TriggerDetails);
+        await SafeInvokeCheck(folders, InvokeFolderInner, context.TriggerDetails);
 
         Finilayze(folders);
         Finalayze();
@@ -138,11 +138,6 @@ internal partial class Job : BaseCheckJob
         ValidateBase(result, "defaults");
 
         return result;
-    }
-
-    private async Task InvokeFolderInnerAsync(Folder folder)
-    {
-        await Task.Run(() => InvokeFolderInner(folder));
     }
 
     private void InvokeFolderInner(Folder folder)

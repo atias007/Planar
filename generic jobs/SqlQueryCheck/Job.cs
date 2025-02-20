@@ -150,7 +150,6 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(checkQuery.ConnectionStringName, "connection string name", "queries");
         ValidateRequired(checkQuery.Query, "query", "queries");
         ValidateGreaterThen(checkQuery.Timeout, TimeSpan.FromSeconds(1), "timeout", "queries");
-        ValidateGreaterThen(checkQuery.Interval, TimeSpan.FromMinutes(1), "interval", "queries");
 
         if (string.IsNullOrWhiteSpace(checkQuery.ConnectionString))
         {

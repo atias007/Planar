@@ -26,4 +26,7 @@ folders:
     created age: 1day                           # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
     modified age: 1day                          # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
     max fails: 0                                # the maximum number of fails before fail the job. the default is 0 (no fails allow)
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
     active: true                                # the default is true

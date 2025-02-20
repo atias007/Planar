@@ -45,7 +45,7 @@ internal partial class Job : BaseCheckJob
 
         folders = GetFoldersWithHost(folders, hosts);
         EffectedRows = 0;
-        await SafeInvokeOperation(folders, InvokeFolderInnerAsync);
+        await SafeInvokeOperation(folders, InvokeFoldersInner, context.TriggerDetails);
 
         Finalayze();
     }
@@ -145,11 +145,6 @@ internal partial class Job : BaseCheckJob
         {
             throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' has empty file pattern");
         }
-    }
-
-    private async Task InvokeFolderInnerAsync(Folder folder)
-    {
-        await Task.Run(() => InvokeFoldersInner(folder));
     }
 
     private void InvokeFoldersInner(Folder folder)

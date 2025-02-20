@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 namespace InfluxDBCheck;
 
 internal class InfluxQuery(IConfigurationSection section, Defaults defaults) :
-    BaseDefault(section, defaults), INamedCheckElement, IVetoEntity, IIntervalEntity
+    BaseDefault(section, defaults), INamedCheckElement, IVetoEntity
 {
     public string Key => Name;
 
@@ -14,7 +14,6 @@ internal class InfluxQuery(IConfigurationSection section, Defaults defaults) :
     public string ValueCondition { get; } = section.GetValue<string>("value condition") ?? string.Empty;
     public string Message { get; } = section.GetValue<string>("message") ?? string.Empty;
     public TimeSpan Timeout { get; } = section.GetValue<TimeSpan?>("timeout") ?? TimeSpan.FromSeconds(30);
-    public TimeSpan? Interval { get; } = section.GetValue<TimeSpan?>("interval");
 
     //// -------------------------- ////
 

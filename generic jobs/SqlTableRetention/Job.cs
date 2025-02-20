@@ -54,7 +54,7 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(tables, "tables");
         ValidateDuplicateNames(tables, "tables");
 
-        await SafeInvokeOperation(tables, InvokeTableRerentionInner);
+        await SafeInvokeOperation(tables, InvokeTableRerentionInner, context.TriggerDetails);
 
         Finalayze();
     }

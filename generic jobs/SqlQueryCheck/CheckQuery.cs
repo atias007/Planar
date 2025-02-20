@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 namespace SqlQueryCheck;
 
 internal class CheckQuery(IConfigurationSection section, Defaults defaults) :
-    BaseDefault(section, defaults), INamedCheckElement, IVetoEntity, IIntervalEntity
+    BaseDefault(section, defaults), INamedCheckElement, IVetoEntity
 {
     public string Name { get; } = section.GetValue<string>("name") ?? string.Empty;
 
@@ -15,8 +15,6 @@ internal class CheckQuery(IConfigurationSection section, Defaults defaults) :
     public string? Message { get; } = section.GetValue<string>("message");
 
     public TimeSpan Timeout { get; } = section.GetValue<TimeSpan?>("timeout") ?? TimeSpan.FromSeconds(30);
-
-    public TimeSpan? Interval { get; } = section.GetValue<TimeSpan?>("interval");
 
     public string Key => Name;
 

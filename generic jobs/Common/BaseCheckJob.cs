@@ -1,5 +1,3 @@
-namespace Common;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +8,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+
+namespace Common;
 
 public abstract class BaseCheckJob : BaseJob
 {
@@ -120,16 +120,6 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected static void ValidateNullOrWhiteSpace(IEnumerable<string>? items, string sectionName)
-    {
-        var has = items?.Any(x => string.IsNullOrWhiteSpace(x)) ?? false;
-
-        if (has)
-        {
-            throw new InvalidDataException($"null or empty items found at '{sectionName}' section");
-        }
-    }
-
     protected static void ValidateGreaterThen(double? value, double limit, string fieldName, string section)
     {
         if (value == null) { return; }
@@ -197,6 +187,16 @@ public abstract class BaseCheckJob : BaseJob
         if (value.Length > limit)
         {
             throw new InvalidDataException($"'{fieldName}' field on '{section}' section must be less then or equals {limit:N0}");
+        }
+    }
+
+    protected static void ValidateNullOrWhiteSpace(IEnumerable<string>? items, string sectionName)
+    {
+        var has = items?.Any(x => string.IsNullOrWhiteSpace(x)) ?? false;
+
+        if (has)
+        {
+            throw new InvalidDataException($"null or empty items found at '{sectionName}' section");
         }
     }
 
@@ -327,6 +327,13 @@ public abstract class BaseCheckJob : BaseJob
         logger.LogInformation(_general.ToString());
     }
 
+    protected Task SafeInvokeCheck<T>(IEnumerable<T> entities, Action<T> checkAction, ITriggerDetail trigger)
+        where T : BaseDefault, ICheckElement
+    {
+        var asyncFunc = async (T entity) => await Task.Run(() => checkAction(entity));
+        return SafeInvokeCheck(entities, asyncFunc, trigger);
+    }
+
     protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc, ITriggerDetail trigger)
                 where T : BaseDefault, ICheckElement
     {
@@ -335,7 +342,7 @@ public abstract class BaseCheckJob : BaseJob
             foreach (var entity in entities)
             {
                 await SafeInvokeCheck(entity, checkFunc, trigger);
-                var notValidStatus = entity.CheckStatus.IsValidStatus();
+                var notValidStatus = entity.RunStatus.IsValidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
                     var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
@@ -356,29 +363,8 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
-            if (!entity.Active)
-            {
-                Logger.LogInformation("skipping inactive check: '{Key}'", entity.Key);
-                entity.CheckStatus = CheckStatus.Inactive;
-                return;
-            }
-
-            var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
-            var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
-
-            if (bindNotIncludeCurrentTrigger)
-            {
-                Logger.LogInformation("skipping check '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
-                entity.CheckStatus = CheckStatus.Ignore;
-                return;
-            }
-
-            if (entity is IIntervalEntity intervalEntity && !IsIntervalElapsed(intervalEntity))
-            {
-                Logger.LogInformation("skipping check '{Key}' due to its interval", intervalEntity.Key);
-                entity.CheckStatus = CheckStatus.Ignore;
-                return;
-            }
+            if (!CheckActiveCheck(entity)) { return; }
+            if (CheckBindCheckTriggers(entity, trigger)) { return; }
 
             if (entity.RetryCount == 0)
             {
@@ -401,20 +387,11 @@ public abstract class BaseCheckJob : BaseJob
             }
 
             _spanTracker.ResetFailSpan(entity);
-            entity.CheckStatus = CheckStatus.Success;
+            entity.RunStatus = CheckStatus.Success;
         }
         catch (Exception ex)
         {
-            entity.CheckStatus = SafeHandleCheckException(entity, ex);
-        }
-    }
-
-    protected IEnumerable<Task> SafeInvokeCheckInner<T>(IEnumerable<T> entities, Func<T, Task> checkFunc, ITriggerDetail triggerDetail)
-                where T : BaseDefault, ICheckElement
-    {
-        foreach (var item in entities)
-        {
-            yield return SafeInvokeCheck(item, checkFunc, triggerDetail);
+            entity.RunStatus = SafeHandleCheckException(entity, ex);
         }
     }
 
@@ -450,22 +427,22 @@ public abstract class BaseCheckJob : BaseJob
         return default;
     }
 
-    protected Task SafeInvokeOperation<T>(IEnumerable<T> entities, Action<T> operationFunc)
+    protected Task SafeInvokeOperation<T>(IEnumerable<T> entities, Action<T> operationAction, ITriggerDetail trigger)
         where T : BaseOperation, ICheckElement
     {
-        var asyncFunk = async (T entity) => await Task.Run(() => operationFunc(entity));
-        return SafeInvokeOperation(entities, asyncFunk);
+        var asyncFunc = async (T entity) => await Task.Run(() => operationAction(entity));
+        return SafeInvokeOperation(entities, asyncFunc, trigger);
     }
 
-    protected async Task SafeInvokeOperation<T>(IEnumerable<T> entities, Func<T, Task> operationFunc)
+    protected async Task SafeInvokeOperation<T>(IEnumerable<T> entities, Func<T, Task> operationFunc, ITriggerDetail trigger)
             where T : BaseOperation, ICheckElement
     {
         if (_general.SequentialProcessing)
         {
             foreach (var entity in entities)
             {
-                await SafeInvokeOperation(entity, operationFunc);
-                var notValidStatus = entity.OperationStatus.IsValidStatus();
+                await SafeInvokeOperation(entity, operationFunc, trigger);
+                var notValidStatus = entity.RunStatus.IsValidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
                     var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
@@ -476,37 +453,8 @@ public abstract class BaseCheckJob : BaseJob
         }
         else
         {
-            var tasks = entities.Select(x => new Func<Task>(() => SafeInvokeOperation(x, operationFunc)));
+            var tasks = entities.Select(x => new Func<Task>(() => SafeInvokeOperation(x, operationFunc, trigger)));
             await TaskQueue.RunAsync(tasks, _general.MaxDegreeOfParallelism);
-        }
-    }
-
-    private async Task SafeInvokeOperation<T>(T entity, Func<T, Task> operationFunc)
-        where T : BaseOperation, ICheckElement
-    {
-        try
-        {
-            if (!entity.Active)
-            {
-                Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
-                entity.OperationStatus = OperationStatus.Inactive;
-                return;
-            }
-
-            if (entity is IIntervalEntity intervalEntity && !IsIntervalElapsed(intervalEntity))
-            {
-                Logger.LogInformation("skipping operation '{Name}' due to its interval", intervalEntity.Key);
-                entity.OperationStatus = OperationStatus.Ignore;
-                return;
-            }
-
-            await operationFunc(entity);
-            entity.OperationStatus = OperationStatus.Success;
-        }
-        catch (Exception ex)
-        {
-            SafeHandleOperationException(entity, ex);
-            entity.OperationStatus = OperationStatus.Exception;
         }
     }
 
@@ -547,6 +495,62 @@ public abstract class BaseCheckJob : BaseJob
         return false;
     }
 
+    private bool CheckActiveCheck<T>(T entity)
+        where T : BaseDefault, ICheckElement
+    {
+        if (!entity.Active)
+        {
+            Logger.LogInformation("skipping inactive check: '{Key}'", entity.Key);
+            entity.RunStatus = CheckStatus.Inactive;
+        }
+
+        return entity.Active;
+    }
+
+    private bool CheckActiveOperation<T>(T entity)
+       where T : BaseOperation, ICheckElement
+    {
+        if (!entity.Active)
+        {
+            Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
+            entity.RunStatus = OperationStatus.Inactive;
+        }
+
+        return entity.Active;
+    }
+
+    private bool CheckBindCheckTriggers<T>(T entity, ITriggerDetail trigger)
+        where T : BaseDefault, ICheckElement
+    {
+        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
+        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
+
+        if (bindNotIncludeCurrentTrigger)
+        {
+            Logger.LogInformation("skipping check '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
+            entity.RunStatus = CheckStatus.Ignore;
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool CheckBindOperationTriggers<T>(T entity, ITriggerDetail trigger)
+        where T : BaseOperation, ICheckElement
+    {
+        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
+        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
+
+        if (bindNotIncludeCurrentTrigger)
+        {
+            Logger.LogInformation("skipping operation '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
+            entity.RunStatus = OperationStatus.Ignore;
+            return false;
+        }
+
+        return true;
+    }
+
     private void HandleCheckExceptions()
     {
         if (!_exceptions.IsEmpty)
@@ -565,15 +569,6 @@ public abstract class BaseCheckJob : BaseJob
 
             throw new CheckException(sb.ToString());
         }
-    }
-
-    private bool IsIntervalElapsed(IIntervalEntity element)
-    {
-        var interval = element.Interval;
-        if (interval == null || interval.Value == TimeSpan.Zero) { return true; }
-        var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
-        var result = tracker.ShouldRun(element);
-        return result;
     }
 
     private void LogVetoHost(IEnumerable<Host> hosts)
@@ -645,6 +640,24 @@ public abstract class BaseCheckJob : BaseJob
         catch (Exception innerEx)
         {
             AddAggregateException(innerEx);
+        }
+    }
+
+    private async Task SafeInvokeOperation<T>(T entity, Func<T, Task> operationFunc, ITriggerDetail trigger)
+                        where T : BaseOperation, ICheckElement
+    {
+        try
+        {
+            if (!CheckActiveOperation(entity)) { return; }
+            if (CheckBindOperationTriggers(entity, trigger)) { return; }
+
+            await operationFunc(entity);
+            entity.RunStatus = OperationStatus.Success;
+        }
+        catch (Exception ex)
+        {
+            SafeHandleOperationException(entity, ex);
+            entity.RunStatus = OperationStatus.Exception;
         }
     }
 }

@@ -40,7 +40,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(services, InvokeServicesInner, context.TriggerDetails);
+        await SafeInvokeCheck(services, InvokeServiceInner, context.TriggerDetails);
 
         Finalayze(services);
         Finalayze();
@@ -103,18 +103,13 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeServicesInner(Service service)
-    {
-        await Task.Run(() => InvokeServiceInner1(service));
-    }
-
 #pragma warning disable CA1416 // Validate platform compatibility
 
-    private void InvokeServiceInner1(Service service)
+    private void InvokeServiceInner(Service service)
     {
         try
         {
-            InvokeServiceInner2(service);
+            InvokeServiceInnerInner(service);
         }
         catch (InvalidOperationException ex)
         {
@@ -127,7 +122,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private void InvokeServiceInner2(Service service)
+    private void InvokeServiceInnerInner(Service service)
     {
         if (string.IsNullOrWhiteSpace(service.Host))
         {
@@ -166,12 +161,12 @@ internal partial class Job : BaseCheckJob
             return;
         }
 
+        var winUtil = new WindowsServiceUtil(Logger, service.Name, service.Host);
+
         if (status == ServiceControllerStatus.StartPending || status == ServiceControllerStatus.ContinuePending)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for running status...", service.Name, service.Host, status);
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
-            controller.Refresh();
-            status = controller.Status;
+            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: false);
             if (status == ServiceControllerStatus.Running)
             {
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
@@ -183,18 +178,14 @@ internal partial class Job : BaseCheckJob
         if ((status == ServiceControllerStatus.StopPending) && service.StartService)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, service.Host, status);
-            controller.WaitForStatus(ServiceControllerStatus.StopPending, TimeSpan.FromSeconds(30));
-            controller.Refresh();
-            status = controller.Status;
+            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30), restart: true);
         }
 
         if (status == ServiceControllerStatus.Stopped && service.StartService)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, service.Host);
             controller.Start();
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
-            controller.Refresh();
-            status = controller.Status;
+            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: false);
             if (status == ServiceControllerStatus.Running)
             {
                 service.Result.Started = true;
@@ -208,9 +199,7 @@ internal partial class Job : BaseCheckJob
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service", service.Name, service.Host);
             controller.Continue();
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
-            controller.Refresh();
-            status = controller.Status;
+            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: false);
             if (status == ServiceControllerStatus.Running)
             {
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);

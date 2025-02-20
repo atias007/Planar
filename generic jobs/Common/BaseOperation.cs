@@ -12,5 +12,5 @@ public abstract class BaseOperation : BaseDefault
     {
     }
 
-    public OperationStatus OperationStatus { get; set; }
+    public new OperationStatus RunStatus { get; set; }
 }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceRestart;
 
-internal class Service : BaseOperation, IService, INamedCheckElement, IVetoEntity, IIntervalEntity
+internal class Service : BaseOperation, IService, INamedCheckElement, IVetoEntity
 {
     public Service(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
@@ -12,7 +12,6 @@ internal class Service : BaseOperation, IService, INamedCheckElement, IVetoEntit
         IgnoreDisabled = section.GetValue<bool?>("ignore disabled") ?? true;
         StopTimeout = section.GetValue<TimeSpan?>("stop timeout") ?? TimeSpan.FromSeconds(30);
         StartTimeout = section.GetValue<TimeSpan?>("start timeout") ?? TimeSpan.FromSeconds(30);
-        Interval = section.GetValue<TimeSpan?>("interval");
         KillProcess = section.GetValue<bool?>("kill process") ?? false;
     }
 

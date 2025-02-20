@@ -16,8 +16,10 @@ services:
     hosts:                                     # the hosts of the services. if not defined, the hosts from the root hosts section will be used
       - localhost
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
-    interval: 1.00:00:00                       # Interval
     stop timeout: 00:00:30                     # the timeout for stop the service. the default is 30 seconds
     start timeout: 00:00:30                    # the timeout for start the service. the default is 30 seconds
     kill process: false                        # if stopping the service failed, kill the process. the default is false
-    active: true                               # the default is true
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
+    active: true                                # the default is true

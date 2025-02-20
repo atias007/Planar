@@ -23,4 +23,7 @@ keys:
     expire cron: 0 0 0 * * *                    # set expire by cron expression for the key. examples: end of day=0 0 0 ? * * *  start of every month=0 0 0 1 * ? *
     default command: INCRBY foo 0               # command to run if key not exists
     mandatory: true                             # is the existence of the key mandatory or not. the default is true
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
     active: true                                # the default is true

@@ -42,4 +42,7 @@ folders:
     exclude delete target directories:          # regex pattern of the directories to be excluded from delete in target. this value is optional
       - ^obj$                                   # (directory with obj name)
       - ^bin$                                   # (directory with bin name)
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
     active: true                                # the default is true

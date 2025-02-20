@@ -204,7 +204,6 @@ internal partial class Job : BaseCheckJob
         ValidateName(query);
         ValidateRequired(query.Query, $"query (name: {query.Name})", root);
         ValidateGreaterThen(query.Timeout, TimeSpan.FromSeconds(1), $"timeout (name: {query.Name})", root);
-        ValidateGreaterThen(query.Interval, TimeSpan.FromMinutes(1), $"interval (name: {query.Name})", root);
 
         string[] values = [query.ValueCondition, query.RecordsCondition];
         string[] names = [nameof(query.ValueCondition), nameof(query.RecordsCondition)];

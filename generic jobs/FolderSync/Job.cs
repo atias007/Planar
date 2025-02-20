@@ -41,7 +41,7 @@ internal partial class Job : BaseCheckJob
 
         folders = GetFoldersWithHost(folders, hosts);
         EffectedRows = 0;
-        await SafeInvokeOperation(folders, InvokeSyncFolderInnerAsync);
+        await SafeInvokeOperation(folders, InvokeSyncFoldersInner, context.TriggerDetails);
 
         Finalayze();
     }
@@ -110,11 +110,6 @@ internal partial class Job : BaseCheckJob
         ValidateDuplicateNames(result, "folders");
 
         return result;
-    }
-
-    private async Task InvokeSyncFolderInnerAsync(SyncFolder folder)
-    {
-        await Task.Run(() => InvokeSyncFoldersInner(folder));
     }
 
     private void InvokeSyncFoldersInner(SyncFolder folder)
