@@ -4,7 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<RootNamespace>Planar.API.Common</RootNamespace>
 		<AssemblyName>Planar.API.Common</AssemblyName>
-		<Version>1.7.8</Version>
+		<Version>1.7.9</Version>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
