@@ -19,6 +19,8 @@ services:
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
     start service: true                        # start the service if it is stopped. the default is true
     start service timeout: 00:00:30            # the timeout for starting the service. the default is 30 seconds
+    stop pending service timeout: 00:01:00     # the timeout for waiting for StopPending service status. the default is 1 minute
+    kill pending service process: true         # kill the process of the service if it is in StopPending status for defined timeout period. the default is true
     auto start mode: true                      # check for automatic start mode. the default is true
     bind to triggers:                          # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
       - every-1-hour                            

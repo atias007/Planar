@@ -166,7 +166,7 @@ internal partial class Job : BaseCheckJob
         if (status == ServiceControllerStatus.StartPending || status == ServiceControllerStatus.ContinuePending)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for running status...", service.Name, service.Host, status);
-            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: false);
+            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: service.KillPendingServiceProcess);
             if (status == ServiceControllerStatus.Running)
             {
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
@@ -178,7 +178,7 @@ internal partial class Job : BaseCheckJob
         if ((status == ServiceControllerStatus.StopPending) && service.StartService)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, service.Host, status);
-            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30), restart: true);
+            status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Stopped, service.StopPendingServiceTimeout, restart: service.KillPendingServiceProcess);
         }
 
         if (status == ServiceControllerStatus.Stopped && service.StartService)

@@ -1,7 +1,6 @@
 ﻿using Planar.Job;
 using SomeJob;
 
-PlanarJob.Start<Worker>();
 PlanarJob.Debugger.AddProfile("Demo 1", builder =>
     builder
         .WithJobData("X", "1")

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceCheck;
 
-internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
+internal class Service : BaseDefault, INamedCheckElement, IVetoEntity
 {
     public Service(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
@@ -13,6 +13,8 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
         StartService = section.GetValue<bool?>("start service") ?? true;
         AutoStartMode = section.GetValue<bool?>("auto start mode") ?? true;
         StartServiceTimeout = section.GetValue<TimeSpan?>("start service timeout") ?? TimeSpan.FromSeconds(30);
+        StopPendingServiceTimeout = section.GetValue<TimeSpan?>("stop pending service timeout") ?? TimeSpan.FromMinutes(1);
+        KillPendingServiceProcess = section.GetValue<bool?>("kill pending service process") ?? true;
     }
 
     public Service(Service service) : base(service)
@@ -23,6 +25,8 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
         StartService = service.StartService;
         AutoStartMode = service.AutoStartMode;
         StartServiceTimeout = service.StartServiceTimeout;
+        StopPendingServiceTimeout = service.StopPendingServiceTimeout;
+        KillPendingServiceProcess = service.KillPendingServiceProcess;
     }
 
     public string Name { get; }
@@ -30,6 +34,8 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
     public bool IgnoreDisabled { get; }
     public bool StartService { get; }
     public bool AutoStartMode { get; }
+    public TimeSpan StopPendingServiceTimeout { get; set; }
+    public bool KillPendingServiceProcess { get; set; }
     public TimeSpan StartServiceTimeout { get; }
     public string Key => Name;
 

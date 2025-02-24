@@ -102,7 +102,13 @@ namespace Planar.Job
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 await Console.Out.WriteLineAsync(">> Press any key to exit");
                 await Console.Out.WriteLineAsync("---------------------------------------");
-                Console.ReadKey(true);
+                using (var timer = new Timer(60_000))
+                {
+                    timer.Elapsed += TimerElapsed;
+                    timer.Start();
+                    Console.ReadKey(true);
+                    timer.Stop();
+                }
             }
         }
 

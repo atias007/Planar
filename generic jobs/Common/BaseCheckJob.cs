@@ -363,7 +363,7 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
-            if (!CheckActiveCheck(entity)) { return; }
+            if (CheckInactiveCheck(entity)) { return; }
             if (CheckBindCheckTriggers(entity, trigger)) { return; }
 
             if (entity.RetryCount == 0)
@@ -495,28 +495,30 @@ public abstract class BaseCheckJob : BaseJob
         return false;
     }
 
-    private bool CheckActiveCheck<T>(T entity)
+    private bool CheckInactiveCheck<T>(T entity)
         where T : BaseDefault, ICheckElement
     {
-        if (!entity.Active)
+        var inactive = !entity.Active;
+        if (inactive)
         {
             Logger.LogInformation("skipping inactive check: '{Key}'", entity.Key);
             entity.RunStatus = CheckStatus.Inactive;
         }
 
-        return entity.Active;
+        return inactive;
     }
 
-    private bool CheckActiveOperation<T>(T entity)
+    private bool CheckInactiveOperation<T>(T entity)
        where T : BaseOperation, ICheckElement
     {
-        if (!entity.Active)
+        var inactive = !entity.Active;
+        if (inactive)
         {
             Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
             entity.RunStatus = OperationStatus.Inactive;
         }
 
-        return entity.Active;
+        return inactive;
     }
 
     private bool CheckBindCheckTriggers<T>(T entity, ITriggerDetail trigger)
@@ -648,7 +650,7 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
-            if (!CheckActiveOperation(entity)) { return; }
+            if (CheckInactiveOperation(entity)) { return; }
             if (CheckBindOperationTriggers(entity, trigger)) { return; }
 
             await operationFunc(entity);
