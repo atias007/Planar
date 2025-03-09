@@ -49,9 +49,11 @@ install CLI tool as dotnet tool as follow: `dotnet tool install --global planar-
 
 # Planar For Docker
 
-`docker-compose.yml`: docker compose file to run configured service & SQL server instance.
+`docker-compose-sqlite.yml`: docker compose file to run configured service using Sqlite.
+`docker-compose-sqlserver.yml`: docker compose file to run configured service & MS SQL Express instance.
 
 - create new local foder 
-- download and save the docker-compose.yml file to the new folder
+- download and save the docker compose file to the new folder
 - open terminal / command line pointing to the new folder
-- run command: `docker-compose -p planar up -d`
+- run command: `docker-compose -f docker-compose-sqlite.yml -p planar up -d`
+- run command: `docker-compose -f docker-compose-sqlserver.yml -p planar up -d`

@@ -14,7 +14,7 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
-    public abstract class BaseJob
+    public abstract class BaseJob : IBaseJob
     {
 #if NETSTANDARD2_0
         private BaseJobFactory _baseJobFactory = null;
@@ -49,15 +49,15 @@ namespace Planar.Job
             }
         }
 
-        protected int? EffectedRows
+        public int? EffectedRows
         {
             get { return _baseJobFactory.EffectedRows; }
             set { _baseJobFactory.EffectedRows = value; }
         }
 
-        protected int ExceptionCount => _baseJobFactory.ExceptionCount;
+        public int ExceptionCount => _baseJobFactory.ExceptionCount;
 
-        protected TimeSpan JobRunTime => _baseJobFactory.JobRunTime;
+        public TimeSpan JobRunTime => _baseJobFactory.JobRunTime;
 
         protected ILogger Logger
         {
@@ -334,31 +334,31 @@ namespace Planar.Job
             }
         }
 
-        protected void AddAggregateException(Exception ex, int maxItems = 25)
+        public void AddAggregateException(Exception ex, int maxItems = 25)
         {
             _baseJobFactory.AddAggregateException(ex, maxItems);
         }
 
-        protected async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
+        public async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
         {
             await _baseJobFactory.AddAggregateExceptionAsync(ex, maxItems);
         }
 
-        protected void CheckAggragateException()
+        public void CheckAggragateException()
         {
             _baseJobFactory.CheckAggragateException();
         }
 
-        protected DateTime Now()
+        public DateTime Now()
         {
             return _baseJobFactory.Now();
         }
 
 #if NETSTANDARD2_0
 
-        protected void PutJobData(string key, object value)
+        public void PutJobData(string key, object value)
 #else
-        protected void PutJobData(string key, object? value)
+        public void PutJobData(string key, object? value)
 #endif
         {
             PutJobDataAsync(key, value).Wait();
@@ -366,9 +366,9 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        protected async Task PutJobDataAsync(string key, object value)
+        public async Task PutJobDataAsync(string key, object value)
 #else
-        protected async Task PutJobDataAsync(string key, object? value)
+        public async Task PutJobDataAsync(string key, object? value)
 #endif
         {
             ValidateSystemDataKey(key);
@@ -385,59 +385,59 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        protected void PutTriggerData(string key, object value)
+        public void PutTriggerData(string key, object value)
 #else
-        protected void PutTriggerData(string key, object? value)
+        public void PutTriggerData(string key, object? value)
 #endif
         {
             PutTriggerDataAsync(key, value).Wait();
         }
 
-        protected void RemoveJobData(string key)
+        public void RemoveJobData(string key)
         {
             _baseJobFactory.RemoveJobData(key);
         }
 
-        protected async Task RemoveJobDataAsync(string key)
+        public async Task RemoveJobDataAsync(string key)
         {
             await _baseJobFactory.RemoveJobDataAsync(key);
         }
 
-        protected void RemoveTriggerData(string key)
+        public void RemoveTriggerData(string key)
         {
             _baseJobFactory.RemoveTriggerData(key);
         }
 
-        protected async Task RemoveTriggerDataAsync(string key)
+        public async Task RemoveTriggerDataAsync(string key)
         {
             await _baseJobFactory.RemoveTriggerDataAsync(key);
         }
 
-        protected void ClearJobData()
+        public void ClearJobData()
         {
             _baseJobFactory.ClearJobData();
         }
 
-        protected async Task ClearJobDataAsync()
+        public async Task ClearJobDataAsync()
         {
             await _baseJobFactory.ClearJobDataAsync();
         }
 
-        protected void ClearTriggerData()
+        public void ClearTriggerData()
         {
             _baseJobFactory.ClearTriggerData();
         }
 
-        protected async Task ClearTriggerDataAsync()
+        public async Task ClearTriggerDataAsync()
         {
             await _baseJobFactory.ClearTriggerDataAsync();
         }
 
 #if NETSTANDARD2_0
 
-        protected async Task PutTriggerDataAsync(string key, object value)
+        public async Task PutTriggerDataAsync(string key, object value)
 #else
-        protected async Task PutTriggerDataAsync(string key, object? value)
+        public async Task PutTriggerDataAsync(string key, object? value)
 #endif
         {
             ValidateSystemDataKey(key);
@@ -452,22 +452,22 @@ namespace Planar.Job
             await _baseJobFactory.PutTriggerDataAsync(key, value);
         }
 
-        protected void UpdateProgress(byte value)
+        public void UpdateProgress(byte value)
         {
             _baseJobFactory.UpdateProgress(value);
         }
 
-        protected void UpdateProgress(long current, long total)
+        public void UpdateProgress(long current, long total)
         {
             _baseJobFactory.UpdateProgress(current, total);
         }
 
-        protected async Task UpdateProgressAsync(byte value)
+        public async Task UpdateProgressAsync(byte value)
         {
             await _baseJobFactory.UpdateProgressAsync(value);
         }
 
-        protected async Task UpdateProgressAsync(long current, long total)
+        public async Task UpdateProgressAsync(long current, long total)
         {
             await _baseJobFactory.UpdateProgressAsync(current, total);
         }
