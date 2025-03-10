@@ -20,6 +20,10 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoKey(RedisKey key);
 
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<RedisKey>> details);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
@@ -39,8 +43,6 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-#pragma warning restore S3251 // Implementations should be provided for "partial" methods
-
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
@@ -55,6 +57,8 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
         await SafeInvokeOperation(keys, InvokeKeyCheckInner, context.TriggerDetails);
 
+        var details = GetFinalayzeDetails(keys.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 

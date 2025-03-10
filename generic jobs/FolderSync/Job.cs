@@ -4,9 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using Polly;
-using Polly.Retry;
-using System.IO;
 using System.Text.RegularExpressions;
 
 namespace FolderSync;
@@ -20,6 +17,8 @@ internal partial class Job : BaseCheckJob
     static partial void VetoFolder(SyncFolder folder);
 
     static partial void VetoHost(Host host);
+
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<SyncFolder>> details);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -43,6 +42,8 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
         await SafeInvokeOperation(folders, InvokeSyncFoldersInner, context.TriggerDetails);
 
+        var details = GetFinalayzeDetails(folders.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 

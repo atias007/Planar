@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using Planar.Job;
 using Sql;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SqlTableRetention;
 
@@ -20,6 +19,10 @@ internal partial class Job : BaseCheckJob
     static partial void CustomConfigure(List<SqlConnectionString> connectionStrings, IConfiguration configuration);
 
     static partial void VetoTable(Table table);
+
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Table>> details);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -41,8 +44,6 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-#pragma warning restore S3251 // Implementations should be provided for "partial" methods
-
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
@@ -56,6 +57,8 @@ internal partial class Job : BaseCheckJob
 
         await SafeInvokeOperation(tables, InvokeTableRerentionInner, context.TriggerDetails);
 
+        var details = GetFinalayzeDetails(tables.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 

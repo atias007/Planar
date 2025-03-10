@@ -18,7 +18,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoHost(Host host);
 
-    static partial void Finalayze(IEnumerable<Service> services);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Service>> services);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -42,7 +42,8 @@ internal partial class Job : BaseCheckJob
 
         await SafeInvokeCheck(services, InvokeServiceInner, context.TriggerDetails);
 
-        Finalayze(services);
+        var details = GetFinalayzeDetails(services.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 
@@ -115,9 +116,11 @@ internal partial class Job : BaseCheckJob
         {
             if (ex.InnerException is Win32Exception win32Exception)
             {
+                service.ResultMessage = win32Exception.Message;
                 throw new CheckException($"service {service.Name} on host {service.Host} fail. message: {win32Exception.Message}");
             }
 
+            service.ResultMessage = ex.Message;
             throw;
         }
     }
@@ -126,6 +129,7 @@ internal partial class Job : BaseCheckJob
     {
         if (string.IsNullOrWhiteSpace(service.Host))
         {
+            service.ResultMessage = $"service '{service.Name}' has no host. (missing host group name '{service.HostGroupName}')";
             throw new CheckException($"service '{service.Name}' has no host. (missing host group name '{service.HostGroupName}'");
         }
 
@@ -138,12 +142,14 @@ internal partial class Job : BaseCheckJob
 
         if (disabled && service.IgnoreDisabled)
         {
+            service.ResultMessage = $"skipping disabled service '{service.Name}' on host '{service.Host}";
             Logger.LogInformation("skipping disabled service '{Name}' on host '{Host}'", service.Name, service.Host);
             return;
         }
 
         if (disabled)
         {
+            service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in {status} start type";
             throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} start type");
         }
 
@@ -151,11 +157,13 @@ internal partial class Job : BaseCheckJob
 
         if (startType == ServiceStartMode.Manual && service.AutoStartMode)
         {
+            service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' start type is {nameof(ServiceStartMode.Manual)}";
             throw new CheckException($"service '{service.Name}' on host '{service.Host}' start type is {nameof(ServiceStartMode.Manual)}");
         }
 
         if (status == ServiceControllerStatus.Running)
         {
+            service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
             Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
             IncreaseEffectedRows();
             return;
@@ -169,6 +177,7 @@ internal partial class Job : BaseCheckJob
             status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: service.KillPendingServiceProcess);
             if (status == ServiceControllerStatus.Running)
             {
+                service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
                 IncreaseEffectedRows();
                 return;
@@ -189,6 +198,7 @@ internal partial class Job : BaseCheckJob
             if (status == ServiceControllerStatus.Running)
             {
                 service.Result.Started = true;
+                service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
                 IncreaseEffectedRows();
                 return;
@@ -202,6 +212,7 @@ internal partial class Job : BaseCheckJob
             status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, service.StartServiceTimeout, restart: false);
             if (status == ServiceControllerStatus.Running)
             {
+                service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
                 IncreaseEffectedRows();
                 return;
@@ -210,6 +221,7 @@ internal partial class Job : BaseCheckJob
 
         if (status != ServiceControllerStatus.Running)
         {
+            service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in {status} status";
             throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} status");
         }
     }

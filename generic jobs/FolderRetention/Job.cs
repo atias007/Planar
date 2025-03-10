@@ -18,6 +18,8 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoHost(Host host);
 
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Folder>> details);
+
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
@@ -47,6 +49,8 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
         await SafeInvokeOperation(folders, InvokeFoldersInner, context.TriggerDetails);
 
+        var details = GetFinalayzeDetails(folders.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 

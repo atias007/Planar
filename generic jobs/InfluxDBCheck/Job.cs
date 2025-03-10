@@ -8,6 +8,8 @@ using Planar.Job;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using YamlDotNet.Core.Tokens;
 
 namespace InfluxDBCheck;
 
@@ -21,7 +23,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoQuery(InfluxQuery query);
 
-    static partial void Finalayze(IEnumerable<InfluxQuery> queries);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<InfluxQuery>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -63,7 +65,8 @@ internal partial class Job : BaseCheckJob
         var proxy = new InfluxProxy(server);
         await SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, proxy), context.TriggerDetails);
 
-        Finalayze(queries);
+        var details = GetFinalayzeDetails(queries.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 
@@ -144,6 +147,7 @@ internal partial class Job : BaseCheckJob
                 throw GetCheckException(query, "value", value);
             }
 
+            query.ResultMessage = $"value condition '{value} {query.InternalValueCondition.Text}' for check '{query.Name}' success";
             Logger.LogInformation("value condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalValueCondition.Text, query.Name);
         }
 
@@ -154,9 +158,12 @@ internal partial class Job : BaseCheckJob
             var ok = query.InternalRecordsCondition.Evaluate(value);
             if (!ok)
             {
-                throw GetCheckException(query, "records", value);
+                var ex = GetCheckException(query, "records", value);
+                query.ResultMessage = ex.Message;
+                throw ex;
             }
 
+            query.ResultMessage = $"records condition '{value} {query.InternalRecordsCondition.Text}' for check '{query.Name}' success";
             Logger.LogInformation("records condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalRecordsCondition.Text, query.Name);
         }
 

@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using System.Net;
 
 namespace HealthCheck;
 
@@ -21,7 +20,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoHost(Host host);
 
-    static partial void Finilayze(IEnumerable<Endpoint> endpoints);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Endpoint>> details);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -50,7 +49,8 @@ internal partial class Job : BaseCheckJob
 
         await SafeInvokeCheck(endpoints, e => InvokeEndpointInner(e, client), context.TriggerDetails);
 
-        Finilayze(endpoints);
+        var details = GetFinalayzeDetails(endpoints.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 
@@ -165,16 +165,19 @@ internal partial class Job : BaseCheckJob
         }
         catch (TaskCanceledException)
         {
-            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. timeout expire");
+            endpoint.ResultMessage = $"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. timeout expire";
+            throw new CheckException(endpoint.ResultMessage);
         }
         catch (Exception ex)
         {
-            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. message: {ex.Message}");
+            endpoint.ResultMessage = $"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. message: {ex.Message}";
+            throw new CheckException(endpoint.ResultMessage);
         }
 
         endpoint.Result.HttpStatusCode = response.StatusCode;
         if (endpoint.SuccessStatusCodes.Any(s => s == (int)response.StatusCode))
         {
+            endpoint.ResultMessage = $"health check success for endpoint name '{endpoint.Name}' with url '{uri}'";
             Logger.LogInformation("health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",
                 endpoint.Name, uri);
 
@@ -182,7 +185,8 @@ internal partial class Job : BaseCheckJob
             return;
         }
 
-        throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
+        endpoint.ResultMessage = $"health check fail for endpoint name '{endpoint.Name}' with url '{uri}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list";
+        throw new CheckException(endpoint.ResultMessage);
     }
 
     private static void ValidateEndpoint(Endpoint endpoint)

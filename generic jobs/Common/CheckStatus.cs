@@ -2,8 +2,8 @@
 
 public enum CheckStatus
 {
-    Inactive,
-    Ignore,
+    Inactive,   // Active property = False
+    Ignore,     // Not binding to current trigger
     Success,
     CheckWarning,
     CheckError,
@@ -19,4 +19,6 @@ public static class CheckStatusExtentions
             status == CheckStatus.Ignore ||
             status == CheckStatus.CheckWarning;
     }
+
+    public static bool IsInvalidStatus(this CheckStatus status) => !status.IsValidStatus();
 }

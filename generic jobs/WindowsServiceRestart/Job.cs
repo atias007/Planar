@@ -3,10 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using System.Globalization;
-using System.Management;
-using System.Net;
-using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
 namespace WindowsServiceRestart;
@@ -20,6 +16,8 @@ internal partial class Job : BaseCheckJob
     static partial void VetoService(Service service);
 
     static partial void VetoHost(Host host);
+
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Service>> details);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -44,6 +42,8 @@ internal partial class Job : BaseCheckJob
         using var client = new HttpClient();
         await SafeInvokeOperation(services, InvokeServiceInner, context.TriggerDetails);
 
+        var details = GetFinalayzeDetails(services.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 

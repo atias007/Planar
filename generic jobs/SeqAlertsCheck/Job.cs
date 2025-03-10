@@ -5,9 +5,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using Seq.Api.Model.Alerting;
-using System.Collections.Generic;
 using System.Text;
-using YamlDotNet.Core.Tokens;
 
 namespace SeqAlertsCheck;
 
@@ -21,7 +19,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoAlert(SeqAlert alert);
 
-    static partial void Finalayze(IEnumerable<SeqAlert> alerts);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<SeqAlert>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -59,7 +57,8 @@ internal partial class Job : BaseCheckJob
 
         await SafeInvokeCheck(alerts, InvokeAlertCheckInner, context.TriggerDetails);
 
-        Finalayze(alerts);
+        var details = GetFinalayzeDetails(alerts.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 
@@ -184,6 +183,7 @@ internal partial class Job : BaseCheckJob
         var owner = string.IsNullOrWhiteSpace(state.OwnerId) ? shared : state.OwnerId;
         if (!state.IsFailing)
         {
+            alert.ResultMessage = $"alert: {title}, id: {state.AlertId}, owner: {owner}, is in ok state";
             Logger.LogInformation("alert: {Title}, id: {AlertId}, owner: {Owner}, is in ok state", title, state.AlertId, owner);
             return;
         }
@@ -192,6 +192,7 @@ internal partial class Job : BaseCheckJob
         {
             if (state.SuppressedUntil.Value >= DateTime.UtcNow)
             {
+                alert.ResultMessage = $"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state but suppressed until {state.SuppressedUntil:O}";
                 Logger.LogWarning("alert: {Title}, id: {AlertId}, owner: {Owner}, is in fail state but suppressed until {SuppressedUntil:O}",
                     title,
                     state.AlertId,
@@ -202,6 +203,7 @@ internal partial class Job : BaseCheckJob
             }
         }
 
+        alert.ResultMessage = $"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state";
         Logger.LogError("alert {Title}, id: {AlertId}, owner: {Owner}, is in fail state", title, state.AlertId, owner);
 
         throw new CheckException($"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state");

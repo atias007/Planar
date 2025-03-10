@@ -33,5 +33,6 @@ public abstract class BaseDefault : BaseActiveElement
 
     public bool Veto { get; set; }
     public string? VetoReason { get; set; }
+    public string? ResultMessage { get; set; }
     public virtual CheckStatus RunStatus { get; set; }
 }

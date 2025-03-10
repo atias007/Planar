@@ -55,6 +55,13 @@ public abstract class BaseCheckJob : BaseJob
         return result;
     }
 
+    protected FinalayzeDetails<T> GetFinalayzeDetails<T>(T data)
+    {
+        var success = ExceptionCount == 0 && _exceptions.IsEmpty;
+        var details = new FinalayzeDetails<T>(data, this, success);
+        return details;
+    }
+
     protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
     {
         var defaults = configuration.GetSection("defaults");
@@ -342,7 +349,7 @@ public abstract class BaseCheckJob : BaseJob
             foreach (var entity in entities)
             {
                 await SafeInvokeCheck(entity, checkFunc, trigger);
-                var notValidStatus = entity.RunStatus.IsValidStatus();
+                var notValidStatus = entity.RunStatus.IsInvalidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
                     var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");

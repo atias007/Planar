@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using System.Text;
-using YamlDotNet.Core.Tokens;
 
 namespace RabbitMQCheck;
 
@@ -19,11 +18,11 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoQueue(Queue queue);
 
-    static partial void Finalayze(IEnumerable<Queue> queues);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Queue>> details);
 
-    static partial void Finalayze(Node node);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Node>> details);
 
-    static partial void Finalayze(HealthCheck healthCheck);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<HealthCheck>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -60,11 +59,13 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
 
         // health check
-        var healthCheckTask = InvokeHealthCheck(healthCheck, server, context.TriggerDetails);
+        var checks = server.Hosts.Select(h => new HealthCheck(healthCheck, h));
+        var healthCheckTask = SafeInvokeCheck(checks, hc => InvokeHealthCheckInner(hc, server), context.TriggerDetails);
         tasks.Add(healthCheckTask);
 
         // nodes
-        var nodeCheckTask = SafeInvokeNodeCheck(node, server, context.TriggerDetails);
+        var nodes = server.Hosts.Select(h => new Node(node, h));
+        var nodeCheckTask = SafeInvokeCheck(nodes, n => InvokeNodeCheckInner(n, server), context.TriggerDetails);
         tasks.Add(nodeCheckTask);
 
         // queues
@@ -73,9 +74,12 @@ internal partial class Job : BaseCheckJob
 
         await Task.WhenAll(tasks);
 
-        Finalayze(healthCheck);
-        Finalayze(node);
-        Finalayze(queues);
+        var hcDetails = GetFinalayzeDetails(checks.AsEnumerable());
+        Finalayze(hcDetails);
+        var hcNodes = GetFinalayzeDetails(nodes.AsEnumerable());
+        Finalayze(hcNodes);
+        var queueDetails = GetFinalayzeDetails(queues.AsEnumerable());
+        Finalayze(queueDetails);
         Finalayze();
     }
 
@@ -160,38 +164,47 @@ internal partial class Job : BaseCheckJob
 
         var proxy = RabbitMqProxy.GetProxy(healthCheck.Host, server, Logger);
 
-        if (healthCheck.ClusterAlarm.GetValueOrDefault())
+        try
         {
-            await proxy.ClusterAlarm();
-        }
+            if (healthCheck.ClusterAlarm.GetValueOrDefault())
+            {
+                await proxy.ClusterAlarm();
+            }
 
-        if (healthCheck.LocalAlarm.GetValueOrDefault())
-        {
-            await proxy.LocalAlarm();
-        }
+            if (healthCheck.LocalAlarm.GetValueOrDefault())
+            {
+                await proxy.LocalAlarm();
+            }
 
-        if (healthCheck.NodeMirrorSync.GetValueOrDefault())
-        {
-            await proxy.NodeMirrorSync();
-        }
+            if (healthCheck.NodeMirrorSync.GetValueOrDefault())
+            {
+                await proxy.NodeMirrorSync();
+            }
 
-        if (healthCheck.NodeQuorumCritical.GetValueOrDefault())
-        {
-            await proxy.NodeQuorumCritical();
-        }
+            if (healthCheck.NodeQuorumCritical.GetValueOrDefault())
+            {
+                await proxy.NodeQuorumCritical();
+            }
 
-        if (healthCheck.VirtualHosts.GetValueOrDefault())
+            if (healthCheck.VirtualHosts.GetValueOrDefault())
+            {
+                await proxy.VirtualHosts();
+            }
+        }
+        catch (Exception ex)
         {
-            await proxy.VirtualHosts();
+            healthCheck.ResultMessage = ex.Message;
+            throw;
         }
 
         IncreaseEffectedRows();
     }
 
-    private async Task InvokeNodeCheckInner(Node node, Server server, string host)
+    private async Task InvokeNodeCheckInner(Node node, Server server)
     {
         if (!node.IsValid) { return; }
-
+        var host = node.Host;
+        if (string.IsNullOrWhiteSpace(host)) { return; }
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
         var details = await proxy.GetNodeDetails();
 
@@ -203,10 +216,12 @@ internal partial class Job : BaseCheckJob
             {
                 if (item.DiskFreeAlarm)
                 {
+                    node.ResultMessage = $"node check (disk free alarm) on host {host} failed. free disk is {item.DiskFree:N0} and limit is {item.DiskFreeLimit:N0}";
                     throw new CheckException($"node check (disk free alarm) on host {host} failed. free disk is {item.DiskFree:N0} and limit is {item.DiskFreeLimit:N0}");
                 }
                 else
                 {
+                    node.ResultMessage = $"node check (disk free alarm) on host {host} succeeded";
                     Logger.LogInformation("node check (disk free alarm) on host {Host} succeeded", host);
                 }
             }
@@ -215,24 +230,17 @@ internal partial class Job : BaseCheckJob
             {
                 if (item.MemoryAlarm)
                 {
+                    node.ResultMessage = $"node check (memory alarm) on host {host} failed. used memory is {item.MemoryUsed:N0} and limit is {item.MemoryLimit:N0}";
                     throw new CheckException($"node check (memory alarm) on host {host} failed. used memory is {item.MemoryUsed:N0} and limit is {item.MemoryLimit:N0}");
                 }
                 else
                 {
+                    node.ResultMessage += $"\r\nnode check (memory alarm) on host {host} succeeded".Trim();
                     Logger.LogInformation("node check (memory alarm) on host {Host} succeeded", host);
                 }
             }
 
             IncreaseEffectedRows();
-        }
-    }
-
-    private async Task InvokeHealthCheck(HealthCheck healthCheck, Server server, ITriggerDetail trigger)
-    {
-        var checks = server.Hosts.Select(h => new HealthCheck(healthCheck, h));
-        foreach (var check in checks)
-        {
-            await SafeInvokeCheck(check, hc => InvokeHealthCheckInner(hc, server), trigger);
         }
     }
 
@@ -244,11 +252,20 @@ internal partial class Job : BaseCheckJob
 
         queue.Result = detail;
 
-        CheckState(queue, detail);
-        CheckConsumers(queue, detail);
-        CheckMessages(queue, detail);
-        CheckUnacked(queue, detail);
-        CheckMemory(queue, detail);
+        try
+        {
+            CheckState(queue, detail);
+            CheckConsumers(queue, detail);
+            CheckMessages(queue, detail);
+            CheckUnacked(queue, detail);
+            CheckMemory(queue, detail);
+        }
+        catch (Exception ex)
+        {
+            queue.ResultMessage = ex.Message;
+            throw;
+        }
+
         IncreaseEffectedRows();
         await Task.CompletedTask;
     }
@@ -351,13 +368,5 @@ internal partial class Job : BaseCheckJob
         if (details == null) { return; }
 
         await SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, details), trigger);
-    }
-
-    private async Task SafeInvokeNodeCheck(Node node, Server server, ITriggerDetail trigger)
-    {
-        foreach (var host in server.Hosts)
-        {
-            await SafeInvokeCheck(node, n => InvokeNodeCheckInner(n, server, host), trigger);
-        }
     }
 }

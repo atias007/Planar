@@ -23,7 +23,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoQuery(ref CheckQuery query);
 
-    static partial void Finalayze(IEnumerable<CheckQuery> queries);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<CheckQuery>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -59,7 +59,8 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
         await SafeInvokeCheck(queries, InvokeQueryCheckInner, context.TriggerDetails);
 
-        Finalayze(queries);
+        var details = GetFinalayzeDetails(queries.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 
@@ -87,10 +88,12 @@ internal partial class Job : BaseCheckJob
                 $"{checkQuery.Name} query failed" :
                 Replace(checkQuery.Message, reader);
 
+            checkQuery.ResultMessage = message;
             AddCheckException(new CheckException(message));
         }
         else
         {
+            checkQuery.ResultMessage = $"query {checkQuery.Name} query executed successfully";
             Logger.LogInformation("query '{Name}' executed successfully", checkQuery.Name);
             IncreaseEffectedRows();
         }

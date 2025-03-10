@@ -19,9 +19,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoKey(RedisKey key);
 
-    static partial void Finalayze(IEnumerable<RedisKey> keys);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<RedisKey>> details);
 
-    static partial void Finalayze(HealthCheck healthCheck);
+    static partial void Finalayze(FinalayzeDetails<HealthCheck> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -60,8 +60,10 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner, context.TriggerDetails);
         await SafeInvokeCheck(keys, InvokeKeyCheckInner, context.TriggerDetails);
 
-        Finalayze(healthCheck);
-        Finalayze(keys);
+        var hcDetails = GetFinalayzeDetails(healthCheck);
+        Finalayze(hcDetails);
+        var keysDetails = GetFinalayzeDetails(keys);
+        Finalayze(keysDetails);
         Finalayze();
     }
 
@@ -159,15 +161,18 @@ internal partial class Job : BaseCheckJob
             try
             {
                 span = await RedisFactory.Ping();
+                healthCheck.ResultMessage = $"ping/latency health check ok. latency {span.TotalMilliseconds:N2}ms";
                 Logger.LogInformation("ping/latency health check ok. latency {Latency:N2}ms", span.TotalMilliseconds);
             }
             catch (Exception ex)
             {
+                healthCheck.ResultMessage = $"ping/latency health check fail. reason: {ex.Message}";
                 throw new CheckException($"ping/latency health check fail. reason: {ex.Message}");
             }
 
             if (healthCheck.Latency.HasValue && span.TotalMilliseconds > healthCheck.Latency.Value)
             {
+                healthCheck.ResultMessage = $"latency of {span.TotalMilliseconds:N2} ms is greater then {healthCheck.Latency.Value:N0} ms";
                 throw new CheckException($"latency of {span.TotalMilliseconds:N2} ms is greater then {healthCheck.Latency.Value:N0} ms");
             }
         }
@@ -180,10 +185,12 @@ internal partial class Job : BaseCheckJob
 
             if (int.TryParse(ccString, out var cc) && int.TryParse(maxString, out var max))
             {
+                healthCheck.ResultMessage += $"\r\nconnected clients is {cc:N0}. maximum clients is {max:N0}".Trim();
                 Logger.LogInformation("connected clients is {Clients:N0}. maximum clients is {MaxClients:N0}", cc, max);
 
                 if (cc > healthCheck.ConnectedClients)
                 {
+                    healthCheck.ResultMessage = $"connected clients ({cc:N0}) is greater then {healthCheck.ConnectedClients:N0}";
                     throw new CheckException($"connected clients ({cc:N0}) is greater then {healthCheck.ConnectedClients:N0}");
                 }
             }
@@ -199,16 +206,19 @@ internal partial class Job : BaseCheckJob
             {
                 if (max > 0)
                 {
+                    healthCheck.ResultMessage += $"\r\nused memory is {memory:N0} bytes. maximum memory is {max:N0} bytes".Trim();
                     Logger.LogInformation("used memory is {Memory:N0} bytes. maximum memory is {MaxMemory:N0} bytes", memory, max);
                 }
                 else
                 {
+                    healthCheck.ResultMessage += $"\r\nused memory is {memory:N0} bytes".Trim();
                     Logger.LogInformation("used memory is {Memory:N0} bytes", memory);
                 }
             }
 
             if (memory > healthCheck.UsedMemoryNumber)
             {
+                healthCheck.ResultMessage = $"used memory ({memory:N0}) bytes is greater then {healthCheck.UsedMemoryNumber:N0} bytes";
                 throw new CheckException($"used memory ({memory:N0}) bytes is greater then {healthCheck.UsedMemoryNumber:N0} bytes");
             }
         }
@@ -231,6 +241,7 @@ internal partial class Job : BaseCheckJob
         {
             length = await RedisFactory.GetLength(key);
             key.Result.Length = length;
+            key.ResultMessage = $"key '{key.Key}' length is {length:N0}";
             Logger.LogInformation("key '{Key}' length is {Length:N0}", key.Key, length);
         }
 
@@ -238,16 +249,19 @@ internal partial class Job : BaseCheckJob
         {
             size = await RedisFactory.GetMemoryUsage(key);
             key.Result.MemoryUsage = size;
+            key.ResultMessage += $"\r\nkey '{key.Key}' size is {size:N0} byte(s)".Trim();
             Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s)", key.Key, size);
         }
 
         if (key.Length > 0 && length > key.Length)
         {
+            key.ResultMessage = $"key '{key.Key}' length is greater then {key.Length:N0}";
             throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}");
         }
 
         if (key.MemoryUsageNumber > 0 && size > key.MemoryUsageNumber)
         {
+            key.ResultMessage = $"key '{key.Key}' size is greater then {key.MemoryUsage:N0}";
             throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}");
         }
 

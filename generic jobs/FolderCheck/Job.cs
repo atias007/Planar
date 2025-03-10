@@ -16,7 +16,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoHost(Host host);
 
-    static partial void Finilayze(IEnumerable<Folder> folders);
+    static partial void Finalayze(FinalayzeDetails<IEnumerable<Folder>> details);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -42,7 +42,8 @@ internal partial class Job : BaseCheckJob
 
         await SafeInvokeCheck(folders, InvokeFolderInner, context.TriggerDetails);
 
-        Finilayze(folders);
+        var details = GetFinalayzeDetails(folders.AsEnumerable());
+        Finalayze(details);
         Finalayze();
     }
 
@@ -156,7 +157,8 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
             if (size > folder.TotalSizeNumber)
             {
-                throw new CheckException($"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}");
+                folder.ResultMessage = $"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}";
+                throw new CheckException(folder.ResultMessage);
             }
         }
 
@@ -167,7 +169,8 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
             if (max > folder.FileSizeNumber)
             {
-                throw new CheckException($"folder '{path}' has file size that is greater then {folder.FileSizeNumber:N0}");
+                folder.ResultMessage = $"folder '{path}' has file size that is greater then {folder.FileSizeNumber:N0}";
+                throw new CheckException(folder.ResultMessage);
             }
         }
 
@@ -176,7 +179,8 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, filesCount);
             if (filesCount > folder.FileCount)
             {
-                throw new CheckException($"folder '{path}' contains more then {folder.FileCount:N0} files");
+                folder.ResultMessage = $"folder '{path}' contains more then {folder.FileCount:N0} files";
+                throw new CheckException(folder.ResultMessage);
             }
         }
 
@@ -187,7 +191,8 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
             if (created < folder.CreatedAgeDate)
             {
-                throw new CheckException($"folder '{path}' contains files that are created older then {folder.CreatedAge}");
+                folder.ResultMessage = $"folder '{path}' contains files that are created older then {folder.CreatedAge}";
+                throw new CheckException(folder.ResultMessage);
             }
         }
 
@@ -198,10 +203,12 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);
             if (modified < folder.ModifiedAgeDate)
             {
-                throw new CheckException($"folder '{path}' contains files that are modified older then {folder.ModifiedAgeDate}");
+                folder.ResultMessage = $"folder '{path}' contains files that are modified older then {folder.ModifiedAgeDate}";
+                throw new CheckException(folder.ResultMessage);
             }
         }
 
+        folder.ResultMessage = $"folder check success, folder '{folder.Name}', path '{path}'";
         Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
                         folder.Name, path);
 
