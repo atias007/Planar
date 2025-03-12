@@ -20,46 +20,27 @@ public abstract class BaseCheckJob : BaseJob
 
     protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
     {
-        var section = configuration.GetSection("connection strings");
-        if (!section.Exists())
+        var sections = new string[] { "connection strings", "ConnectionStrings" };
+        var result = new Dictionary<string, string>();
+        foreach (var item in sections)
         {
-            section = configuration.GetSection("ConnectionStrings");
+            var section = configuration.GetSection(item);
+            if (section.Exists())
+            {
+                var connStrings = ReadConnectionStringFromSection(section);
+                foreach (var s in connStrings)
+                {
+                    result.TryAdd(s.Key, s.Value);
+                }
+            }
         }
 
-        if (!section.Exists())
-        {
-            section = configuration.GetSection("connectionStrings");
-        }
-
-        if (!section.Exists())
+        if (result.Count == 0)
         {
             throw new InvalidDataException("coud not found any connection string in configuration");
         }
 
-        var result = new Dictionary<string, string>();
-        foreach (var item in section.GetChildren())
-        {
-            if (string.IsNullOrWhiteSpace(item.Key))
-            {
-                throw new InvalidDataException("connection string has invalid null or empty key");
-            }
-
-            if (string.IsNullOrWhiteSpace(item.Value))
-            {
-                throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
-            }
-
-            result.TryAdd(item.Key, item.Value);
-        }
-
         return result;
-    }
-
-    protected FinalayzeDetails<T> GetFinalayzeDetails<T>(T data)
-    {
-        var success = ExceptionCount == 0 && _exceptions.IsEmpty;
-        var details = new FinalayzeDetails<T>(data, this, success);
-        return details;
     }
 
     protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
@@ -287,6 +268,13 @@ public abstract class BaseCheckJob : BaseJob
         HandleCheckExceptions();
     }
 
+    protected FinalayzeDetails<T> GetFinalayzeDetails<T>(T data)
+    {
+        var success = ExceptionCount == 0 && _exceptions.IsEmpty;
+        var details = new FinalayzeDetails<T>(data, this, success);
+        return details;
+    }
+
     protected IReadOnlyDictionary<string, HostsConfig> GetHosts(IConfiguration configuration, Action<Host> veto)
     {
         var dic = new Dictionary<string, HostsConfig>();
@@ -370,8 +358,8 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
-            if (CheckInactiveCheck(entity)) { return; }
-            if (CheckBindCheckTriggers(entity, trigger)) { return; }
+            if (IsInactiveCheck(entity)) { return; }
+            if (IsUnbindCheckTriggers(entity, trigger)) { return; }
 
             if (entity.RetryCount == 0)
             {
@@ -502,62 +490,25 @@ public abstract class BaseCheckJob : BaseJob
         return false;
     }
 
-    private bool CheckInactiveCheck<T>(T entity)
-        where T : BaseDefault, ICheckElement
+    private static Dictionary<string, string> ReadConnectionStringFromSection(IConfigurationSection section)
     {
-        var inactive = !entity.Active;
-        if (inactive)
+        var result = new Dictionary<string, string>();
+        foreach (var item in section.GetChildren())
         {
-            Logger.LogInformation("skipping inactive check: '{Key}'", entity.Key);
-            entity.RunStatus = CheckStatus.Inactive;
+            if (string.IsNullOrWhiteSpace(item.Key))
+            {
+                throw new InvalidDataException("connection string has invalid null or empty key");
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Value))
+            {
+                throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
+            }
+
+            result.TryAdd(item.Key, item.Value);
         }
 
-        return inactive;
-    }
-
-    private bool CheckInactiveOperation<T>(T entity)
-       where T : BaseOperation, ICheckElement
-    {
-        var inactive = !entity.Active;
-        if (inactive)
-        {
-            Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
-            entity.RunStatus = OperationStatus.Inactive;
-        }
-
-        return inactive;
-    }
-
-    private bool CheckBindCheckTriggers<T>(T entity, ITriggerDetail trigger)
-        where T : BaseDefault, ICheckElement
-    {
-        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
-        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
-
-        if (bindNotIncludeCurrentTrigger)
-        {
-            Logger.LogInformation("skipping check '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
-            entity.RunStatus = CheckStatus.Ignore;
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool CheckBindOperationTriggers<T>(T entity, ITriggerDetail trigger)
-        where T : BaseOperation, ICheckElement
-    {
-        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
-        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
-
-        if (bindNotIncludeCurrentTrigger)
-        {
-            Logger.LogInformation("skipping operation '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
-            entity.RunStatus = OperationStatus.Ignore;
-            return false;
-        }
-
-        return true;
+        return result;
     }
 
     private void HandleCheckExceptions()
@@ -578,6 +529,64 @@ public abstract class BaseCheckJob : BaseJob
 
             throw new CheckException(sb.ToString());
         }
+    }
+
+    private bool IsInactiveCheck<T>(T entity)
+            where T : BaseDefault, ICheckElement
+    {
+        var inactive = !entity.Active;
+        if (inactive)
+        {
+            Logger.LogInformation("skipping inactive check: '{Key}'", entity.Key);
+            entity.RunStatus = CheckStatus.Inactive;
+        }
+
+        return inactive;
+    }
+
+    private bool IsInactiveOperation<T>(T entity)
+       where T : BaseOperation, ICheckElement
+    {
+        var inactive = !entity.Active;
+        if (inactive)
+        {
+            Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
+            entity.RunStatus = OperationStatus.Inactive;
+        }
+
+        return inactive;
+    }
+
+    private bool IsUnbindCheckTriggers<T>(T entity, ITriggerDetail trigger)
+        where T : BaseDefault, ICheckElement
+    {
+        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
+        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
+
+        if (bindNotIncludeCurrentTrigger)
+        {
+            Logger.LogInformation("skipping check '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
+            entity.RunStatus = CheckStatus.Ignore;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IsUnbindOperationTriggers<T>(T entity, ITriggerDetail trigger)
+        where T : BaseOperation, ICheckElement
+    {
+        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
+        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
+
+        if (bindNotIncludeCurrentTrigger)
+        {
+            Logger.LogInformation("skipping operation '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);
+            entity.RunStatus = OperationStatus.Ignore;
+            return true;
+        }
+
+        return false;
     }
 
     private void LogVetoHost(IEnumerable<Host> hosts)
@@ -657,8 +666,8 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
-            if (CheckInactiveOperation(entity)) { return; }
-            if (CheckBindOperationTriggers(entity, trigger)) { return; }
+            if (IsInactiveOperation(entity)) { return; }
+            if (IsUnbindOperationTriggers(entity, trigger)) { return; }
 
             await operationFunc(entity);
             entity.RunStatus = OperationStatus.Success;

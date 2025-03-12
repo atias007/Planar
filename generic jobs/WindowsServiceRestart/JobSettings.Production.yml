@@ -1,3 +1,5 @@
 hosts:
-  - http://prod.server.1
-  - http://prod.server.2
+ - group name: default
+   hosts:
+     - \\prod.server.1
+     - \\prod.server.2

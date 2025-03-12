@@ -13,8 +13,7 @@ defaults:                                       # default values for all service
  
 services:
   - name: MyServiceName                        # the name of the service
-    hosts:                                     # the hosts of the services. if not defined, the hosts from the root hosts section will be used
-      - localhost
+    host group name: default                    # when using relative folder path, 'host group name' must be supplied to a valid 'group name' in hosts section
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
     stop timeout: 00:00:30                     # the timeout for stop the service. the default is 30 seconds
     start timeout: 00:00:30                    # the timeout for start the service. the default is 30 seconds

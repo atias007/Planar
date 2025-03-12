@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using Sql;
+using System.Globalization;
 using System.Text;
 
 namespace SqlTableRetention;
@@ -96,7 +97,8 @@ internal partial class Job : BaseCheckJob
 
         await connection.OpenAsync();
         var count = await cmd.ExecuteNonQueryAsync();
-        Logger.LogInformation("retention '{Name}' executed successfully with {Count} effected row(s)", table.Name, count);
+        if (count < 0) { count = 0; }
+        Logger.LogInformation("retention '{Name}' executed successfully with {Count} effected row(s)", table.Name, count.ToString("N0", CultureInfo.CurrentCulture));
         EffectedRows += count;
     }
 
