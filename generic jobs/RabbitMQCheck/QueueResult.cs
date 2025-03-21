@@ -4,6 +4,10 @@ namespace RabbitMQCheck;
 
 public class QueueResult
 {
+    public Dictionary<string, string> BundleStates { get; set; } = [];
+
+    //// --------------------------------------------------------------------------- ////
+
     public string Name { get; set; } = null!;
     public int Messages { get; set; }
     public int Memory { get; set; }

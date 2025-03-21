@@ -13,7 +13,12 @@ internal class Queue(IConfigurationSection section, Defaults defaults) : BaseDef
     public bool? CheckState { get; private set; } = section.GetValue<bool?>("check state");
     public long? MemoryNumber { get; private set; } = CommonUtil.GetSize(section.GetValue<string>("memory"), "memory");
     public string Key => Name;
-    public bool IsValid => Messages.HasValue || Consumers.HasValue || CheckState.HasValue || MemoryNumber.HasValue;
+    public bool IsValid => Messages.HasValue || Consumers.HasValue || CheckState.HasValue || MemoryNumber.HasValue || Unacked.HasValue;
 
     public QueueResult Result { get; set; } = new();
+}
+
+internal class QueuesBundle(IConfigurationSection section, Defaults defaults) : Queue(section, defaults)
+{
+    public IEnumerable<string> Queues { get; set; } = section.GetSection("queues").Get<string[]>() ?? [];
 }
