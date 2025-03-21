@@ -22,6 +22,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<Group> Groups { get; set; }
 
+    public virtual DbSet<HistoryLastLog> HistoryLastLogs { get; set; }
+
     public virtual DbSet<JobAudit> JobAudits { get; set; }
 
     public virtual DbSet<JobCounter> JobCounters { get; set; }

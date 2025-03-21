@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Planar.Service.General;
 
@@ -17,7 +18,7 @@ public static class ServiceUtil
 {
     internal static ConcurrentDictionary<string, HookWrapper> MonitorHooks { get; private set; } = new();
     private static bool _disposeFlag;
-    private static readonly object _locker = new();
+    private static readonly Lock _locker = new();
 
     public static IEnumerable<string> JobTypes =>
     [

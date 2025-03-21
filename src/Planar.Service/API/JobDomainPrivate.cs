@@ -79,6 +79,12 @@ public partial class JobDomain
         }
     }
 
+    private async Task DeleteJobHistory(string jobId)
+    {
+        var dal = Resolve<IHistoryData>();
+        await dal.ClearJobHistory(jobId);
+    }
+
     private async Task<AvailableJob?> GetAvailableJob(string filename, string jobsFolder, bool update)
     {
         try

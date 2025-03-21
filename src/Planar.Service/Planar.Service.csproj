@@ -92,27 +92,29 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="14.0.0" />
-		<PackageReference Include="CronExpressionDescriptor" Version="2.38.0" />
+		<PackageReference Include="CronExpressionDescriptor" Version="2.39.0" />
 		<PackageReference Include="FluentValidation" Version="11.11.0" />
-		<PackageReference Include="Google.Protobuf" Version="3.29.3" />
-		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.67.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.69.0">
+		<PackageReference Include="Google.Protobuf" Version="3.30.1" />
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.71.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.1" />
-		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.13.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.6.0.109712">
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.14.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.14.0" />
+		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
+		<PackageReference Include="Riok.Mapperly" Version="4.1.1" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.7.0.110445">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

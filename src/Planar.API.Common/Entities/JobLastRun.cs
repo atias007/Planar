@@ -6,6 +6,8 @@ namespace Planar.API.Common.Entities
     {
         public long Id { get; set; }
 
+        public string InstanceId { get; set; } = null!;
+
         public string JobId { get; set; } = null!;
 
         public string JobName { get; set; } = null!;
@@ -23,8 +25,13 @@ namespace Planar.API.Common.Entities
         public DateTime StartDate { get; set; }
 
         public int? Duration { get; set; }
+        public string? ServerName { get; set; }
 
         public int? EffectedRows { get; set; }
+
+        public bool Retry { get; set; }
+
+        public bool IsCanceled { get; set; }
 
         public bool HasWarnings { get; set; }
     }

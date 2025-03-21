@@ -74,6 +74,7 @@ public abstract class BaseCheckJob : BaseJob
         ValidateLessThen(@default.RetryInterval?.TotalMinutes, 1, "retry interval", section);
         ValidateGreaterThenOrEquals(@default.RetryCount, 0, "retry count", section);
         ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
+        ValidateGreaterThen(@default.AllowedFailSpan, TimeSpan.FromSeconds(1), "allowed fail span", section);
     }
 
     protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
@@ -98,6 +99,21 @@ public abstract class BaseCheckJob : BaseJob
         var duplicates1 = items
             .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .GroupBy(x => x.Name)
+            .Where(g => g.Count() > 1)
+            .Select(y => y.Key)
+            .ToList();
+
+        if (duplicates1.Count != 0)
+        {
+            throw new InvalidDataException($"duplicated found at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    protected static void ValidateDuplicates(IEnumerable<string> items, string sectionName)
+    {
+        var duplicates1 = items
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .GroupBy(x => x)
             .Where(g => g.Count() > 1)
             .Select(y => y.Key)
             .ToList();

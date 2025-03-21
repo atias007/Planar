@@ -10,5 +10,6 @@ internal class HistoryProfile : Profile
     {
         CreateMap<JobInstanceLog, JobInstanceLogRow>();
         CreateMap<JobInstanceLog, JobHistory>();
+        CreateMap<HistoryLastLog, JobLastRun>();
     }
 }

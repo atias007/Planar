@@ -1,10 +1,12 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
+using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,6 +18,12 @@ namespace Planar.Service.Data;
 
 public interface IHistoryData : IBaseDataLayer
 {
+    Task ClearHistoryLastLogs(IEnumerable<string> jobIds);
+
+    Task ClearJobHistory(string jobId);
+
+    Task ClearJobHistory(IEnumerable<string> jobIds);
+
     Task<int> ClearJobLogTable(int overDays);
 
     Task<int> ClearJobLogTable(string jobId, int overDays);
@@ -38,17 +46,23 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<string?> GetHistoryExceptionById(long id);
 
+    Task<IEnumerable<string>> GetHistoryJobIds();
+
     Task<string?> GetHistoryLogById(long id);
 
     Task<int?> GetHistoryStatusById(long id);
 
     Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters);
 
-    Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters);
+    Task<PagingResponse<HistoryLastLog>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request);
+
+    Task<IEnumerable<string>> GetLastHistoryJobIds();
 
     Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken);
 
     Task<bool> IsHistoryExists(long id);
+
+    Task MergeHistoryLastLog(HistoryLastLog log);
 
     Task PersistJobInstanceData(JobInstanceLog log);
 
@@ -91,22 +105,6 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
         var count = await multi.ReadSingleAsync<int>();
         return (data.ToList(), count);
     }
-
-    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters)
-    {
-        var referenceDate = DateTime.Now.AddDays(-parameters.Get<int>("LastDays"));
-        parameters.Add("ReferenceDate", referenceDate);
-
-        var cmd = new CommandDefinition(
-            commandText: SqliteResource.GetScript("GetLastHistoryCallForJob", parameters),
-            commandType: CommandType.Text,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<JobLastRun>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
 }
 
 public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context), IHistoryData
@@ -145,23 +143,35 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
         var count = await multi.ReadSingleAsync<int>();
         return (data.ToList(), count);
     }
-
-    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters)
-    {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.GetLastHistoryCallForJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<JobLastRun>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
 }
 
 public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task ClearHistoryLastLogs(IEnumerable<string> jobIds)
+    {
+        await _context.HistoryLastLogs
+            .Where(h => jobIds.Contains(h.JobId))
+            .ExecuteDeleteAsync();
+    }
+
+    public async Task ClearJobHistory(string jobId)
+    {
+        await _context.JobInstanceLogs
+            .Where(l => l.JobId == jobId)
+            .ExecuteDeleteAsync();
+
+        await _context.HistoryLastLogs
+            .Where(l => l.JobId == jobId)
+            .ExecuteDeleteAsync();
+    }
+
+    public async Task ClearJobHistory(IEnumerable<string> jobIds)
+    {
+        await _context.JobInstanceLogs
+            .Where(h => jobIds.Contains(h.JobId))
+            .ExecuteDeleteAsync();
+    }
+
     public async Task CreateJobInstanceLog(JobInstanceLog log)
     {
         _context.JobInstanceLogs.Add(log);
@@ -310,6 +320,14 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return result;
     }
 
+    public async Task<IEnumerable<string>> GetHistoryJobIds()
+    {
+        return await _context.JobInstanceLogs
+            .Select(l => l.JobId)
+            .Distinct()
+            .ToListAsync();
+    }
+
     public async Task<string?> GetHistoryLogById(long id)
     {
         var result = await _context.JobInstanceLogs
@@ -330,6 +348,33 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .FirstOrDefaultAsync();
 
         return result;
+    }
+
+    public async Task<PagingResponse<HistoryLastLog>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
+    {
+        var last = _context.HistoryLastLogs.AsNoTracking();
+        if (request.JobId.HasValue()) { last = last.Where(l => l.JobId == request.JobId); }
+        if (request.JobGroup.HasValue()) { last = last.Where(l => l.JobGroup == request.JobGroup); }
+        if (request.JobType.HasValue()) { last = last.Where(l => l.JobType == request.JobType); }
+        if (request.LastDays.HasValue)
+        {
+            var referenceDate = DateTime.Now.Date.AddDays(-request.LastDays.Value);
+            last = last.Where(l => l.StartDate >= referenceDate);
+        }
+
+        var result = await last
+            .OrderByDescending(l => l.StartDate)
+            .ToPagingListAsync(request);
+
+        return result;
+    }
+
+    public async Task<IEnumerable<string>> GetLastHistoryJobIds()
+    {
+        return await _context.HistoryLastLogs
+          .Select(l => l.JobId)
+          .Distinct()
+          .ToListAsync();
     }
 
     public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken)
@@ -357,6 +402,13 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .AnyAsync(l => l.Id == id);
 
         return result;
+    }
+
+    public async Task MergeHistoryLastLog(HistoryLastLog log)
+    {
+        var id = await _context.JobInstanceLogs.Where(l => l.InstanceId == log.InstanceId).Select(l => l.Id).FirstOrDefaultAsync();
+        log.Id = id;
+        await DbConnection.MergeAsync(log);
     }
 
     public async Task PersistJobInstanceData(JobInstanceLog log)

@@ -1,4 +1,5 @@
 using Planar.Startup;
+using RepoDb;
 using Serilog;
 using System;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ namespace Planar
         public static async Task Main(string[] args)
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Log.CloseAndFlush();
+            GlobalConfiguration.Setup().UseSqlServer();
 
             DataFolderInitializer.CreateFolderAndFiles();
             AppSettingsInitializer.Initialize();

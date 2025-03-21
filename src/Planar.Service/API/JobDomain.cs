@@ -13,6 +13,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
+using Planar.Service.SystemJobs;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -811,6 +812,11 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         await Scheduler.DeleteJob(jobKey);
 
+        _ = ClearJobData(jobId, jobKey, id);
+    }
+
+    public async Task ClearJobData(string jobId, JobKey jobKey, string id)
+    {
         try
         {
             await DataLayer.DeleteJobProperty(jobId);
@@ -841,6 +847,15 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         try
         {
             await DeleteJobStatistics(jobId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "fail to delete job statistics after delete job id {Id}", id);
+        }
+
+        try
+        {
+            await DeleteJobHistory(jobId);
         }
         catch (Exception ex)
         {

@@ -71,11 +71,10 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDal));
-            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDal", ex);
         }
     }
 
-    protected async Task<TResponse> ExecuteDal<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
+    protected async Task<TResponse?> ExecuteDal<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
         where TDataLayer : IBaseDataLayer
     {
         try
@@ -91,7 +90,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDal));
-            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDal", ex);
+            return default;
         }
     }
 
@@ -111,7 +110,6 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDal));
-            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDal", ex);
         }
     }
 
@@ -130,11 +128,10 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDalOnObjectDisposedException));
-            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDalOnObjectDisposedException", ex);
         }
     }
 
-    private async Task<TResponse> ExecuteDalOnObjectDisposedException<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
+    private async Task<TResponse?> ExecuteDalOnObjectDisposedException<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
         where TDataLayer : IBaseDataLayer
     {
         try
@@ -149,7 +146,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDalOnObjectDisposedException));
-            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDalOnObjectDisposedException", ex);
+            return default;
         }
     }
 
@@ -168,7 +165,6 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDalOnObjectDisposedException));
-            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDalOnObjectDisposedException", ex);
         }
     }
 
