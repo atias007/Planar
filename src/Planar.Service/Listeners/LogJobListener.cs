@@ -38,8 +38,8 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         var result = TriggerHelper.GetTriggerId(context.Trigger);
         if (!string.IsNullOrWhiteSpace(result)) { return result; }
 
-        var isWorkflow = JobHelper.IsWorkflowJob(context.MergedJobDataMap);
-        if (isWorkflow) { return Consts.WorkflowTriggerId; }
+        var isSequence = JobHelper.IsSequenceJob(context.MergedJobDataMap);
+        if (isSequence) { return Consts.SequenceTriggerId; }
 
         return Consts.ManualTriggerId;
     }

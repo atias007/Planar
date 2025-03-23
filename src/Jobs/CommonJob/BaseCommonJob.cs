@@ -223,7 +223,7 @@ where TProperties : class, new()
             _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
 
-        await SafeHandleWorkflow(context, metadata);
+        await SafeHandleSequence(context, metadata);
     }
 
     protected async Task Initialize(IJobExecutionContext context)
@@ -248,7 +248,7 @@ where TProperties : class, new()
         var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
         _executionTokenSource.CancelAfter(timeout);
 
-        SafeLogWorkflow(context);
+        SafeLogSequence(context);
     }
 
     protected IDictionary<string, string?> LoadJobSettings(string? path)
@@ -276,53 +276,54 @@ where TProperties : class, new()
         }
     }
 
-    protected private async Task SafeHandleWorkflow(IJobExecutionContext context, JobExecutionMetadata? metadata)
+    protected private async Task SafeHandleSequence(IJobExecutionContext context, JobExecutionMetadata? metadata)
     {
         if (metadata == null) { return; }
 
         try
         {
-            var workflowInstanceId = JobHelper.GetWorkflowInstanceId(context.MergedJobDataMap);
-            if (string.IsNullOrWhiteSpace(workflowInstanceId)) { return; }
+            var sequenceInstanceId = JobHelper.GetSequenceInstanceId(context.MergedJobDataMap);
+            var index = JobHelper.GetSequenceInstanceIndex(context.MergedJobDataMap);
+            if (string.IsNullOrWhiteSpace(sequenceInstanceId)) { return; }
             var exception = metadata.UnhandleException;
             if (exception == null)
             {
-                await SignalWorkflowEvent(context, workflowInstanceId, WorkflowJobStepEvent.Success);
+                await SignalSequenceEvent(context, sequenceInstanceId, index, SequenceJobStepEvent.Success);
             }
             else
             {
-                await SignalWorkflowEvent(context, workflowInstanceId, WorkflowJobStepEvent.Fail);
+                await SignalSequenceEvent(context, sequenceInstanceId, index, SequenceJobStepEvent.Fail);
             }
         }
         catch (Exception ex)
         {
-            var source = nameof(SafeHandleWorkflow);
+            var source = nameof(SafeHandleSequence);
             _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
     }
 
-    private async Task SignalWorkflowEvent(IJobExecutionContext context, string workflowInstanceId, WorkflowJobStepEvent @event)
+    private async Task SignalSequenceEvent(IJobExecutionContext context, string sequenceInstanceId, int index, SequenceJobStepEvent @event)
     {
-        var success = WorkflowManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, @event);
+        var success = SequenceManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, index, @event);
         if (success) { return; }
 
         if (AppSettings.Cluster.Clustering)
         {
-            await clusterUtil.WorkflowSignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, (int)@event);
+            await clusterUtil.SequenceSignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, index, (int)@event);
         }
     }
 
-    private void SafeLogWorkflow(IJobExecutionContext context)
+    private void SafeLogSequence(IJobExecutionContext context)
     {
         try
         {
-            var instanceId = JobHelper.GetWorkflowInstanceId(context.MergedJobDataMap);
+            var instanceId = JobHelper.GetSequenceInstanceId(context.MergedJobDataMap);
             if (string.IsNullOrWhiteSpace(instanceId)) { return; }
 
-            var triggerId = JobHelper.GetWorkflowTriggerId(context.MergedJobDataMap);
-            var jobKey = JobHelper.GetWorkflowJobKey(context.MergedJobDataMap);
+            var triggerId = JobHelper.GetSequenceTriggerId(context.MergedJobDataMap);
+            var jobKey = JobHelper.GetSequenceJobKey(context.MergedJobDataMap);
             MessageBroker.AppendLog(LogLevel.Information, Seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by workflow");
+            MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by sequence");
             MessageBroker.AppendLog(LogLevel.Information, Seperator);
             MessageBroker.AppendLog(LogLevel.Information, $" key: {jobKey}");
             MessageBroker.AppendLog(LogLevel.Information, $" trigger: {triggerId}");
@@ -331,7 +332,7 @@ where TProperties : class, new()
         }
         catch (Exception ex)
         {
-            var source = nameof(SafeLogWorkflow);
+            var source = nameof(SafeLogSequence);
             _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
     }

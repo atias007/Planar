@@ -808,7 +808,7 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         var jobKey = await JobKeyHelper.GetJobKey(id);
         var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
         ValidateSystemJob(jobKey);
-        await ValidateWorkflowStepJob(jobKey);
+        await ValidateSequenceStepJob(jobKey);
 
         await Scheduler.DeleteJob(jobKey);
 

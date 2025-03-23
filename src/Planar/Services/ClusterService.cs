@@ -28,12 +28,12 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
     }
 
     // NEED CHECK
-    public override async Task<WorkflowSignalEventResponse> WorkflowSignalEvent(WorkflowSignalEventRequest request, ServerCallContext context)
+    public override async Task<SequenceSignalEventResponse> SequenceSignalEvent(SequenceSignalEventRequest request, ServerCallContext context)
     {
         var jobKey = new JobKey(request.JobName, request.JobGroup);
-        var @event = (WorkflowJobStepEvent)request.WorkflowJobStepEvent;
-        var result = WorkflowManager.SignalEvent(jobKey, request.FireInstanceId, request.WorkflowFireInstanceId, @event);
-        var response = new WorkflowSignalEventResponse { Result = result };
+        var @event = (SequenceJobStepEvent)request.SequenceJobStepEvent;
+        var result = SequenceManager.SignalEvent(jobKey, request.FireInstanceId, request.SequenceFireInstanceId, request.Index, @event);
+        var response = new SequenceSignalEventResponse { Result = result };
         return await Task.FromResult(response);
     }
 

@@ -371,7 +371,7 @@ V1.7.8
 
 V 1.7.9
 -------
->> ** Add WorkflowJob **
+>> ** Add SequenceJob **
 - BUG: when you pause job with calendar. after restart the job resume. it should stay paused
 - api security headers
 - mqtt ver 5

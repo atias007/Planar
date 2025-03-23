@@ -1,5 +1,4 @@
-﻿using CommonJob;
-using Google.Protobuf.WellKnownTypes;
+﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,7 +117,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         }
     }
 
-    public async Task WorkflowSignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, int eventId)
+    public async Task SequenceSignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, int eventId)
     {
         var nodes = await GetAllNodes();
         foreach (var node in nodes)
@@ -127,7 +126,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
 
             try
             {
-                var result = await _asyncRetry.ExecuteAsync(() => CallWorkflowSignalEvent(node, stepJobKey, fireInstanceId, workflowFireInstanceId, eventId));
+                var result = await _asyncRetry.ExecuteAsync(() => CallSequenceSignalEvent(node, stepJobKey, fireInstanceId, sequenceFireInstanceId, index, eventId));
                 if (result.Result) { break; }
             }
             catch (RpcException ex)
@@ -593,19 +592,20 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         return result;
     }
 
-    private static async Task<WorkflowSignalEventResponse> CallWorkflowSignalEvent(ClusterNode node, JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, int eventId)
+    private static async Task<SequenceSignalEventResponse> CallSequenceSignalEvent(ClusterNode node, JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, int eventId)
     {
         var client = GetClient(node);
-        var request = new WorkflowSignalEventRequest
+        var request = new SequenceSignalEventRequest
         {
             FireInstanceId = fireInstanceId,
             JobGroup = stepJobKey.Group,
             JobName = stepJobKey.Name,
-            WorkflowFireInstanceId = workflowFireInstanceId,
-            WorkflowJobStepEvent = eventId
+            SequenceFireInstanceId = sequenceFireInstanceId,
+            SequenceJobStepEvent = eventId,
+            Index = index
         };
 
-        var result = await client.WorkflowSignalEventAsync(request, deadline: GrpcDeadLine);
+        var result = await client.SequenceSignalEventAsync(request, deadline: GrpcDeadLine);
         return result;
     }
 

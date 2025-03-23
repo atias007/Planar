@@ -5,5 +5,5 @@ namespace Planar.Service.General;
 
 public interface IClusterUtil
 {
-    Task WorkflowSignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, int eventId);
+    Task SequenceSignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, int eventId);
 }

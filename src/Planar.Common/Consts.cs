@@ -40,9 +40,10 @@ namespace Planar
         public const string RetryCounter = "__Job_Retry_Counter";
         public const string RetrySpan = "__Job_Retry_Span";
         public const string MaxRetries = "__Job_Retry_Max";
-        public const string WorkflowJobKeyDataKey = "__Workflow_Job_Key";
-        public const string WorkflowInstanceIdDataKey = "__Workflow_Instance_Id";
-        public const string WorkflowTriggerIdDataKey = "__Workflow_Trigger_Id";
+        public const string SequenceJobKeyDataKey = "__Sequence_Job_Key";
+        public const string SequenceInstanceIdDataKey = "__Sequence_Instance_Id";
+        public const string SequenceTriggerIdDataKey = "__Sequence_Trigger_Id";
+        public const string SequenceInstanceIndexDataKey = "__Sequence_Instance_Index";
         public const int DefaultMaxRetries = 3;
 
         public const string QueueInvokeTriggerGroup = "__QueueInvoke";
@@ -61,7 +62,7 @@ namespace Planar
         public const string CircuitBreakerTriggerGroup = "__CircuitBreakerResume";
 
         public const string ManualTriggerId = "Manual";
-        public const string WorkflowTriggerId = "Workflow";
+        public const string SequenceTriggerId = "Sequence";
         public const string LogLevelSettingsKey1 = "Log Level";
         public const string LogLevelSettingsKey2 = "LogLevel";
 

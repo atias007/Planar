@@ -9,16 +9,16 @@ namespace Planar.Service.API.Helpers;
 
 public static class JobHelper
 {
-    public static bool IsWorkflowJob(JobDataMap dataMap)
+    public static bool IsSequenceJob(JobDataMap dataMap)
     {
         if (dataMap == null) { return false; }
-        return dataMap.ContainsKey(Consts.WorkflowInstanceIdDataKey);
+        return dataMap.ContainsKey(Consts.SequenceInstanceIdDataKey);
     }
 
-    public static string? GetWorkflowTriggerId(JobDataMap dataMap)
+    public static string? GetSequenceTriggerId(JobDataMap dataMap)
     {
         if (dataMap == null) { return null; }
-        if (dataMap.TryGetValue(Consts.WorkflowTriggerIdDataKey, out var id))
+        if (dataMap.TryGetValue(Consts.SequenceTriggerIdDataKey, out var id))
         {
             return PlanarConvert.ToString(id);
         }
@@ -26,10 +26,10 @@ public static class JobHelper
         return null;
     }
 
-    public static string? GetWorkflowJobKey(JobDataMap dataMap)
+    public static string? GetSequenceJobKey(JobDataMap dataMap)
     {
         if (dataMap == null) { return null; }
-        if (dataMap.TryGetValue(Consts.WorkflowJobKeyDataKey, out var id))
+        if (dataMap.TryGetValue(Consts.SequenceJobKeyDataKey, out var id))
         {
             return PlanarConvert.ToString(id);
         }
@@ -37,15 +37,30 @@ public static class JobHelper
         return null;
     }
 
-    public static string? GetWorkflowInstanceId(JobDataMap dataMap)
+    public static string? GetSequenceInstanceId(JobDataMap dataMap)
     {
         if (dataMap == null) { return null; }
-        if (dataMap.TryGetValue(Consts.WorkflowInstanceIdDataKey, out var id))
+        if (dataMap.TryGetValue(Consts.SequenceInstanceIdDataKey, out var id))
         {
             return PlanarConvert.ToString(id);
         }
 
         return null;
+    }
+
+    public static int GetSequenceInstanceIndex(JobDataMap dataMap)
+    {
+        if (dataMap == null) { return -1; }
+        if (dataMap.TryGetValue(Consts.SequenceInstanceIndexDataKey, out var id))
+        {
+            var text = PlanarConvert.ToString(id);
+            if (int.TryParse(text, out var result))
+            {
+                return result;
+            }
+        }
+
+        return -1;
     }
 
     public static string? GetJobAuthor(IJobDetail job)
