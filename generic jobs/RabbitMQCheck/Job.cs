@@ -84,7 +84,7 @@ internal partial class Job : BaseCheckJob
 
         // queues
         var bundleTask = SafeInvokeQueueCheck(bundles, server, defaults, context.TriggerDetails);
-        tasks.Add(queueTask);
+        tasks.Add(bundleTask);
 
         await Task.WhenAll(tasks);
 
@@ -304,7 +304,7 @@ internal partial class Job : BaseCheckJob
         if (detail.Count < names.Count())
         {
             var exists = detail.Select(d => d.Name);
-            var missing = names.Except(exists);
+            var missing = names.Where(n => !exists.Any(e => string.Equals(e, n, StringComparison.OrdinalIgnoreCase)));
             throw new CheckException($"queue(s) '{string.Join(',', missing)}' does not exists");
         }
 
@@ -315,7 +315,7 @@ internal partial class Job : BaseCheckJob
             Messages = detail.Sum(d => d.Messages),
             MessagesUnacknowledged = detail.Sum(d => d.MessagesUnacknowledged),
             Memory = detail.Sum(d => d.Memory),
-            BundleStates = detail.ToDictionary(d => d.Name, d => d.State)
+            BundleStates = detail.ToDictionary(d => d.Name.ToLower(), d => d.State)
         };
 
         return result;
@@ -393,6 +393,12 @@ internal partial class Job : BaseCheckJob
         var entity = isBundle ? BundleEntity : QueueEntity;
 
         if (!queue.Unacked.HasValue) { return; }
+        if (detail.Messages == 0) // there is messages in queue
+        {
+            Logger.LogInformation("{Entity} '{Name}' unacked is ok. no messages in queue", entity, queue.Name);
+            return;
+        }
+
         if (
             detail.Messages > detail.MessagesUnacknowledged && // there is enough messages in queue so unacked cen be in maximum level
             queue.Unacked.GetValueOrDefault() < detail.MessagesUnacknowledged)
@@ -442,7 +448,7 @@ internal partial class Job : BaseCheckJob
         if (!bundle.CheckState.GetValueOrDefault()) { return; }
         foreach (var queue in bundle.Queues)
         {
-            var state = detail.BundleStates[queue];
+            var state = detail.BundleStates[queue.ToLower()];
             var ok = string.Equals(state, "running", StringComparison.OrdinalIgnoreCase) || string.Equals(state, "idle", StringComparison.OrdinalIgnoreCase);
             if (!ok)
             {
