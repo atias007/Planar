@@ -11,7 +11,7 @@ public enum StepStatus
     Finish
 }
 
-internal sealed class ResetEventWrapper
+internal sealed class ResetEventWrapper : IDisposable
 {
     private ResetEventWrapper(JobKey jobKey, string sequenceFireInstanceId, JobDataMap dataMap, SequenceJobStep step)
     {
@@ -43,5 +43,17 @@ internal sealed class ResetEventWrapper
     {
         var key = $"{stepJobKey}~~~{sequenceFireInstanceId}";
         return key;
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            ResetEvent?.Dispose();
+        }
+        catch
+        {
+            /// *** DO NOTHING ***
+        }
     }
 }

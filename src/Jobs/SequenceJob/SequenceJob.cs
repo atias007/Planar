@@ -5,7 +5,6 @@ using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.General;
 using Quartz;
-using System.Globalization;
 
 namespace Planar;
 
@@ -43,6 +42,7 @@ public abstract class SequenceJob(
             SafeInvoke(LogSequenceSummary);
             SafeInvoke(() => SequenceManager.UnregisterSequence(context.FireInstanceId));
             await FinalizeJob(context);
+            SafeInvoke(() => { _resetEvent?.Dispose(); });
             SafeInvoke(() => { _resetEvent = null; });
         }
     }
@@ -146,7 +146,7 @@ public abstract class SequenceJob(
 
     private async Task ExecuteSteps(IJobExecutionContext context, IEnumerable<SequenceJobStep> steps, CancellationToken cancellationToken)
     {
-        if (cancellationToken.IsCancellationRequested) { return; }
+        if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException(); }
 
         var totalSteps = steps.Count();
 
@@ -167,28 +167,38 @@ public abstract class SequenceJob(
             var result = _resetEvent.ResetEvent.WaitOne(timeout);
 
             // handle step timeout | check for cancellation token
-            if (!result || cancellationToken.IsCancellationRequested)
-            {
-                // TODO: handle timeout
-                _resetEvent.SetStatus(StepStatus.Interrupted);
-                AddLog(_resetEvent);
-                return;
-            }
-
-            // update status
-            _resetEvent.SetStatus(StepStatus.Finish);
-            MessageBroker.IncreaseEffectedRows(1);
-            MessageBroker.UpdateProgress(index + 1, totalSteps);
-
-            // check for cancellation token
             if (cancellationToken.IsCancellationRequested)
             {
                 _resetEvent.SetStatus(StepStatus.Interrupted);
                 AddLog(_resetEvent);
-                return;
+                throw new TaskCanceledException();
             }
 
-            AddLog(_resetEvent);
+            if (!result)
+            {
+                _resetEvent.SetStatus(StepStatus.Interrupted);
+                AddLog(_resetEvent);
+                throw new TimeoutException($"step {index + 1} timeout");
+            }
+
+            // check for fail step
+            if (_resetEvent.Event == SequenceJobStepEvent.Fail)
+            {
+                _resetEvent.SetStatus(StepStatus.Interrupted);
+                AddLog(_resetEvent);
+                if (Properties.StopRunningOnFail)
+                {
+                    throw new OperationCanceledException($"step {index + 1} fail and 'stop running on fail' is true");
+                }
+            }
+            else
+            {
+                // update status
+                _resetEvent.SetStatus(StepStatus.Finish);
+                AddLog(_resetEvent);
+                MessageBroker.IncreaseEffectedRows(1);
+                MessageBroker.UpdateProgress(index + 1, totalSteps);
+            }
         }
     }
 

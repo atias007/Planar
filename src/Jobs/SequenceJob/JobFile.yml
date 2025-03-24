@@ -13,20 +13,21 @@ job data:                             # Key/Value pairs used by job code
   key3: value3                        # value --> [up to 1000 characters]
 
 properties:                           # Job Properties
-   steps:
-     - key: group-a.name-a            # The job key <group>.<name> [7 to 101 characters]
-       timeout: 00:30:00              # Timeout span for step
-       data:                          # Key/Value pairs used by job code (merged with job data)
-         key1: value1                 # -------------------------------------------------------
-         key2: value2                 # key --> [1 to 100 characters]
-         key3: value3                 # value --> [up to 1000 characters]
+  stop running on fail: true          # Stop running the job if one of the steps failed (default is true)
+  steps:
+    - key: group-a.name-a             # The job key <group>.<name> [7 to 101 characters]
+      timeout: 00:30:00               # Timeout span for step
+      data:                           # Key/Value pairs used by job code (merged with job data)
+        key1: value1                  # -------------------------------------------------------
+        key2: value2                  # key --> [1 to 100 characters]
+        key3: value3                  # value --> [up to 1000 characters]
    
-     - key: group-b.name-b
-       timeout: 00:30:00
-       data:
-         key4: value4
-         key5: value5
-         key6: value6
+    - key: group-b.name-b
+      timeout: 00:30:00
+      data:
+        key4: value4
+        key5: value5
+        key6: value6
       
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker

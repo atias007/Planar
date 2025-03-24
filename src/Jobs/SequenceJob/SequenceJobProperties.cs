@@ -1,7 +1,12 @@
-﻿namespace Planar;
+﻿using YamlDotNet.Serialization;
+
+namespace Planar;
 
 public class SequenceJobProperties
 {
+    [YamlMember(Alias = "stop running on fail")]
+    public bool StopRunningOnFail { get; set; } = true;
+
     public List<SequenceJobStep> Steps { get; set; } = [];
 }
 
