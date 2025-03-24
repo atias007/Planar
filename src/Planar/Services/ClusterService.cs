@@ -24,7 +24,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         using var scope = _serviceScopeFactory.CreateScope();
         var configDomain = scope.ServiceProvider.GetService<ConfigDomain>();
         await configDomain.FlushInner();
-        return await Task.FromResult(new Empty());
+        return new Empty();
     }
 
     // NEED CHECK
@@ -32,9 +32,9 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
     {
         var jobKey = new JobKey(request.JobName, request.JobGroup);
         var @event = (SequenceJobStepEvent)request.SequenceJobStepEvent;
-        var result = SequenceManager.SignalEvent(jobKey, request.FireInstanceId, request.SequenceFireInstanceId, @event);
+        var result = await SequenceManager.SignalEvent(jobKey, request.FireInstanceId, request.SequenceFireInstanceId, @event);
         var response = new SequenceSignalEventResponse { Result = result };
-        return await Task.FromResult(response);
+        return response;
     }
 
     // OK

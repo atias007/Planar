@@ -305,7 +305,7 @@ where TProperties : class, new()
 
     private async Task SignalSequenceEvent(IJobExecutionContext context, string sequenceInstanceId, SequenceJobStepEvent @event)
     {
-        var success = SequenceManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, @event);
+        var success = await SequenceManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, @event);
         if (success) { return; }
 
         if (AppSettings.Cluster.Clustering)
