@@ -37,8 +37,7 @@ message SequenceSignalEventRequest {
 	string jobName = 2;
 	string fireInstanceId = 3;
 	string sequenceFireInstanceId = 4;
-	int32 index = 5;
-	int32 sequenceJobStepEvent = 6;
+	int32 sequenceJobStepEvent = 5;
 }
 
 message SequenceSignalEventResponse {

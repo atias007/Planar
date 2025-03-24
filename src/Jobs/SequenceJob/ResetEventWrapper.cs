@@ -13,15 +13,14 @@ public enum StepStatus
 
 internal sealed class ResetEventWrapper
 {
-    private ResetEventWrapper(JobKey jobKey, string sequenceFireInstanceId, JobDataMap dataMap, SequenceJobStep step, int index)
+    private ResetEventWrapper(JobKey jobKey, string sequenceFireInstanceId, JobDataMap dataMap, SequenceJobStep step)
     {
         ResetEvent = new AutoResetEvent(false);
         JobKey = jobKey;
         Timeout = step.Timeout;
         DataMap = dataMap;
-        Index = index;
         SequenceFireInstanceId = sequenceFireInstanceId;
-        Key = GetKey(jobKey, SequenceFireInstanceId, index);
+        Key = GetKey(jobKey, SequenceFireInstanceId);
     }
 
     public AutoResetEvent ResetEvent { get; private set; }
@@ -30,7 +29,6 @@ internal sealed class ResetEventWrapper
     public JobDataMap DataMap { get; private set; }
     public string SequenceFireInstanceId { get; private set; }
     public string Key { get; private set; }
-    public int Index { get; private set; }
     public StepStatus Status { get; private set; }
     public SequenceJobStepEvent Event { get; set; } = SequenceJobStepEvent.Unknown;
     public string? FireInstanceId { get; set; }
@@ -38,12 +36,12 @@ internal sealed class ResetEventWrapper
 
     public void SetStatus(StepStatus status) => Status = status;
 
-    public static ResetEventWrapper Create(JobKey jobKey, string sequenceFireInstanceId, JobDataMap dataMap, SequenceJobStep step, int index) =>
-        new(jobKey, sequenceFireInstanceId, dataMap, step, index);
+    public static ResetEventWrapper Create(JobKey jobKey, string sequenceFireInstanceId, JobDataMap dataMap, SequenceJobStep step) =>
+        new(jobKey, sequenceFireInstanceId, dataMap, step);
 
-    public static string GetKey(JobKey stepJobKey, string sequenceFireInstanceId, int index)
+    public static string GetKey(JobKey stepJobKey, string sequenceFireInstanceId)
     {
-        var key = $"{stepJobKey}~~~{sequenceFireInstanceId}~~~{index}";
+        var key = $"{stepJobKey}~~~{sequenceFireInstanceId}";
         return key;
     }
 }

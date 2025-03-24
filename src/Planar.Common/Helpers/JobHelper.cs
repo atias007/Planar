@@ -48,21 +48,6 @@ public static class JobHelper
         return null;
     }
 
-    public static int GetSequenceInstanceIndex(JobDataMap dataMap)
-    {
-        if (dataMap == null) { return -1; }
-        if (dataMap.TryGetValue(Consts.SequenceInstanceIndexDataKey, out var id))
-        {
-            var text = PlanarConvert.ToString(id);
-            if (int.TryParse(text, out var result))
-            {
-                return result;
-            }
-        }
-
-        return -1;
-    }
-
     public static string? GetJobAuthor(IJobDetail job)
     {
         if (job == null)

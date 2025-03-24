@@ -35,11 +35,11 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     private static string GetTriggerId(IJobExecutionContext context)
     {
-        var result = TriggerHelper.GetTriggerId(context.Trigger);
-        if (!string.IsNullOrWhiteSpace(result)) { return result; }
-
         var isSequence = JobHelper.IsSequenceJob(context.MergedJobDataMap);
         if (isSequence) { return Consts.SequenceTriggerId; }
+
+        var result = TriggerHelper.GetTriggerId(context.Trigger);
+        if (!string.IsNullOrWhiteSpace(result)) { return result; }
 
         return Consts.ManualTriggerId;
     }

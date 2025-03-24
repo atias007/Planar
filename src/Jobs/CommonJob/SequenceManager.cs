@@ -5,7 +5,7 @@ namespace CommonJob;
 
 public interface ISequenceInstance
 {
-    bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, SequenceJobStepEvent @event);
+    bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, SequenceJobStepEvent @event);
 }
 
 public static class SequenceManager
@@ -17,11 +17,11 @@ public static class SequenceManager
         _sequences.TryAdd(instanceId, sequence);
     }
 
-    public static bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, SequenceJobStepEvent @event)
+    public static bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, SequenceJobStepEvent @event)
     {
         if (_sequences.TryGetValue(sequenceFireInstanceId, out var sequence))
         {
-            return sequence.SignalEvent(stepJobKey, fireInstanceId, sequenceFireInstanceId, index, @event);
+            return sequence.SignalEvent(stepJobKey, fireInstanceId, sequenceFireInstanceId, @event);
         }
 
         return false;

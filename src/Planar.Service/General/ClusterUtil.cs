@@ -117,7 +117,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         }
     }
 
-    public async Task SequenceSignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, int eventId)
+    public async Task SequenceSignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int eventId)
     {
         var nodes = await GetAllNodes();
         foreach (var node in nodes)
@@ -126,7 +126,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
 
             try
             {
-                var result = await _asyncRetry.ExecuteAsync(() => CallSequenceSignalEvent(node, stepJobKey, fireInstanceId, sequenceFireInstanceId, index, eventId));
+                var result = await _asyncRetry.ExecuteAsync(() => CallSequenceSignalEvent(node, stepJobKey, fireInstanceId, sequenceFireInstanceId, eventId));
                 if (result.Result) { break; }
             }
             catch (RpcException ex)
@@ -592,7 +592,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         return result;
     }
 
-    private static async Task<SequenceSignalEventResponse> CallSequenceSignalEvent(ClusterNode node, JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, int eventId)
+    private static async Task<SequenceSignalEventResponse> CallSequenceSignalEvent(ClusterNode node, JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int eventId)
     {
         var client = GetClient(node);
         var request = new SequenceSignalEventRequest
@@ -601,8 +601,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
             JobGroup = stepJobKey.Group,
             JobName = stepJobKey.Name,
             SequenceFireInstanceId = sequenceFireInstanceId,
-            SequenceJobStepEvent = eventId,
-            Index = index
+            SequenceJobStepEvent = eventId
         };
 
         var result = await client.SequenceSignalEventAsync(request, deadline: GrpcDeadLine);

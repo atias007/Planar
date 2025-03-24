@@ -499,6 +499,8 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             }
         }
 
+        result = result.Where(r => r.Group != Consts.PlanarSystemGroup).ToList();
+
         FillEstimatedEndTime(result);
 
         return result;

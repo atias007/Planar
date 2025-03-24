@@ -5,7 +5,6 @@ using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.General;
 using Quartz;
-using System.Collections.Concurrent;
 using System.Globalization;
 
 namespace Planar;
@@ -19,7 +18,8 @@ public abstract class SequenceJob(
     BaseCommonJob<SequenceJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil),
     ISequenceInstance
 {
-    private readonly ConcurrentDictionary<string, ResetEventWrapper> _resetEvents = [];
+    private ResetEventWrapper? _resetEvent;
+    private readonly List<(bool, string)> _logs = [];
 
     public override async Task Execute(IJobExecutionContext context)
     {
@@ -43,22 +43,20 @@ public abstract class SequenceJob(
             SafeInvoke(LogSequenceSummary);
             SafeInvoke(() => SequenceManager.UnregisterSequence(context.FireInstanceId));
             await FinalizeJob(context);
-            SafeInvoke(_resetEvents.Clear);
+            SafeInvoke(() => { _resetEvent = null; });
         }
     }
 
-    public bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, int index, SequenceJobStepEvent @event)
+    public bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string sequenceFireInstanceId, SequenceJobStepEvent @event)
     {
-        var key = ResetEventWrapper.GetKey(stepJobKey, sequenceFireInstanceId, index);
-        if (_resetEvents.TryGetValue(key, out var resetWrapper))
-        {
-            resetWrapper.Event = @event;
-            resetWrapper.FireInstanceId = fireInstanceId;
-            resetWrapper.ResetEvent.Set();
-            return true;
-        }
+        if (_resetEvent == null) { return false; }
 
-        return false;
+        var key = ResetEventWrapper.GetKey(stepJobKey, sequenceFireInstanceId);
+        if (_resetEvent.Key != key) { return false; }
+        _resetEvent.Event = @event;
+        _resetEvent.FireInstanceId = fireInstanceId;
+        _resetEvent.ResetEvent.Set();
+        return true;
     }
 
     private void LogSequenceSummary()
@@ -73,8 +71,7 @@ public abstract class SequenceJob(
             MessageBroker.AppendLog(LogLevel.Warning, message);
         }
 
-        var data = _resetEvents.Values;
-        if (data.Count == 0) { return; }
+        if (_logs.Count == 0) { return; }
 
         AppendInfoLog("  ");
         AppendInfoLog(Seperator);
@@ -82,23 +79,22 @@ public abstract class SequenceJob(
         AppendInfoLog(Seperator);
         AppendInfoLog("[job key] --> [fire instance id] --> [status]");
         AppendInfoLog(string.Empty);
-        foreach (var wrapper in data)
+        foreach (var log in _logs)
         {
-            var text = $"{wrapper.JobKey} --> {wrapper.FireInstanceId} --> {wrapper.DisplayStatus}";
-            if (wrapper.Event == SequenceJobStepEvent.Fail)
+            if (log.Item1)
             {
-                AppendWarnLog(text);
+                AppendWarnLog(log.Item2);
             }
             else
             {
-                AppendInfoLog(text);
+                AppendInfoLog(log.Item2);
             }
         }
 
         AppendInfoLog(Seperator);
     }
 
-    private static JobDataMap GetJobDataMap(IJobExecutionContext context, SequenceJobStep step, int index)
+    private static JobDataMap GetJobDataMap(IJobExecutionContext context, SequenceJobStep step)
     {
         var data = context.MergedJobDataMap;
         foreach (var item in step.Data)
@@ -125,7 +121,6 @@ public abstract class SequenceJob(
         }
 
         data.TryAdd(Consts.SequenceInstanceIdDataKey, context.FireInstanceId);
-        data.TryAdd(Consts.SequenceInstanceIndexDataKey, index.ToString(CultureInfo.CurrentCulture));
         data.TryAdd(Consts.SequenceJobKeyDataKey, context.JobDetail.Key.ToString());
         data.TryAdd(Consts.SequenceTriggerIdDataKey, triggerId);
 
@@ -153,53 +148,47 @@ public abstract class SequenceJob(
     {
         if (cancellationToken.IsCancellationRequested) { return; }
 
-        var completedSteps = 0;
         var totalSteps = steps.Count();
 
-        // build steps wrapper
+        // run steps
         foreach (var (index, step) in steps.Index())
         {
-            var jobKey = ParseJobKey(step.Key);
-            var data = GetJobDataMap(context, step, index);
-            var wrapper = ResetEventWrapper.Create(jobKey, context.FireInstanceId, data, step, index);
-            _resetEvents.TryAdd(wrapper.Key, wrapper);
-        }
-
-        // run steps
-        foreach (var wrapper in _resetEvents.Values)
-        {
             // prepare
-            var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
-            if (wrapper.Status != StepStatus.Waiting) { return; }
-            MessageBroker.AppendLog(LogLevel.Information, $" - [step {wrapper.Index}] start job: {wrapper.JobKey}");
+            var jobKey = ParseJobKey(step.Key);
+            var data = GetJobDataMap(context, step);
+            _resetEvent = ResetEventWrapper.Create(jobKey, context.FireInstanceId, data, step);
+            var timeout = _resetEvent.Timeout ?? AppSettings.General.JobAutoStopSpan;
+            if (_resetEvent.Status != StepStatus.Waiting) { return; }
+            MessageBroker.AppendLog(LogLevel.Information, $" - [step {index + 1}] start job: {jobKey}");
 
             // execute step
-            wrapper.SetStatus(StepStatus.Start);
-            await context.Scheduler.TriggerJob(wrapper.JobKey, wrapper.DataMap, cancellationToken);
-            var result = wrapper.ResetEvent.WaitOne(timeout);
+            _resetEvent.SetStatus(StepStatus.Start);
+            await context.Scheduler.TriggerJob(jobKey, data, cancellationToken);
+            var result = _resetEvent.ResetEvent.WaitOne(timeout);
 
-            // handle step timeout
-            if (!result)
+            // handle step timeout | check for cancellation token
+            if (!result || cancellationToken.IsCancellationRequested)
             {
                 // TODO: handle timeout
-                return;
-            }
-
-            // check for cancellation token
-            if (cancellationToken.IsCancellationRequested)
-            {
-                wrapper.SetStatus(StepStatus.Interrupted);
+                _resetEvent.SetStatus(StepStatus.Interrupted);
+                AddLog(_resetEvent);
                 return;
             }
 
             // update status
-            wrapper.SetStatus(StepStatus.Finish);
-            completedSteps++;
+            _resetEvent.SetStatus(StepStatus.Finish);
             MessageBroker.IncreaseEffectedRows(1);
-            MessageBroker.UpdateProgress(completedSteps, totalSteps);
+            MessageBroker.UpdateProgress(index + 1, totalSteps);
 
             // check for cancellation token
-            if (cancellationToken.IsCancellationRequested) { return; }
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _resetEvent.SetStatus(StepStatus.Interrupted);
+                AddLog(_resetEvent);
+                return;
+            }
+
+            AddLog(_resetEvent);
         }
     }
 
@@ -208,7 +197,7 @@ public abstract class SequenceJob(
         // register cancellation token event
         ExecutionCancellationToken.Register(() =>
         {
-            _resetEvents.Values.ToList().ForEach(w => w.ResetEvent.Set());
+            _resetEvent?.ResetEvent.Set();
         });
 
         // find startup step
@@ -220,6 +209,13 @@ public abstract class SequenceJob(
 
         // handle cancel steps
         ExecutionCancellationToken.ThrowIfCancellationRequested();
+    }
+
+    private void AddLog(ResetEventWrapper wrapper)
+    {
+        var isWarning = wrapper.Event == SequenceJobStepEvent.Fail;
+        var log = $"{wrapper.JobKey} --> {wrapper.FireInstanceId} --> {wrapper.DisplayStatus}";
+        _logs.Add((isWarning, log));
     }
 
     private async Task ValidateSequenceJob(CancellationToken cancellationToken)

@@ -32,7 +32,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
     {
         var jobKey = new JobKey(request.JobName, request.JobGroup);
         var @event = (SequenceJobStepEvent)request.SequenceJobStepEvent;
-        var result = SequenceManager.SignalEvent(jobKey, request.FireInstanceId, request.SequenceFireInstanceId, request.Index, @event);
+        var result = SequenceManager.SignalEvent(jobKey, request.FireInstanceId, request.SequenceFireInstanceId, @event);
         var response = new SequenceSignalEventResponse { Result = result };
         return await Task.FromResult(response);
     }

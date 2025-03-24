@@ -283,16 +283,17 @@ where TProperties : class, new()
         try
         {
             var sequenceInstanceId = JobHelper.GetSequenceInstanceId(context.MergedJobDataMap);
-            var index = JobHelper.GetSequenceInstanceIndex(context.MergedJobDataMap);
             if (string.IsNullOrWhiteSpace(sequenceInstanceId)) { return; }
+
             var exception = metadata.UnhandleException;
+
             if (exception == null)
             {
-                await SignalSequenceEvent(context, sequenceInstanceId, index, SequenceJobStepEvent.Success);
+                await SignalSequenceEvent(context, sequenceInstanceId, SequenceJobStepEvent.Success);
             }
             else
             {
-                await SignalSequenceEvent(context, sequenceInstanceId, index, SequenceJobStepEvent.Fail);
+                await SignalSequenceEvent(context, sequenceInstanceId, SequenceJobStepEvent.Fail);
             }
         }
         catch (Exception ex)
@@ -302,14 +303,14 @@ where TProperties : class, new()
         }
     }
 
-    private async Task SignalSequenceEvent(IJobExecutionContext context, string sequenceInstanceId, int index, SequenceJobStepEvent @event)
+    private async Task SignalSequenceEvent(IJobExecutionContext context, string sequenceInstanceId, SequenceJobStepEvent @event)
     {
-        var success = SequenceManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, index, @event);
+        var success = SequenceManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, @event);
         if (success) { return; }
 
         if (AppSettings.Cluster.Clustering)
         {
-            await clusterUtil.SequenceSignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, index, (int)@event);
+            await clusterUtil.SequenceSignalEvent(context.JobDetail.Key, context.FireInstanceId, sequenceInstanceId, (int)@event);
         }
     }
 

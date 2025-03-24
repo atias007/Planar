@@ -43,7 +43,6 @@ namespace Planar
         public const string SequenceJobKeyDataKey = "__Sequence_Job_Key";
         public const string SequenceInstanceIdDataKey = "__Sequence_Instance_Id";
         public const string SequenceTriggerIdDataKey = "__Sequence_Trigger_Id";
-        public const string SequenceInstanceIndexDataKey = "__Sequence_Instance_Index";
         public const int DefaultMaxRetries = 3;
 
         public const string QueueInvokeTriggerGroup = "__QueueInvoke";
