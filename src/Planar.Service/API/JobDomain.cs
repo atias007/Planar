@@ -23,6 +23,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
@@ -358,6 +359,14 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         return result;
     }
 
+    private class JobFileValidationRecord
+    {
+        [YamlMember(Alias = "job type")]
+        public string? JobType { get; set; }
+
+        public string? Name { get; set; }
+    }
+
     public async Task<string> GetJobFilename(string id)
     {
         var key = await JobKeyHelper.GetJobKey(id);
@@ -374,13 +383,30 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         var path = Convert.ToString(pathObj);
         if (string.IsNullOrWhiteSpace(path)) { throw NotFound(id); }
         var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
+
+        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+
         var files = Directory.EnumerateFiles(fullpath, "*.yml", SearchOption.TopDirectoryOnly);
-        var count = files.Count();
+        var validFiles = files.Where(f =>
+        {
+            try
+            {
+                var yml = File.ReadAllText(f);
+                var record = YmlUtil.Deserialize<JobFileValidationRecord>(yml);
+                return !string.IsNullOrWhiteSpace(record.JobType) && !string.IsNullOrWhiteSpace(record.Name);
+            }
+            catch
+            {
+                return false;
+            }
+        })
+        .ToList();
+
+        var count = validFiles.Count();
         if (count == 0) { throw NotFound(id, path); }
         if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml jobfile found in '{path}' folder"); }
 
-        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-        var jobfile = Path.GetRelativePath(jobsFolder, files.First());
+        var jobfile = Path.GetRelativePath(jobsFolder, validFiles.First());
         return jobfile;
 
         static Exception NotFound(string id, string? path = null)

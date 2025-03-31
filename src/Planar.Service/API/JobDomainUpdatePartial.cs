@@ -226,7 +226,14 @@ public partial class JobDomain
     private async Task UpdateJobProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
     {
         var jobPropertiesYml = GetJopPropertiesYml(request);
-        var property = new JobProperty { JobId = metadata.JobId, Properties = jobPropertiesYml };
+        var jobType = General.SchedulerUtil.GetJobTypeName(metadata.JobDetails);
+        var property = new JobProperty
+        {
+            JobId = metadata.JobId,
+            Properties = jobPropertiesYml,
+            JobType = jobType
+        };
+
         if (string.IsNullOrEmpty(metadata.OldJobProperties))
         {
             await DataLayer.AddJobProperty(property);
