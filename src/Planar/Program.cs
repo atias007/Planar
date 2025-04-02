@@ -11,9 +11,9 @@ namespace Planar
         public static async Task Main(string[] args)
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Log.CloseAndFlush();
-            DbFactory.InitializeRepoDb();
             DataFolderInitializer.CreateFolderAndFiles();
             AppSettingsInitializer.Initialize();
+            DbFactory.InitializeRepoDb();
             WorkingHoursInitializer.Initialize();
             DatabaseMigrationInitializer.RunMigration();
             AppSettingsInitializer.TestDatabaseConnection();

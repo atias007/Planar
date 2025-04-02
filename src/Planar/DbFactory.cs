@@ -19,7 +19,7 @@ internal static class DbFactory
                 break;
 
             case DbProviders.Sqlite:
-                GlobalConfiguration.Setup().UseSQLite();
+                GlobalConfiguration.Setup().UseSqlite();
                 break;
         }
     }
