@@ -359,12 +359,16 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         return result;
     }
 
-    private class JobFileValidationRecord
+    private sealed class JobFileValidationRecord
     {
         [YamlMember(Alias = "job type")]
         public string? JobType { get; set; }
 
+#pragma warning disable S3459 // Unassigned members should be removed
+#pragma warning disable S1144 // Unused private types or members should be removed
         public string? Name { get; set; }
+#pragma warning restore S1144 // Unused private types or members should be removed
+#pragma warning restore S3459 // Unassigned members should be removed
     }
 
     public async Task<string> GetJobFilename(string id)
@@ -402,11 +406,11 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         })
         .ToList();
 
-        var count = validFiles.Count();
+        var count = validFiles.Count;
         if (count == 0) { throw NotFound(id, path); }
         if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml jobfile found in '{path}' folder"); }
 
-        var jobfile = Path.GetRelativePath(jobsFolder, validFiles.First());
+        var jobfile = Path.GetRelativePath(jobsFolder, validFiles[0]);
         return jobfile;
 
         static Exception NotFound(string id, string? path = null)

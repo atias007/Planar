@@ -1,6 +1,7 @@
 ﻿using DbUp;
 using Microsoft.Data.Sqlite;
 using Planar.Common;
+using RepoDb;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System;
@@ -9,6 +10,20 @@ namespace Planar;
 
 internal static class DbFactory
 {
+    public static void InitializeRepoDb()
+    {
+        switch (AppSettings.Database.ProviderName)
+        {
+            case DbProviders.SqlServer:
+                GlobalConfiguration.Setup().UseSqlServer();
+                break;
+
+            case DbProviders.Sqlite:
+                GlobalConfiguration.Setup().UseSQLite();
+                break;
+        }
+    }
+
     public static IExecuter CreateDbMigrationExecuter(DbProviders provider)
     {
         return provider switch

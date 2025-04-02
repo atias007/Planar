@@ -1,5 +1,5 @@
 ﻿--------------------------------------------------------
-PLAN FOR V 1.7.9
+PLAN FOR V 1.8.*
 ----------------
 
 - validate on startup that instance id not exists in nodes table

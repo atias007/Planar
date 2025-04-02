@@ -4,6 +4,7 @@ using Planar.Common;
 using Planar.Common.Monitor;
 using Planar.Service.Data;
 using Quartz;
+using RepoDb;
 using System;
 
 namespace Planar.Service;

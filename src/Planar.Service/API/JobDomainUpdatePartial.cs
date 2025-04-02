@@ -139,7 +139,8 @@ public partial class JobDomain
         if (metadata.OldJobDetails == null) { return; }
         if (!metadata.RollbackEnabled) { return; }
 
-        var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
+        var jobType = General.SchedulerUtil.GetJobTypeName(metadata.OldJobDetails);
+        var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties, JobType = jobType };
         await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
         await Scheduler.PauseJob(metadata.JobKey);
         await Resolve<IJobData>().UpdateJobProperty(property);
@@ -227,12 +228,7 @@ public partial class JobDomain
     {
         var jobPropertiesYml = GetJopPropertiesYml(request);
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.JobDetails);
-        var property = new JobProperty
-        {
-            JobId = metadata.JobId,
-            Properties = jobPropertiesYml,
-            JobType = jobType
-        };
+        var property = new JobProperty { JobId = metadata.JobId, Properties = jobPropertiesYml, JobType = jobType };
 
         if (string.IsNullOrEmpty(metadata.OldJobProperties))
         {
