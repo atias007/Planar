@@ -450,9 +450,13 @@ public abstract class BaseCheckJob : BaseJob
     {
         if (_general.SequentialProcessing)
         {
+            var total = entities.Count();
+            var current = 0;
             foreach (var entity in entities)
             {
+                current++;
                 await SafeInvokeOperation(entity, operationFunc, trigger);
+                await UpdateProgressAsync(current, total);
                 var notValidStatus = entity.RunStatus.IsValidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {

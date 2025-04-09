@@ -13,7 +13,6 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
-using Planar.Service.SystemJobs;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -27,7 +26,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
-public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
+public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
 
@@ -851,7 +850,9 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
     {
         try
         {
-            await DataLayer.DeleteJobProperty(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+            await dataLayer.DeleteJobProperty(jobId);
         }
         catch (Exception ex)
         {
@@ -860,7 +861,9 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            await DataLayer.DeleteJobAudit(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+            await dataLayer.DeleteJobAudit(jobId);
         }
         catch (Exception ex)
         {
@@ -869,7 +872,9 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            await DeleteMonitorOfJob(jobKey);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var monitordal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
+            await DeleteMonitorOfJob(monitordal, jobKey);
         }
         catch (Exception ex)
         {
@@ -878,20 +883,24 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            await DeleteJobStatistics(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var merticsdal = scope.ServiceProvider.GetRequiredService<IMetricsData>();
+            await DeleteJobStatistics(merticsdal, jobId);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "fail to delete job statistics after delete job id {Id}", id);
+            Logger.LogError(ex, "fail to delete job metrics after delete job id {Id}", id);
         }
 
         try
         {
-            await DeleteJobHistory(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var historydal = scope.ServiceProvider.GetRequiredService<IHistoryData>();
+            await historydal.ClearJobHistory(jobId);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "fail to delete job statistics after delete job id {Id}", id);
+            Logger.LogError(ex, "fail to delete job history after delete job id {Id}", id);
         }
     }
 

@@ -5,6 +5,7 @@ using Planar.Common;
 using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
+using Polly;
 using Quartz;
 using RepoDb;
 using System;
@@ -24,9 +25,9 @@ public interface IHistoryData : IBaseDataLayer
 
     Task ClearJobHistory(IEnumerable<string> jobIds);
 
-    Task<int> ClearJobLogTable(int overDays);
+    Task<int> ClearJobLogTable(int overDays, int batchSize);
 
-    Task<int> ClearJobLogTable(string jobId, int overDays);
+    Task<int> ClearJobLogTable(string jobId, int overDays, int batchSize);
 
     Task CreateJobInstanceLog(JobInstanceLog log);
 
@@ -75,24 +76,6 @@ public interface IHistoryData : IBaseDataLayer
 
 public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IHistoryData
 {
-    public async Task<int> ClearJobLogTable(int overDays)
-    {
-        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
-        var result = await _context.JobInstanceLogs
-            .Where(l => l.StartDate < referenceDate)
-            .ExecuteDeleteAsync();
-        return result;
-    }
-
-    public async Task<int> ClearJobLogTable(string jobId, int overDays)
-    {
-        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
-        var result = await _context.JobInstanceLogs
-            .Where(l => l.StartDate < referenceDate && l.JobId == jobId)
-            .ExecuteDeleteAsync();
-        return result;
-    }
-
     public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
     {
         var cmd = new CommandDefinition(
@@ -109,28 +92,6 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
 
 public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context), IHistoryData
 {
-    public async Task<int> ClearJobLogTable(int overDays)
-    {
-        var parameters = new { OverDays = overDays };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.ClearLogInstance",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        return await DbConnection.ExecuteAsync(cmd);
-    }
-
-    public async Task<int> ClearJobLogTable(string jobId, int overDays)
-    {
-        var parameters = new { JobId = jobId, OverDays = overDays };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.ClearLogInstanceByJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        return await DbConnection.ExecuteAsync(cmd);
-    }
-
     public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
     {
         var cmd = new CommandDefinition(
@@ -147,6 +108,32 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
 
 public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<int> ClearJobLogTable(int overDays, int batchSize)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        _context.Database.SetCommandTimeout(600); // 10 minutes
+        var result = await _context.JobInstanceLogs
+            .Where(l => l.StartDate < referenceDate)
+            .OrderBy(l => l.Id)
+            .Take(batchSize)
+            .ExecuteDeleteAsync();
+
+        return result;
+    }
+
+    public async Task<int> ClearJobLogTable(string jobId, int overDays, int batchSize)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        _context.Database.SetCommandTimeout(600); // 10 minutes
+        var result = await _context.JobInstanceLogs
+            .Where(l => l.StartDate < referenceDate && l.JobId == jobId)
+            .OrderBy(l => l.Id)
+            .Take(batchSize)
+            .ExecuteDeleteAsync();
+
+        return result;
+    }
+
     public async Task ClearHistoryLastLogs(IEnumerable<string> jobIds)
     {
         await _context.HistoryLastLogs
