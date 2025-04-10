@@ -167,11 +167,19 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
 
     private async Task ClearTrace()
     {
+        const int BatchSize = 5_000;
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<ITraceData>();
-            var rows = await data.ClearTraceTable(AppSettings.Retention.TraceRetentionDays);
+            int count;
+            var rows = 0;
+            do
+            {
+                count = await data.ClearTraceTable(AppSettings.Retention.TraceRetentionDays, BatchSize);
+                rows += count;
+            } while (count == BatchSize);
+
             logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.TraceRetentionDays, rows);
         }
         catch (Exception ex)

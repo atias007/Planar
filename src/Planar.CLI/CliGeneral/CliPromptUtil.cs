@@ -15,15 +15,15 @@ namespace Planar.CLI.CliGeneral;
 
 internal static class CliPromptUtil
 {
-    internal static string? PromptSelection(IEnumerable<string>? items, string title)
+    internal static string? PromptSelection(IEnumerable<string>? items, string title, bool writeSelection = true)
     {
         if (items == null) { return null; }
 
         var finalItems = items.Select(i => new CliSelectItem<string> { DisplayName = i, Value = i });
-        return PromptSelection(finalItems, title)?.Value;
+        return PromptSelection(finalItems, title, writeSelection)?.Value;
     }
 
-    internal static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title)
+    internal static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool writeSelection = true)
     {
         if (items == null) { return null; }
         var finalItems = items.ToList();
@@ -42,6 +42,11 @@ internal static class CliPromptUtil
             prompt.SearchHighlightStyle = new Style(foreground: Color.White, background: Color.DeepSkyBlue4_2);
         }
         var selectedItem = AnsiConsole.Prompt(prompt);
+
+        if (writeSelection)
+        {
+            AnsiConsole.MarkupLine($"[grey] > selected: {selectedItem.DisplayName}[/]");
+        }
 
         CheckForCancelOption(selectedItem);
 
@@ -274,7 +279,7 @@ internal static class CliPromptUtil
         return new CliPromptWrapper<string>(select);
     }
 
-    internal static async Task<CliPromptWrapper<MonitorItem>> Monitors(CancellationToken cancellationToken)
+    internal static async Task<CliPromptWrapper<MonitorItem>> Monitors(bool writeSelection, CancellationToken cancellationToken)
     {
         var restRequest = new RestRequest("monitor", Method.Get)
             .AddQueryPagingParameter(1000);
@@ -291,7 +296,7 @@ internal static class CliPromptUtil
         }
 
         var prompt = data.Select(data => $"{data.Id} - {data.Title}");
-        var select = PromptSelection(prompt, "monitor");
+        var select = PromptSelection(prompt, "monitor", writeSelection);
         var id = select?.Split('-').FirstOrDefault()?.Trim();
         _ = int.TryParse(id, out var monitorId);
         var item = data.First(data => data.Id == monitorId);

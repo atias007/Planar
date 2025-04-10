@@ -699,6 +699,12 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
         }
 
+        if (request.Timeout.HasValue)
+        {
+            var timeoutValue = request.Timeout.Value.Ticks.ToString();
+            request.Data.Add(Consts.TriggerTimeout, timeoutValue);
+        }
+
         if (request.Data.Count != 0)
         {
             var data = new JobDataMap(request.Data);
@@ -726,6 +732,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             return;
         }
 
+        // Handle auto resume
         var job = await Scheduler.GetJobDetail(jobKey);
         if (job == null)
         {
@@ -733,9 +740,10 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             return;
         }
 
-        await AutoResumeJobUtil.QueueResumeJob(Scheduler, job, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
         Audit(true, request.AutoResumeDate.Value);
 
+        // ----------------------- Audit Function ----------------------- //
         void Audit(bool scheduleAutoResume, DateTime? autoResumeDate)
         {
             AuditJobSafe(jobKey, "job paused");
@@ -904,13 +912,24 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
     }
 
-    public async Task Resume(JobOrTriggerKey request)
+    public async Task Resume(PauseResumeJobRequest request)
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
-        await Scheduler.ResumeJob(jobKey);
-        AuditJobSafe(jobKey, "job resumed");
+
         await CancelQueuedResumeJob(jobKey);
+
+        if (request.AutoResumeDate == null)
+        {
+            await Scheduler.ResumeJob(jobKey);
+            AuditJobSafe(jobKey, "job resumed");
+            await CancelQueuedResumeJob(jobKey);
+        }
+        else
+        {
+            await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+            AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
+        }
     }
 
     public async Task ResumeGroup(PauseResumeGroupRequest request)
@@ -990,6 +1009,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
         await CancelQueuedResumeJob(jobKey);
         await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
     }
 
     public async Task CancelAutoResume(string id)

@@ -53,7 +53,7 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<int?> GetHistoryStatusById(long id);
 
-    Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters);
+    Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(GetSummaryRequest request);
 
     Task<PagingResponse<HistoryLastLog>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request);
 
@@ -76,38 +76,54 @@ public interface IHistoryData : IBaseDataLayer
 
 public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IHistoryData
 {
-    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
-    {
-        var cmd = new CommandDefinition(
-            commandText: SqliteResource.GetScript("GetHistorySummary", parameters),
-            commandType: CommandType.Text,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<HistorySummary>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
 }
 
 public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context), IHistoryData
 {
-    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
-    {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.GetHistorySummary",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<HistorySummary>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
 }
 
 public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(GetSummaryRequest request)
+    {
+        var fromDate = request.FromDate;
+        var toDate = request.ToDate;
+        var pageNumber = request.PageNumber.GetValueOrDefault();
+        var pageSize = request.PageSize.GetValueOrDefault();
+
+        var summary = await _context.JobInstanceLogs
+            .Where(log => (fromDate == null || log.StartDate > fromDate) &&
+                          (toDate == null || log.StartDate <= toDate))
+            .GroupBy(log => new { log.JobId, log.JobName, log.JobGroup, log.JobType })
+            .Select(group => new HistorySummary
+            {
+                JobId = group.Key.JobId,
+                JobName = group.Key.JobName,
+                JobGroup = group.Key.JobGroup,
+                JobType = group.Key.JobType,
+                Total = group.Count(),
+                Success = group.Sum(log => log.Status == 0 ? 1 : 0),
+                Fail = group.Sum(log => log.Status == 1 ? 1 : 0),
+                Running = group.Sum(log => log.Status == -1 ? 1 : 0),
+                Retries = group.Sum(log => log.Retry ? 1 : 0),
+                TotalEffectedRows = group.Sum(log => log.EffectedRows.GetValueOrDefault())
+            })
+            .OrderBy(item => item.JobGroup)
+            .ThenBy(item => item.JobName)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // Second SQL Query (converted to LINQ) - Counting the total number of groups
+        var totalRuns = await _context.JobInstanceLogs
+            .Where(log => (fromDate == null || log.StartDate > fromDate) &&
+                          (toDate == null || log.StartDate <= toDate))
+            .GroupBy(log => new { log.JobId, log.JobName, log.JobGroup, log.JobType })
+            .CountAsync();
+
+        return (summary, totalRuns);
+    }
+
     public async Task<int> ClearJobLogTable(int overDays, int batchSize)
     {
         var referenceDate = DateTime.Now.Date.AddDays(-overDays);

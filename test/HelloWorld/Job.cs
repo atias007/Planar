@@ -16,6 +16,7 @@ namespace HelloWorld
         {
             var now = Now();
             Logger.LogInformation("Now: {Now:dd/MM/yyyy HH:mm:ss}", now);
+            Logger.LogInformation("Timeout: {Timeout}", context.TriggerDetails.Timeout);
             var durationSeconds = new Random().Next(10, 20);
             Logger.LogInformation("Start execute job: {Name}", context.JobDetails.Key.Name);
             EffectedRows = 0;

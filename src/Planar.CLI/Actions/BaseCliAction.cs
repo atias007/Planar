@@ -450,9 +450,9 @@ namespace Planar.CLI.Actions
             }
         }
 
-        protected static string? PromptSelection(IEnumerable<string>? items, string title)
+        protected static string? PromptSelection(IEnumerable<string>? items, string title, bool writeSelection = true)
         {
-            return CliPromptUtil.PromptSelection(items, title);
+            return CliPromptUtil.PromptSelection(items, title, writeSelection);
         }
 
         protected static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title)

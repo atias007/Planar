@@ -30,7 +30,7 @@
     <PackageReference Include="MailKit" Version="4.11.0" />
     <PackageReference Include="Planar.Hook" Version="1.7.9.2" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.31" />
-    <PackageReference Include="Twilio" Version="7.9.1" />
+    <PackageReference Include="Twilio" Version="7.10.0" />
   </ItemGroup>
 
   <ItemGroup>

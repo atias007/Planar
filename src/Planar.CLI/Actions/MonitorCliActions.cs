@@ -359,14 +359,14 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             const string opt1 = "all monitors";
             const string opt2 = "specific monitor";
 
-            var opt = CliPromptUtil.PromptSelection([opt2, opt1], "monitor/s to mute");
+            var opt = CliPromptUtil.PromptSelection([opt2, opt1], "monitor/s to mute", writeSelection: false);
             if (opt == opt1)
             {
                 AnsiConsole.MarkupLine($"[turquoise2]  > {opt1}[/]");
             }
             else
             {
-                var monitorWrapper = await CliPromptUtil.Monitors(cancellationToken);
+                var monitorWrapper = await CliPromptUtil.Monitors(writeSelection: false, cancellationToken);
                 if (!monitorWrapper.IsSuccessful)
                 {
                     return monitorWrapper;
@@ -388,14 +388,14 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
                 return CliPromptWrapper.Success;
             }
 
-            var opt = CliPromptUtil.PromptSelection([opt2, opt1], "job/s to mute");
+            var opt = CliPromptUtil.PromptSelection([opt2, opt1], "job/s to mute", writeSelection: false);
             if (opt == opt1)
             {
                 AnsiConsole.MarkupLine($"[turquoise2]  > {opt1}[/]");
             }
             else
             {
-                request.JobId = await JobCliActions.ChooseJob(null, false, cancellationToken);
+                request.JobId = await JobCliActions.ChooseJob(null, false, writeSelection: false, cancellationToken);
                 AnsiConsole.MarkupLine($"[turquoise2]  > job id :[/] {request.JobId}");
             }
         }
@@ -435,7 +435,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     private static string GetDistributionGroup(IEnumerable<GroupInfo> groups)
     {
         var groupsNames = groups.Select(group => group.Name ?? string.Empty);
-        var selectedGroup = PromptSelection(groupsNames, "distribution group");
+        var selectedGroup = PromptSelection(groupsNames, "distribution group", writeSelection: false);
 
         AnsiConsole.MarkupLine($"[turquoise2]  > dist. group:[/] {selectedGroup}");
         return selectedGroup ?? string.Empty;
@@ -444,7 +444,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     private static string GetEvent(IEnumerable<MonitorEventModel> events)
     {
         var eventsName = events.Select(e => $"{e.EventTitle} {CliConsts.GroupDisplayFormat}({e.EventType})[/]");
-        var selectedEvent = PromptSelection(eventsName, "monitor event");
+        var selectedEvent = PromptSelection(eventsName, "monitor event", writeSelection: false);
         if (selectedEvent == null) { return string.Empty; }
         selectedEvent = selectedEvent[0..(selectedEvent.IndexOf(CliConsts.GroupDisplayFormat) - 1)];
         AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
@@ -524,7 +524,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
     private static string GetHook(IEnumerable<string> hooks)
     {
-        var selectedHook = PromptSelection(hooks, "hook");
+        var selectedHook = PromptSelection(hooks, "hook", writeSelection: false);
 
         AnsiConsole.MarkupLine($"[turquoise2]  > hook: [/] {selectedHook}");
 
@@ -543,7 +543,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             "group (monitor for group of jobs)",
             "all (monitor for all jobs)" };
 
-        var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
+        var selectedEvent = PromptSelection(types, "monitor type", writeSelection: false) ?? string.Empty;
 
         selectedEvent = selectedEvent.Split(' ')[0];
         if (selectedEvent == "all")
@@ -554,12 +554,12 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         if (selectedEvent == "group")
         {
-            var group = JobCliActions.ChooseGroup(jobs) ?? string.Empty;
+            var group = JobCliActions.ChooseGroup(jobs, writeSelection: false) ?? string.Empty;
             AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] job group '{group}'");
             return new AddMonitorJobData { JobGroup = group };
         }
 
-        var job = JobCliActions.ChooseJob(jobs, false);
+        var job = JobCliActions.ChooseJob(jobs, false, writeSelection: false);
         AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] single job '{job}'");
         var key = JobKey.Parse(job);
         return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };

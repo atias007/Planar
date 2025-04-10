@@ -271,7 +271,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [AcceptedContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
+    public async Task<IActionResult> Resume([FromBody] PauseResumeJobRequest request)
     {
         await BusinesLayer.Resume(request);
         return Accepted();

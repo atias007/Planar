@@ -1,5 +1,4 @@
-﻿using Dapper;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
