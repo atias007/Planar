@@ -23,6 +23,8 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoQuery(ref CheckQuery query);
 
+    partial void FillConnectionStrings(Dictionary<string, string> connectionStrings, IConfiguration configuration, string environment);
+
     partial void Finalayze(FinalayzeDetails<IEnumerable<CheckQuery>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
@@ -52,7 +54,9 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var connStrings = GetConnectionStrings(Configuration);
+        var names = GetConnectionStringNames(Configuration);
+        var connStrings = GetConnectionStrings(Configuration, names);
+        FillConnectionStrings(connStrings, Configuration, context.Environment);
         var queries = GetQueries(Configuration, defaults, connStrings);
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
@@ -160,18 +164,38 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private IEnumerable<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults, Dictionary<string, string> connectionStrings)
+    private List<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults, Dictionary<string, string> connectionStrings)
     {
+        var queries = new List<CheckQuery>();
         var section = configuration.GetRequiredSection("queries");
         foreach (var item in section.GetChildren())
         {
             var key = new CheckQuery(item, defaults);
+            key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
+
             VetoQuery(ref key);
             if (CheckVeto(key, "query")) { continue; }
-            key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
             ValidateCheckQuery(key);
-            yield return key;
+            queries.Add(key);
         }
+
+        return queries;
+    }
+
+    private static List<string> GetConnectionStringNames(IConfiguration configuration)
+    {
+        var result = new List<string>();
+        var section = configuration.GetRequiredSection("queries");
+        foreach (var item in section.GetChildren())
+        {
+            var name = item.GetValue<string>("connection string name");
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                result.Add(name);
+            }
+        }
+
+        return result;
     }
 
     private Defaults GetDefaults(IConfiguration configuration)

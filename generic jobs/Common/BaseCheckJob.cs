@@ -18,10 +18,10 @@ public abstract class BaseCheckJob : BaseJob
     private General _general = null!;
     private CheckSpanTracker _spanTracker = null!;
 
-    protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
+    protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration, List<string> names)
     {
         var sections = new string[] { "connection strings", "ConnectionStrings" };
-        var result = new Dictionary<string, string>();
+        var dic = new Dictionary<string, string>();
         foreach (var item in sections)
         {
             var section = configuration.GetSection(item);
@@ -30,14 +30,17 @@ public abstract class BaseCheckJob : BaseJob
                 var connStrings = ReadConnectionStringFromSection(section);
                 foreach (var s in connStrings)
                 {
-                    result.TryAdd(s.Key, s.Value);
+                    dic.TryAdd(s.Key.ToLower(), s.Value);
                 }
             }
         }
 
-        if (result.Count == 0)
+        var result = new Dictionary<string, string>();
+        foreach (var name in names)
         {
-            throw new InvalidDataException("coud not found any connection string in configuration");
+            var lowerName = name.ToLower();
+            var value = dic.GetValueOrDefault(lowerName) ?? string.Empty;
+            result.TryAdd(name, value);
         }
 
         return result;
