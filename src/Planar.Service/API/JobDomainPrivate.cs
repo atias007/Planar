@@ -60,7 +60,7 @@ public partial class JobDomain
         }
     }
 
-    private async Task DeleteJobStatistics(IMetricsData dal, string jobId)
+    private static async Task DeleteJobStatistics(IMetricsData dal, string jobId)
     {
         var s1 = new JobDurationStatistic { JobId = jobId };
         await dal.DeleteJobStatistic(s1);
