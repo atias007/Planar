@@ -1,5 +1,5 @@
 ﻿--------------------------------------------------------
-PLAN FOR V 1.7.9
+PLAN FOR V 1.8.*
 ----------------
 
 - validate on startup that instance id not exists in nodes table
@@ -371,8 +371,13 @@ V1.7.8
 
 V 1.7.9
 -------
->> ** Add WorkflowJob **
+>> ** Add SequenceJob **
 - BUG: when you pause job with calendar. after restart the job resume. it should stay paused
 - api security headers
 - mqtt ver 5
 - migrate to .net 9
+
+V 1.8.0
+-------
+- improve 'last' command in cli (save last log in table)
+- add timeout parameter to cli/api/client library for invoke and test command

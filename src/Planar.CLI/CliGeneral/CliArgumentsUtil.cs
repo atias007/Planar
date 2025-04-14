@@ -324,7 +324,7 @@ namespace Planar.CLI
                 var withGroup = value.StartsWith("??");
                 value = withGroup ? value[2..] : value[1..];
                 var filter = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-                var jobId = await JobCliActions.ChooseJob(filter, withGroup, cancellationToken);
+                var jobId = await JobCliActions.ChooseJob(filter, withGroup, writeSelection: true, cancellationToken);
                 arg.Value = jobId;
                 if (arg.Key == "?")
                 {

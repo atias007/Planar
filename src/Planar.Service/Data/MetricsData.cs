@@ -64,21 +64,6 @@ public class MetricsDataSqlite(PlanarContext context) : MetricsData(context), IM
         return await DbConnection.ExecuteAsync(cmd);
     }
 
-    public async Task<int> ClearStatisticsTables(int overDays)
-    {
-        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
-
-        var count = await _context.ConcurrentQueues
-            .Where(l => l.RecordDate < referenceDate)
-            .ExecuteDeleteAsync();
-
-        count += await _context.ConcurrentExecutions
-            .Where(l => l.RecordDate < referenceDate)
-            .ExecuteDeleteAsync();
-
-        return count;
-    }
-
     public async Task<int> FillJobCounters()
     {
         var cmd = new CommandDefinition(
@@ -113,17 +98,6 @@ public class MetricsDataSqlServer(PlanarContext context) : MetricsData(context),
         return await DbConnection.ExecuteAsync(cmd);
     }
 
-    public async Task<int> ClearStatisticsTables(int overDays)
-    {
-        var parameters = new { OverDays = overDays };
-        var cmd = new CommandDefinition(
-            commandText: "Statistics.ClearStatistics",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        return await DbConnection.ExecuteAsync(cmd);
-    }
-
     public async Task<int> FillJobCounters()
     {
         var cmd = new CommandDefinition(
@@ -145,6 +119,21 @@ public class MetricsDataSqlServer(PlanarContext context) : MetricsData(context),
 
 public class MetricsData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<int> ClearStatisticsTables(int overDays)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+
+        var count = await _context.ConcurrentQueues
+            .Where(l => l.RecordDate < referenceDate)
+            .ExecuteDeleteAsync();
+
+        count += await _context.ConcurrentExecutions
+            .Where(l => l.RecordDate < referenceDate)
+            .ExecuteDeleteAsync();
+
+        return count;
+    }
+
     public async Task AddCocurentQueueItem(ConcurrentQueue item)
     {
         _context.Add(item);

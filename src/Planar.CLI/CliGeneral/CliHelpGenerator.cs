@@ -76,9 +76,12 @@ namespace Planar.CLI.CliGeneral
         {
             var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliCommand} ";
             var space = string.IsNullOrEmpty(cliCommand) ? string.Empty : " ";
+            var prefix = $"{space}{cliCommand}";
+            var lastSpace = string.IsNullOrEmpty(module) ? string.Empty : " ";
+            if (string.IsNullOrEmpty(prefix)) { prefix = " "; }
 
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{module}[/]{space}[cornsilk1]{header1}[/] [[{header2}]]");
+            AnsiConsole.MarkupLine($" [invert]usage:[/]{prefix}[lightskyblue1]{module}[/]{lastSpace}[cornsilk1]{header1}[/] [[{header2}]]");
             AnsiConsole.WriteLine();
 
             var actions =

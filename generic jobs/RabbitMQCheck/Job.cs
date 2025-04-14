@@ -2,27 +2,36 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MQTTnet.Internal;
 using Newtonsoft.Json;
 using Planar.Job;
 using System.Text;
+using System.Xml.Linq;
 
 namespace RabbitMQCheck;
 
 internal partial class Job : BaseCheckJob
 {
+    private const string BundleEntity = "bundle";
+    private const string QueueEntity = "queue";
+
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(RabbitMqServer rabbitMqServer, IConfiguration configuration);
+    partial void CustomConfigure(RabbitMqServer rabbitMqServer, IConfiguration configuration);
 
-    static partial void VetoQueue(Queue queue);
+    partial void VetoQueue(Queue queue);
 
-    static partial void Finalayze(FinalayzeDetails<IEnumerable<Queue>> details);
+    partial void VetoQueuesBundle(QueuesBundle bundle);
 
-    static partial void Finalayze(FinalayzeDetails<IEnumerable<Node>> details);
+    partial void Finalayze(FinalayzeDetails<IEnumerable<Queue>> details);
 
-    static partial void Finalayze(FinalayzeDetails<IEnumerable<HealthCheck>> details);
+    partial void Finalayze(FinalayzeDetails<IEnumerable<QueuesBundle>> details);
+
+    partial void Finalayze(FinalayzeDetails<IEnumerable<Node>> details);
+
+    partial void Finalayze(FinalayzeDetails<IEnumerable<HealthCheck>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -55,6 +64,7 @@ internal partial class Job : BaseCheckJob
         var healthCheck = GetHealthCheck(Configuration, defaults);
         var node = GetNode(Configuration, defaults);
         var queues = GetQueue(Configuration, defaults);
+        var bundles = GetQueuesBundle(Configuration, defaults);
 
         EffectedRows = 0;
 
@@ -72,6 +82,10 @@ internal partial class Job : BaseCheckJob
         var queueTask = SafeInvokeQueueCheck(queues, server, defaults, context.TriggerDetails);
         tasks.Add(queueTask);
 
+        // queues
+        var bundleTask = SafeInvokeQueueCheck(bundles, server, defaults, context.TriggerDetails);
+        tasks.Add(bundleTask);
+
         await Task.WhenAll(tasks);
 
         var hcDetails = GetFinalayzeDetails(checks.AsEnumerable());
@@ -80,6 +94,8 @@ internal partial class Job : BaseCheckJob
         Finalayze(hcNodes);
         var queueDetails = GetFinalayzeDetails(queues.AsEnumerable());
         Finalayze(queueDetails);
+        var bundleDetails = GetFinalayzeDetails(bundles.AsEnumerable());
+        Finalayze(bundleDetails);
         Finalayze();
     }
 
@@ -102,30 +118,57 @@ internal partial class Job : BaseCheckJob
         return node;
     }
 
-    private IEnumerable<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
+    private List<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
     {
         var sections = configuration.GetSection("queues").GetChildren();
-
+        var result = new List<Queue>();
         foreach (var section in sections)
         {
             var queue = new Queue(section, defaults);
 
             VetoQueue(queue);
             if (CheckVeto(queue, "queue")) { continue; }
+            ValidateBase(queue, "queues");
+            ValidateQueue(queue);
 
-            ValidateRequired(queue.Name, "name", "queues");
-            ValidateGreaterThen(queue.Messages, 0, "messages", "queues");
-            ValidateGreaterThen(queue.MemoryNumber, 0, "memory", "queues");
-            ValidateGreaterThen(queue.Consumers, 0, "consumers", "queues");
-            ValidateRequired(queue.CheckState, "check state", "queues");
-
-            if (queue.AllowedFailSpan.HasValue && queue.AllowedFailSpan.Value.TotalSeconds < 1)
-            {
-                throw new InvalidDataException($"'span' on queues section is less then 1 second");
-            }
-
-            yield return queue;
+            result.Add(queue);
         }
+
+        return result;
+    }
+
+    private List<QueuesBundle> GetQueuesBundle(IConfiguration configuration, Defaults defaults)
+    {
+        var sections = configuration.GetSection("queues bundles").GetChildren();
+        var result = new List<QueuesBundle>();
+
+        foreach (var section in sections)
+        {
+            var bundle = new QueuesBundle(section, defaults);
+
+            VetoQueuesBundle(bundle);
+            if (CheckVeto(bundle, "queues bundle")) { continue; }
+            ValidateBase(bundle, "queues bundles");
+            ValidateQueue(bundle);
+
+            // validate queues
+            ValidateRequired(bundle.Queues, "queues", "queues bundles");
+            ValidateDuplicates(bundle.Queues, "queues bundles --> queues");
+            ValidateNullOrWhiteSpace(bundle.Queues, "queues bundles --> queues");
+
+            result.Add(bundle);
+        }
+
+        return result;
+    }
+
+    private static void ValidateQueue(Queue queue)
+    {
+        ValidateRequired(queue.Name, "name", "queues");
+        ValidateGreaterThen(queue.Messages, 0, "messages", "queues");
+        ValidateGreaterThen(queue.MemoryNumber, 0, "memory", "queues");
+        ValidateGreaterThen(queue.Consumers, 0, "consumers", "queues");
+        ValidateRequired(queue.CheckState, "check state", "queues");
     }
 
     private static Server GetServer(IConfiguration configuration)
@@ -244,21 +287,64 @@ internal partial class Job : BaseCheckJob
         }
     }
 
+    private static QueueResult GetQueueResult(string name, IEnumerable<QueueResult> details)
+    {
+        var detail = details.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new CheckException($"queue '{name}' does not exists");
+
+        return detail;
+    }
+
+    private static QueueResult GetQueueResult(IEnumerable<string> names, IEnumerable<QueueResult> details)
+    {
+        var detail = details
+            .Where(d => names.Any(n => string.Equals(d.Name, n, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        if (detail.Count < names.Count())
+        {
+            var exists = detail.Select(d => d.Name);
+            var missing = names.Where(n => !exists.Any(e => string.Equals(e, n, StringComparison.OrdinalIgnoreCase)));
+            throw new CheckException($"queue(s) '{string.Join(',', missing)}' does not exists");
+        }
+
+        var result = new QueueResult
+        {
+            Name = string.Join(',', names),
+            Consumers = detail.Sum(d => d.Consumers),
+            Messages = detail.Sum(d => d.Messages),
+            MessagesUnacknowledged = detail.Sum(d => d.MessagesUnacknowledged),
+            Memory = detail.Sum(d => d.Memory),
+            BundleStates = detail.ToDictionary(d => d.Name.ToLower(), d => d.State)
+        };
+
+        return result;
+    }
+
     private async Task InvokeQueueCheckInner(Queue queue, IEnumerable<QueueResult> details)
     {
         if (!queue.IsValid) { return; }
-        var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
-            ?? throw new CheckException($"queue '{queue.Name}' does not exists");
+        QueueResult detail;
+        var bundle = queue as QueuesBundle;
+        if (bundle != null)
+        {
+            detail = GetQueueResult(bundle.Queues, details);
+        }
+        else
+        {
+            detail = GetQueueResult(queue.Name, details);
+        }
 
         queue.Result = detail;
 
         try
         {
-            CheckState(queue, detail);
-            CheckConsumers(queue, detail);
-            CheckMessages(queue, detail);
-            CheckUnacked(queue, detail);
-            CheckMemory(queue, detail);
+            var isBundle = bundle != null;
+            if (isBundle) { CheckState(bundle!, detail); } else { CheckState(queue, detail); }
+            CheckConsumers(queue, detail, isBundle);
+            CheckMessages(queue, detail, isBundle);
+            CheckUnacked(queue, detail, isBundle);
+            CheckMemory(queue, detail, isBundle);
         }
         catch (Exception ex)
         {
@@ -270,86 +356,107 @@ internal partial class Job : BaseCheckJob
         await Task.CompletedTask;
     }
 
-    private void CheckMemory(Queue queue, QueueResult detail)
+    private void CheckMemory(Queue queue, QueueResult detail, bool isBundle)
     {
+        var entity = isBundle ? BundleEntity : QueueEntity;
+
         // Memory
-        if (queue.MemoryNumber.HasValue)
+        if (!queue.MemoryNumber.HasValue) { return; }
+        if (queue.MemoryNumber.GetValueOrDefault() > detail.Memory)
         {
-            if (queue.MemoryNumber.GetValueOrDefault() > detail.Memory)
-            {
-                Logger.LogInformation("queue '{Name}' memory is ok. {Memory:N0}", detail.Name, detail.Memory);
-            }
-            else
-            {
-                throw new CheckException($"queue '{detail.Name}' memory check failed. {detail.Memory:N0} is greater then {queue.MemoryNumber:N0} bytes");
-            }
+            Logger.LogInformation("{Entity} '{Name}' memory is ok. {Memory:N0}", entity, queue.Name, detail.Memory);
+        }
+        else
+        {
+            throw new CheckException($"{entity} '{queue.Name}' memory check failed. {detail.Memory:N0} is greater then {queue.MemoryNumber:N0} bytes");
         }
     }
 
-    private void CheckMessages(Queue queue, QueueResult detail)
+    private void CheckMessages(Queue queue, QueueResult detail, bool isBundle)
     {
+        var entity = isBundle ? BundleEntity : QueueEntity;
+
         // Messages
-        if (queue.Messages.HasValue)
+        if (!queue.Messages.HasValue) { return; }
+        if (queue.Messages.GetValueOrDefault() >= detail.Messages)
         {
-            if (queue.Messages.GetValueOrDefault() >= detail.Messages)
-            {
-                Logger.LogInformation("queue '{Name}' messages is ok. {Messages:N0} messages", detail.Name, detail.Messages);
-            }
-            else
-            {
-                throw new CheckException($"queue '{detail.Name}' messages check failed. {detail.Messages:N0} messages are greater then {queue.Messages.GetValueOrDefault():N0}");
-            }
+            Logger.LogInformation("{Entity} '{Name}' messages is ok. {Messages:N0} messages", entity, queue.Name, detail.Messages);
+        }
+        else
+        {
+            throw new CheckException($"{entity} '{queue.Name}' messages check failed. {detail.Messages:N0} messages are greater then {queue.Messages.GetValueOrDefault():N0}");
         }
     }
 
-    private void CheckUnacked(Queue queue, QueueResult detail)
+    private void CheckUnacked(Queue queue, QueueResult detail, bool isBundle)
     {
-        if (queue.Unacked.HasValue)
+        var entity = isBundle ? BundleEntity : QueueEntity;
+
+        if (!queue.Unacked.HasValue) { return; }
+        if (detail.Messages == 0) // there is messages in queue
         {
-            if (
-                detail.Messages > detail.MessagesUnacknowledged && // there is enough messages in queue so unacked cen be in maximum level
-                queue.Unacked.GetValueOrDefault() < detail.MessagesUnacknowledged)
-            {
-                Logger.LogInformation("queue '{Name}' unacked is ok. {Unacked:N0} unacked", detail.Name, detail.MessagesUnacknowledged);
-            }
-            else
-            {
-                throw new CheckException($"queue '{detail.Name}' unacked check failed. {detail.MessagesUnacknowledged:N0} unacked are greater then {queue.Messages.GetValueOrDefault():N0}");
-            }
+            Logger.LogInformation("{Entity} '{Name}' unacked is ok. no messages in queue", entity, queue.Name);
+            return;
+        }
+
+        if (
+            detail.Messages > detail.MessagesUnacknowledged && // there is enough messages in queue so unacked cen be in maximum level
+            queue.Unacked.GetValueOrDefault() < detail.MessagesUnacknowledged)
+        {
+            Logger.LogInformation("{Entity} '{Name}' unacked is ok. {Unacked:N0} unacked", entity, queue.Name, detail.MessagesUnacknowledged);
+        }
+        else
+        {
+            throw new CheckException($"{entity} '{queue.Name}' unacked check failed. {detail.MessagesUnacknowledged:N0} unacked are greater then {queue.Messages.GetValueOrDefault():N0}");
         }
     }
 
-    private void CheckConsumers(Queue queue, QueueResult detail)
+    private void CheckConsumers(Queue queue, QueueResult detail, bool isBundle)
     {
+        var entity = isBundle ? BundleEntity : QueueEntity;
+
         // Consumers
-        if (queue.Consumers.HasValue)
+        if (!queue.Consumers.HasValue) { return; }
+        if (queue.Consumers.GetValueOrDefault() <= detail.Consumers)
         {
-            if (queue.Consumers.GetValueOrDefault() <= detail.Consumers)
-            {
-                Logger.LogInformation("queue '{Name}' consumers is ok. {Consumers:N0} consumers", detail.Name, detail.Consumers);
-            }
-            else
-            {
-                throw new CheckException($"queue '{detail.Name}' consumers check failed. {detail.Consumers:N0} consumers less are then {queue.Consumers.GetValueOrDefault():N0}");
-            }
+            Logger.LogInformation("{Entity} '{Name}' consumers is ok. {Consumers:N0} consumers", entity, queue.Name, detail.Consumers);
+        }
+        else
+        {
+            throw new CheckException($"{entity} '{queue.Name}' consumers check failed. {detail.Consumers:N0} consumers are less then {queue.Consumers.GetValueOrDefault():N0}");
         }
     }
 
     private void CheckState(Queue queue, QueueResult detail)
     {
         // Check State
-        if (queue.CheckState.GetValueOrDefault())
+        if (!queue.CheckState.GetValueOrDefault()) { return; }
+        var ok = string.Equals(detail.State, "running", StringComparison.OrdinalIgnoreCase) || string.Equals(detail.State, "idle", StringComparison.OrdinalIgnoreCase);
+        if (ok)
         {
-            var ok = string.Equals(detail.State, "running", StringComparison.OrdinalIgnoreCase) || string.Equals(detail.State, "idle", StringComparison.OrdinalIgnoreCase);
-            if (ok)
+            Logger.LogInformation("{Entity} '{Name}' state is ok", QueueEntity, queue.Name);
+        }
+        else
+        {
+            throw new CheckException($"{QueueEntity} '{queue.Name}' state check failed. state is '{detail.State}'");
+        }
+    }
+
+    private void CheckState(QueuesBundle bundle, QueueResult detail)
+    {
+        // Check State
+        if (!bundle.CheckState.GetValueOrDefault()) { return; }
+        foreach (var queue in bundle.Queues)
+        {
+            var state = detail.BundleStates[queue.ToLower()];
+            var ok = string.Equals(state, "running", StringComparison.OrdinalIgnoreCase) || string.Equals(state, "idle", StringComparison.OrdinalIgnoreCase);
+            if (!ok)
             {
-                Logger.LogInformation("queue '{Name}' state is ok", detail.Name);
-            }
-            else
-            {
-                throw new CheckException($"queue '{detail.Name}' state check failed. state is '{detail.State}'");
+                throw new CheckException($"{BundleEntity} '{queue}' state check failed. state is '{detail.State}'");
             }
         }
+
+        Logger.LogInformation("{Entity} '{Name}' state is ok", BundleEntity, bundle.Name);
     }
 
     private async Task SafeInvokeQueueCheck(IEnumerable<Queue> queues, Server server, Defaults defaults, ITriggerDetail trigger)

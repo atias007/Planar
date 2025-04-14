@@ -33,8 +33,6 @@
 	<ItemGroup>
 	  <None Remove="Data\Scripts\Sqlite\BuildJobStatistics.sql" />
 	  <None Remove="Data\Scripts\Sqlite\FillJobCounters.sql" />
-	  <None Remove="Data\Scripts\Sqlite\GetHistorySummary.sql" />
-	  <None Remove="Data\Scripts\Sqlite\GetLastHistoryCallForJob.sql" />
 	  <None Remove="Data\Scripts\Sqlite\SetMaxConcurrentExecution.sql" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
@@ -62,8 +60,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <EmbeddedResource Include="Data\Scripts\Sqlite\GetHistorySummary.sql" />
-	  <EmbeddedResource Include="Data\Scripts\Sqlite\GetLastHistoryCallForJob.sql" />
 	  <EmbeddedResource Include="Data\Scripts\Sqlite\BuildJobStatistics.sql" />
 	  <EmbeddedResource Include="Data\Scripts\Sqlite\FillJobCounters.sql" />
 	  <EmbeddedResource Include="Data\Scripts\Sqlite\SetMaxConcurrentExecution.sql" />
@@ -92,30 +88,34 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="14.0.0" />
-		<PackageReference Include="CronExpressionDescriptor" Version="2.38.0" />
+		<PackageReference Include="CronExpressionDescriptor" Version="2.40.0" />
 		<PackageReference Include="FluentValidation" Version="11.11.0" />
-		<PackageReference Include="Google.Protobuf" Version="3.29.3" />
-		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.67.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.69.0">
+		<PackageReference Include="Google.Protobuf" Version="3.30.2" />
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.71.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.1" />
-		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.13.1" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.13.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.6.0.109712">
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.14.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.14.0" />
+		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
+		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
+		<PackageReference Include="Riok.Mapperly" Version="4.2.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -123,9 +123,9 @@
 		<ProjectReference Include="..\Jobs\PlanarJob\PlanarJob.csproj" />
 		<ProjectReference Include="..\Jobs\ProcessJob\ProcessJob.csproj" />
 		<ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
+		<ProjectReference Include="..\Jobs\SequenceJob\SequenceJob.csproj" />
 		<ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
 		<ProjectReference Include="..\Jobs\SqlTableReportJob\SqlTableReportJob.csproj" />
-		<ProjectReference Include="..\Jobs\WorkflowJob\WorkflowJob.csproj" />
 		<ProjectReference Include="..\Nager.Date\Nager.Date.csproj" />
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>

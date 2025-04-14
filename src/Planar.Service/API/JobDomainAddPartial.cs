@@ -886,8 +886,8 @@ public partial class JobDomain
                 await ValidateJobProperties<SqlTableReportJobProperties>(yml);
                 break;
 
-            case nameof(WorkflowJob):
-                await ValidateJobProperties<WorkflowJobProperties>(yml);
+            case nameof(SequenceJob):
+                await ValidateJobProperties<SequenceJobProperties>(yml);
                 break;
 
             default:

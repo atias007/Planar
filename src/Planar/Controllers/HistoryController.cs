@@ -102,7 +102,7 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "get_history_last", Description = "Get last running of each job", Summary = "Get Last Running Of Each Job")]
         [OkJsonResponse(typeof(PagingResponse<JobHistory>))]
         [BadRequestResponse]
-        public async Task<ActionResult<PagingResponse<JobHistory>>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
+        public async Task<ActionResult<PagingResponse<JobLastRun>>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
         {
             var result = await BusinesLayer.GetLastHistoryCallForJob(request);
             return Ok(result);

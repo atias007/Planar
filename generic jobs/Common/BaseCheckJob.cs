@@ -18,10 +18,10 @@ public abstract class BaseCheckJob : BaseJob
     private General _general = null!;
     private CheckSpanTracker _spanTracker = null!;
 
-    protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
+    protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration, List<string> names)
     {
         var sections = new string[] { "connection strings", "ConnectionStrings" };
-        var result = new Dictionary<string, string>();
+        var dic = new Dictionary<string, string>();
         foreach (var item in sections)
         {
             var section = configuration.GetSection(item);
@@ -30,14 +30,17 @@ public abstract class BaseCheckJob : BaseJob
                 var connStrings = ReadConnectionStringFromSection(section);
                 foreach (var s in connStrings)
                 {
-                    result.TryAdd(s.Key, s.Value);
+                    dic.TryAdd(s.Key.ToLower(), s.Value);
                 }
             }
         }
 
-        if (result.Count == 0)
+        var result = new Dictionary<string, string>();
+        foreach (var name in names)
         {
-            throw new InvalidDataException("coud not found any connection string in configuration");
+            var lowerName = name.ToLower();
+            var value = dic.GetValueOrDefault(lowerName) ?? string.Empty;
+            result.TryAdd(name, value);
         }
 
         return result;
@@ -74,6 +77,7 @@ public abstract class BaseCheckJob : BaseJob
         ValidateLessThen(@default.RetryInterval?.TotalMinutes, 1, "retry interval", section);
         ValidateGreaterThenOrEquals(@default.RetryCount, 0, "retry count", section);
         ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
+        ValidateGreaterThen(@default.AllowedFailSpan, TimeSpan.FromSeconds(1), "allowed fail span", section);
     }
 
     protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
@@ -98,6 +102,21 @@ public abstract class BaseCheckJob : BaseJob
         var duplicates1 = items
             .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .GroupBy(x => x.Name)
+            .Where(g => g.Count() > 1)
+            .Select(y => y.Key)
+            .ToList();
+
+        if (duplicates1.Count != 0)
+        {
+            throw new InvalidDataException($"duplicated found at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    protected static void ValidateDuplicates(IEnumerable<string> items, string sectionName)
+    {
+        var duplicates1 = items
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .GroupBy(x => x)
             .Where(g => g.Count() > 1)
             .Select(y => y.Key)
             .ToList();
@@ -434,9 +453,13 @@ public abstract class BaseCheckJob : BaseJob
     {
         if (_general.SequentialProcessing)
         {
+            var total = entities.Count();
+            var current = 0;
             foreach (var entity in entities)
             {
+                current++;
                 await SafeInvokeOperation(entity, operationFunc, trigger);
+                await UpdateProgressAsync(current, total);
                 var notValidStatus = entity.RunStatus.IsValidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {

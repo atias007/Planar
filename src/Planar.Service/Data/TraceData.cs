@@ -13,7 +13,7 @@ namespace Planar.Service.Data;
 
 public interface ITraceData : IBaseDataLayer
 {
-    Task<int> ClearTraceTable(int overDays);
+    Task<int> ClearTraceTable(int overDays, int batchSize);
 
     Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request);
 
@@ -34,15 +34,16 @@ public interface ITraceData : IBaseDataLayer
 
 public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context), ITraceData
 {
-    public async Task<int> ClearTraceTable(int overDays)
+    public async Task<int> ClearTraceTable(int overDays, int batchSize)
     {
-        var parameters = new { OverDays = overDays };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.ClearTrace",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        var result = await _context.Traces
+            .Where(l => l.TimeStamp < referenceDate)
+            .OrderBy(l => l.Id)
+            .Take(batchSize)
+            .ExecuteDeleteAsync();
 
-        return await DbConnection.ExecuteAsync(cmd);
+        return result;
     }
 
     public IQueryable<Trace> GetTrace(int key)
@@ -168,12 +169,15 @@ public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context),
 
 public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(context), ITraceData
 {
-    public async Task<int> ClearTraceTable(int overDays)
+    public async Task<int> ClearTraceTable(int overDays, int batchSize)
     {
         var referenceDate = DateTime.Now.Date.AddDays(-overDays);
         var result = await _context.Traces
             .Where(l => l.TimeStamp < referenceDate)
+            .OrderBy(l => l.Id)
+            .Take(batchSize)
             .ExecuteDeleteAsync();
+
         return result;
     }
 

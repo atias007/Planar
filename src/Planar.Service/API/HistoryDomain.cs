@@ -1,8 +1,8 @@
-﻿using Dapper;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -117,17 +117,12 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
     {
         request.SetPagingDefaults();
-        request.LastDays ??= 30;
-        var parameters1 = new DynamicParameters();
-        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.JobId), request.JobId);
-        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.LastDays), request.LastDays);
-        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.JobGroup), request.JobGroup);
-        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.JobType), request.JobType);
-        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.PageNumber), request.PageNumber);
-        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.PageSize), request.PageSize);
-        var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
-        var items = data.Item1?.ToList() ?? [];
-        var result = new PagingResponse<JobLastRun>(request, items, data.Item2);
+        request.LastDays ??= 365;
+        var last = await DataLayer.GetLastHistoryCallForJob(request);
+
+        var mapper = new JobLastRunMapper();
+        var data = last.Data?.Select(mapper.MapJobLastRun).ToList() ?? [];
+        var result = new PagingResponse<JobLastRun>(request, data, last.TotalRows);
         return result;
     }
 

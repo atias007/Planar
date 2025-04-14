@@ -1,10 +1,13 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
+using Polly;
 using Quartz;
+using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,9 +19,15 @@ namespace Planar.Service.Data;
 
 public interface IHistoryData : IBaseDataLayer
 {
-    Task<int> ClearJobLogTable(int overDays);
+    Task ClearHistoryLastLogs(IEnumerable<string> jobIds);
 
-    Task<int> ClearJobLogTable(string jobId, int overDays);
+    Task ClearJobHistory(string jobId);
+
+    Task ClearJobHistory(IEnumerable<string> jobIds);
+
+    Task<int> ClearJobLogTable(int overDays, int batchSize);
+
+    Task<int> ClearJobLogTable(string jobId, int overDays, int batchSize);
 
     Task CreateJobInstanceLog(JobInstanceLog log);
 
@@ -38,17 +47,23 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<string?> GetHistoryExceptionById(long id);
 
+    Task<IEnumerable<string>> GetHistoryJobIds();
+
     Task<string?> GetHistoryLogById(long id);
 
     Task<int?> GetHistoryStatusById(long id);
 
-    Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters);
+    Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(GetSummaryRequest request);
 
-    Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters);
+    Task<PagingResponse<HistoryLastLog>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request);
+
+    Task<IEnumerable<string>> GetLastHistoryJobIds();
 
     Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken);
 
     Task<bool> IsHistoryExists(long id);
+
+    Task MergeHistoryLastLog(HistoryLastLog log);
 
     Task PersistJobInstanceData(JobInstanceLog log);
 
@@ -61,107 +76,105 @@ public interface IHistoryData : IBaseDataLayer
 
 public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IHistoryData
 {
-    public async Task<int> ClearJobLogTable(int overDays)
-    {
-        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
-        var result = await _context.JobInstanceLogs
-            .Where(l => l.StartDate < referenceDate)
-            .ExecuteDeleteAsync();
-        return result;
-    }
-
-    public async Task<int> ClearJobLogTable(string jobId, int overDays)
-    {
-        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
-        var result = await _context.JobInstanceLogs
-            .Where(l => l.StartDate < referenceDate && l.JobId == jobId)
-            .ExecuteDeleteAsync();
-        return result;
-    }
-
-    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
-    {
-        var cmd = new CommandDefinition(
-            commandText: SqliteResource.GetScript("GetHistorySummary", parameters),
-            commandType: CommandType.Text,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<HistorySummary>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
-
-    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters)
-    {
-        var referenceDate = DateTime.Now.AddDays(-parameters.Get<int>("LastDays"));
-        parameters.Add("ReferenceDate", referenceDate);
-
-        var cmd = new CommandDefinition(
-            commandText: SqliteResource.GetScript("GetLastHistoryCallForJob", parameters),
-            commandType: CommandType.Text,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<JobLastRun>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
 }
 
 public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context), IHistoryData
 {
-    public async Task<int> ClearJobLogTable(int overDays)
-    {
-        var parameters = new { OverDays = overDays };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.ClearLogInstance",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        return await DbConnection.ExecuteAsync(cmd);
-    }
-
-    public async Task<int> ClearJobLogTable(string jobId, int overDays)
-    {
-        var parameters = new { JobId = jobId, OverDays = overDays };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.ClearLogInstanceByJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        return await DbConnection.ExecuteAsync(cmd);
-    }
-
-    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
-    {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.GetHistorySummary",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<HistorySummary>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
-
-    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters)
-    {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.GetLastHistoryCallForJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<JobLastRun>();
-        var count = await multi.ReadSingleAsync<int>();
-        return (data.ToList(), count);
-    }
 }
 
 public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(GetSummaryRequest request)
+    {
+        var fromDate = request.FromDate;
+        var toDate = request.ToDate;
+        var pageNumber = request.PageNumber.GetValueOrDefault();
+        var pageSize = request.PageSize.GetValueOrDefault();
+
+        var summary = await _context.JobInstanceLogs
+            .Where(log => (fromDate == null || log.StartDate > fromDate) &&
+                          (toDate == null || log.StartDate <= toDate))
+            .GroupBy(log => new { log.JobId, log.JobName, log.JobGroup, log.JobType })
+            .Select(group => new HistorySummary
+            {
+                JobId = group.Key.JobId,
+                JobName = group.Key.JobName,
+                JobGroup = group.Key.JobGroup,
+                JobType = group.Key.JobType,
+                Total = group.Count(),
+                Success = group.Sum(log => log.Status == 0 ? 1 : 0),
+                Fail = group.Sum(log => log.Status == 1 ? 1 : 0),
+                Running = group.Sum(log => log.Status == -1 ? 1 : 0),
+                Retries = group.Sum(log => log.Retry ? 1 : 0),
+                TotalEffectedRows = group.Sum(log => log.EffectedRows.GetValueOrDefault())
+            })
+            .OrderBy(item => item.JobGroup)
+            .ThenBy(item => item.JobName)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // Second SQL Query (converted to LINQ) - Counting the total number of groups
+        var totalRuns = await _context.JobInstanceLogs
+            .Where(log => (fromDate == null || log.StartDate > fromDate) &&
+                          (toDate == null || log.StartDate <= toDate))
+            .GroupBy(log => new { log.JobId, log.JobName, log.JobGroup, log.JobType })
+            .CountAsync();
+
+        return (summary, totalRuns);
+    }
+
+    public async Task<int> ClearJobLogTable(int overDays, int batchSize)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        _context.Database.SetCommandTimeout(600); // 10 minutes
+        var result = await _context.JobInstanceLogs
+            .Where(l => l.StartDate < referenceDate)
+            .OrderBy(l => l.Id)
+            .Take(batchSize)
+            .ExecuteDeleteAsync();
+
+        return result;
+    }
+
+    public async Task<int> ClearJobLogTable(string jobId, int overDays, int batchSize)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        _context.Database.SetCommandTimeout(600); // 10 minutes
+        var result = await _context.JobInstanceLogs
+            .Where(l => l.StartDate < referenceDate && l.JobId == jobId)
+            .OrderBy(l => l.Id)
+            .Take(batchSize)
+            .ExecuteDeleteAsync();
+
+        return result;
+    }
+
+    public async Task ClearHistoryLastLogs(IEnumerable<string> jobIds)
+    {
+        await _context.HistoryLastLogs
+            .Where(h => jobIds.Contains(h.JobId))
+            .ExecuteDeleteAsync();
+    }
+
+    public async Task ClearJobHistory(string jobId)
+    {
+        await _context.JobInstanceLogs
+            .Where(l => l.JobId == jobId)
+            .ExecuteDeleteAsync();
+
+        await _context.HistoryLastLogs
+            .Where(l => l.JobId == jobId)
+            .ExecuteDeleteAsync();
+    }
+
+    public async Task ClearJobHistory(IEnumerable<string> jobIds)
+    {
+        await _context.JobInstanceLogs
+            .Where(h => jobIds.Contains(h.JobId))
+            .ExecuteDeleteAsync();
+    }
+
     public async Task CreateJobInstanceLog(JobInstanceLog log)
     {
         _context.JobInstanceLogs.Add(log);
@@ -310,6 +323,14 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return result;
     }
 
+    public async Task<IEnumerable<string>> GetHistoryJobIds()
+    {
+        return await _context.JobInstanceLogs
+            .Select(l => l.JobId)
+            .Distinct()
+            .ToListAsync();
+    }
+
     public async Task<string?> GetHistoryLogById(long id)
     {
         var result = await _context.JobInstanceLogs
@@ -330,6 +351,33 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .FirstOrDefaultAsync();
 
         return result;
+    }
+
+    public async Task<PagingResponse<HistoryLastLog>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
+    {
+        var last = _context.HistoryLastLogs.AsNoTracking();
+        if (request.JobId.HasValue()) { last = last.Where(l => l.JobId == request.JobId); }
+        if (request.JobGroup.HasValue()) { last = last.Where(l => l.JobGroup == request.JobGroup); }
+        if (request.JobType.HasValue()) { last = last.Where(l => l.JobType == request.JobType); }
+        if (request.LastDays.HasValue)
+        {
+            var referenceDate = DateTime.Now.Date.AddDays(-request.LastDays.Value);
+            last = last.Where(l => l.StartDate >= referenceDate);
+        }
+
+        var result = await last
+            .OrderByDescending(l => l.StartDate)
+            .ToPagingListAsync(request);
+
+        return result;
+    }
+
+    public async Task<IEnumerable<string>> GetLastHistoryJobIds()
+    {
+        return await _context.HistoryLastLogs
+          .Select(l => l.JobId)
+          .Distinct()
+          .ToListAsync();
     }
 
     public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken)
@@ -357,6 +405,13 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .AnyAsync(l => l.Id == id);
 
         return result;
+    }
+
+    public async Task MergeHistoryLastLog(HistoryLastLog log)
+    {
+        var id = await _context.JobInstanceLogs.Where(l => l.InstanceId == log.InstanceId).Select(l => l.Id).FirstOrDefaultAsync();
+        log.Id = id;
+        await DbConnection.MergeAsync(log);
     }
 
     public async Task PersistJobInstanceData(JobInstanceLog log)

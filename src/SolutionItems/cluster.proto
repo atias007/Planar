@@ -29,18 +29,18 @@ service PlanarCluster {
   rpc IsJobFileExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
   rpc ReloadMonitor(google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc ReloadMonitorActions(google.protobuf.Empty) returns (google.protobuf.Empty);
-  rpc WorkflowSignalEvent(WorkflowSignalEventRequest) returns (WorkflowSignalEventResponse);
+  rpc SequenceSignalEvent(SequenceSignalEventRequest) returns (SequenceSignalEventResponse);
 }
 
-message WorkflowSignalEventRequest {
+message SequenceSignalEventRequest {
 	string jobGroup = 1;
 	string jobName = 2;
 	string fireInstanceId = 3;
-	string workflowFireInstanceId = 4;
-	int32 workflowJobStepEvent = 5;
+	string sequenceFireInstanceId = 4;
+	int32 sequenceJobStepEvent = 5;
 }
 
-message WorkflowSignalEventResponse {
+message SequenceSignalEventResponse {
 	bool result = 1;
 }
 

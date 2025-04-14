@@ -77,8 +77,8 @@ namespace Planar.Job
 
                 if (_exceptions.Count >= maxItems)
                 {
-                    var finalEx = new PlanarJobAggragateException("Aggregate exception items exceeded maximum limit");
-                    _exceptions.Add(finalEx);
+                    var topEx = new PlanarJobAggragateException($"Aggregate exception items exceeded maximum limit of {maxItems} exceptions");
+                    _exceptions.Insert(0, topEx);
                     CheckAggragateException();
                 }
             }

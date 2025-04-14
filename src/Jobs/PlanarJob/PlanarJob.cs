@@ -223,6 +223,7 @@ public abstract class PlanarJob(
         if (_process == null) { return; }
         if (!_process.HasExited) { return; }
         if (_process.ExitCode == 0) { return; }
+        if (_processKilled) { return; }
 
         if (FinalOutputText.Length > 0)
         {

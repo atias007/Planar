@@ -13,13 +13,13 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(SeqServer seqServer, IConfiguration configuration);
+    partial void CustomConfigure(SeqServer seqServer, IConfiguration configuration);
 
-    static partial void VetoAlert(SeqAlert alert);
+    partial void VetoAlert(SeqAlert alert);
 
-    static partial void Finalayze(FinalayzeDetails<IEnumerable<SeqAlert>> details);
+    partial void Finalayze(FinalayzeDetails<IEnumerable<SeqAlert>> details);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {

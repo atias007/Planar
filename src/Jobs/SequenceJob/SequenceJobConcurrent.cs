@@ -7,13 +7,12 @@ using Quartz;
 
 namespace Planar;
 
-[DisallowConcurrentExecution]
 [PersistJobDataAfterExecution]
-internal class WorkflowJobNoConcurrent(
-    ILogger<WorkflowJobNoConcurrent> logger,
+public class SequenceJobConcurrent(
+    ILogger<SequenceJobConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil,
     IClusterUtil clusterUtil,
-    IValidator<WorkflowJobProperties> validator) : WorkflowJob(logger, dataLayer, jobMonitorUtil, clusterUtil, validator)
+    IValidator<SequenceJobProperties> validator) : SequenceJob(logger, dataLayer, jobMonitorUtil, clusterUtil, validator)
 {
 }

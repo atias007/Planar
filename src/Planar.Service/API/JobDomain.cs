@@ -22,10 +22,11 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
-public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
+public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
 
@@ -357,6 +358,18 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         return result;
     }
 
+    private sealed class JobFileValidationRecord
+    {
+        [YamlMember(Alias = "job type")]
+        public string? JobType { get; set; }
+
+#pragma warning disable S3459 // Unassigned members should be removed
+#pragma warning disable S1144 // Unused private types or members should be removed
+        public string? Name { get; set; }
+#pragma warning restore S1144 // Unused private types or members should be removed
+#pragma warning restore S3459 // Unassigned members should be removed
+    }
+
     public async Task<string> GetJobFilename(string id)
     {
         var key = await JobKeyHelper.GetJobKey(id);
@@ -373,13 +386,30 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         var path = Convert.ToString(pathObj);
         if (string.IsNullOrWhiteSpace(path)) { throw NotFound(id); }
         var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
+
+        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+
         var files = Directory.EnumerateFiles(fullpath, "*.yml", SearchOption.TopDirectoryOnly);
-        var count = files.Count();
+        var validFiles = files.Where(f =>
+        {
+            try
+            {
+                var yml = File.ReadAllText(f);
+                var record = YmlUtil.Deserialize<JobFileValidationRecord>(yml);
+                return !string.IsNullOrWhiteSpace(record.JobType) && !string.IsNullOrWhiteSpace(record.Name);
+            }
+            catch
+            {
+                return false;
+            }
+        })
+        .ToList();
+
+        var count = validFiles.Count;
         if (count == 0) { throw NotFound(id, path); }
         if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml jobfile found in '{path}' folder"); }
 
-        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-        var jobfile = Path.GetRelativePath(jobsFolder, files.First());
+        var jobfile = Path.GetRelativePath(jobsFolder, validFiles[0]);
         return jobfile;
 
         static Exception NotFound(string id, string? path = null)
@@ -497,6 +527,8 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
                 result.AddRange(clusterResult);
             }
         }
+
+        result = result.Where(r => r.Group != Consts.PlanarSystemGroup).ToList();
 
         FillEstimatedEndTime(result);
 
@@ -667,6 +699,12 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
         }
 
+        if (request.Timeout.HasValue)
+        {
+            var timeoutValue = request.Timeout.Value.Ticks.ToString();
+            request.Data.Add(Consts.TriggerTimeout, timeoutValue);
+        }
+
         if (request.Data.Count != 0)
         {
             var data = new JobDataMap(request.Data);
@@ -694,6 +732,7 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             return;
         }
 
+        // Handle auto resume
         var job = await Scheduler.GetJobDetail(jobKey);
         if (job == null)
         {
@@ -701,9 +740,10 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             return;
         }
 
-        await AutoResumeJobUtil.QueueResumeJob(Scheduler, job, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
         Audit(true, request.AutoResumeDate.Value);
 
+        // ----------------------- Audit Function ----------------------- //
         void Audit(bool scheduleAutoResume, DateTime? autoResumeDate)
         {
             AuditJobSafe(jobKey, "job paused");
@@ -807,13 +847,20 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         var jobKey = await JobKeyHelper.GetJobKey(id);
         var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
         ValidateSystemJob(jobKey);
-        await ValidateWorkflowStepJob(jobKey);
+        await ValidateSequenceStepJob(jobKey);
 
         await Scheduler.DeleteJob(jobKey);
 
+        _ = ClearJobData(jobId, jobKey, id);
+    }
+
+    public async Task ClearJobData(string jobId, JobKey jobKey, string id)
+    {
         try
         {
-            await DataLayer.DeleteJobProperty(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+            await dataLayer.DeleteJobProperty(jobId);
         }
         catch (Exception ex)
         {
@@ -822,7 +869,9 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            await DataLayer.DeleteJobAudit(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+            await dataLayer.DeleteJobAudit(jobId);
         }
         catch (Exception ex)
         {
@@ -831,7 +880,9 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            await DeleteMonitorOfJob(jobKey);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var monitordal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
+            await DeleteMonitorOfJob(monitordal, jobKey);
         }
         catch (Exception ex)
         {
@@ -840,21 +891,45 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            await DeleteJobStatistics(jobId);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var merticsdal = scope.ServiceProvider.GetRequiredService<IMetricsData>();
+            await DeleteJobStatistics(merticsdal, jobId);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "fail to delete job statistics after delete job id {Id}", id);
+            Logger.LogError(ex, "fail to delete job metrics after delete job id {Id}", id);
+        }
+
+        try
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var historydal = scope.ServiceProvider.GetRequiredService<IHistoryData>();
+            await historydal.ClearJobHistory(jobId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "fail to delete job history after delete job id {Id}", id);
         }
     }
 
-    public async Task Resume(JobOrTriggerKey request)
+    public async Task Resume(PauseResumeJobRequest request)
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
-        await Scheduler.ResumeJob(jobKey);
-        AuditJobSafe(jobKey, "job resumed");
+
         await CancelQueuedResumeJob(jobKey);
+
+        if (request.AutoResumeDate == null)
+        {
+            await Scheduler.ResumeJob(jobKey);
+            AuditJobSafe(jobKey, "job resumed");
+            await CancelQueuedResumeJob(jobKey);
+        }
+        else
+        {
+            await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+            AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
+        }
     }
 
     public async Task ResumeGroup(PauseResumeGroupRequest request)
@@ -934,6 +1009,7 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         await CancelQueuedResumeJob(jobKey);
         await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
     }
 
     public async Task CancelAutoResume(string id)

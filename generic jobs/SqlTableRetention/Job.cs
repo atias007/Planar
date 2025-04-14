@@ -15,13 +15,15 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(List<SqlConnectionString> connectionStrings, IConfiguration configuration);
+    partial void CustomConfigure(List<SqlConnectionString> connectionStrings, IConfiguration configuration);
 
-    static partial void VetoTable(Table table);
+    partial void FillConnectionStrings(Dictionary<string, string> connectionStrings, IConfiguration configuration, string environment);
 
-    static partial void Finalayze(FinalayzeDetails<IEnumerable<Table>> details);
+    partial void VetoTable(Table table);
+
+    partial void Finalayze(FinalayzeDetails<IEnumerable<Table>> details);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -51,7 +53,9 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
         var defaults = GetDefaults(Configuration);
-        var connStrings = GetConnectionStrings(Configuration);
+        var names = GetConnectionStringNames(Configuration);
+        var connStrings = GetConnectionStrings(Configuration, names);
+        FillConnectionStrings(connStrings, Configuration, context.Environment);
         var tables = GetTables(Configuration, connStrings, defaults);
         ValidateRequired(tables, "tables");
         ValidateDuplicateNames(tables, "tables");
@@ -168,19 +172,38 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private IEnumerable<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings, Defaults defaults)
+    private List<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings, Defaults defaults)
     {
+        var tables = new List<Table>();
         var section = configuration.GetRequiredSection("tables");
         foreach (var item in section.GetChildren())
         {
             var key = new Table(item, defaults);
+            key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
 
             VetoTable(key);
             if (CheckVeto(key, "table")) { continue; }
 
-            key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
             ValidateTable(key);
-            yield return key;
+            tables.Add(key);
         }
+
+        return tables;
+    }
+
+    private static List<string> GetConnectionStringNames(IConfiguration configuration)
+    {
+        var result = new List<string>();
+        var section = configuration.GetRequiredSection("queries");
+        foreach (var item in section.GetChildren())
+        {
+            var name = item.GetValue<string>("connection string name");
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                result.Add(name);
+            }
+        }
+
+        return result;
     }
 }

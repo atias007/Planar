@@ -68,10 +68,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [IgnoreHelp]
-    public static string? ChooseGroup(IEnumerable<JobBasicDetails> data)
+    public static string? ChooseGroup(IEnumerable<JobBasicDetails> data, bool writeSelection)
     {
         var groups = data.Select(d => d.Group);
-        return ShowGroupsMenu(groups);
+        return ShowGroupsMenu(groups, writeSelection);
     }
 
     [IgnoreHelp]
@@ -98,7 +98,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [IgnoreHelp]
-    public static async Task<string> ChooseJob(string? filter, bool groupMenu, CancellationToken cancellationToken)
+    public static async Task<string> ChooseJob(string? filter, bool groupMenu, bool writeSelection = true, CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("job", Method.Get);
         var p = AllJobsMembers.AllUserJobs;
@@ -118,27 +118,27 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
 
         var filterData = FilterJobs(result.Data?.Data, filter);
-        return ChooseJob(filterData, groupMenu);
+        return ChooseJob(filterData, groupMenu, writeSelection);
     }
 
     [IgnoreHelp]
-    public static string ChooseJob(List<JobBasicDetails>? data, bool groupMenu)
+    public static string ChooseJob(List<JobBasicDetails>? data, bool groupMenu, bool writeSelection = true)
     {
         if (data == null) { return string.Empty; }
 
         if (data.Count <= 1000 && !groupMenu)
         {
-            return ShowJobsMenu(data);
+            return ShowJobsMenu(data, writeSelection: writeSelection);
         }
 
-        var group = ShowGroupsMenu(data.Select(d => d.Group));
-        return ShowJobsMenu(data, group);
+        var group = ShowGroupsMenu(data.Select(d => d.Group), writeSelection);
+        return ShowJobsMenu(data, group, writeSelection);
     }
 
     [IgnoreHelp]
     public static async Task<string> ChooseTrigger(string? filter, CancellationToken cancellationToken = default)
     {
-        var jobId = await ChooseJob(filter, false, cancellationToken);
+        var jobId = await ChooseJob(filter, false, writeSelection: false, cancellationToken);
         var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get);
         restRequest.AddUrlSegment("jobId", jobId);
         var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest, cancellationToken);
@@ -466,6 +466,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("invoke")]
+    [Action("run")]
     public static async Task<CliActionResponse> InvokeJob(CliInvokeJobRequest request, CancellationToken cancellationToken = default)
     {
         var result = await InvokeJobInner(request, cancellationToken);
@@ -529,11 +530,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("pause")]
-    public static async Task<CliActionResponse> PauseJob(CliPauseRequest jobKey, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> PauseJob(CliPauseRequest request, CancellationToken cancellationToken = default)
     {
-        var autoResumeDate = jobKey.For == null ? (DateTime?)null : DateTime.Now.Add(jobKey.For.Value);
+        var autoResumeDate = request.For == null ? (DateTime?)null : DateTime.Now.Add(request.For.Value);
         var restRequest = new RestRequest("job/pause", Method.Post)
-            .AddBody(new { jobKey.Id, autoResumeDate });
+            .AddBody(new { request.Id, autoResumeDate });
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
@@ -581,10 +582,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("resume")]
-    public static async Task<CliActionResponse> ResumeJob(CliJobKey jobKey, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> ResumeJob(CliResumeRequest request, CancellationToken cancellationToken = default)
     {
+        var autoResumeDate = request.In == null ? (DateTime?)null : DateTime.Now.Add(request.In.Value);
         var restRequest = new RestRequest("job/resume", Method.Post)
-            .AddBody(jobKey);
+            .AddBody(new { request.Id, autoResumeDate });
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
@@ -619,7 +621,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("cancel-auto-resume")]
-    public static async Task<CliActionResponse> DeleteAutoResume(CliJobKey request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> CancelAutoResume(CliJobKey request, CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
             .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -634,7 +636,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         request ??= new CliSetAuthorOfJob
         {
-            Id = await ChooseJob(null, false, cancellationToken)
+            Id = await ChooseJob(null, false, writeSelection: true, cancellationToken)
         };
 
         FillRequiredString(request, nameof(request.Author));
@@ -1085,17 +1087,17 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return selectedItem?.Value ?? string.Empty;
     }
 
-    private static string? ShowGroupsMenu(IEnumerable<string> data)
+    private static string? ShowGroupsMenu(IEnumerable<string> data, bool writeSelection = true)
     {
         var groups = data
             .OrderBy(d => d)
             .Distinct()
             .ToList();
 
-        return PromptSelection(groups, "job group");
+        return PromptSelection(groups, "job group", writeSelection);
     }
 
-    private static string ShowJobsMenu(IEnumerable<JobBasicDetails> data, string? groupName = null)
+    private static string ShowJobsMenu(IEnumerable<JobBasicDetails> data, string? groupName = null, bool writeSelection = true)
     {
         var query = data.AsQueryable();
 
@@ -1110,7 +1112,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             .Select(d => CliTableFormat.FormatJobKey(d.Group, d.Name))
             .ToList();
 
-        var result = PromptSelection(jobs, "job") ?? string.Empty;
+        var result = PromptSelection(jobs, "job", writeSelection) ?? string.Empty;
         result = CliTableFormat.UnformatJobName(result);
         return result;
     }

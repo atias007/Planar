@@ -79,6 +79,8 @@
     <None Remove="Scripts\Planar_0064 - drop_proc.sql" />
     <None Remove="Scripts\Planar_0065 - fix_last.sql" />
     <None Remove="Scripts\Planar_0066 - add_jobtype_prop.sql" />
+    <None Remove="Scripts\Planar_0067 - HistoryLastLog.sql" />
+    <None Remove="Scripts\Planar_0068 - del_hist_sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -147,6 +149,8 @@
     <EmbeddedResource Include="Scripts\Planar_0064 - drop_proc.sql" />
     <EmbeddedResource Include="Scripts\Planar_0065 - fix_last.sql" />
     <EmbeddedResource Include="Scripts\Planar_0066 - add_jobtype_prop.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0067 - HistoryLastLog.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0068 - del_hist_sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

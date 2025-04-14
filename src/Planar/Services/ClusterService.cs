@@ -24,17 +24,17 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         using var scope = _serviceScopeFactory.CreateScope();
         var configDomain = scope.ServiceProvider.GetService<ConfigDomain>();
         await configDomain.FlushInner();
-        return await Task.FromResult(new Empty());
+        return new Empty();
     }
 
     // NEED CHECK
-    public override async Task<WorkflowSignalEventResponse> WorkflowSignalEvent(WorkflowSignalEventRequest request, ServerCallContext context)
+    public override async Task<SequenceSignalEventResponse> SequenceSignalEvent(SequenceSignalEventRequest request, ServerCallContext context)
     {
         var jobKey = new JobKey(request.JobName, request.JobGroup);
-        var @event = (WorkflowJobStepEvent)request.WorkflowJobStepEvent;
-        var result = WorkflowManager.SignalEvent(jobKey, request.FireInstanceId, request.WorkflowFireInstanceId, @event);
-        var response = new WorkflowSignalEventResponse { Result = result };
-        return await Task.FromResult(response);
+        var @event = (SequenceJobStepEvent)request.SequenceJobStepEvent;
+        var result = await SequenceManager.SignalEvent(jobKey, request.FireInstanceId, request.SequenceFireInstanceId, @event);
+        var response = new SequenceSignalEventResponse { Result = result };
+        return response;
     }
 
     // OK

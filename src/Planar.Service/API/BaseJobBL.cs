@@ -112,10 +112,10 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
-    protected async Task ValidateWorkflowStepJob(JobKey jobKey)
+    protected async Task ValidateSequenceStepJob(JobKey jobKey)
     {
         var dal = Resolve<IJobData>();
-        var type = typeof(WorkflowJob);
+        var type = typeof(SequenceJob);
         ArgumentNullException.ThrowIfNull(type);
         var typeName = General.SchedulerUtil.GetJobTypeName(type);
         var properties = await dal.GetAllProperties(typeName);
@@ -125,16 +125,16 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             {
                 if (string.IsNullOrWhiteSpace(prop.Properties)) { continue; }
 
-                var entity = YmlUtil.Deserialize<WorkflowJobProperties>(prop.Properties);
+                var entity = YmlUtil.Deserialize<SequenceJobProperties>(prop.Properties);
                 if (entity.Steps.Any(s => s.Key == jobKey.ToString()))
                 {
-                    var workflowKey = await JobKeyHelper.GetJobKeyById(prop.JobId);
-                    throw new RestValidationException("key", $"job '{jobKey}' is part of workflow job '{workflowKey}' and can not be deleted");
+                    var sequenceKey = await JobKeyHelper.GetJobKeyById(prop.JobId);
+                    throw new RestValidationException("key", $"job '{jobKey}' is part of sequence job '{sequenceKey}' and can not be deleted");
                 }
             }
             catch (Exception ex) when (ex is not RestValidationException)
             {
-                Logger.LogError("Fail to ValidateWorkflowStepJob");
+                Logger.LogError("Fail to {Name}", nameof(ValidateSequenceStepJob));
             }
         }
     }

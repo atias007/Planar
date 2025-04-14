@@ -166,14 +166,18 @@ namespace Planar.Client
         /// Invoke Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="nowOverrideValue"></param>
+        /// <param name="data"></param>
+        /// <param name="timeout"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
 
 #if NETSTANDARD2_0
 
-        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, CancellationToken cancellationToken = default);
+        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default);
 
 #else
-        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
+        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string?>? data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default);
 #endif
 
         /// <summary>
@@ -183,6 +187,7 @@ namespace Planar.Client
         /// <param name="callback"></param>
         /// <param name="nowOverrideValue"></param>
         /// <param name="data"></param>
+        /// <param name="timeout"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
 #if NETSTANDARD2_0
@@ -192,6 +197,7 @@ namespace Planar.Client
             Func<RunningJobDetails, Task> callback,
             DateTime? nowOverrideValue = null,
             Dictionary<string, string> data = null,
+            TimeSpan? timeout = null,
             CancellationToken cancellationToken = default);
 
 #else
@@ -199,7 +205,8 @@ namespace Planar.Client
             string id,
             Func<RunningJobDetails, Task> callback,
             DateTime? nowOverrideValue = null,
-            Dictionary<string, string>? data = null,
+            Dictionary<string, string?>? data = null,
+            TimeSpan? timeout = null,
             CancellationToken cancellationToken = default);
 #endif
 
@@ -238,12 +245,12 @@ namespace Planar.Client
         Task SetAutoResumeAsync(string id, DateTime autoResumeDate, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Delete Auto Resume From Job
+        /// Cancel Auto Resume From Job
         /// </summary>
         /// <param name="id"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task DeleteAutoResumeAsync(string id, CancellationToken cancellationToken = default);
+        Task CancelAutoResumeAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Queue Invokation Of Job Queue invokation of job
@@ -271,7 +278,7 @@ namespace Planar.Client
             DateTime dueDate,
             TimeSpan? timeout,
             DateTime? nowOverrideValue = null,
-            Dictionary<string, string>? data = null,
+            Dictionary<string, string?>? data = null,
             CancellationToken cancellationToken = default);
 #endif
 
@@ -284,11 +291,13 @@ namespace Planar.Client
 #endif
 
         /// <summary>
-        /// Resume Job
+        /// Set auto resume date for job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="autoResumeDate"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task ResumeAsync(string id, CancellationToken cancellationToken = default);
+        Task ResumeAsync(string id, DateTime? autoResumeDate = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Add Or Update Job Data

@@ -1,6 +1,6 @@
 ﻿namespace CommonJob;
 
-public enum WorkflowJobStepEvent
+public enum SequenceJobStepEvent
 {
     Unknown,
     Success,

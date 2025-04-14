@@ -136,7 +136,7 @@ internal static class CliObjectDumper
             var text = value.ToString();
             if (attr?.MaximumChars > 0 && text?.Length > attr?.MaximumChars)
             {
-                text = string.Concat(text.AsSpan(0, attr.MaximumChars), $"\r\n... (text is more then {attr?.MaximumChars} charecters)");
+                text = string.Concat(text.AsSpan(0, attr.MaximumChars), $"\r\n...\r\n(this property display only top {attr?.MaximumChars:N0} charecters)");
             }
 
             if (specialFormat == SpecialFormat.Log)

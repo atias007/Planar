@@ -15,5 +15,15 @@ namespace Planar.Job
 
         public string Name { get; set; } = string.Empty;
         public string Group { get; set; } = string.Empty;
+
+        public override string ToString()
+        {
+            if (string.IsNullOrWhiteSpace(Group))
+            {
+                return $"DEFAULT.{Name}";
+            }
+
+            return $"{Group}.{Name}";
+        }
     }
 }

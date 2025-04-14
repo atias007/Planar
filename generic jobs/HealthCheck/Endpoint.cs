@@ -33,7 +33,7 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntit
     public IEnumerable<int> SuccessStatusCodes { get; }
     public TimeSpan Timeout { get; }
     public int? Port { get; }
-    public string Key => Name;
+    public string Key => Host == null ? Name : $"{Name} ({Host})";
     public Uri? AbsoluteUrl { get; }
     public bool IsAbsoluteUrl => !IsRelativeUrl;
     public bool IsRelativeUrl => AbsoluteUrl == null;

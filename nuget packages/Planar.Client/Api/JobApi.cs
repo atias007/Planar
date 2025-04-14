@@ -175,9 +175,9 @@ namespace Planar.Client
 
 #if NETSTANDARD2_0
 
-        public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, CancellationToken cancellationToken = default)
+        public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #else
-        public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
+        public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string?>? data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #endif
 
         {
@@ -186,6 +186,7 @@ namespace Planar.Client
             {
                 id,
                 nowOverrideValue,
+                timeout,
                 data
             };
 
@@ -329,7 +330,7 @@ namespace Planar.Client
             DateTime dueDate,
             TimeSpan? timeout,
             DateTime? nowOverrideValue = null,
-            Dictionary<string, string>? data = null,
+            Dictionary<string, string?>? data = null,
             CancellationToken cancellationToken = default)
 #endif
         {
@@ -368,11 +369,11 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task ResumeAsync(string id, CancellationToken cancellationToken = default)
+        public async Task ResumeAsync(string id, DateTime? autoResumeDate = null, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var restRequest = new RestRequest("job/resume", Method.Post)
-               .AddBody(new { id });
+               .AddBody(new { id, autoResumeDate });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -397,7 +398,7 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task DeleteAutoResumeAsync(string id, CancellationToken cancellationToken = default)
+        public async Task CancelAutoResumeAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
@@ -422,9 +423,9 @@ namespace Planar.Client
 
 #if NETSTANDARD2_0
 
-        public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, CancellationToken cancellationToken = default)
+        public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #else
-        public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
+        public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string?>? data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #endif
         {
             ValidateMandatory(id, nameof(id));
@@ -434,7 +435,7 @@ namespace Planar.Client
             await CheckAlreadyRunningJobInner(id, cancellationToken);
 
             // (1) Invoke job
-            await InvokeJobInner(id, nowOverrideValue, data, cancellationToken);
+            await InvokeJobInner(id, nowOverrideValue, data, timeout, cancellationToken);
 
             // (2) Get last instance id
             var lastInstanceId = await GetLastInstanceId(id, invokeDate, cancellationToken);
@@ -652,9 +653,9 @@ namespace Planar.Client
 
 #if NETSTANDARD2_0
 
-        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string> data, CancellationToken cancellationToken)
+        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string> data, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #else
-        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string>? data, CancellationToken cancellationToken)
+        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string?>? data, TimeSpan? timeout = null,CancellationToken cancellationToken = default)
 #endif
         {
             var restRequest = new RestRequest("job/invoke", Method.Post)
@@ -662,7 +663,8 @@ namespace Planar.Client
                 {
                     id,
                     nowOverrideValue,
-                    data
+                    data,
+                    timeout
                 });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);

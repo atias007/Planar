@@ -37,13 +37,13 @@
 	<ItemGroup>
 		<PackageReference Include="Dapper" Version="2.1.66" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.2" />
-		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.6.0" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.4" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.4" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.8.0" />
 		<PackageReference Include="Polly" Version="8.5.2" />
-		<PackageReference Include="Quartz" Version="3.13.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.6.0.109712">
+		<PackageReference Include="Quartz" Version="3.14.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

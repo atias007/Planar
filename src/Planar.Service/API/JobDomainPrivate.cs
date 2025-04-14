@@ -60,18 +60,16 @@ public partial class JobDomain
         }
     }
 
-    private async Task DeleteJobStatistics(string jobId)
+    private static async Task DeleteJobStatistics(IMetricsData dal, string jobId)
     {
-        var dal = Resolve<IMetricsData>();
         var s1 = new JobDurationStatistic { JobId = jobId };
         await dal.DeleteJobStatistic(s1);
         var s2 = new JobEffectedRowsStatistic { JobId = jobId };
         await dal.DeleteJobStatistic(s2);
     }
 
-    private async Task DeleteMonitorOfJob(JobKey jobKey)
+    private async Task DeleteMonitorOfJob(IMonitorData dal, JobKey jobKey)
     {
-        var dal = Resolve<IMonitorData>();
         await dal.DeleteMonitorByJobId(jobKey.Group, jobKey.Name);
         if (!await JobGroupExists(jobKey.Group))
         {
