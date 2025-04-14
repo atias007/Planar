@@ -45,7 +45,7 @@ internal static class CliPromptUtil
 
         if (writeSelection)
         {
-            AnsiConsole.MarkupLine($"[grey] > selected: {selectedItem.DisplayName}[/]");
+            AnsiConsole.MarkupLine($"[grey]  > selected: {selectedItem.DisplayName}[/]");
         }
 
         CheckForCancelOption(selectedItem);
