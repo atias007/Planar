@@ -34,33 +34,40 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var reader = _channel.Reader;
-        while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken))
+        try
         {
-            if (!reader.TryRead(out var monitor)) { continue; }
-            if (IsInternalEvent(monitor)) { continue; }
-
-            switch (monitor.Type)
+            var reader = _channel.Reader;
+            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
             {
-                case MonitorScanType.ScanJob:
-                    _ = SafeScanInner(monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
-                    break;
+                if (!reader.TryRead(out var monitor)) { continue; }
+                if (IsInternalEvent(monitor)) { continue; }
 
-                case MonitorScanType.ScanSystem:
-                    _ = SafeScanInner(monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
-                    break;
+                switch (monitor.Type)
+                {
+                    case MonitorScanType.ScanJob:
+                        _ = SafeScanInner(monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
+                        break;
 
-                case MonitorScanType.ExecuteJob:
-                    _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
-                    break;
+                    case MonitorScanType.ScanSystem:
+                        _ = SafeScanInner(monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
+                        break;
 
-                case MonitorScanType.ExecuteSystem:
-                    _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
-                    break;
+                    case MonitorScanType.ExecuteJob:
+                        _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
+                        break;
 
-                default:
-                    break;
+                    case MonitorScanType.ExecuteSystem:
+                        _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
+                        break;
+
+                    default:
+                        break;
+                }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // === DO NOTHING: CLOSE APPLICATION === //
         }
 
         _channel.Writer.TryComplete();

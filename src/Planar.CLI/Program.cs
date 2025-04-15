@@ -645,7 +645,8 @@ internal static class Program
             {
                 if (item.Contains("unhealthy"))
                 {
-                    AnsiConsole.MarkupLine($"[red]{item.EscapeMarkup()}[/]");
+                    var text = item.EscapeMarkup().Replace("unhealthy", "[red]unhealthy[/]");
+                    AnsiConsole.MarkupLine(text);
                 }
                 else
                 {

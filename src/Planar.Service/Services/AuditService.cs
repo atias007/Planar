@@ -29,13 +29,20 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var reader = _channel.Reader;
-        while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
+        try
         {
-            if (reader.TryRead(out var msg))
+            var reader = _channel.Reader;
+            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
             {
-                await SafeSaveAudit(msg);
+                if (reader.TryRead(out var msg))
+                {
+                    await SafeSaveAudit(msg);
+                }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // === DO NOTHING: CLOSE APPLICATION === //
         }
 
         _channel.Writer.TryComplete();

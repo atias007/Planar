@@ -37,7 +37,13 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
     public async Task<int> MaxConcurrency()
     {
         var nodes = await GetNodes();
-        var result = nodes.Where(n => n.LiveNode).Sum(n => n.MaxConcurrency);
+
+        if (nodes.Count == 1)
+        {
+            return nodes[0].MaxConcurrency;
+        }
+
+        var result = nodes.Where(n => n.IsCurrentNode || n.LiveNode).Sum(n => n.MaxConcurrency);
         return result;
     }
 
@@ -53,17 +59,17 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
 
             if (hc)
             {
-                result.AppendLine("Cluster healthy");
+                result.AppendLine("cluster: healthy");
             }
             else
             {
                 serviceUnavaliable = true;
-                result.AppendLine("Cluster unhealthy");
+                result.AppendLine("cluster: unhealthy");
             }
         }
         else
         {
-            result.AppendLine("Cluster: [Clustering not enabled, skip health check]");
+            result.AppendLine("cluster: [clustering not enabled, skip health check]");
         }
 
         var message = result.ToString().Trim();

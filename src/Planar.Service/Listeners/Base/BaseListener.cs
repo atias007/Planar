@@ -55,18 +55,18 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
 
     #region Execute Data Layer
 
-    protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
+    protected async Task ExecuteDal<TDataLayer>(Func<TDataLayer, Task> func)
         where TDataLayer : IBaseDataLayer
     {
         try
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-            await exp.Compile().Invoke(dal);
+            await func.Invoke(dal);
         }
         catch (ObjectDisposedException)
         {
-            await ExecuteDalOnObjectDisposedException(exp);
+            await ExecuteDalOnObjectDisposedException(func);
         }
         catch (Exception ex)
         {
@@ -113,7 +113,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         }
     }
 
-    private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
+    private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Func<TDataLayer, Task> func)
         where TDataLayer : IBaseDataLayer
     {
         try
@@ -123,7 +123,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
             var provider = services.BuildServiceProvider();
             using var scope = provider.CreateScope();
             var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-            await exp.Compile().Invoke(dal);
+            await func.Invoke(dal);
         }
         catch (Exception ex)
         {

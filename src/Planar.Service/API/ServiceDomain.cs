@@ -57,23 +57,23 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         var hc = SchedulerUtil.IsSchedulerRunning;
         if (hc)
         {
-            result.AppendLine("scheduler healthy");
+            result.AppendLine("scheduler: healthy");
         }
         else
         {
             serviceUnavaliable = true;
-            result.AppendLine("scheduler unhealthy");
+            result.AppendLine("scheduler: unhealthy");
         }
 
         try
         {
             await DataLayer.HealthCheck();
-            result.AppendLine("database healthy");
+            result.AppendLine("database: healthy");
         }
         catch (Exception ex)
         {
             serviceUnavaliable = false;
-            result.AppendLine($"database unhealthy: {ex.Message}");
+            result.AppendLine($"database: unhealthy: {ex.Message}");
         }
 
         if (AppSettings.Cluster.Clustering)
@@ -83,17 +83,17 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
             if (hc)
             {
-                result.AppendLine("cluster healthy");
+                result.AppendLine("cluster: healthy");
             }
             else
             {
                 serviceUnavaliable = true;
-                result.AppendLine("cluster unhealthy");
+                result.AppendLine("cluster: unhealthy");
             }
         }
         else
         {
-            result.AppendLine("no cluster define, skip health check");
+            result.AppendLine("cluster: [clustering not enabled, skip health check]");
         }
 
         var message = result.ToString().Trim();

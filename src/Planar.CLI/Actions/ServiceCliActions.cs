@@ -91,12 +91,13 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             if (result.IsSuccessful)
             {
-                AnsiConsole.MarkupLine($"{seperator}\r\n[green]planar is healthy[/]\r\n{seperator}");
+                AnsiConsole.MarkupLine($"[green]{seperator}\r\nplanar is healthy\r\n{seperator}[/]");
             }
             else
             {
-                AnsiConsole.MarkupLine($"{seperator}\r\n[red]planar is unhealthy[/]\r\n{seperator}");
+                AnsiConsole.MarkupLine($"[red]{seperator}\r\nplanar is unhealthy\r\n{seperator}[/]");
             }
+
             return new CliActionResponse(result, result.Data);
         }
 
