@@ -18,5 +18,5 @@ Contents
 
 .. toctree::
 
-   Quick Start
-   First Job
+   quickstart
+   usage
