@@ -988,7 +988,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             .AddParameter("id", logId, ParameterType.UrlSegment);
         var result = await RestProxy.Invoke<int>(restRequest, cancellationToken);
         if (!result.IsSuccessful) { return true; }
-        return result.IsSuccessful && result.Data == -1;
+        return result.Data == -1;
     }
 
     private static async Task<(RestResponse<RunningJobDetails>, DateTime?)> LongPollingGetRunningData(
@@ -1184,7 +1184,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         while (!cancellationToken.IsCancellationRequested)
         {
             var brk = WriteRunningData(runResult, invokeDate, estimateEnd);
-            if (brk) { break; }
+            if (brk)
+            {
+                var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
+                if (!isRunning) { break; }
+            }
 
             if (dataTask.Status == TaskStatus.RanToCompletion)
             {

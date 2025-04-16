@@ -77,7 +77,11 @@ internal partial class Job : BaseCheckJob
         {
             foreach (var rel in relative)
             {
-                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup))
+                {
+                    throw new InvalidDataException($"folder '{rel.Name}' has no host group name '{rel.HostGroupName}'");
+                }
+
                 foreach (var host in hostGroup.Hosts)
                 {
                     var clone = new SyncFolder(rel)

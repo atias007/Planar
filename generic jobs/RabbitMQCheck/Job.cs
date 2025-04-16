@@ -63,8 +63,9 @@ internal partial class Job : BaseCheckJob
         var server = GetServer(Configuration);
         var healthCheck = GetHealthCheck(Configuration, defaults);
         var node = GetNode(Configuration, defaults);
-        var queues = GetQueue(Configuration, defaults);
-        var bundles = GetQueuesBundle(Configuration, defaults);
+        var keys = GetKeys(context);
+        var queues = GetQueue(Configuration, defaults, keys);
+        var bundles = GetQueuesBundle(Configuration, defaults, keys);
 
         EffectedRows = 0;
 
@@ -137,6 +138,28 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
+    private List<Queue> GetQueue(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetQueue(configuration, defaults); }
+
+        var sections = configuration.GetSection("queues").GetChildren();
+        var result = new List<Queue>();
+        foreach (var section in sections)
+        {
+            var queue = new Queue(section, defaults);
+            if (keys.Any(k => string.Equals(k, queue.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                queue.BindToTriggers = null;
+                ValidateBase(queue, "queues");
+                ValidateQueue(queue);
+            }
+
+            result.Add(queue);
+        }
+
+        return result;
+    }
+
     private List<QueuesBundle> GetQueuesBundle(IConfiguration configuration, Defaults defaults)
     {
         var sections = configuration.GetSection("queues bundles").GetChildren();
@@ -157,6 +180,34 @@ internal partial class Job : BaseCheckJob
             ValidateNullOrWhiteSpace(bundle.Queues, "queues bundles --> queues");
 
             result.Add(bundle);
+        }
+
+        return result;
+    }
+
+    private List<QueuesBundle> GetQueuesBundle(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetQueuesBundle(configuration, defaults); }
+
+        var sections = configuration.GetSection("queues bundles").GetChildren();
+        var result = new List<QueuesBundle>();
+
+        foreach (var section in sections)
+        {
+            var bundle = new QueuesBundle(section, defaults);
+            if (keys.Any(k => string.Equals(k, bundle.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                bundle.BindToTriggers = null;
+                ValidateBase(bundle, "queues bundles");
+                ValidateQueue(bundle);
+
+                // validate queues
+                ValidateRequired(bundle.Queues, "queues", "queues bundles");
+                ValidateDuplicates(bundle.Queues, "queues bundles --> queues");
+                ValidateNullOrWhiteSpace(bundle.Queues, "queues bundles --> queues");
+
+                result.Add(bundle);
+            }
         }
 
         return result;

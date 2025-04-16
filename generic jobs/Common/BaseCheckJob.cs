@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -236,7 +235,7 @@ public abstract class BaseCheckJob : BaseJob
     {
         if (value == null || !value.Any())
         {
-            throw new InvalidDataException($"'{fieldName}' field at '{section}' section is missing or empty");
+            throw new InvalidDataException($"'{fieldName}' section is missing or empty");
         }
     }
 
@@ -292,6 +291,18 @@ public abstract class BaseCheckJob : BaseJob
         var success = ExceptionCount == 0 && _exceptions.IsEmpty;
         var details = new FinalayzeDetails<T>(data, this, success);
         return details;
+    }
+
+    protected static IEnumerable<string>? GetKeys(IJobExecutionContext context)
+    {
+        if (!context.MergedJobDataMap.TryGet("keys", out var keys)) { return null; }
+        if (string.IsNullOrWhiteSpace(keys)) { return null; }
+
+        var result = keys.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .ToList();
+
+        return result;
     }
 
     protected IReadOnlyDictionary<string, HostsConfig> GetHosts(IConfiguration configuration, Action<Host> veto)
@@ -581,11 +592,14 @@ public abstract class BaseCheckJob : BaseJob
     }
 
     private bool IsUnbindCheckTriggers<T>(T entity, ITriggerDetail trigger)
-        where T : BaseDefault, ICheckElement
-    {
-        var hasBindToTriggers = entity.BindToTriggers != null && entity.BindToTriggers.Any();
-        var bindNotIncludeCurrentTrigger = hasBindToTriggers && !entity.BindToTriggers!.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
 
+      where T : BaseDefault, ICheckElement
+    {
+        if (trigger.Key.Name.StartsWith("MT_")) { return false; }
+        if (entity.BindToTriggers == null) { return false; }
+        if (!entity.BindToTriggers.Any()) { return false; }
+
+        var bindNotIncludeCurrentTrigger = !entity.BindToTriggers.Any(t => string.Equals(t, trigger.Key.Name, StringComparison.OrdinalIgnoreCase));
         if (bindNotIncludeCurrentTrigger)
         {
             Logger.LogInformation("skipping check '{Key}' due to the 'bind to triggers' list is not include '{Trigger}'", entity.Key, trigger.Key.Name);

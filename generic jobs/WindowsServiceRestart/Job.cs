@@ -59,7 +59,11 @@ internal partial class Job : BaseCheckJob
         {
             foreach (var rel in services)
             {
-                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup))
+                {
+                    throw new InvalidDataException($"service '{rel.Name}' has no host group name '{rel.HostGroupName}'");
+                }
+
                 foreach (var host in hostGroup.Hosts)
                 {
                     var clone = new Service(rel)

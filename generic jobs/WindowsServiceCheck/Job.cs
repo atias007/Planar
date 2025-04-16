@@ -30,8 +30,9 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
+        var keys = GetKeys(context);
         var hosts = GetHosts(Configuration, h => VetoHost(h));
-        var services = GetServices(Configuration, defaults);
+        var services = GetServices(Configuration, defaults, keys);
 
         ValidateRequired(hosts, "hosts");
         ValidateRequired(services, "services");
@@ -59,7 +60,11 @@ internal partial class Job : BaseCheckJob
         {
             foreach (var rel in services)
             {
-                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup))
+                {
+                    throw new InvalidDataException($"service '{rel.Name}' has no host group name '{rel.HostGroupName}'");
+                }
+
                 foreach (var host in hostGroup.Hosts)
                 {
                     var clone = new Service(rel)
@@ -86,6 +91,30 @@ internal partial class Job : BaseCheckJob
             if (CheckVeto(service, "service")) { continue; }
             ValidateService(service);
             result.Add(service);
+        }
+
+        ValidateRequired(result, "services");
+        ValidateDuplicateNames(result, "services");
+
+        return result;
+    }
+
+    private List<Service> GetServices(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetServices(configuration, defaults); }
+
+        var result = new List<Service>();
+        var services = configuration.GetRequiredSection("services");
+
+        foreach (var item in services.GetChildren())
+        {
+            var service = new Service(item, defaults);
+            if (keys.Any(k => string.Equals(k, service.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                service.BindToTriggers = null;
+                ValidateService(service);
+                result.Add(service);
+            }
         }
 
         ValidateRequired(result, "services");

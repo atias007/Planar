@@ -1,5 +1,4 @@
 hosts:
  - group name: default
    hosts:
-     - dev.server.1
-     - dev.server.2
+     - localhost

@@ -33,7 +33,8 @@ internal partial class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration, h => VetoHost(h));
-        var endpoints = GetEndpoints(Configuration, defaults);
+        var keys = GetKeys(context);
+        var endpoints = GetEndpoints(Configuration, defaults, keys);
 
         if (endpoints.Exists(e => e.IsRelativeUrl))
         {
@@ -76,7 +77,7 @@ internal partial class Job : BaseCheckJob
             {
                 if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup))
                 {
-                    result.Add(rel);
+                    throw new InvalidDataException($"endpoint '{rel.Name}' has no host group name '{rel.HostGroupName}'");
                 }
                 else
                 {
@@ -106,6 +107,30 @@ internal partial class Job : BaseCheckJob
 
             ValidateEndpoint(endpoint);
             result.Add(endpoint);
+        }
+
+        ValidateRequired(result, "endpoints");
+        ValidateDuplicateNames(result, "endpoints");
+
+        return result;
+    }
+
+    private List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetEndpoints(configuration, defaults); }
+
+        var endpoints = configuration.GetRequiredSection("endpoints");
+        var result = new List<Endpoint>();
+
+        foreach (var item in endpoints.GetChildren())
+        {
+            var endpoint = new Endpoint(item, defaults);
+            if (keys.Any(k => string.Equals(k, endpoint.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                endpoint.BindToTriggers = null;
+                ValidateEndpoint(endpoint);
+                result.Add(endpoint);
+            }
         }
 
         ValidateRequired(result, "endpoints");

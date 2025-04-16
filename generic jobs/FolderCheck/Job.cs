@@ -29,7 +29,8 @@ internal partial class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration, h => VetoHost(h));
-        var folders = GetFolders(Configuration, defaults);
+        var keys = GetKeys(context);
+        var folders = GetFolders(Configuration, defaults, keys);
 
         if (folders.Exists(e => e.IsRelativePath))
         {
@@ -61,7 +62,11 @@ internal partial class Job : BaseCheckJob
         {
             foreach (var rel in relative)
             {
-                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup))
+                {
+                    throw new InvalidDataException($"folder '{rel.Name}' has no host group name '{rel.HostGroupName}'");
+                }
+
                 foreach (var host in hostGroup.Hosts)
                 {
                     var clone = new Folder(rel)
@@ -104,6 +109,30 @@ internal partial class Job : BaseCheckJob
 
             ValidateFolder(folder);
             result.Add(folder);
+        }
+
+        ValidateRequired(result, "folders");
+        ValidateDuplicateNames(result, "folders");
+
+        return result;
+    }
+
+    private List<Folder> GetFolders(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetFolders(configuration, defaults); }
+
+        var result = new List<Folder>();
+        var folders = configuration.GetRequiredSection("folders");
+
+        foreach (var item in folders.GetChildren())
+        {
+            var folder = new Folder(item, defaults);
+            if (keys.Any(k => string.Equals(k, folder.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                folder.BindToTriggers = null;
+                ValidateFolder(folder);
+                result.Add(folder);
+            }
         }
 
         ValidateRequired(result, "folders");

@@ -1,17 +1,17 @@
 Welcome to Planar documentation!
 ===================================
 
-**Lumache** (/lu'make/) is a Python library for cooks and food lovers
-that creates recipes mixing random ingredients.
-It pulls data from the `Open Food Facts database <https://world.openfoodfacts.org/>`_
-and offers a *simple* and *intuitive* API.
+**Planar** is an enterprise scheduler/batch process server. It’s providing peripheral tools and infrastructure to met all of schedule jobs/batch process needs (small to enterprise systems).
+Planar engine is based on `Quartz.NET <https://www.quartz-scheduler.org/>`
+Planar offers a *simple* and *intuitive* API, CLI and Client Libraries.
 
 Check out the :doc:`quickstart` section for further information, including
-how to :ref:`installation` the project.
+how to :ref:`installation` the server.
 
 .. note::
 
    This project is under active development.
+   Feel free to send questions and asks to: admin@planar.me
 
 Contents
 --------

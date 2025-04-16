@@ -51,18 +51,19 @@ internal partial class Job : BaseCheckJob
         ValidateRedis();
 
         var defaults = GetDefaults(Configuration);
-        var keys = GetKeys(Configuration, defaults);
+        var keys = GetKeys(context);
+        var rediskeys = GetRedisKeys(Configuration, defaults, keys);
         var healthCheck = GetHealthCheck(Configuration, defaults);
-        ValidateRequired(keys, "keys");
+        ValidateRequired(rediskeys, "keys");
 
         EffectedRows = 0;
 
         await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner, context.TriggerDetails);
-        await SafeInvokeCheck(keys, InvokeKeyCheckInner, context.TriggerDetails);
+        await SafeInvokeCheck(rediskeys, InvokeKeyCheckInner, context.TriggerDetails);
 
         var hcDetails = GetFinalayzeDetails(healthCheck);
         Finalayze(hcDetails);
-        var keysDetails = GetFinalayzeDetails(keys);
+        var keysDetails = GetFinalayzeDetails(rediskeys.AsEnumerable());
         Finalayze(keysDetails);
         Finalayze();
     }
@@ -96,10 +97,11 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
+    private List<RedisKey> GetRedisKeys(IConfiguration configuration, Defaults defaults)
     {
-        var keys = configuration.GetRequiredSection("keys");
-        foreach (var item in keys.GetChildren())
+        var result = new List<RedisKey>();
+        var rediskeys = configuration.GetRequiredSection("keys");
+        foreach (var item in rediskeys.GetChildren())
         {
             var key = new RedisKey(item, defaults);
 
@@ -107,8 +109,30 @@ internal partial class Job : BaseCheckJob
             if (CheckVeto(key, "key")) { continue; }
 
             ValidateRedisKey(key);
-            yield return key;
+            result.Add(key);
         }
+
+        return result;
+    }
+
+    private List<RedisKey> GetRedisKeys(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetRedisKeys(configuration, defaults); }
+
+        var result = new List<RedisKey>();
+        var rediskeys = configuration.GetRequiredSection("keys");
+
+        foreach (var item in rediskeys.GetChildren())
+        {
+            var key = new RedisKey(item, defaults);
+            if (keys.Any(k => string.Equals(k, key.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                ValidateRedisKey(key);
+                result.Add(key);
+            }
+        }
+
+        return result;
     }
 
     private static void Validate(IRedisDefaults redisKey, string section)

@@ -1,4 +1,5 @@
 ﻿using Common;
+using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Core.Flux.Domain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,7 +58,8 @@ internal partial class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var server = GetServer(Configuration);
-        var queries = GetQueries(Configuration, defaults);
+        var keys = GetKeys(context);
+        var queries = GetQueries(Configuration, defaults, keys);
 
         EffectedRows = 0;
         if (!CheckRequired(queries, "queries")) { return; }
@@ -88,18 +90,46 @@ internal partial class Job : BaseCheckJob
         return server;
     }
 
-    private IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
+    private List<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
     {
-        var keys = configuration.GetRequiredSection("queries");
-        foreach (var item in keys.GetChildren())
-        {
-            var key = new InfluxQuery(item, defaults);
-            VetoQuery(key);
-            if (CheckVeto(key, "query")) { continue; }
+        var queries = configuration.GetRequiredSection("queries");
+        var result = new List<InfluxQuery>();
 
-            ValidateInfluxQuery(key);
-            yield return key;
+        foreach (var item in queries.GetChildren())
+        {
+            var query = new InfluxQuery(item, defaults);
+            VetoQuery(query);
+            if (CheckVeto(query, "query")) { continue; }
+
+            ValidateInfluxQuery(query);
+            result.Add(query);
         }
+
+        ValidateRequired(result, "queries");
+        ValidateDuplicateNames(result, "queries");
+
+        return result;
+    }
+
+    private List<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults, IEnumerable<string>? keys)
+    {
+        if (keys == null || !keys.Any()) { return GetQueries(configuration, defaults); }
+
+        var result = new List<InfluxQuery>();
+        var queries = configuration.GetRequiredSection("queries");
+
+        foreach (var item in queries.GetChildren())
+        {
+            var query = new InfluxQuery(item, defaults);
+            query.BindToTriggers = null;
+            ValidateInfluxQuery(query);
+            result.Add(query);
+        }
+
+        ValidateRequired(result, "queries");
+        ValidateDuplicateNames(result, "queries");
+
+        return result;
     }
 
     private static void ValidateName(InfluxQuery query)

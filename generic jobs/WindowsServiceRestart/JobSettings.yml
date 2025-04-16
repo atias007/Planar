@@ -7,18 +7,20 @@ defaults:                                       # default values for all service
   retry interval: 00:00:10                      # the interval between retry attemps
   allowed fail span: null                       # the time span which violation of the folder will be considered ok
 
-#hosts:                                         # the hosts of the services. usualy this section defined in specific environment job settings
-#  - localhost
-#  - 127.0.0.1
- 
+# hosts:                                        # the hosts of the services. usualy this section defined in specific environment job settings
+#  - group name: default
+#    hosts:
+#      - \\prod.server.1
+#      - \\prod.server.2
+
 services:
   - name: MyServiceName                        # the name of the service
-    host group name: default                    # when using relative folder path, 'host group name' must be supplied to a valid 'group name' in hosts section
+    host group name: default                   # when using relative folder path, 'host group name' must be supplied to a valid 'group name' in hosts section
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
     stop timeout: 00:00:30                     # the timeout for stop the service. the default is 30 seconds
     start timeout: 00:00:30                    # the timeout for start the service. the default is 30 seconds
     kill process: false                        # if stopping the service failed, kill the process. the default is false
-    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+    bind to triggers:                          # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
       - every-1-hour                            
       - end-of-day
-    active: true                                # the default is true
+    active: true                               # the default is true
