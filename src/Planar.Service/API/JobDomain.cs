@@ -850,12 +850,13 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         await ValidateSequenceStepJob(jobKey);
 
         await Scheduler.DeleteJob(jobKey);
-
-        _ = ClearJobData(jobId, jobKey, id);
+        AuditJobSafe(jobKey, "job deleted");
+        _ = ClearJobInfo(jobId, jobKey, id);
     }
 
-    public async Task ClearJobData(string jobId, JobKey jobKey, string id)
+    private async Task ClearJobInfo(string jobId, JobKey jobKey, string id)
     {
+        // Delete property
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
@@ -867,6 +868,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             Logger.LogError(ex, "fail to delete properties after delete job id {Id}", id);
         }
 
+        // Delete job audit
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
@@ -878,6 +880,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             Logger.LogError(ex, "fail to delete audit after delete job id {Id}", id);
         }
 
+        // Delete monitor
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
@@ -889,6 +892,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             Logger.LogError(ex, "fail to delete monitor after delete job id {Id}", id);
         }
 
+        // Delete metrics
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
@@ -900,6 +904,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             Logger.LogError(ex, "fail to delete job metrics after delete job id {Id}", id);
         }
 
+        // Delete history
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();

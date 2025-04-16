@@ -96,7 +96,7 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
             }
         }
 
-        var jobId = message.JobKey == null ? string.Empty : await _jobKeyHelper.GetJobId(message.JobKey);
+        var jobId = message.JobKey == null ? string.Empty : await _jobKeyHelper.SafeGetJobId(message.JobKey);
 
         using var scope = serviceScopeFactory.CreateScope();
         var data = scope.ServiceProvider.GetRequiredService<IJobData>();

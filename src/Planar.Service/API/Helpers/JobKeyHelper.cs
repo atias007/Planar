@@ -6,6 +6,7 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API.Helpers;
 
@@ -27,11 +28,20 @@ public class JobKeyHelper(IScheduler scheduler)
                         new JobKey(metadata.Name, metadata.Group);
     }
 
+    public async Task<string?> SafeGetJobId(JobKey jobKey)
+    {
+        var details = await _scheduler.GetJobDetail(jobKey);
+        if (details == null) { return null; }
+        return GetJobId(details);
+    }
+
     public async Task<string?> GetJobId(JobKey jobKey)
     {
         var job = await ValidateJobExists(jobKey);
         return GetJobId(job);
     }
+
+    
 
     public async Task<string?> GetJobId(string id)
     {

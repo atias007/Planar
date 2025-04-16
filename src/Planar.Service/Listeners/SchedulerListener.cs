@@ -25,7 +25,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         {
             if (IsSystemJob(jobDetail)) { return; }
             var id = JobKeyHelper.GetJobId(jobDetail);
-            if (IsLock(nameof(JobAdded), id)) { return; }
+            if (IsLocked(nameof(JobAdded), id)) { return; }
 
             var info = new MonitorSystemInfo
             (
@@ -47,7 +47,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return Task.Run(() =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
-            if (IsLock(nameof(JobDeleted), jobKey.ToString())) { return; }
+            if (IsLocked(nameof(JobDeleted), jobKey.ToString())) { return; }
             var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
             SafeSystemScan(MonitorEvents.JobDeleted, info, null);
         }, cancellationToken);
@@ -58,7 +58,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return Task.Run(() =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
-            if (IsLock(nameof(JobInterrupted), jobKey.ToString())) { return; }
+            if (IsLocked(nameof(JobInterrupted), jobKey.ToString())) { return; }
             var info = GetJobKeyMonitorSystemInfo(jobKey, "canceled");
             SafeSystemScan(MonitorEvents.JobCanceled, info, null);
         }, cancellationToken);
@@ -69,7 +69,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return Task.Run(() =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
-            if (IsLock(nameof(JobPaused), jobKey.ToString())) { return; }
+            if (IsLocked(nameof(JobPaused), jobKey.ToString())) { return; }
             var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
             SafeSystemScan(MonitorEvents.JobPaused, info, null);
         }, cancellationToken);
@@ -80,7 +80,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return Task.Run(() =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
-            if (IsLock(nameof(JobResumed), jobKey.ToString())) { return; }
+            if (IsLocked(nameof(JobResumed), jobKey.ToString())) { return; }
             var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
             SafeSystemScan(MonitorEvents.JobResumed, info, null);
         }, cancellationToken);
@@ -112,7 +112,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
     {
         return Task.Run(() =>
         {
-            if (IsLock(nameof(SchedulerError), null)) { return; }
+            if (IsLocked(nameof(SchedulerError), null)) { return; }
             _logger.LogError(cause, "scheduler error with message {Message}", msg);
             var info = new MonitorSystemInfo
             (
@@ -128,7 +128,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
     public Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
     {
         // *** DONT USE TASK.RUN ***
-        if (IsLock(nameof(SchedulerInStandbyMode), null)) { return Task.CompletedTask; }
+        if (IsLocked(nameof(SchedulerInStandbyMode), null)) { return Task.CompletedTask; }
         var info = GetSimpleMonitorSystemInfo("Scheduler is in standby mode at {{MachineName}}");
         SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null);
         return Task.CompletedTask;
@@ -142,7 +142,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
     public Task SchedulerShuttingdown(CancellationToken cancellationToken = default)
     {
         // *** DONT USE TASK.RUN ***
-        if (IsLock(nameof(SchedulerShutdown), null)) { return Task.CompletedTask; }
+        if (IsLocked(nameof(SchedulerShutdown), null)) { return Task.CompletedTask; }
         var info = GetSimpleMonitorSystemInfo("Scheduler shuting down at {{MachineName}}");
         SafeSystemScan(MonitorEvents.SchedulerShutdown, info, null);
         return Task.CompletedTask;
@@ -152,7 +152,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
     {
         return Task.Run(() =>
         {
-            if (IsLock(nameof(SchedulerStarted), null)) { return; }
+            if (IsLocked(nameof(SchedulerStarted), null)) { return; }
             _logger.LogInformation("scheduler started");
             var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
             SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
@@ -179,7 +179,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return Task.Run(() =>
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
-            if (IsLock(nameof(TriggerPaused), triggerKey.ToString())) { return; }
+            if (IsLocked(nameof(TriggerPaused), triggerKey.ToString())) { return; }
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
             SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
         }, cancellationToken);
@@ -190,7 +190,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return Task.Run(() =>
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
-            if (IsLock(nameof(TriggerResumed), triggerKey.ToString())) { return; }
+            if (IsLocked(nameof(TriggerResumed), triggerKey.ToString())) { return; }
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
             SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
         }, cancellationToken);
@@ -244,9 +244,9 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
         return info;
     }
 
-    private static bool IsLock(string operation, string? key)
+    private static bool IsLocked(string operation, string? key)
     {
         var cacheKey = GetCacheKey(operation, key ?? string.Empty);
-        return LockUtil.TryLock(cacheKey, TimeSpan.FromSeconds(5));
+        return !LockUtil.TryLock(cacheKey, TimeSpan.FromSeconds(5));
     }
 }

@@ -411,7 +411,9 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
     {
         var id = await _context.JobInstanceLogs.Where(l => l.InstanceId == log.InstanceId).Select(l => l.Id).FirstOrDefaultAsync();
         log.Id = id;
-        await DbConnection.MergeAsync(log);
+        await _context.HistoryLastLogs.Where(l => l.JobId == log.JobId).ExecuteDeleteAsync();
+        _context.Add(log);
+        await _context.SaveChangesAsync();
     }
 
     public async Task PersistJobInstanceData(JobInstanceLog log)
