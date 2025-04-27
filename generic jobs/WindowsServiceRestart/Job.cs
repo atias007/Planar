@@ -149,6 +149,14 @@ internal partial class Job : BaseCheckJob
             status = controller.Status;
         }
 
+        if (status == ServiceControllerStatus.StopPending)
+        {
+            Logger.LogInformation("service '{Name}' on host '{Host}' is in stop pending status. wait for stopped status", service.Name, service.Host);
+            winServiceUtil.WaitForStatus(controller, ServiceControllerStatus.Stopped, service.StopTimeout, restart: service.KillProcess);
+            controller.Refresh();
+            status = controller.Status;
+        }
+
         if (status == ServiceControllerStatus.Stopped)
         {
             Logger.LogInformation("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, service.Host);

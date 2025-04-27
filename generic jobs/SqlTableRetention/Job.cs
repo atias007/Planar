@@ -117,14 +117,14 @@ internal partial class Job : BaseCheckJob
         else
         {
             query = $"""
-            DECLARE @batchSize INT = {table.BatchSize};
+        DECLARE @batchSize INT = {table.BatchSize};
 
-            WHILE EXISTS (SELECT TOP 1 1 FROM {tableName} WHERE {table.Condition})
-            BEGIN
-              DELETE TOP (@batchSize) FROM {tableName}
-              WHERE {table.Condition};
-            END
-            """;
+        WHILE EXISTS (SELECT TOP 1 1 FROM {tableName} WITH(NOLOCK) WHERE {table.Condition})
+        BEGIN
+          DELETE TOP (@batchSize) FROM {tableName}
+          WHERE {table.Condition};
+        END
+        """;
         }
 
         return query;
