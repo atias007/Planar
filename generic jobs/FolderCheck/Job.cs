@@ -129,7 +129,7 @@ internal partial class Job : BaseCheckJob
             var folder = new Folder(item, defaults);
             if (keys.Any(k => string.Equals(k, folder.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                folder.BindToTriggers = null;
+                folder.ForceRun();
                 ValidateFolder(folder);
                 result.Add(folder);
             }

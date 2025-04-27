@@ -35,4 +35,10 @@ public abstract class BaseDefault : BaseActiveElement
     public string? VetoReason { get; set; }
     public string? ResultMessage { get; set; }
     public virtual CheckStatus RunStatus { get; set; }
+
+    public void ForceRun()
+    {
+        BindToTriggers = null;
+        Active = true;
+    }
 }

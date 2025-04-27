@@ -111,7 +111,7 @@ internal partial class Job : BaseCheckJob
             var service = new Service(item, defaults);
             if (keys.Any(k => string.Equals(k, service.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                service.BindToTriggers = null;
+                service.ForceRun();
                 ValidateService(service);
                 result.Add(service);
             }

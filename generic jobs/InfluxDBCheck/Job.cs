@@ -121,7 +121,7 @@ internal partial class Job : BaseCheckJob
         foreach (var item in queries.GetChildren())
         {
             var query = new InfluxQuery(item, defaults);
-            query.BindToTriggers = null;
+            query.ForceRun();
             ValidateInfluxQuery(query);
             result.Add(query);
         }

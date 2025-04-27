@@ -127,7 +127,7 @@ internal partial class Job : BaseCheckJob
             var endpoint = new Endpoint(item, defaults);
             if (keys.Any(k => string.Equals(k, endpoint.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                endpoint.BindToTriggers = null;
+                endpoint.ForceRun();
                 ValidateEndpoint(endpoint);
                 result.Add(endpoint);
             }

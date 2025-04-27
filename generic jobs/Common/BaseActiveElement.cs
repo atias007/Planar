@@ -19,5 +19,5 @@ public abstract class BaseActiveElement
         Active = true;
     }
 
-    public bool Active { get; }
+    public bool Active { get; internal set; }
 }

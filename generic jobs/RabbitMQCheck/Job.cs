@@ -149,7 +149,7 @@ internal partial class Job : BaseCheckJob
             var queue = new Queue(section, defaults);
             if (keys.Any(k => string.Equals(k, queue.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                queue.BindToTriggers = null;
+                queue.ForceRun();
                 ValidateBase(queue, "queues");
                 ValidateQueue(queue);
             }
@@ -197,7 +197,7 @@ internal partial class Job : BaseCheckJob
             var bundle = new QueuesBundle(section, defaults);
             if (keys.Any(k => string.Equals(k, bundle.Key, StringComparison.OrdinalIgnoreCase)))
             {
-                bundle.BindToTriggers = null;
+                bundle.ForceRun();
                 ValidateBase(bundle, "queues bundles");
                 ValidateQueue(bundle);
 
