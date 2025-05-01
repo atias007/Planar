@@ -111,7 +111,7 @@
 		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
 		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
 		<PackageReference Include="Riok.Mapperly" Version="4.2.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.9.0.115408">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

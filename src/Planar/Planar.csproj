@@ -90,7 +90,7 @@
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.2.0" />
 		<PackageReference Include="Serilog.Sinks.SQLite.Microsoft" Version="1.0.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.9.0.115408">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
