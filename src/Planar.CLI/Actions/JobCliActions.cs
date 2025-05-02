@@ -369,7 +369,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     [Action("running-log")]
     [NullRequest]
-    public static async Task<CliActionResponse> GetRunningData(CliRunningLogRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetRunningData(CliRunningLogRequest request, CancellationToken cancellationToken)
     {
         request ??= new CliRunningLogRequest();
         if (string.IsNullOrWhiteSpace(request.FireInstanceId))

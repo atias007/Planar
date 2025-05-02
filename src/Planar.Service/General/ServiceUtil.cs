@@ -200,7 +200,7 @@ public static class ServiceUtil
     {
         if (context == null) { return null; }
         var metadata = context.Result as JobExecutionMetadata;
-        var result = metadata?.Exceptions?.Count;
+        var result = metadata?.Exceptions?.Count();
         return result;
     }
 

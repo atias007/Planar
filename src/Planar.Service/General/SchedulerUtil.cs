@@ -135,7 +135,7 @@ public class SchedulerUtil
         {
             log = metadata.GetLogText();
             exceptions = metadata.GetExceptionsText();
-            count = metadata.Exceptions.Count;
+            count = metadata.Exceptions.Count();
         }
 
         var response = new RunningJobData
@@ -295,7 +295,7 @@ public class SchedulerUtil
         {
             target.EffectedRows = metadata.EffectedRows;
             target.Progress = metadata.Progress;
-            target.ExceptionsCount = metadata.Exceptions.Count;
+            target.ExceptionsCount = metadata.Exceptions.Count();
         }
     }
 }

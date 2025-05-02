@@ -130,7 +130,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
                 Duration = Convert.ToInt32(duration),
                 EndDate = endDate,
                 Exception = GetExceptionText(executionException),
-                ExceptionCount = metadata?.Exceptions.Count ?? 0,
+                ExceptionCount = metadata?.Exceptions.Count() ?? 0,
                 EffectedRows = metadata?.EffectedRows,
                 Log = metadata?.GetLogText(),
                 Status = (int)status,

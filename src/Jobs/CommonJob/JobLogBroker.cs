@@ -11,6 +11,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
@@ -22,7 +23,7 @@ namespace CommonJob;
 // this class is also responsible for save history of all log messages
 public sealed class JobLogBroker : IDisposable
 {
-    private readonly object Locker = new();
+    private readonly Lock Locker = new();
     private readonly IJobExecutionContext _context;
     private readonly IMonitorUtil _monitorUtil;
 
@@ -73,7 +74,7 @@ public sealed class JobLogBroker : IDisposable
         if (ex == null) { return; }
         lock (Locker)
         {
-            Metadata.Exceptions.Add(ex);
+            Metadata.AddException(ex);
         }
     }
 

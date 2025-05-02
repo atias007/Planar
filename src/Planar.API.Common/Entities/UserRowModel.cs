@@ -8,5 +8,10 @@
         public string? LastName { get; set; }
         public string? PhoneNumber1 { get; set; }
         public string Username { get; set; } = null!;
+
+        override public string ToString()
+        {
+            return $"{FirstName} {LastName} ({Username})";
+        }
     }
 }

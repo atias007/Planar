@@ -7,8 +7,5 @@ namespace Planar.API.Common.Entities
     {
         [YamlMember(Alias = "due date")]
         public DateTime DueDate { get; set; }
-
-        [YamlMember(Alias = "timeout")]
-        public TimeSpan? Timeout { get; set; }
     }
 }

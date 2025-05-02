@@ -194,9 +194,9 @@ internal static class CliPromptUtil
             throw new CliWarningException("no available users to perform the opertaion");
         }
 
-        var items = data.Select(g => g.Username ?? string.Empty);
+        var items = data.Select(g => new CliSelectItem<UserRowModel> { DisplayName = g.ToString(), Value = g });
         var select = PromptSelection(items, "user");
-        return new CliPromptWrapper<string>(select);
+        return new CliPromptWrapper<string>(select?.Value?.Username ?? string.Empty);
     }
 
     internal static async Task<CliPromptWrapper<string>> UsersInGroup(string groupName, CancellationToken cancellationToken)

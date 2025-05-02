@@ -134,7 +134,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             }
             catch (Exception ex) when (ex is not RestValidationException)
             {
-                Logger.LogError("Fail to {Name}", nameof(ValidateSequenceStepJob));
+                Logger.LogError(ex, "Fail to {Name}", nameof(ValidateSequenceStepJob));
             }
         }
     }

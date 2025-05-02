@@ -2,7 +2,9 @@
 using Planar;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
@@ -12,6 +14,7 @@ public class JobExecutionMetadata
     private readonly List<string> _log = [];
     private int _logSize;
     private bool _freezLog;
+    private bool _freezException;
 
     public void AppendLog(string log)
     {
@@ -41,7 +44,24 @@ public class JobExecutionMetadata
         return sb.ToString();
     }
 
-    public List<ExceptionDto> Exceptions { get; } = [];
+    private readonly List<ExceptionDto> _exceptions = [];
+    public IEnumerable<ExceptionDto> Exceptions => _exceptions;
+
+    public void AddException(ExceptionDto exception)
+    {
+        if (_freezException) { return; }
+        var length = _exceptions.Sum(e => e.Length);
+        _exceptions.Add(exception);
+
+        if (length > 20_000_000)
+        {
+            HasWarnings = true;
+            _freezException = true;
+
+            var logEntity = new LogEntity { Level = LogLevel.Warning, Message = "exception size exceeded 20mb. additional exceptions will not be recorded" };
+            _log.Add(logEntity.ToString());
+        }
+    }
 
     public int? EffectedRows { get; set; }
 
@@ -49,11 +69,11 @@ public class JobExecutionMetadata
 
     public bool HasWarnings { get; set; }
 
-    private static readonly object Locker = new();
+    private static readonly Lock Locker = new();
 
     public string GetExceptionsText()
     {
-        var exceptions = Exceptions;
+        var exceptions = Exceptions.ToList();
         if (exceptions == null || exceptions.Count == 0)
         {
             return string.Empty;
