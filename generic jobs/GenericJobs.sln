@@ -42,7 +42,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderSync", "FolderSync\Fo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeqAlertsCheck", "SeqAlertsCheck\SeqAlertsCheck.csproj", "{B198145C-A704-4D25-9E6C-D7660DE02B3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IISRecycle", "IISRecycle\IISRecycle.csproj", "{E4825350-4D8A-4B27-BCBE-40BDD98E2391}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IISApplicationPoolRecycle", "IISRecycle\IISApplicationPoolRecycle.csproj", "{E4825350-4D8A-4B27-BCBE-40BDD98E2391}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

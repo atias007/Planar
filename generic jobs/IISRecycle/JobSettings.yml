@@ -1,6 +1,6 @@
 general:
   max degree of parallelism: 10                 # the maximum number of parallel threads to be used in the job. the default is 10. value between 2 and 100
-  sequential processing: false                  # a flag to indicate if the folders should be processed sequentially or in parallel. the default is false
+  sequential processing: true                   # a flag to indicate if the folders should be processed sequentially or in parallel. the default is false
   stop running on fail: false                   # a flag to indicate if the job should stop running on fail in sequential processing. the default is false
 
 defaults:                                       # default values for all endpoints. each endpoint can override these values
@@ -23,11 +23,13 @@ defaults:                                       # default values for all endpoin
 
 application pools:
 # --------------------------------------------- #
-  - name: Default                               # name of iis application pool. required
+  - name: DefaultAppPool                        # name of iis application pool. required
     host group name: default                    # a valid 'group name' in hosts section
     server config file: null                    # the path of the iis server config file. the default is: c$\Windows\System32\inetsrv\config\applicationHost.config
-    bind to triggers:                           # this application pool will be checked only when running with the following triggers. the default is null (run on any trigger execution)
-      - every-1-hour                            
-      - end-of-day
     active: true                                # the default is true
+# --------------------------------------------- #
+  - name: .NET v4.5
+    host group name: default
+    server config file: null
+    active: true
 # --------------------------------------------- #

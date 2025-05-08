@@ -74,4 +74,12 @@ public sealed class WindowsServiceUtil(ILogger logger, string serviceName, strin
             }
         }
     }
+
+    public static void ValidateWindowsServiceOs()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            throw new PlatformNotSupportedException("this application is only supported on Windows.");
+        }
+    }
 }

@@ -1,7 +1,7 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
 
-namespace IISRecycle;
+namespace IISApplicationPoolRecycle;
 
 internal class ApplicationPool : BaseOperation, INamedCheckElement, IVetoEntity
 {

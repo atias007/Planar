@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Web.Administration;
 using Planar.Job;
 
-namespace IISRecycle;
+namespace IISApplicationPoolRecycle;
 
 internal partial class Job : BaseCheckJob
 {
@@ -26,6 +26,8 @@ internal partial class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
+        WindowsServiceUtil.ValidateWindowsServiceOs();
+
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
@@ -43,7 +45,7 @@ internal partial class Job : BaseCheckJob
 
     private void InvokeApplicationPoolInner(ApplicationPool pool)
     {
-        var config = pool.ServerConfigFile ?? "c$\\Windows\\System32\\inetsrv\\Config\\applicationHost.config";
+        var config = string.IsNullOrWhiteSpace(pool.ServerConfigFile) ? "c$\\Windows\\System32\\inetsrv\\Config\\applicationHost.config" : pool.ServerConfigFile;
         config = $"\\\\{pool.Host}\\{config}";
 
         if (!File.Exists(config))
@@ -53,7 +55,7 @@ internal partial class Job : BaseCheckJob
 
         using var iisManager = new ServerManager(false, config);
 
-        var apppool = iisManager.ApplicationPools.FirstOrDefault(p => string.Equals(p.Name, pool.Name, StringComparison.OrdinalIgnoreCase);
+        var apppool = iisManager.ApplicationPools.FirstOrDefault(p => string.Equals(p.Name, pool.Name, StringComparison.OrdinalIgnoreCase));
         if (apppool == null)
         {
             throw new InvalidDataException($"application pool '{pool.Name}' not found in host {pool.Host}");
@@ -62,9 +64,11 @@ internal partial class Job : BaseCheckJob
         if (apppool.State != ObjectState.Started)
         {
             Logger.LogWarning("application pool '{Name}' is not started ({State}). cannot recycle", pool.Name, apppool.State);
+            return;
         }
 
         var objState = apppool.Recycle();
+        Logger.LogInformation("application pool '{Name}' recycled in host {Host} (state: {State})", pool.Name, pool.Host, objState);
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

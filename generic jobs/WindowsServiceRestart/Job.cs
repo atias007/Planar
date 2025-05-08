@@ -26,6 +26,8 @@ internal partial class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
+        WindowsServiceUtil.ValidateWindowsServiceOs();
+
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
