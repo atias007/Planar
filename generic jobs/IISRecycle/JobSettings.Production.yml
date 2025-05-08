@@ -1,0 +1,5 @@
+hosts:
+ - group name: default
+   hosts:
+     - prod.server.1
+     - prod.server.2

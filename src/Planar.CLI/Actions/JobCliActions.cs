@@ -402,7 +402,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             while (!reader.EndOfStream)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var value = await reader.ReadLineAsync(cancellationToken);
+                var value = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
                 if (string.IsNullOrWhiteSpace(value)) { continue; }
                 var log = CliFormat.GetLogMarkup(value) ?? string.Empty;
                 AnsiConsole.Markup(log);

@@ -18,6 +18,7 @@ defaults:                                       # default values for all endpoin
  
 endpoints:
   - name: Test internet access                 # the display name of the endpoint
+    host group name: default                   # a valid 'group name' in hosts section
     url: https://www.google.com                # the url of the endpoint
     bind to triggers:                          # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
       - every-1-hour                            

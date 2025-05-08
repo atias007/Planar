@@ -1,0 +1,5 @@
+hosts:
+ - group name: default
+   hosts:
+     - stage.server.1
+     - stage.server.2

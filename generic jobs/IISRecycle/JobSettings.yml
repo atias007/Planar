@@ -1,0 +1,33 @@
+general:
+  max degree of parallelism: 10                 # the maximum number of parallel threads to be used in the job. the default is 10. value between 2 and 100
+  sequential processing: false                  # a flag to indicate if the folders should be processed sequentially or in parallel. the default is false
+  stop running on fail: false                   # a flag to indicate if the job should stop running on fail in sequential processing. the default is false
+
+defaults:                                       # default values for all endpoints. each endpoint can override these values
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:30                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
+
+#hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
+#  - group name: default
+#    hosts:
+#      - localhost
+#      - 127.0.0.1
+
+# ================================================================================= #
+# = PAY ATTENTION !!!!
+# ================================================================================= #
+# = THE USER RUNNING THE JOB MUST HAVE PERMISSION TO RECYCLE THE APPLICATION POOL = #
+# = (SHOULD BE A MEMBER OF THE IIS_IUSRS GROUP OR SERVER ADMINISTRATORS))         = #
+# ================================================================================= #
+
+application pools:
+# --------------------------------------------- #
+  - name: Default                               # name of iis application pool. required
+    host group name: default                    # a valid 'group name' in hosts section
+    server config file: null                    # the path of the iis server config file. the default is: c$\Windows\System32\inetsrv\config\applicationHost.config
+    bind to triggers:                           # this application pool will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
+    active: true                                # the default is true
+# --------------------------------------------- #
