@@ -88,11 +88,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="14.0.0" />
-		<PackageReference Include="CronExpressionDescriptor" Version="2.40.0" />
-		<PackageReference Include="FluentValidation" Version="11.11.0" />
+		<PackageReference Include="CronExpressionDescriptor" Version="2.41.0" />
+		<PackageReference Include="FluentValidation" Version="12.0.0" />
 		<PackageReference Include="Google.Protobuf" Version="3.30.2" />
-		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.71.0">
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.72.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -110,8 +110,8 @@
 		<PackageReference Include="Quartz.Serialization.Json" Version="3.14.0" />
 		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
 		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
-		<PackageReference Include="Riok.Mapperly" Version="4.2.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.8.0.113526">
+		<PackageReference Include="Riok.Mapperly" Version="4.2.1" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.9.0.115408">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

@@ -24,7 +24,7 @@ namespace Planar.CLI.Actions;
 [Module("job", "Actions to add, remove, list, update and operate jobs", Synonyms = "jobs")]
 public class JobCliActions : BaseCliAction<JobCliActions>
 {
-    private static readonly object _locker = new();
+    private static readonly Lock _locker = new();
 
     [Action("add")]
     [NullRequest]
@@ -766,7 +766,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 while (!reader.EndOfStream)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var value = await reader.ReadLineAsync(cancellationToken);
+                    var value = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
                     if (string.IsNullOrWhiteSpace(value)) { continue; }
                     if (data.Parse(value))
                     {
