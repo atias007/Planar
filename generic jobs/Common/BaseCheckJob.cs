@@ -10,12 +10,14 @@ using System.Text;
 
 namespace Common;
 
-public abstract class BaseCheckJob : BaseJob
+public abstract partial class BaseCheckJob : BaseJob
 {
     private static readonly object _locker = new();
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
     private General _general = null!;
     private CheckSpanTracker _spanTracker = null!;
+
+    partial void OnFail<T>(T entity, Exception ex) where T : BaseDefault, ICheckElement;
 
     protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration, List<string> names)
     {
@@ -417,6 +419,7 @@ public abstract class BaseCheckJob : BaseJob
         catch (Exception ex)
         {
             entity.RunStatus = SafeHandleCheckException(entity, ex);
+            OnFail(entity, ex);
         }
     }
 

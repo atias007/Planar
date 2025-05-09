@@ -15,17 +15,20 @@ defaults:                                       # default values for all endpoin
 #      - 127.0.0.1
 
 # ================================================================================= #
-# = PAY ATTENTION !!!!
+# = PAY ATTENTION !!!!                                                            = #
 # ================================================================================= #
 # = THE USER RUNNING THE JOB MUST HAVE PERMISSION TO RECYCLE THE APPLICATION POOL = #
-# = (SHOULD BE A MEMBER OF THE IIS_IUSRS GROUP OR SERVER ADMINISTRATORS))         = #
+# = (SHOULD BE A MEMBER OF THE IIS_IUSRS GROUP OR SERVER ADMINISTRATORS)          = #
 # ================================================================================= #
 
 application pools:
 # --------------------------------------------- #
   - name: DefaultAppPool                        # name of iis application pool. required
     host group name: default                    # a valid 'group name' in hosts section
-    server config file: null                    # the path of the iis server config file. the default is: c$\Windows\System32\inetsrv\config\applicationHost.config
+    server config file: null                    # the network path of the iis server config file. the default is: c$\Windows\System32\inetsrv\config\applicationHost.config
+    bind to triggers:                           # this pool will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
     active: true                                # the default is true
 # --------------------------------------------- #
   - name: .NET v4.5
