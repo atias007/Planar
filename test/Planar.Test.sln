@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AbnormalExitCode", "Abnorma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CircuitBreakerTester", "CircuitBreakerTester\CircuitBreakerTester.csproj", "{6B87BF51-B391-42D0-9F16-550EA44B86CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryLeak", "MemoryLeak\MemoryLeak.csproj", "{9C3E6149-871A-42EF-9A9F-B5CB331661A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -107,6 +109,10 @@ Global
 		{6B87BF51-B391-42D0-9F16-550EA44B86CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B87BF51-B391-42D0-9F16-550EA44B86CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B87BF51-B391-42D0-9F16-550EA44B86CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C3E6149-871A-42EF-9A9F-B5CB331661A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C3E6149-871A-42EF-9A9F-B5CB331661A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C3E6149-871A-42EF-9A9F-B5CB331661A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C3E6149-871A-42EF-9A9F-B5CB331661A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

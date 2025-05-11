@@ -535,15 +535,15 @@ namespace Planar.Job
             return data.Any(k => string.Equals(k.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
-        private void HandleException(Exception ex)
+        private async Task HandleException(Exception ex)
         {
             if (ex is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
             {
-                HandleException(aggregateException.InnerExceptions[0]);
+                await HandleException(aggregateException.InnerExceptions[0]);
                 return;
             }
 
-            var text = _baseJobFactory.ReportException(ex);
+            var text = await _baseJobFactory.ReportException(ex);
             if (PlanarJob.Mode == RunningMode.Debug)
             {
                 Console.ForegroundColor = ConsoleColor.Red;

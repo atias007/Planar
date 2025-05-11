@@ -26,17 +26,33 @@ namespace Planar.Job
         public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
         internal static RunningMode Mode { get; set; } = RunningMode.Debug;
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
+        internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
+
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
 
         public static void Start<TJob>()
             where TJob : BaseJob, new()
         {
-            StartAsync<TJob>().Wait();
+            Start<TJob>(PlanarJobStartProperties.Default);
         }
 
-        public static async Task StartAsync<TJob>()
+        public static void Start<TJob>(PlanarJobStartProperties properties)
             where TJob : BaseJob, new()
         {
+            StartAsync<TJob>(properties).Wait();
+        }
+
+        public static Task StartAsync<TJob>()
+                    where TJob : BaseJob, new()
+        {
+            return StartAsync<TJob>(PlanarJobStartProperties.Default);
+        }
+
+        public static async Task StartAsync<TJob>(PlanarJobStartProperties properties)
+            where TJob : BaseJob, new()
+        {
+            Properties = properties;
+
             Stopwatch.Start();
             FillProperties();
             try

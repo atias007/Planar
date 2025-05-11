@@ -1244,7 +1244,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         if (!result.IsSuccessful) { return new CliActionResponse(result); }
 
         var finalSpan = TimeSpan.FromMilliseconds(result.Data.Duration.GetValueOrDefault());
-        AnsiConsole.Markup($"Effected Row(s): {result.Data.EffectedRows.GetValueOrDefault()}  |");
+        AnsiConsole.Markup($"Effected Row(s): {CliTableFormat.FormatNumber(result.Data.EffectedRows)}  |");
         AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(result.Data.ExceptionCount)}  |");
         AnsiConsole.Markup($"  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}  |");
         AnsiConsole.MarkupLine($"  End Time: --:--:--     ");

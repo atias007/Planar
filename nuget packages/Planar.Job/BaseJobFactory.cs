@@ -235,7 +235,7 @@ namespace Planar.Job
 
         #region Inner
 
-        public string ReportException(Exception ex)
+        internal async Task<string> ReportException(Exception ex)
         {
             var text = GetExceptionText(ex);
             var innerEx = GetMostInnerException(ex);
@@ -247,7 +247,7 @@ namespace Planar.Job
                 MostInnerMessage = innerEx.Message,
             };
 
-            MqttClient.PublishAsync(MessageBrokerChannels.ReportExceptionV2, dto).Wait();
+            await MqttClient.PublishAsync(MessageBrokerChannels.ReportExceptionV2, dto);
 
             return text;
         }

@@ -1,0 +1,12 @@
+﻿job type: PlanarJob
+name: MemoryLeak
+group: Demo
+description: Demo MemoryLeak Job
+durable: true
+concurrent: false
+properties:
+  filename: MemoryLeak.exe
+simple triggers:
+  - name: default_trigger
+    interval: 01:00:00
+    misfire behaviour: FireNow

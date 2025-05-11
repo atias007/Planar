@@ -2,6 +2,10 @@
 PLAN FOR V 1.8.*
 ----------------
 
+- ** failover proxy (in job nuget package) should get the port number from variable
+- ** history get with id, truncate the log property to 10_000 chars. make 10_000 common const between cli and api
+- ** cli test command call history get get at the end of running. waste, call service to return only needed data 
+
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)

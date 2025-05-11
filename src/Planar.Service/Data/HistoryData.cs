@@ -262,6 +262,33 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         var result = await _context.JobInstanceLogs
             .AsNoTracking()
             .Where(l => l.Id == id)
+            .Select(h => new JobInstanceLog
+            {
+                Id = h.Id,
+                JobId = h.JobId,
+                JobName = h.JobName,
+                JobGroup = h.JobGroup,
+                JobType = h.JobType,
+                InstanceId = h.InstanceId,
+                StartDate = h.StartDate,
+                EndDate = h.EndDate,
+                Duration = h.Duration,
+                Status = h.Status,
+                StatusTitle = h.StatusTitle,
+                Data = h.Data,
+                Log = h.Log == null ? null : h.Log.Substring(0, 10_000 + 1),
+                Exception = h.Exception,
+                ExceptionCount = h.ExceptionCount,
+                EffectedRows = h.EffectedRows,
+                IsCanceled = h.IsCanceled,
+                Anomaly = h.Anomaly,
+                HasWarnings = h.HasWarnings,
+                TriggerId = h.TriggerId,
+                TriggerName = h.TriggerName,
+                TriggerGroup = h.TriggerGroup,
+                ServerName = h.ServerName,
+                Retry = h.Retry
+            })
             .FirstOrDefaultAsync();
 
         return result;

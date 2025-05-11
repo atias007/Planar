@@ -10,13 +10,10 @@ namespace Planar.Job
     internal sealed class FailOverProxy : IDisposable
     {
         private readonly IRestClient _client;
-        private readonly string _fireInstanceId;
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
 
-        public FailOverProxy(int port, string fireInstanceId)
+        public FailOverProxy(int port)
         {
-            _fireInstanceId = fireInstanceId;
-
             var options = new RestClientOptions
             {
                 Timeout = TimeSpan.FromSeconds(5),

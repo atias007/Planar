@@ -5,6 +5,7 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Protocol;
+using Newtonsoft.Json;
 using Planar.Job;
 using System;
 using System.Net.Mime;
@@ -23,12 +24,14 @@ namespace Planar
 
         private const int _keepAlivePeriod = 1;
 
-        private const int _port = 206;
+        private const int _defaultMqttPort = 206;
+        private const int _defaultHttpPort = 2306;
 
         private const int _timeout = 12;
 
-        private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
+        private static readonly JsonEventFormatter _formatter = new JsonEventFormatter(JsonSerializer.Create(_jsonSerializerSettings));
         private static string _id = "none";
+        private static int _mqttPort;
 
 #if NETSTANDARD2_0
         private static FailOverProxy _failOverProxy;
@@ -45,7 +48,13 @@ namespace Planar
         public static event EventHandler? Connected;
 #endif
 
-        ////public static bool IsConnected => _mqttClient.IsConnected;
+        private static readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.Auto,
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore,
+            Formatting = Formatting.None,
+        };
 
         public static async Task PingAsync()
         {
@@ -98,12 +107,17 @@ namespace Planar
         public static async Task StartAsync(string id, int port)
         {
             _id = id;
-            var mqttPort = port == 0 ? _port : port;
+            _mqttPort = port == 0 ? _defaultMqttPort : port;
+            await RestartAsync();
+        }
+
+        public static async Task RestartAsync()
+        {
             var clientOptions = new MqttClientOptionsBuilder()
                 .WithTimeout(TimeSpan.FromSeconds(_timeout))
-                .WithClientId(id)
+                .WithClientId(_id)
                 .WithKeepAlivePeriod(TimeSpan.FromSeconds(_keepAlivePeriod))
-                .WithTcpServer(_host, mqttPort)
+                .WithTcpServer(_host, _mqttPort)
                 .Build();
 
             var options = new ManagedMqttClientOptionsBuilder()
@@ -121,7 +135,8 @@ namespace Planar
         public static void StartFailOver(string id, int port)
         {
             _id = id;
-            _failOverProxy = new FailOverProxy(port, id);
+            if (port == 0) { port = _defaultHttpPort; }
+            _failOverProxy = new FailOverProxy(port);
             _mqttClient = null;
         }
 
@@ -130,14 +145,15 @@ namespace Planar
             // mqtt
             if (_mqttClient != null)
             {
-                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, TimeSpan.FromSeconds(10));
+                const int defaultWaitSecondes = 20;
+                var pendingBefore = _mqttClient.PendingApplicationMessagesCount;
+                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, TimeSpan.FromSeconds(defaultWaitSecondes));
+                var pendingAfter = _mqttClient.PendingApplicationMessagesCount;
 
-                _mqttClient.ConnectedAsync -= ConnectedAsync;
-                _mqttClient.DisconnectedAsync -= DisconnectedAsync;
-                _mqttClient.ConnectingFailedAsync -= ConnectingFailedAsync;
+                await SafeCloseMqttClient();
 
-                await _mqttClient.StopAsync(true);
-                _mqttClient?.Dispose();
+                await SafeWarnLostOfLogs(defaultWaitSecondes, pendingBefore, pendingAfter);
+
                 return;
             }
 
@@ -150,6 +166,56 @@ namespace Planar
             }
         }
 
+        private static async Task SafeWarnLostOfLogs(int defaultWaitSecondes, int pendingBefore, int pendingAfter)
+        {
+            try
+            {
+                if (pendingAfter <= 0) { return; }
+                var delta = pendingBefore - pendingAfter;
+
+                await RestartAsync();
+                if (_mqttClient == null) { return; }
+
+                var messages = new string[] {
+                        "there are many logs in outgoing queue. some of them will not be saved.",
+                        $"for {defaultWaitSecondes:N0} seconds, after job finish to run, the job flushes {delta:N0} log item.",
+                        $"{pendingAfter:N0} log messages remains in queue and will not be saved.",
+                        $"you can increase the flush default timeout of {defaultWaitSecondes:N0} seconds by settings the LogFlushTimeout property of PlanarJobStartProperties class which you can pass to Start/StartAsync startup method of PlanarJob"
+                    };
+
+                foreach (var message in messages)
+                {
+                    var entity = new LogEntity { Message = message, Level = LogLevel.Warning };
+                    PublishAsync(MessageBrokerChannels.AppendLog, entity).Wait();
+                }
+
+                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, TimeSpan.FromSeconds(5));
+                await SafeCloseMqttClient();
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
+            }
+        }
+
+        private async static Task SafeCloseMqttClient()
+        {
+            try
+            {
+                if (_mqttClient == null) { return; }
+                _mqttClient.ConnectedAsync -= ConnectedAsync;
+                _mqttClient.DisconnectedAsync -= DisconnectedAsync;
+                _mqttClient.ConnectingFailedAsync -= ConnectingFailedAsync;
+
+                await _mqttClient.StopAsync(true);
+                _mqttClient?.Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
+            }
+        }
+
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
             _ = OnConnected();
@@ -159,7 +225,7 @@ namespace Planar
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to mqtt broker! (port {_port})" };
+            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to mqtt broker! (port {_defaultMqttPort})" };
             await Console.Error.WriteLineAsync(log.ToString());
 
             log = new LogEntity { Level = LogLevel.Critical, Message = arg.Exception.ToString() };
