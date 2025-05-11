@@ -116,8 +116,8 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
         var restRequest = new RestRequest("history/{id}/data", Method.Get)
            .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-        var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-        return new CliActionResponse(result, message: result.Data);
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result, message: result.Content);
     }
 
     [Action("odata")]
@@ -173,8 +173,8 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
         var restRequest = new RestRequest("history/{id}/exception", Method.Get)
            .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-        var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-        return new CliActionResponse(result, message: result.Data);
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result, message: result.Content);
     }
 
     [Action("log")]
@@ -185,8 +185,8 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
         var restRequest = new RestRequest("history/{id}/log", Method.Get)
            .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-        var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-        var message = CliFormat.GetLogMarkup(result.Data);
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        var message = CliFormat.GetLogMarkup(result.Content);
         return new CliActionResponse(result, message: message, formattedMessage: true);
     }
 

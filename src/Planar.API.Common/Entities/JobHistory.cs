@@ -4,6 +4,9 @@ namespace Planar.API.Common.Entities;
 
 public class JobHistory
 {
+    public const int LogMaximumLength = 10_000;
+    public const int DataMaximumLength = 4_000;
+
     public long Id { get; set; }
 
     public string InstanceId { get; set; } = null!;
@@ -38,13 +41,13 @@ public class JobHistory
     [DisplayFormat(Format = "N0")]
     public int? EffectedRows { get; set; }
 
-    [DisplayFormat(MaximumChars = 4_000)]
+    [DisplayFormat(MaximumChars = DataMaximumLength)]
     public string? Data { get; set; }
 
-    [DisplayFormat(SpecialFormat = SpecialFormat.Log, MaximumChars = 10_000)]
+    [DisplayFormat(SpecialFormat = SpecialFormat.Log, MaximumChars = LogMaximumLength)]
     public string? Log { get; set; }
 
-    [DisplayFormat(MaximumChars = 10_000)]
+    [DisplayFormat(MaximumChars = LogMaximumLength)]
     public string? Exception { get; set; }
 
     public int ExceptionCount { get; set; }

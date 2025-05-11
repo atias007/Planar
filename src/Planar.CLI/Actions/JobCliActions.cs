@@ -1230,8 +1230,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     private static async Task<CliActionResponse?> TestStep5CheckLog(long logId, CancellationToken cancellationToken)
     {
-        var restRequest = new RestRequest("history/{id}", Method.Get)
-           .AddParameter("id", logId, ParameterType.UrlSegment);
+        // HistoryData?select=
+        var restRequest = new RestRequest("odata/HistoryData", Method.Get)
+           .AddQueryParameter("filter", $"Id eq {logId}")
+           .AddQueryParameter("select", "Duration,EffectedRows,ExceptionCount,Status");
 
         var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
 

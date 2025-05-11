@@ -145,14 +145,14 @@ namespace Planar
             // mqtt
             if (_mqttClient != null)
             {
-                const int defaultWaitSecondes = 20;
+                var defaultWaitSecondes = PlanarJob.Properties.LogFlushTimeout;
                 var pendingBefore = _mqttClient.PendingApplicationMessagesCount;
-                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, TimeSpan.FromSeconds(defaultWaitSecondes));
+                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, defaultWaitSecondes);
                 var pendingAfter = _mqttClient.PendingApplicationMessagesCount;
 
                 await SafeCloseMqttClient();
 
-                await SafeWarnLostOfLogs(defaultWaitSecondes, pendingBefore, pendingAfter);
+                await SafeWarnLostOfLogs(defaultWaitSecondes.TotalSeconds, pendingBefore, pendingAfter);
 
                 return;
             }
@@ -166,7 +166,7 @@ namespace Planar
             }
         }
 
-        private static async Task SafeWarnLostOfLogs(int defaultWaitSecondes, int pendingBefore, int pendingAfter)
+        private static async Task SafeWarnLostOfLogs(double defaultWaitSecondes, int pendingBefore, int pendingAfter)
         {
             try
             {

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
 using Planar.Job;
 using System;
 using System.Threading;
@@ -15,9 +14,9 @@ namespace TestAggEx
         {
         }
 
-        public override Task ExecuteJob(IJobExecutionContext context)
+        public async override Task ExecuteJob(IJobExecutionContext context)
         {
-            EffectedRows = 0;
+            await SetEffectedRowsAsync(0);
             for (int i = 0; i < 6; i++)
             {
                 Thread.Sleep(1000);
@@ -30,7 +29,7 @@ namespace TestAggEx
 
                     Logger.LogInformation("This is loop no. {Index}", i);
 
-                    EffectedRows++;
+                    await IncreaseEffectedRowsAsync();
                 }
                 catch (Exception ex)
                 {
@@ -43,8 +42,6 @@ namespace TestAggEx
             }
 
             CheckAggragateException();
-
-            return Task.CompletedTask;
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

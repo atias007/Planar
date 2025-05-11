@@ -19,13 +19,13 @@ namespace HelloWorld
             Logger.LogInformation("Timeout: {Timeout}", context.TriggerDetails.Timeout);
             var durationSeconds = new Random().Next(10, 20);
             Logger.LogInformation("Start execute job: {Name}", context.JobDetails.Key.Name);
-            EffectedRows = 0;
+            await SetEffectedRowsAsync(0);
             for (int i = 0; i < durationSeconds; i++)
             {
                 Logger.LogInformation("Hello world: step {Iteration}", i);
                 await Task.Delay(1000);
                 UpdateProgress(i + 1, durationSeconds);
-                EffectedRows++;
+                await IncreaseEffectedRowsAsync();
             }
 
             Logger.LogInformation("Finish");

@@ -49,11 +49,7 @@ namespace Planar.Job
             }
         }
 
-        public int? EffectedRows
-        {
-            get { return _baseJobFactory.EffectedRows; }
-            set { _baseJobFactory.EffectedRows = value; }
-        }
+        public int? EffectedRows => _baseJobFactory.EffectedRows;
 
         public int ExceptionCount => _baseJobFactory.ExceptionCount;
 
@@ -133,7 +129,7 @@ namespace Planar.Job
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
                 var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
                 _timer = new Timer(timeoutms);
-                _timer.Elapsed += TimerElapsed;
+                _timer.Elapsed += async (s, e) => await TimerElapsed(s, e);
                 _timer.Start();
 
                 var task = ExecuteJob(_context);
@@ -143,7 +139,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                await HandleException(ex);
                 return false;
             }
             finally
@@ -356,16 +352,6 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        public void PutJobData(string key, object value)
-#else
-        public void PutJobData(string key, object? value)
-#endif
-        {
-            PutJobDataAsync(key, value).Wait();
-        }
-
-#if NETSTANDARD2_0
-
         public async Task PutJobDataAsync(string key, object value)
 #else
         public async Task PutJobDataAsync(string key, object? value)
@@ -383,29 +369,9 @@ namespace Planar.Job
             await _baseJobFactory.PutJobDataAsync(key, value);
         }
 
-#if NETSTANDARD2_0
-
-        public void PutTriggerData(string key, object value)
-#else
-        public void PutTriggerData(string key, object? value)
-#endif
-        {
-            PutTriggerDataAsync(key, value).Wait();
-        }
-
-        public void RemoveJobData(string key)
-        {
-            _baseJobFactory.RemoveJobData(key);
-        }
-
         public async Task RemoveJobDataAsync(string key)
         {
             await _baseJobFactory.RemoveJobDataAsync(key);
-        }
-
-        public void RemoveTriggerData(string key)
-        {
-            _baseJobFactory.RemoveTriggerData(key);
         }
 
         public async Task RemoveTriggerDataAsync(string key)
@@ -413,19 +379,9 @@ namespace Planar.Job
             await _baseJobFactory.RemoveTriggerDataAsync(key);
         }
 
-        public void ClearJobData()
-        {
-            _baseJobFactory.ClearJobData();
-        }
-
         public async Task ClearJobDataAsync()
         {
             await _baseJobFactory.ClearJobDataAsync();
-        }
-
-        public void ClearTriggerData()
-        {
-            _baseJobFactory.ClearTriggerData();
         }
 
         public async Task ClearTriggerDataAsync()
@@ -470,6 +426,16 @@ namespace Planar.Job
         public async Task UpdateProgressAsync(long current, long total)
         {
             await _baseJobFactory.UpdateProgressAsync(current, total);
+        }
+
+        public async Task IncreaseEffectedRowsAsync(int value = 1)
+        {
+            await _baseJobFactory.IncreaseEffectedRowsAsync(value);
+        }
+
+        public async Task SetEffectedRowsAsync(int value = 1)
+        {
+            await _baseJobFactory.SetEffectedRowsAsync(value);
         }
 
         private static void FilterJobData(IDataMap dictionary)
@@ -647,12 +613,12 @@ namespace Planar.Job
             Logger.LogInformation("job version: {Version}", Version);
         }
 
-        private void TimerElapsed(object sender, ElapsedEventArgs e)
+        private async Task TimerElapsed(object sender, ElapsedEventArgs e)
         {
             try
             {
                 var ex = new PlanarJobException("Execution timeout. Terminate application");
-                HandleException(ex);
+                await HandleException(ex);
             }
             catch
             {
@@ -661,7 +627,7 @@ namespace Planar.Job
 
             try
             {
-                MqttClient.StopAsync().Wait();
+                await MqttClient.StopAsync();
                 _timer?.Dispose();
             }
             catch

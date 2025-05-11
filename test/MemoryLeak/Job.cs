@@ -13,7 +13,7 @@ internal class Job : BaseJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         int i = 0;
 
         Logger.LogInformation("Job delay 10");
@@ -24,7 +24,7 @@ internal class Job : BaseJob
             for (i = 0; i < 100_000; i++)
             {
                 Logger.LogInformation("This is line number {Number} at {Date} for the memory leak test. Trying to crash planar process while running or when get the result in cli", i, DateTime.Now);
-                EffectedRows++;
+                await IncreaseEffectedRowsAsync();
                 //await UpdateProgressAsync(i + 1, 100_000);
             }
         }

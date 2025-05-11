@@ -13,7 +13,7 @@ namespace AggregateException
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
-            EffectedRows = 0;
+            await SetEffectedRowsAsync(0);
 
             for (int i = 0; i < 10; i++)
             {
@@ -23,7 +23,7 @@ namespace AggregateException
                 var ex = new InvalidProgramException($"Invalid program exception {i}");
                 AddAggregateException(ex, 60);
 
-                EffectedRows++;
+                await IncreaseEffectedRowsAsync();
                 UpdateProgress(i + 1, 10);
             }
 

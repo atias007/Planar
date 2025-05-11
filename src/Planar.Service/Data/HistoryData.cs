@@ -11,6 +11,7 @@ using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,13 +44,13 @@ public interface IHistoryData : IBaseDataLayer
 
     IQueryable<JobInstanceLog> GetHistoryData();
 
-    Task<string?> GetHistoryDataById(long id);
+    Task<DbDataReader> GetHistoryDataById(long id);
 
-    Task<string?> GetHistoryExceptionById(long id);
+    Task<DbDataReader> GetHistoryExceptionById(long id);
 
     Task<IEnumerable<string>> GetHistoryJobIds();
 
-    Task<string?> GetHistoryLogById(long id);
+    Task<DbDataReader> GetHistoryLogById(long id);
 
     Task<int?> GetHistoryStatusById(long id);
 
@@ -275,9 +276,9 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
                 Duration = h.Duration,
                 Status = h.Status,
                 StatusTitle = h.StatusTitle,
-                Data = h.Data,
-                Log = h.Log == null ? null : h.Log.Substring(0, 10_000 + 1),
-                Exception = h.Exception,
+                Data = h.Data == null ? null : h.Data.Substring(0, JobHistory.DataMaximumLength + 1),
+                Log = h.Log == null ? null : h.Log.Substring(0, JobHistory.LogMaximumLength + 1),
+                Exception = h.Exception == null ? null : h.Exception.Substring(0, JobHistory.LogMaximumLength + 1),
                 ExceptionCount = h.ExceptionCount,
                 EffectedRows = h.EffectedRows,
                 IsCanceled = h.IsCanceled,
@@ -329,25 +330,35 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .AsQueryable();
     }
 
-    public async Task<string?> GetHistoryDataById(long id)
+    public async Task<DbDataReader> GetHistoryDataById(long id)
     {
-        var result = await _context.JobInstanceLogs
-            .Where(l => l.Id == id)
-            .Select(l => l.Data)
-            .FirstOrDefaultAsync();
+        const string query = "SELECT Data FROM JobInstanceLog WHERE Id = @Id";
 
-        return result;
+        var def = new CommandDefinition
+        (
+            commandText: query,
+            parameters: new { Id = id },
+            commandType: CommandType.Text
+        );
+
+        var connection = _context.Database.GetDbConnection();
+        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        return reader;
     }
 
-    public async Task<string?> GetHistoryExceptionById(long id)
+    public async Task<DbDataReader> GetHistoryExceptionById(long id)
     {
-        var result = await _context.JobInstanceLogs
-            .AsNoTracking()
-            .Where(l => l.Id == id)
-            .Select(l => l.Exception)
-            .FirstOrDefaultAsync();
+        const string query = "SELECT Exception FROM JobInstanceLog WHERE Id = @Id";
+        var def = new CommandDefinition
+        (
+            commandText: query,
+            parameters: new { Id = id },
+            commandType: CommandType.Text
+        );
 
-        return result;
+        var connection = _context.Database.GetDbConnection();
+        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        return reader;
     }
 
     public async Task<IEnumerable<string>> GetHistoryJobIds()
@@ -358,15 +369,19 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .ToListAsync();
     }
 
-    public async Task<string?> GetHistoryLogById(long id)
+    public async Task<DbDataReader> GetHistoryLogById(long id)
     {
-        var result = await _context.JobInstanceLogs
-            .AsNoTracking()
-            .Where(l => l.Id == id)
-            .Select(l => l.Log)
-            .FirstOrDefaultAsync();
+        const string query = "SELECT Log FROM JobInstanceLog WHERE Id = @Id";
+        var def = new CommandDefinition
+        (
+            commandText: query,
+            parameters: new { Id = id },
+            commandType: CommandType.Text
+        );
 
-        return result;
+        var connection = _context.Database.GetDbConnection();
+        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        return reader;
     }
 
     public async Task<int?> GetHistoryStatusById(long id)

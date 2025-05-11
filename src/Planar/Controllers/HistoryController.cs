@@ -7,7 +7,9 @@ using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Net;
+using System.Net.Mime;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -67,10 +69,13 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetHistoryDataById([FromRoute][LongId] long id)
+        public async Task<IActionResult> GetHistoryDataById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryDataById(id);
-            return Ok(result);
+            return new FileStreamResult(result, MediaTypeNames.Text.Plain)
+            {
+                FileDownloadName = $"planar_history_data_{id}.log"
+            };
         }
 
         [HttpGet("{id}/log")]
@@ -79,10 +84,13 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetHistoryLogById([FromRoute][LongId] long id)
+        public async Task<IActionResult> GetHistoryLogById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryLogById(id);
-            return Ok(result);
+            return new FileStreamResult(result, MediaTypeNames.Text.Plain)
+            {
+                FileDownloadName = $"planar_history_log_{id}.log"
+            };
         }
 
         [HttpGet("{id}/exception")]
@@ -91,10 +99,13 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetHistoryExceptionById([FromRoute][LongId] long id)
+        public async Task<IActionResult> GetHistoryExceptionById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryExceptionById(id);
-            return Ok(result);
+            return new FileStreamResult(result, MediaTypeNames.Text.Plain)
+            {
+                FileDownloadName = $"planar_history_exception_{id}.log"
+            };
         }
 
         [HttpGet("last")]

@@ -12,6 +12,8 @@ namespace Planar.Job
     internal class BaseJobFactory : IBaseJob
     {
         private static readonly object Locker = new object();
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
+
         private readonly bool _isNowOverrideValueExists;
         private readonly DateTime? _nowOverrideValue;
         private readonly IJobExecutionContext _context;
@@ -62,8 +64,6 @@ namespace Planar.Job
 
         #region AggregateException
 
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
-
         public async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
         {
             if (ex == null) { return; }
@@ -106,17 +106,6 @@ namespace Planar.Job
                 {
                     throw _exceptions[0];
                 }
-
-                ////var seperator = string.Empty.PadLeft(80, '-');
-                ////var sb = new StringBuilder();
-                ////sb.AppendLine($"There is {_exceptions.Count} aggregate exception");
-                ////_exceptions.ForEach(e => sb.AppendLine($"  - {e.Message}"));
-                ////sb.AppendLine(seperator);
-                ////_exceptions.ForEach(e =>
-                ////{
-                ////    sb.AppendLine(e.Message);
-                ////    sb.AppendLine(seperator);
-                ////});
 
                 throw new PlanarJobAggragateException($"There is {_exceptions.Count} aggregate exception", _exceptions);
             }
@@ -170,20 +159,10 @@ namespace Planar.Job
             await MqttClient.PublishAsync(MessageBrokerChannels.PutTriggerData, message);
         }
 
-        public void RemoveJobData(string key)
-        {
-            RemoveJobDataAsync(key).Wait();
-        }
-
         public async Task RemoveJobDataAsync(string key)
         {
             var message = new { Key = key };
             await MqttClient.PublishAsync(MessageBrokerChannels.RemoveJobData, message);
-        }
-
-        public void RemoveTriggerData(string key)
-        {
-            RemoveTriggerDataAsync(key).Wait();
         }
 
         public async Task RemoveTriggerDataAsync(string key)
@@ -192,20 +171,10 @@ namespace Planar.Job
             await MqttClient.PublishAsync(MessageBrokerChannels.RemoveTriggerData, message);
         }
 
-        public void ClearJobData()
-        {
-            ClearJobDataAsync().Wait();
-        }
-
         public async Task ClearJobDataAsync()
         {
             var message = new { };
             await MqttClient.PublishAsync(MessageBrokerChannels.ClearJobData, message);
-        }
-
-        public void ClearTriggerData()
-        {
-            ClearTriggerDataAsync().Wait();
         }
 
         public async Task ClearTriggerDataAsync()
@@ -221,13 +190,33 @@ namespace Planar.Job
         public int? EffectedRows
         {
             get { return _effectedRows; }
-            set
+        }
+
+        public async Task IncreaseEffectedRowsAsync(int value = 1)
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
             {
-                lock (Locker)
-                {
-                    _effectedRows = value;
-                    MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value).Wait();
-                }
+                _effectedRows += value;
+                MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value).Wait();
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+        }
+
+        public async Task SetEffectedRowsAsync(int value)
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                _effectedRows = value;
+                MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value).Wait();
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
             }
         }
 

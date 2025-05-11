@@ -28,13 +28,13 @@ namespace HelloWorldWithData
 
             var delay = isSpeed ? 500 : 1000;
 
-            EffectedRows = 0;
+            await SetEffectedRowsAsync(0);
             for (int i = 0; i < DurationSeconds; i++)
             {
                 Logger.LogInformation("Hello world with data: step {Iteration}", i);
                 await Task.Delay(delay);
                 UpdateProgress(i + 1, DurationSeconds);
-                EffectedRows++;
+                await IncreaseEffectedRowsAsync();
             }
 
             DurationSeconds++;

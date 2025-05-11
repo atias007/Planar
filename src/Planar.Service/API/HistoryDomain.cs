@@ -2,12 +2,14 @@
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -88,29 +90,40 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         return result;
     }
 
-    public async Task<string?> GetHistoryDataById(long id)
+    public async Task<Stream> GetHistoryDataById(long id)
     {
-        var result = await DataLayer.GetHistoryDataById(id);
-        await ValidateHistoryExists(id, result);
+        using var reader = await DataLayer.GetHistoryDataById(id);
+        if (!await reader.ReadAsync())
+        {
+            throw new RestNotFoundException($"history with id {id} not found");
+        }
+
+        var result = await reader.GetStreamFromText(0);
         return result;
     }
 
-    public async Task<string?> GetHistoryLogById(long id)
+    public async Task<Stream> GetHistoryLogById(long id)
     {
-        var result = await DataLayer.GetHistoryLogById(id);
+        using var reader = await DataLayer.GetHistoryLogById(id);
+        if (!await reader.ReadAsync())
+        {
+            throw new RestNotFoundException($"history with id {id} not found");
+        }
 
-        // generate NotFound response
-        await ValidateHistoryExists(id, result);
+        var result = await reader.GetStreamFromText(0);
         return result;
     }
 
-    public async Task<string?> GetHistoryExceptionById(long id)
+    public async Task<Stream> GetHistoryExceptionById(long id)
     {
-        var result = await DataLayer.GetHistoryExceptionById(id);
+        using var reader = await DataLayer.GetHistoryExceptionById(id);
 
-        // generate NotFound response
-        await ValidateHistoryExists(id, result);
+        if (!await reader.ReadAsync())
+        {
+            throw new RestNotFoundException($"history with id {id} not found");
+        }
 
+        var result = await reader.GetStreamFromText(0);
         return result;
     }
 
@@ -124,14 +137,6 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         var data = last.Data?.Select(mapper.MapJobLastRun).ToList() ?? [];
         var result = new PagingResponse<JobLastRun>(request, data, last.TotalRows);
         return result;
-    }
-
-    private async Task ValidateHistoryExists(long id, string? result)
-    {
-        if (string.IsNullOrEmpty(result) && !await DataLayer.IsHistoryExists(id))
-        {
-            throw new RestNotFoundException($"history with id {id} not found");
-        }
     }
 
     public async Task<CounterResponse> GetHistoryCounter(CounterRequest request)

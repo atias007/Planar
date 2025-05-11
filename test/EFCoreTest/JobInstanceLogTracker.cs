@@ -25,7 +25,7 @@ namespace EFCoreTest
             Logger.LogInformation("Last id {Id}", LastId);
 
             var baseJob = ServiceProvider.GetRequiredService<IBaseJob>();
-            EffectedRows = 1;
+            await SetEffectedRowsAsync(1);
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
