@@ -1,8 +1,8 @@
 ﻿using Planar.Client.Entities;
 using Planar.Client.Exceptions;
-using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,22 +28,22 @@ namespace Planar.Client.Api
         public async Task<GlobalConfig> GetAsync(string key, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(key, nameof(key));
-            var restRequest = new RestRequest("config/{key}", Method.Get)
-                            .AddParameter("key", key, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("config/{key}", HttpMethod.Get)
+                            .AddSegmentParameter("key", key);
             var result = await _proxy.InvokeAsync<GlobalConfig>(restRequest, cancellationToken);
             return result;
         }
 
         public async Task<IEnumerable<GlobalConfig>> ListAsync(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("config", Method.Get);
+            var restRequest = new RestRequest("config", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<IEnumerable<GlobalConfig>>(restRequest, cancellationToken);
             return result;
         }
 
         public async Task<IEnumerable<KeyValueItem>> ListFlatAsync(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("config/flat", Method.Get);
+            var restRequest = new RestRequest("config/flat", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
             return result;
         }
@@ -60,13 +60,13 @@ namespace Planar.Client.Api
             var data = new { key, value, Type = configType.ToString().ToLower() };
             try
             {
-                var restRequest = new RestRequest("config", Method.Post)
+                var restRequest = new RestRequest("config", HttpMethod.Post)
                         .AddBody(data);
                 await _proxy.InvokeAsync(restRequest, cancellationToken);
             }
             catch (PlanarNotFoundException)
             {
-                var restRequest = new RestRequest("config", Method.Put)
+                var restRequest = new RestRequest("config", HttpMethod.Put)
                     .AddBody(data);
 
                 await _proxy.InvokeAsync(restRequest, cancellationToken);

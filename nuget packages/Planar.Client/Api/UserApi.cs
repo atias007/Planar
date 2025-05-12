@@ -1,6 +1,7 @@
 ﻿using Planar.Client.Entities;
-using RestSharp;
+
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -15,7 +16,7 @@ namespace Planar.Client.Api
 
         public async Task<string> AddAsync(User user, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("user", Method.Post)
+            var restRequest = new RestRequest("user", HttpMethod.Post)
                 .AddBody(user);
 
             var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
@@ -26,8 +27,8 @@ namespace Planar.Client.Api
         {
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("user/{username}", Method.Delete)
-                .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("user/{username}", HttpMethod.Delete)
+                .AddSegmentParameter("username", username);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -37,9 +38,9 @@ namespace Planar.Client.Api
             ValidateMandatory(group, nameof(group));
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("group/{name}/user/{username}", Method.Delete)
-              .AddParameter("name", group, ParameterType.UrlSegment)
-              .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("group/{name}/user/{username}", HttpMethod.Delete)
+              .AddSegmentParameter("name", group)
+              .AddSegmentParameter("username", username);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -48,8 +49,8 @@ namespace Planar.Client.Api
         {
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("user/{username}", Method.Get)
-               .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("user/{username}", HttpMethod.Get)
+               .AddSegmentParameter("username", username);
 
             var result = await _proxy.InvokeAsync<UserDetails>(restRequest, cancellationToken);
             return result;
@@ -59,8 +60,8 @@ namespace Planar.Client.Api
         {
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("user/{username}/role", Method.Get)
-               .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("user/{username}/role", HttpMethod.Get)
+               .AddSegmentParameter("username", username);
 
             var title = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
             Enum.TryParse<Roles>(title, ignoreCase: true, out var result);
@@ -72,9 +73,9 @@ namespace Planar.Client.Api
             ValidateMandatory(group, nameof(group));
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("group/{name}/user/{username}", Method.Patch)
-               .AddParameter("name", group, ParameterType.UrlSegment)
-               .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("group/{name}/user/{username}", HttpPatchMethod)
+               .AddSegmentParameter("name", group)
+               .AddSegmentParameter("username", username);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -82,7 +83,7 @@ namespace Planar.Client.Api
         public async Task<PagingResponse<UserBasicDetails>> ListAsync(int? pageNumber = null, int? pageSize = null, CancellationToken cancellationToken = default)
         {
             var paging = new Paging(pageNumber, pageSize);
-            var restRequest = new RestRequest("user", Method.Get)
+            var restRequest = new RestRequest("user", HttpMethod.Get)
                 .AddQueryPagingParameter(paging);
 
             var result = await _proxy.InvokeAsync<PagingResponse<UserBasicDetails>>(restRequest, cancellationToken);
@@ -93,8 +94,8 @@ namespace Planar.Client.Api
         {
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("user/{username}/reset-password", Method.Patch)
-                .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("user/{username}/reset-password", HttpPatchMethod)
+                .AddSegmentParameter("username", username);
 
             var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
             return result;
@@ -105,8 +106,8 @@ namespace Planar.Client.Api
             ValidateMandatory(username, nameof(username));
             ValidateMandatory(password, nameof(password));
 
-            var restRequest = new RestRequest("user/{username}/password", Method.Patch)
-                .AddParameter("username", username, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("user/{username}/password", HttpPatchMethod)
+                .AddSegmentParameter("username", username)
                 .AddBody(new
                 {
                     password,
@@ -126,7 +127,7 @@ namespace Planar.Client.Api
             ValidateMandatory(username, nameof(username));
             ValidateMandatory(propertyName, nameof(propertyName));
 
-            var restRequest = new RestRequest("group", Method.Patch)
+            var restRequest = new RestRequest("group", HttpPatchMethod)
                .AddBody(new
                {
                    name = username,

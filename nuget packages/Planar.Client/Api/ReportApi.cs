@@ -1,7 +1,8 @@
 ﻿using Planar.Client.Entities;
-using RestSharp;
+
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,8 +16,8 @@ namespace Planar.Client.Api
 
         public async Task<IEnumerable<ReportsStatus>> GetAsync(ReportNames report, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("report/{name}", Method.Get)
-                .AddUrlSegment("name", report);
+            var restRequest = new RestRequest("report/{name}", HttpMethod.Get)
+                .AddSegmentParameter("name", report);
 
             var result = await _proxy.InvokeAsync<IEnumerable<ReportsStatus>>(restRequest, cancellationToken);
             return result;
@@ -35,8 +36,8 @@ namespace Planar.Client.Api
                 period = period?.ToString()
             };
 
-            var restRequest = new RestRequest("report/{name}/run", Method.Post)
-                .AddUrlSegment("name", report.ToString())
+            var restRequest = new RestRequest("report/{name}/run", HttpMethod.Post)
+                .AddSegmentParameter("name", report.ToString())
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -56,8 +57,8 @@ namespace Planar.Client.Api
                 toDate
             };
 
-            var restRequest = new RestRequest("report/{name}/run", Method.Post)
-                .AddUrlSegment("name", report.ToString())
+            var restRequest = new RestRequest("report/{name}/run", HttpMethod.Post)
+                .AddSegmentParameter("name", report.ToString())
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -77,8 +78,8 @@ namespace Planar.Client.Api
                 period = period.ToString()
             };
 
-            var restRequest = new RestRequest("report/{name}", Method.Patch)
-                .AddUrlSegment("name", report.ToString())
+            var restRequest = new RestRequest("report/{name}", HttpPatchMethod)
+                .AddSegmentParameter("name", report.ToString())
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -92,8 +93,8 @@ namespace Planar.Client.Api
                 period = period.ToString()
             };
 
-            var restRequest = new RestRequest("report/{name}", Method.Patch)
-                .AddUrlSegment("name", report.ToString())
+            var restRequest = new RestRequest("report/{name}", HttpPatchMethod)
+                .AddSegmentParameter("name", report.ToString())
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -109,8 +110,8 @@ namespace Planar.Client.Api
                 period = period.ToString()
             };
 
-            var restRequest = new RestRequest("report/{name}", Method.Patch)
-                .AddUrlSegment("name", report.ToString())
+            var restRequest = new RestRequest("report/{name}", HttpPatchMethod)
+                .AddSegmentParameter("name", report.ToString())
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -124,8 +125,8 @@ namespace Planar.Client.Api
                 period = period.ToString()
             };
 
-            var restRequest = new RestRequest("report/{name}", Method.Patch)
-                .AddUrlSegment("name", report.ToString())
+            var restRequest = new RestRequest("report/{name}", HttpPatchMethod)
+                .AddSegmentParameter("name", report.ToString())
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);

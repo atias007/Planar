@@ -1,14 +1,10 @@
-﻿using Core.JsonConvertor;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Planar.Client.Entities;
-using Planar.Client.Exceptions;
-using Planar.Client.Serialize;
-using RestSharp;
-using RestSharp.Serializers.NewtonsoftJson;
+﻿using Planar.Client.Exceptions;
 using System;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,7 +30,7 @@ namespace Planar.Client
         public string FirstName { get; private set; }
         public string LastName { get; private set; }
         private string Token { get; set; }
-        private RestClient _client;
+        private HttpClient _client;
 
 #else
         public string? Username { get; private set; }
@@ -43,7 +39,7 @@ namespace Planar.Client
         public string? LastName { get; private set; }
         public string FirstName { get; private set; } = null!;
         private string? Token { get; set; }
-        private RestClient? _client;
+        private HttpClient? _client;
 
 #endif
 
@@ -51,39 +47,59 @@ namespace Planar.Client
 
         private Uri BaseUri => new UriBuilder(Schema, Host, Port).Uri;
 
-        private RestClient Proxy
+#if NETSTANDARD2_0
+
+        internal static HttpClient CreateHttpClient(Uri baseAddress, string token = null, TimeSpan? timeout = null)
+#else
+        internal static HttpClient CreateHttpClient(Uri baseAddress, string? token = null, TimeSpan? timeout = null)
+#endif
+
+        {
+            if (timeout == null || timeout == TimeSpan.Zero)
+            {
+                timeout = TimeSpan.FromSeconds(10);
+            }
+
+            var client = new HttpClient
+            {
+                Timeout = timeout.GetValueOrDefault(),
+                BaseAddress = baseAddress,
+            };
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // get the assembly version number
+            var assembly = typeof(PlanarClient).Assembly;
+            var version = assembly.GetName().Version;
+            if (version != null)
+            {
+                var versionString = $"{version.Major}.{version.Minor}.{version.Build}";
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Planar.Client", versionString));
+            }
+            else
+            {
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Planar.Client"));
+            }
+
+            return client;
+        }
+
+        private HttpClient Client
         {
             get
             {
+                if (_client != null) { return _client; }
+
                 lock (_lock)
                 {
-                    if (_client == null)
-                    {
-                        var options = new RestClientOptions
-                        {
-                            BaseUrl = BaseUri,
-                            Timeout = TimeSpan.FromMilliseconds(Convert.ToInt32(Timeout.TotalMilliseconds))
-                        };
-
-                        var serOprions = new JsonSerializerSettings();
-                        serOprions.Converters.Add(new NewtonsoftTimeSpanConverter());
-                        serOprions.Converters.Add(new NewtonsoftNullableTimeSpanConverter());
-                        serOprions.Converters.Add(new GenericEnumConverter<JobActiveMembers>());
-                        serOprions.Converters.Add(new GenericEnumConverter<Roles>());
-                        serOprions.Converters.Add(new GenericEnumConverter<ReportPeriods>());
-                        _client = new RestClient(
-                            options: options,
-                            configureSerialization: s => s.UseNewtonsoftJson(serOprions)
-                        );
-
-                        if (!string.IsNullOrEmpty(Token))
-                        {
-                            _client.AddDefaultHeader("Authorization", $"Bearer {Token}");
-                        }
-                    }
-
-                    return _client;
+                    if (_client != null) { return _client; }
+                    _client = CreateHttpClient(BaseUri, Token, Timeout);
                 }
+
+                return _client;
             }
         }
 
@@ -100,15 +116,14 @@ namespace Planar.Client
             if (response.StatusCode != HttpStatusCode.Unauthorized) { return false; }
 
             var reloginResponse = await Relogin(cancellationToken);
-            return reloginResponse.IsSuccessful;
+            return reloginResponse.IsSuccess;
         }
 
-        private static void ValidateResponse(RestResponse response)
+        private static async Task ValidateResponse(RestResponse response)
         {
-            if (response.IsSuccessful) { return; }
+            if (response.IsSuccess) { return; }
 
-            HandleSuccessStatusCode(response);
-            HandleBadResponse(response);
+            await HandleBadResponse(response);
 
             if (response.StatusCode == HttpStatusCode.Conflict) { throw new PlanarConflictException(response); }
             if (response.StatusCode == HttpStatusCode.Forbidden) { throw new PlanarForbiddenException(response); }
@@ -123,44 +138,26 @@ namespace Planar.Client
             if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(response); }
 #endif
 
-            HandleNotFoundResponse(response);
+            await HandleNotFoundResponse(response);
 
             throw new PlanarException(response);
         }
 
-        private static void HandleSuccessStatusCode(RestResponse response)
-        {
-            if (!response.IsSuccessStatusCode) { return; }
-
-            var message = "Planar service return success status code but the response content is invalid";
-            if (!string.IsNullOrWhiteSpace(response.ErrorMessage))
-            {
-                message += $". Inner error message: {response.ErrorMessage}";
-            }
-
-            if (response.ErrorException == null)
-            {
-                throw new PlanarException(message);
-            }
-
-            throw new PlanarException(message, response.ErrorException);
-        }
-
-        private static void HandleNotFoundResponse(RestResponse response)
+        private static async Task HandleNotFoundResponse(RestResponse response)
         {
             if (response.StatusCode != HttpStatusCode.NotFound) { return; }
-            if (string.IsNullOrWhiteSpace(response.Content))
+            if (string.IsNullOrWhiteSpace(await response.GetStringContent()))
             {
                 throw new PlanarNotFoundException(response);
             }
 
-            throw new PlanarNotFoundException(response.Content);
+            throw new PlanarNotFoundException(await response.GetStringContent() ?? string.Empty);
         }
 
-        private static void HandleBadResponse(RestResponse response)
+        private async static Task HandleBadResponse(RestResponse response)
         {
             if (response.StatusCode != HttpStatusCode.BadRequest) { return; }
-            if (!string.IsNullOrWhiteSpace(response.Content))
+            if (!string.IsNullOrWhiteSpace(await response.GetStringContent()))
             {
 #if NETSTANDARD2_0
                 PlanarValidationErrors errorResponse = null;
@@ -172,7 +169,7 @@ namespace Planar.Client
 
                 try
                 {
-                    errorResponse = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
+                    errorResponse = CoreSerializer.Deserialize<PlanarValidationErrors>(await response.GetStringContent());
                 }
                 catch
                 {
@@ -190,27 +187,36 @@ namespace Planar.Client
                 }
             }
 
-            HandleODataErrorResponse(response);
+            await HandleODataErrorResponse(response);
             throw new PlanarValidationException("Planar service return validation errors");
         }
 
-        private static void HandleODataErrorResponse(RestResponse response)
+        private async static Task HandleODataErrorResponse(RestResponse response)
         {
             if (response.StatusCode != HttpStatusCode.BadRequest) { return; }
-            if (string.IsNullOrWhiteSpace(response.Content)) { return; }
-            var token = JToken.Parse(response.Content);
-            var message = token["error"]?["innererror"]?["message"]?.ToString();
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                message = ClearMessage(message);
-                throw new PlanarValidationException(message);
-            }
+            var content = await response.GetStringContent();
+            if (string.IsNullOrWhiteSpace(content)) { return; }
 
-            message = token["error"]?["message"]?.ToString();
-            if (!string.IsNullOrWhiteSpace(message))
+            using (var doc = JsonDocument.Parse(content))
             {
-                message = ClearMessage(message);
-                throw new PlanarValidationException(message);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("error", out var errorElement) &&
+                    errorElement.TryGetProperty("innererror", out var innerElement) &&
+                    innerElement.TryGetProperty("message", out var messageElement))
+                {
+                    var message = messageElement.GetString() ?? string.Empty;
+                    message = ClearMessage(message);
+                    throw new PlanarValidationException(message);
+                }
+
+                if (root.TryGetProperty("error", out var errorElement2) &&
+                    errorElement2.TryGetProperty("message", out var messageElement2))
+                {
+                    var message = messageElement2.GetString() ?? string.Empty;
+                    message = ClearMessage(message);
+                    throw new PlanarValidationException(message);
+                }
             }
         }
 
@@ -226,16 +232,15 @@ namespace Planar.Client
 #endif
         }
 
-        public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken)
+        public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken) where TResponse : class
         {
-            var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
+            var response = await ExecuteAsync<TResponse>(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
             {
-                response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
+                response = await ExecuteAsync<TResponse>(request, cancellationToken);
             }
 
-            ValidateResponse(response);
-
+            await ValidateResponse(response);
 #if NETSTANDARD2_0
             return response.Data;
 #else
@@ -251,14 +256,29 @@ namespace Planar.Client
 #endif
 
         {
-            var response = await Proxy.ExecuteAsync(request, cancellationToken);
+            var response = await ExecuteAsync(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
             {
-                response = await Proxy.ExecuteAsync(request, cancellationToken);
+                response = await ExecuteAsync(request, cancellationToken);
             }
 
-            ValidateResponse(response);
-            return response.Content;
+            await ValidateResponse(response);
+            return await response.GetStringContent();
+        }
+
+        public async Task<T> InvokeScalarAsync<T>(RestRequest request, CancellationToken cancellationToken) where T : struct
+        {
+            var response = await ExecuteAsync(request, cancellationToken);
+            if (await RefreshToken(response, cancellationToken))
+            {
+                response = await ExecuteAsync(request, cancellationToken);
+            }
+
+            await ValidateResponse(response);
+            var text = await response.GetStringContent();
+            if (string.IsNullOrWhiteSpace(text)) { return default; }
+            var obj = Convert.ChangeType(text, typeof(T));
+            return (T)obj;
         }
 
         private async Task<RestResponse> Relogin(CancellationToken cancellationToken)
@@ -283,6 +303,44 @@ namespace Planar.Client
             }
         }
 
+        private async Task<RestResponse<TResult>> ExecuteAsync<TResult>(RestRequest restRequest, CancellationToken cancellationToken)
+            where TResult : class
+        {
+            var request = restRequest.GetRequest();
+            HttpResponseMessage response;
+
+            if (restRequest.Timeout != null && restRequest.Timeout != TimeSpan.Zero)
+            {
+#if NETSTANDARD2_0
+
+                using (var cts = new CancellationTokenSource(restRequest.Timeout))
+#else
+                using (var cts = new CancellationTokenSource(restRequest.Timeout.Value))
+#endif
+                {
+                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token))
+                    {
+                        response = await Client.SendAsync(request, linkedCts.Token);
+                    }
+                }
+            }
+            else
+            {
+                response = await Client.SendAsync(request, cancellationToken);
+            }
+
+            var result = new RestResponse(response);
+            return await result.GetTypedResponse<TResult>();
+        }
+
+        private async Task<RestResponse> ExecuteAsync(RestRequest restRequest, CancellationToken cancellationToken)
+        {
+            var request = restRequest.GetRequest();
+            var response = await Client.SendAsync(request, cancellationToken);
+            var result = new RestResponse(response);
+            return result;
+        }
+
         public async Task<RestResponse<LoginResponse>> Login(LoginData login, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(login.Host)) { throw new PlanarException("Host is mandatory"); }
@@ -293,46 +351,46 @@ namespace Planar.Client
             }
 
             var schema = GetSchema(login.SecureProtocol);
+            var baseAddress = new UriBuilder(schema, login.Host, login.Port).Uri;
 
-            var options = new RestClientOptions
+            using (var client = CreateHttpClient(baseAddress, null, Timeout))
             {
-                BaseUrl = new UriBuilder(schema, login.Host, login.Port).Uri,
-                Timeout = TimeSpan.FromMilliseconds(Convert.ToInt32(Timeout.TotalMilliseconds)),
-            };
+                var restRequest = new RestRequest("service/login", HttpMethod.Post);
+                var body = new { login.Username, login.Password };
+                restRequest.AddBody(body);
 
-            var client = new RestClient(options);
-            var restRequest = new RestRequest("service/login", Method.Post);
-            var body = new { login.Username, login.Password };
-            restRequest.AddBody(body);
+                var request = restRequest.GetRequest();
+                var response = await Client.SendAsync(request, cancellationToken);
+                var result = new RestResponse(response);
+                if (result.StatusCode == HttpStatusCode.Conflict)
+                {
+                    Host = login.Host;
+                    Port = login.Port;
+                    SecureProtocol = login.SecureProtocol;
+                    Flush();
 
-            var result = await client.ExecuteAsync<LoginResponse>(restRequest, cancellationToken);
-            if (result.StatusCode == HttpStatusCode.Conflict)
-            {
-                Host = login.Host;
-                Port = login.Port;
-                SecureProtocol = login.SecureProtocol;
-                Flush();
+                    Username = login.Username;
+                    Password = login.Password;
+                }
 
-                Username = login.Username;
-                Password = login.Password;
+                if (result.IsSuccess)
+                {
+                    var data = await result.GetData<LoginResponse>()
+                        ?? throw new PlanarException("The data return from login service is invalid");
+
+                    Host = login.Host;
+                    Port = login.Port;
+                    SecureProtocol = login.SecureProtocol;
+                    Flush();
+
+                    Username = login.Username;
+                    Password = login.Password;
+                    Token = data.Token;
+                    Role = data.Role;
+                }
+
+                return await result.GetTypedResponse<LoginResponse>();
             }
-
-            if (result.IsSuccessful)
-            {
-                if (result.Data == null) { throw new PlanarException("The data return from login service is invalid"); }
-
-                Host = login.Host;
-                Port = login.Port;
-                SecureProtocol = login.SecureProtocol;
-                Flush();
-
-                Username = login.Username;
-                Password = login.Password;
-                Token = result.Data.Token;
-                Role = result.Data.Role;
-            }
-
-            return result;
         }
 
         public void Logout()

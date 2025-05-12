@@ -81,7 +81,7 @@ namespace Planar.Client
                 return new LoginDetails { Role = Anonymous };
             }
 
-            if (!response.IsSuccessful)
+            if (!response.IsSuccess)
             {
                 throw new PlanarException($"Login failed. Server return {response.StatusCode} status code");
             }

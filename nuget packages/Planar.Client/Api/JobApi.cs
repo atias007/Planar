@@ -1,9 +1,9 @@
 ﻿using Planar.Client.Entities;
 using Planar.Client.Exceptions;
-using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,7 +29,7 @@ namespace Planar.Client
                 jobFileName
             };
 
-            var restRequest = new RestRequest("job/folder", Method.Post)
+            var restRequest = new RestRequest("job/folder", HttpMethod.Post)
                 .AddBody(body);
 
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
@@ -39,7 +39,7 @@ namespace Planar.Client
         public async Task CancelRunningAsync(string fireInstanceId, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(fireInstanceId, nameof(fireInstanceId));
-            var restRequest = new RestRequest("job/cancel", Method.Post)
+            var restRequest = new RestRequest("job/cancel", HttpMethod.Post)
                 .AddBody(new { fireInstanceId });
             await _proxy.InvokeAsync<JobDescription>(restRequest, cancellationToken);
         }
@@ -47,8 +47,8 @@ namespace Planar.Client
         public async Task ClearDataAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/data", Method.Delete)
-                       .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/data", HttpMethod.Delete)
+                       .AddSegmentParameter("id", id);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -56,8 +56,8 @@ namespace Planar.Client
         public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}", Method.Delete)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}", HttpMethod.Delete)
+                .AddSegmentParameter("id", id);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -66,9 +66,9 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
             ValidateMandatory(key, nameof(key));
-            var restRequest = new RestRequest("job/{id}/data/{key}", Method.Delete)
-                       .AddParameter("id", id, ParameterType.UrlSegment)
-                       .AddParameter("key", key, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/data/{key}", HttpMethod.Delete)
+                       .AddSegmentParameter("id", id)
+                       .AddSegmentParameter("key", key);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -76,8 +76,8 @@ namespace Planar.Client
         public async Task<JobDescription> DescribeJobAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/info", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/info", HttpMethod.Get)
+               .AddSegmentParameter("id", id);
             var result = await _proxy.InvokeAsync<JobDescription>(restRequest, cancellationToken);
             return result;
         }
@@ -85,8 +85,8 @@ namespace Planar.Client
         public async Task<IEnumerable<KeyValueItem>> GatSettingsAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/settings", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/settings", HttpMethod.Get)
+               .AddSegmentParameter("id", id);
 
             var result = await _proxy.InvokeAsync<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
             return result;
@@ -95,8 +95,8 @@ namespace Planar.Client
         public async Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}", HttpMethod.Get)
+                .AddSegmentParameter("id", id);
 
             var result = await _proxy.InvokeAsync<JobDetails>(restRequest, cancellationToken);
             return result;
@@ -104,8 +104,8 @@ namespace Planar.Client
 
         public async Task<JobAuditWithInformation> GetAuditAsync(int auditId, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/audit/{auditId}", Method.Get)
-                .AddParameter("auditId", auditId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/audit/{auditId}", HttpMethod.Get)
+                .AddSegmentParameter("auditId", auditId);
             var result = await _proxy.InvokeAsync<JobAuditWithInformation>(restRequest, cancellationToken);
             return result;
         }
@@ -113,8 +113,8 @@ namespace Planar.Client
         public async Task<string> GetJobFileAsync(string name, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
-                .AddUrlSegment("name", name);
+            var restRequest = new RestRequest("job/jobfile/{name}", HttpMethod.Get)
+                .AddSegmentParameter("name", name);
 
             var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
             return result;
@@ -122,7 +122,7 @@ namespace Planar.Client
 
         public async Task<IEnumerable<string>> GetJobTypesAsync(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/types", Method.Get);
+            var restRequest = new RestRequest("job/types", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<IEnumerable<string>>(restRequest, cancellationToken);
             return result;
         }
@@ -130,26 +130,26 @@ namespace Planar.Client
         public async Task<DateTime?> GetNextRunningAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/next-running", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/next-running", HttpMethod.Get)
+                .AddSegmentParameter("id", id);
 
-            var result = await _proxy.InvokeAsync<DateTime?>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeScalarAsync<DateTime>(restRequest, cancellationToken);
             return result;
         }
 
         public async Task<DateTime?> GetPreviousRunningAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/prev-running", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/prev-running", HttpMethod.Get)
+               .AddSegmentParameter("id", id);
 
-            var result = await _proxy.InvokeAsync<DateTime?>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeScalarAsync<DateTime>(restRequest, cancellationToken);
             return result;
         }
 
         public async Task<IEnumerable<RunningJobDetails>> GetRunningAsync(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/running", Method.Get);
+            var restRequest = new RestRequest("job/running", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<List<RunningJobDetails>>(restRequest, cancellationToken);
             return result;
         }
@@ -157,8 +157,8 @@ namespace Planar.Client
         public async Task<RunningJobDetails> GetRunningAsync(string instanceId, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(instanceId, nameof(instanceId));
-            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
-                    .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", HttpMethod.Get)
+                    .AddSegmentParameter("instanceId", instanceId);
             var result = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
             return result;
         }
@@ -166,8 +166,8 @@ namespace Planar.Client
         public async Task<RunningJobData> GetRunningDataAsync(string instanceId, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(instanceId, nameof(instanceId));
-            var restRequest = new RestRequest("job/running-data/{instanceId}", Method.Get)
-                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/running-data/{instanceId}", HttpMethod.Get)
+                .AddSegmentParameter("instanceId", instanceId);
 
             var result = await _proxy.InvokeAsync<RunningJobData>(restRequest, cancellationToken);
             return result;
@@ -190,7 +190,7 @@ namespace Planar.Client
                 data
             };
 
-            var restRequest = new RestRequest("job/invoke", Method.Post)
+            var restRequest = new RestRequest("job/invoke", HttpMethod.Post)
                 .AddBody(request);
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -202,7 +202,7 @@ namespace Planar.Client
         {
             var paging = new Paging(pageNumber, pageSize);
             paging.SetPagingDefaults();
-            var restRequest = new RestRequest("job/audits", Method.Get)
+            var restRequest = new RestRequest("job/audits", HttpMethod.Get)
                 .AddQueryPagingParameter(paging);
 
             var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
@@ -217,7 +217,7 @@ namespace Planar.Client
 #endif
         {
             var f = filter ?? ListJobsFilter.Empty;
-            var restRequest = new RestRequest("job", Method.Get);
+            var restRequest = new RestRequest("job", HttpMethod.Get);
             restRequest.AddQueryParameter("jobCategory", (int)f.Category);
             if (!string.IsNullOrEmpty(f.JobType))
             {
@@ -261,8 +261,8 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
             var paging = new Paging(pageNumber, pageSize);
-            var restRequest = new RestRequest("job/{id}/audit", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("job/{id}/audit", HttpMethod.Get)
+                .AddSegmentParameter("id", id)
                 .AddQueryPagingParameter(paging);
 
             var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
@@ -272,7 +272,7 @@ namespace Planar.Client
         public async Task PauseAsync(string id, DateTime? autoResumeDate = null, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/pause", Method.Post)
+            var restRequest = new RestRequest("job/pause", HttpMethod.Post)
                 .AddBody(new { id, autoResumeDate });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -281,7 +281,7 @@ namespace Planar.Client
         public async Task PauseGroupAsync(string name, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("job/pause-group", Method.Post)
+            var restRequest = new RestRequest("job/pause-group", HttpMethod.Post)
                .AddBody(new { name });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -303,14 +303,14 @@ namespace Planar.Client
                 DataValue = value
             };
 
-            var restRequest = new RestRequest("job/data", Method.Post).AddBody(prm);
+            var restRequest = new RestRequest("job/data", HttpMethod.Post).AddBody(prm);
             try
             {
                 await _proxy.InvokeAsync(restRequest, cancellationToken);
             }
             catch (PlanarConflictException)
             {
-                restRequest = new RestRequest("job/data", Method.Put).AddBody(prm);
+                restRequest = new RestRequest("job/data", HttpMethod.Put).AddBody(prm);
                 await _proxy.InvokeAsync(restRequest, cancellationToken);
             }
         }
@@ -344,7 +344,7 @@ namespace Planar.Client
                 data
             };
 
-            var restRequest = new RestRequest("job/queue-invoke", Method.Post)
+            var restRequest = new RestRequest("job/queue-invoke", HttpMethod.Post)
                 .AddBody(request);
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
@@ -363,7 +363,7 @@ namespace Planar.Client
             ValidateMandatory(id, nameof(id));
             ValidateMandatory(group, nameof(group));
 
-            var restRequest = new RestRequest("job/wait", Method.Get);
+            var restRequest = new RestRequest("job/wait", HttpMethod.Get);
             if (!string.IsNullOrWhiteSpace(id)) { restRequest.AddQueryParameter("id", id); }
             if (!string.IsNullOrWhiteSpace(group)) { restRequest.AddQueryParameter("group", group); }
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -372,7 +372,7 @@ namespace Planar.Client
         public async Task ResumeAsync(string id, DateTime? autoResumeDate = null, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/resume", Method.Post)
+            var restRequest = new RestRequest("job/resume", HttpMethod.Post)
                .AddBody(new { id, autoResumeDate });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -381,7 +381,7 @@ namespace Planar.Client
         public async Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("job/resume-group", Method.Post)
+            var restRequest = new RestRequest("job/resume-group", HttpMethod.Post)
                .AddBody(new { name });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -392,7 +392,7 @@ namespace Planar.Client
             ValidateMandatory(id, nameof(id));
             ValidateMandatory(autoResumeDate, nameof(autoResumeDate));
 
-            var restRequest = new RestRequest("job/auto-resume", Method.Post)
+            var restRequest = new RestRequest("job/auto-resume", HttpMethod.Post)
                 .AddBody(new { id, autoResumeDate });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -401,8 +401,8 @@ namespace Planar.Client
         public async Task CancelAutoResumeAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/{id}/auto-resume", HttpMethod.Delete)
+                .AddSegmentParameter("id", id);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -411,7 +411,7 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
             ValidateMandatory(author, nameof(author));
-            var restRequest = new RestRequest("job/author", Method.Patch)
+            var restRequest = new RestRequest("job/author", HttpPatchMethod)
                 .AddBody(new
                 {
                     id,
@@ -465,7 +465,7 @@ namespace Planar.Client
                 }
             };
 
-            var restRequest = new RestRequest("job", Method.Put)
+            var restRequest = new RestRequest("job", HttpMethod.Put)
                 .AddBody(body);
 
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
@@ -487,7 +487,7 @@ namespace Planar.Client
 
         private async Task CheckAlreadyRunningJobInner(string id, CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("job/running", Method.Get);
+            var restRequest = new RestRequest("job/running", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<List<RunningJobDetails>>(restRequest, cancellationToken);
 
             var exists = result.Exists(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
@@ -496,8 +496,8 @@ namespace Planar.Client
 
         private async Task CheckLog(Func<RunningJobDetails, Task> callback, long logId, CancellationToken cancellationToken)
         {
-            var restTestRequest = new RestRequest("history/{id}", Method.Get)
-               .AddParameter("id", logId, ParameterType.UrlSegment);
+            var restTestRequest = new RestRequest("history/{id}", HttpMethod.Get)
+               .AddSegmentParameter("id", logId);
             HistoryDetails status;
 
             try
@@ -534,23 +534,16 @@ namespace Planar.Client
             // UTC
             var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
 
-            var restRequest = new RestRequest("job/{id}/last-instance-id/long-polling", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment)
-                .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
-
-            restRequest.Timeout = TimeSpan.FromMilliseconds(40_000); // 40 sec
+            var restRequest = new RestRequest("job/{id}/last-instance-id/long-polling", HttpMethod.Get)
+                .AddSegmentParameter("id", id)
+                .AddQueryParameter("invokeDate", dateParameter)
+                .SetTimeoutSeconds(40);
 
             try
             {
-#if NETSTANDARD2_0
                 var result = await _proxy.InvokeAsync<LastInstanceId>(restRequest, cancellationToken)
                     ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
 
-#else
-                var result = await _proxy.InvokeAsync<LastInstanceId?>(restRequest, cancellationToken)
-                    ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
-
-#endif
                 return result;
             }
             catch (PlanarConflictException)
@@ -602,15 +595,15 @@ namespace Planar.Client
 
         private async Task<(bool, RunningJobDetails)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
-                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", HttpMethod.Get)
+                .AddSegmentParameter("instanceId", instanceId);
 
             RunningJobDetails runResult;
 #else
         private async Task<(bool, RunningJobDetails?)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
-                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", HttpMethod.Get)
+                .AddSegmentParameter("instanceId", instanceId);
 
             RunningJobDetails? runResult;
 #endif
@@ -658,7 +651,7 @@ namespace Planar.Client
         private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string?>? data, TimeSpan? timeout = null,CancellationToken cancellationToken = default)
 #endif
         {
-            var restRequest = new RestRequest("job/invoke", Method.Post)
+            var restRequest = new RestRequest("job/invoke", HttpMethod.Post)
                 .AddBody(new
                 {
                     id,
@@ -673,12 +666,12 @@ namespace Planar.Client
         // bug fix: test finish while job still running
         private async Task<bool> IsHistoryStatusRunning(long logId, CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("history/{id}/status", Method.Get)
-                .AddParameter("id", logId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("history/{id}/status", HttpMethod.Get)
+                .AddSegmentParameter("id", logId);
 
             try
             {
-                var result = await _proxy.InvokeAsync<int>(restRequest, cancellationToken);
+                var result = await _proxy.InvokeScalarAsync<int>(restRequest, cancellationToken);
                 return result == -1;
             }
             catch
@@ -704,13 +697,13 @@ namespace Planar.Client
             CancellationToken cancellationToken)
 #endif
         {
-            var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
-                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", HttpMethod.Get)
+                .AddSegmentParameter("instanceId", instanceId)
                 .AddQueryParameter("progress", data?.Progress ?? 0)
                 .AddQueryParameter("effectedRows", data?.EffectedRows ?? 0)
-                .AddQueryParameter("exceptionsCount", data?.ExceptionsCount ?? 0);
+                .AddQueryParameter("exceptionsCount", data?.ExceptionsCount ?? 0)
+                .SetTimeoutSeconds(360); // 6 min
 
-            restRequest.Timeout = TimeSpan.FromMilliseconds(360_000); // 6 min
             var counter = 1;
             while (counter <= 3)
             {

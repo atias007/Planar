@@ -1,34 +1,35 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using System;
+using System.Text.Json.Serialization;
 
-namespace Planar.Client.Serialize
+namespace Core.JsonConvertors
 {
     internal class GenericEnumConverter<T> : JsonConverter<T> where T : struct, Enum
     {
-        public override T ReadJson(JsonReader reader, Type objectType, T existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             try
             {
-                if (reader.TokenType == JsonToken.Integer)
+                if (reader.TokenType == JsonTokenType.Null) { return default; }
+                if (reader.TokenType == JsonTokenType.Number)
                 {
-                    if (reader.Value == null) { return default; }
-                    var value = Convert.ToInt64(reader.Value);
+                    if (!reader.TryGetUInt32(out var value)) { throw new JsonException($"Invalid enum value {reader.GetString()}"); }
                     return (T)Enum.ToObject(typeof(T), value);
                 }
-                else if (reader.TokenType == JsonToken.String)
+                else if (reader.TokenType == JsonTokenType.String)
                 {
 #if NETSTANDARD2_0
-                    var value = (string)reader.Value;
+                    var value = reader.GetString();
                     if (string.IsNullOrWhiteSpace(value)) { return default; }
                     return (T)Enum.Parse(typeof(T), value, ignoreCase: true);
 #else
-                    var value = (string?)reader.Value;
+                    var value = reader.GetString();
                     if (string.IsNullOrWhiteSpace(value)) { return default; }
                     return Enum.Parse<T>(value, ignoreCase: true);
 #endif
                 }
 
-                throw new JsonSerializationException($"Unexpected token when parsing enum: {reader.TokenType}");
+                throw new JsonException($"Unexpected token when parsing enum: {reader.TokenType}");
             }
             catch (Exception)
             {
@@ -36,9 +37,10 @@ namespace Planar.Client.Serialize
             }
         }
 
-        public override void WriteJson(JsonWriter writer, T value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
-            writer.WriteValue((int)(object)value);
+            var iValue = (int)(object)value;
+            writer.WriteNumberValue(iValue);
         }
     }
 }

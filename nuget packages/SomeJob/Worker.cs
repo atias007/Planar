@@ -29,7 +29,7 @@ namespace SomeJob
 
             child.TestMe();
 
-            factory.PutJobData("NoExists", 12345);
+            await factory.PutJobDataAsync("NoExists", 12345);
 
             Logger.LogWarning("Now: {Now:ddd MMM yyyy}", Now());
 
@@ -54,18 +54,18 @@ namespace SomeJob
             var a = context.MergedJobDataMap.Get<int>("X");
             Logger.LogDebug("Data X Value: {Value}", a);
             a++;
-            PutJobData("X", a);
+            await PutJobDataAsync("X", a);
 
             var z = context.MergedJobDataMap.Get("Z");
             Logger.LogDebug("Data Z Value: {Value}", z);
-            PutJobData("Z", "NewZData");
+            await PutJobDataAsync("Z", "NewZData");
 
             var rows = EffectedRows;
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
-            EffectedRows = 0;
+            await SetEffectedRowsAsync(0);
             rows = EffectedRows;
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
-            EffectedRows++;
+            await IncreaseEffectedRowsAsync();
             rows = EffectedRows;
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);

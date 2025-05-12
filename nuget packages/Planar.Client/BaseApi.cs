@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Net.Http;
 
 namespace Planar.Client
 {
     internal class BaseApi
     {
         protected readonly RestProxy _proxy;
+
+        protected static HttpMethod HttpPatchMethod = new HttpMethod("Patch");
 
         public BaseApi(RestProxy proxy)
         {

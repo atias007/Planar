@@ -1,7 +1,6 @@
 ﻿using Planar.Client.Entities;
-using RestSharp;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,7 +25,7 @@ namespace Planar.Client.Api
                 Role = group.Role.ToString().ToLower()
             };
 
-            var restRequest = new RestRequest("group", Method.Post)
+            var restRequest = new RestRequest("group", HttpMethod.Post)
                 .AddBody(body);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -35,8 +34,8 @@ namespace Planar.Client.Api
         public async Task DeleteAsync(string name, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("group/{name}", Method.Delete)
-                .AddParameter("name", name, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("group/{name}", HttpMethod.Delete)
+                .AddSegmentParameter("name", name);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -46,9 +45,9 @@ namespace Planar.Client.Api
             ValidateMandatory(name, nameof(name));
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("group/{name}/user/{username}", Method.Delete)
-              .AddParameter("name", name, ParameterType.UrlSegment)
-              .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("group/{name}/user/{username}", HttpMethod.Delete)
+              .AddSegmentParameter("name", name)
+              .AddSegmentParameter("username", username);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -57,8 +56,8 @@ namespace Planar.Client.Api
         {
             ValidateMandatory(name, nameof(name));
 
-            var restRequest = new RestRequest("group/{name}", Method.Get)
-                .AddParameter("name", name, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("group/{name}", HttpMethod.Get)
+                .AddSegmentParameter("name", name);
 
             var result = await _proxy.InvokeAsync<GroupDetails>(restRequest, cancellationToken);
             return result;
@@ -69,9 +68,9 @@ namespace Planar.Client.Api
             ValidateMandatory(name, nameof(name));
             ValidateMandatory(username, nameof(username));
 
-            var restRequest = new RestRequest("group/{name}/user/{username}", Method.Patch)
-               .AddParameter("name", name, ParameterType.UrlSegment)
-               .AddParameter("username", username, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("group/{name}/user/{username}", HttpPatchMethod)
+               .AddSegmentParameter("name", name)
+               .AddSegmentParameter("username", username);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -80,7 +79,7 @@ namespace Planar.Client.Api
         {
             var paging = new Paging(pageNumber, pageSize);
 
-            var restRequest = new RestRequest("group", Method.Get)
+            var restRequest = new RestRequest("group", HttpMethod.Get)
                 .AddQueryPagingParameter(paging);
 
             var result = await _proxy.InvokeAsync<PagingResponse<GroupBasicDetails>>(restRequest, cancellationToken);
@@ -89,7 +88,7 @@ namespace Planar.Client.Api
 
         public async Task<IEnumerable<string>> ListRolesAsync(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("group/roles", Method.Get);
+            var restRequest = new RestRequest("group/roles", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<List<string>>(restRequest, cancellationToken);
             return result;
         }
@@ -98,9 +97,9 @@ namespace Planar.Client.Api
         {
             ValidateMandatory(name, nameof(name));
 
-            var restRequest = new RestRequest("group/{name}/role/{role}", Method.Patch)
-               .AddUrlSegment("name", name)
-               .AddUrlSegment("role", role.ToString().ToLower());
+            var restRequest = new RestRequest("group/{name}/role/{role}", HttpPatchMethod)
+               .AddSegmentParameter("name", name)
+               .AddSegmentParameter("role", role.ToString().ToLower());
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -117,7 +116,7 @@ namespace Planar.Client.Api
             ValidateMandatory(name, nameof(name));
             ValidateMandatory(propertyName, nameof(propertyName));
 
-            var restRequest = new RestRequest("group", Method.Patch)
+            var restRequest = new RestRequest("group", HttpPatchMethod)
                .AddBody(new
                {
                    name,

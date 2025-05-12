@@ -1,6 +1,4 @@
-﻿using RestSharp;
-
-namespace Planar.Client.Exceptions
+﻿namespace Planar.Client.Exceptions
 {
     public sealed class PlanarRequestTimeoutException : BaseException
     {

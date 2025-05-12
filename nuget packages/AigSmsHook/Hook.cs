@@ -80,7 +80,7 @@ public partial class Hook : BaseHook
         };
 
         var client = new RestClient(options);
-        var restRequest = new RestRequest("WebApi/api/Sms/SendMessage", Method.Post);
+        var restRequest = new RestRequest("WebApi/api/Sms/SendMessage", HttpMethod.Post);
         var aggregateException = new List<Exception>();
 
         foreach (var item in request)

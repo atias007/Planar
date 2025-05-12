@@ -1,5 +1,4 @@
-﻿using RestSharp;
-using System;
+﻿using System;
 
 namespace Planar.Client.Exceptions
 {

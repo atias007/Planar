@@ -1,7 +1,8 @@
 ﻿using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.NewtonsoftJson;
-using RestSharp;
 using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,31 +10,55 @@ namespace Planar.Job
 {
     internal sealed class FailOverProxy : IDisposable
     {
-        private readonly IRestClient _client;
+        private readonly HttpClient _client;
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
 
         public FailOverProxy(int port)
         {
-            var options = new RestClientOptions
-            {
-                Timeout = TimeSpan.FromSeconds(5),
-                BaseUrl = new Uri($"http://127.0.0.1:{port}"),
-                UserAgent = $"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}"
-            };
-
-            _client = new RestClient(options);
+            var uri = new Uri($"http://127.0.0.1:{port}");
+            var timeout = TimeSpan.FromSeconds(5);
+            _client = CreateHttpClient(uri, null, timeout);
         }
 
-        private static RestRequest CreateRequest(string body)
+#if NETSTANDARD2_0
+
+        internal static HttpClient CreateHttpClient(Uri baseAddress, string token = null, TimeSpan? timeout = null)
+#else
+        internal static HttpClient CreateHttpClient(Uri baseAddress, string? token = null, TimeSpan? timeout = null)
+#endif
+
         {
-            var restRequest = new RestRequest
+            if (timeout == null || timeout == TimeSpan.Zero)
             {
-                Resource = "job/failover-publish",
-                Method = Method.Post
+                timeout = TimeSpan.FromSeconds(10);
+            }
+
+            var client = new HttpClient
+            {
+                Timeout = timeout.GetValueOrDefault(),
+                BaseAddress = baseAddress,
             };
 
-            restRequest.AddJsonBody(body);
-            return restRequest;
+            if (!string.IsNullOrEmpty(token))
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue($"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}"));
+
+            return client;
+        }
+
+        private static HttpRequestMessage CreateRequest(string body)
+        {
+            const string contentType = "application/json";
+            const string resource = "job/failover-publish";
+
+            var request = new HttpRequestMessage(HttpMethod.Post, resource);
+            var content = new StringContent(body, Encoding.UTF8, contentType);
+            request.Content = content;
+            request.Content.Headers.ContentType.MediaType = contentType;
+            return request;
         }
 
         public void Dispose()
@@ -61,15 +86,15 @@ namespace Planar.Job
             await ExecuteRestWithRetryAsync(restRequest);
         }
 
-        private async Task<RestResponse> ExecuteRestWithRetryAsync(RestRequest request)
+        private async Task<HttpResponseMessage> ExecuteRestWithRetryAsync(HttpRequestMessage request)
         {
             const int retryCount = 3;
             var counter = 0;
 #if NETSTANDARD2_0
-            RestResponse response = null;
+            HttpResponseMessage response = null;
             Exception exception = null;
 #else
-            RestResponse? response = null;
+            HttpResponseMessage? response = null;
             Exception? exception = null;
 #endif
 
@@ -77,7 +102,8 @@ namespace Planar.Job
             {
                 try
                 {
-                    response = await _client.ExecuteAsync(request);
+                    response = await _client.SendAsync(request);
+
                     if (response.IsSuccessStatusCode) { return response; }
                     if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500) { return response; }
                 }
@@ -93,11 +119,7 @@ namespace Planar.Job
 
             if (exception != null) { throw exception; }
 
-            return response ?? new RestResponse(request)
-            {
-                IsSuccessStatusCode = false,
-                StatusCode = System.Net.HttpStatusCode.Conflict
-            };
+            return response ?? new HttpResponseMessage(System.Net.HttpStatusCode.Conflict);
         }
     }
 }

@@ -3,7 +3,7 @@ using System;
 using System.Globalization;
 using System.Reflection;
 
-namespace RestSharp
+namespace Planar.Client
 {
     internal static class RestRequestExtensions
     {
@@ -52,7 +52,7 @@ namespace RestSharp
             return request;
         }
 
-        public static RestRequest AddEntityToQueryParameter<T>(this RestRequest request, T parameter, bool encode = true)
+        public static RestRequest AddEntityToQueryParameter<T>(this RestRequest request, T parameter)
         where T : class
         {
             var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -67,7 +67,7 @@ namespace RestSharp
                 var @default = type.IsValueType ? Activator.CreateInstance(type) : null;
                 if (value.Equals(@default)) { continue; }
                 var stringValue = GetStringValueForQueryStringParameter(value);
-                request.AddQueryParameter(name, stringValue, encode);
+                request.AddQueryParameter(name, stringValue);
             }
 
             return request;

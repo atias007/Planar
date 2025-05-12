@@ -1,6 +1,6 @@
 ﻿using Planar.Client.Entities;
-using RestSharp;
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,8 +15,8 @@ namespace Planar.Client
         public async Task<HistoryDetails> GetAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("history/{id}", Method.Get)
-            .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("history/{id}", HttpMethod.Get)
+            .AddSegmentParameter("id", id);
 
             var result = await _proxy.InvokeAsync<HistoryDetails>(restRequest, cancellationToken);
             return result;
@@ -25,8 +25,8 @@ namespace Planar.Client
         public async Task<HistoryDetails> GetAsync(string instanceId, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(instanceId, nameof(instanceId));
-            var restRequest = new RestRequest("history/by-instanceid/{instanceid}", Method.Get)
-                .AddParameter("instanceid", instanceId, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}", HttpMethod.Get)
+                .AddSegmentParameter("instanceid", instanceId);
 
             var result = await _proxy.InvokeAsync<HistoryDetails>(restRequest, cancellationToken);
             return result;
@@ -36,7 +36,7 @@ namespace Planar.Client
         {
             var filter = new CounterFilter(fromDate, toDate);
 
-            var restRequest = new RestRequest("history/count", Method.Get)
+            var restRequest = new RestRequest("history/count", HttpMethod.Get)
                 .AddQueryDateScope(filter);
 
             var result = await _proxy.InvokeAsync<CounterResponse>(restRequest, cancellationToken);
@@ -47,8 +47,8 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
 
-            var restRequest = new RestRequest("history/{id}/data", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("history/{id}/data", HttpMethod.Get)
+               .AddSegmentParameter("id", id);
 
             var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
             return result;
@@ -58,8 +58,8 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
 
-            var restRequest = new RestRequest("history/{id}/exception", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("history/{id}/exception", HttpMethod.Get)
+               .AddSegmentParameter("id", id);
 
             var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
             return result;
@@ -75,7 +75,7 @@ namespace Planar.Client
         {
             filter ??= new LastHistoryFilter();
 #endif
-            var restRequest = new RestRequest("history/last", Method.Get);
+            var restRequest = new RestRequest("history/last", HttpMethod.Get);
             if (!string.IsNullOrEmpty(filter.JobId))
             {
                 restRequest.AddQueryParameter("jobid", filter.JobId);
@@ -105,8 +105,8 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
 
-            var restRequest = new RestRequest("history/{id}/log", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("history/{id}/log", HttpMethod.Get)
+               .AddSegmentParameter("id", id);
 
             var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
             return result;
@@ -127,7 +127,7 @@ namespace Planar.Client
                 PageSize = pageSize
             };
 
-            var restRequest = new RestRequest("history/summary", Method.Get)
+            var restRequest = new RestRequest("history/summary", HttpMethod.Get)
               .AddQueryDateScope(filter)
               .AddQueryPagingParameter(filter);
 
@@ -146,7 +146,7 @@ namespace Planar.Client
             filter ??= new ListHistoryFilter();
 #endif
 
-            var restRequest = new RestRequest("history", Method.Get);
+            var restRequest = new RestRequest("history", HttpMethod.Get);
             restRequest.AddQueryDateScope(filter);
 
             if (filter.Status != null)
@@ -197,7 +197,7 @@ namespace Planar.Client
         {
             filter ??= new ODataFilter();
 #endif
-            var restRequest = new RestRequest("odata/historydata", Method.Get);
+            var restRequest = new RestRequest("odata/historydata", HttpMethod.Get);
 
             if (!string.IsNullOrWhiteSpace(filter.Filter))
             {
