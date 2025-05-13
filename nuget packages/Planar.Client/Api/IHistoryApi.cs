@@ -1,5 +1,6 @@
 ﻿using Planar.Client.Entities;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -58,21 +59,21 @@ namespace Planar.Client
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<string> GetDataAsync(long id, CancellationToken cancellationToken = default);
+        Task<Stream> GetDataAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<string> GetLogAsync(long id, CancellationToken cancellationToken = default);
+        Task<Stream> GetLogAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<string> GetExceptionAsync(long id, CancellationToken cancellationToken = default);
+        Task<Stream> GetExceptionAsync(long id, CancellationToken cancellationToken = default);
 
 #if NETSTANDARD2_0
 

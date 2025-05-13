@@ -229,7 +229,7 @@ namespace Planar.Job
             try
             {
                 // TODO: change the port to variable
-                MqttClient.StartFailOver(_context.FireInstanceId, 2306);
+                MqttClient.StartFailOver(_context.FireInstanceId, _context.JobFailOverPort);
                 await MqttClient.PingAsync();
                 await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
                 return true;

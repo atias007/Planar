@@ -71,6 +71,22 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
 
         // === fix bug cause save \r\n in database ===
         result.Data = result.Data?.Trim();
+
+        if (result.Data?.Length > JobHistory.DataMaximumLength)
+        {
+            result.Data += $"\r\n...\r\n('data' property return only top {JobHistory.DataMaximumLength:N0} charecters)";
+        }
+
+        if (result.Exception?.Length > JobHistory.LogMaximumLength)
+        {
+            result.Data += $"\r\n...\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+        }
+
+        if (result.Log?.Length > JobHistory.LogMaximumLength)
+        {
+            result.Data += $"\r\n...\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+        }
+
         return result;
     }
 

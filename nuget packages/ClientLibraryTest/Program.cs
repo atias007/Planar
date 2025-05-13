@@ -1,12 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.Client;
 using Planar.Client.Entities;
+using System.IO;
 
 const string jobid1 = "Infrastructure.BankOfIsraelCurrency";
 var services = new ServiceCollection();
 services.AddPlanarClient(c => c.Host = "http://localhost:2306");
 var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
+var logStream = await client.History.GetLogAsync(281);
+// convert logStream to byte[]
+
+byte[] buffer = new byte[logStream.Length];
+// Read the entire stream into the byte array
+logStream.ReadExactly(buffer, 0, (int)logStream.Length);
+await File.WriteAllBytesAsync(@"C:\temp\log_281.txt", buffer);
 
 var odata = await client.History.ODataAsync(new ODataFilter { Filter = "triggerid eq 'manual'", Select = "jobname,jobid" });
 Console.WriteLine(odata);

@@ -1,5 +1,6 @@
 ﻿using Planar.Client.Exceptions;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -232,6 +233,18 @@ namespace Planar.Client
 #endif
         }
 
+        public async Task<Stream> InvokeStreamAsync(RestRequest request, CancellationToken cancellationToken)
+        {
+            var response = await ExecuteAsync(request, cancellationToken);
+            if (await RefreshToken(response, cancellationToken))
+            {
+                response = await ExecuteAsync(request, cancellationToken);
+            }
+
+            await ValidateResponse(response);
+            return await response.Response.Content.ReadAsStreamAsync();
+        }
+
         public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken) where TResponse : class
         {
             var response = await ExecuteAsync<TResponse>(request, cancellationToken);
@@ -306,39 +319,46 @@ namespace Planar.Client
         private async Task<RestResponse<TResult>> ExecuteAsync<TResult>(RestRequest restRequest, CancellationToken cancellationToken)
             where TResult : class
         {
-            var request = restRequest.GetRequest();
-            HttpResponseMessage response;
-
-            if (restRequest.Timeout != null && restRequest.Timeout != TimeSpan.Zero)
-            {
-#if NETSTANDARD2_0
-
-                using (var cts = new CancellationTokenSource(restRequest.Timeout))
-#else
-                using (var cts = new CancellationTokenSource(restRequest.Timeout.Value))
-#endif
-                {
-                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token))
-                    {
-                        response = await Client.SendAsync(request, linkedCts.Token);
-                    }
-                }
-            }
-            else
-            {
-                response = await Client.SendAsync(request, cancellationToken);
-            }
-
+            var response = await SendAsync(restRequest, cancellationToken);
             var result = new RestResponse(response);
             return await result.GetTypedResponse<TResult>();
         }
 
         private async Task<RestResponse> ExecuteAsync(RestRequest restRequest, CancellationToken cancellationToken)
         {
-            var request = restRequest.GetRequest();
-            var response = await Client.SendAsync(request, cancellationToken);
+            var response = await SendAsync(restRequest, cancellationToken);
             var result = new RestResponse(response);
             return result;
+        }
+
+        private async Task<HttpResponseMessage> SendAsync(RestRequest restRequest, CancellationToken cancellationToken)
+        {
+            HttpResponseMessage response;
+            var request = restRequest.GetRequest();
+
+            if (restRequest.Timeout != null && restRequest.Timeout != TimeSpan.Zero)
+            {
+#if NETSTANDARD2_0
+
+                using (var cts = new CancellationTokenSource(restRequest.Timeout))
+                {
+                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token))
+                    {
+                        response = await Client.SendAsync(request, linkedCts.Token);
+                    }
+                }
+#else
+                using var cts = new CancellationTokenSource(restRequest.Timeout.Value);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
+                response = await Client.SendAsync(request, linkedCts.Token);
+#endif
+            }
+            else
+            {
+                response = await Client.SendAsync(request, cancellationToken);
+            }
+
+            return response;
         }
 
         public async Task<RestResponse<LoginResponse>> Login(LoginData login, CancellationToken cancellationToken = default)

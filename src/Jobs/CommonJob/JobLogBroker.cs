@@ -279,6 +279,7 @@ public sealed class JobLogBroker : IDisposable
             PreviousFireTime = context.PreviousFireTimeUtc,
             Recovering = context.Recovering,
             JobPort = AppSettings.General.JobPort,
+            JobFailOverPort = AppSettings.General.ApiPort,
             RefireCount = context.RefireCount,
             ScheduledFireTime = context.ScheduledFireTimeUtc,
             JobDetails = new JobDetail

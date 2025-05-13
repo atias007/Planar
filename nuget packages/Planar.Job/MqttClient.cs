@@ -135,7 +135,7 @@ namespace Planar
         public static void StartFailOver(string id, int port)
         {
             _id = id;
-            if (port == 0) { port = _defaultHttpPort; }
+            if (port <= 0) { port = _defaultHttpPort; }
             _failOverProxy = new FailOverProxy(port);
             _mqttClient = null;
         }

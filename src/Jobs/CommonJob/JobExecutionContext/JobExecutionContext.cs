@@ -29,6 +29,8 @@ namespace Planar.Job
 
         public int JobPort { get; set; }
 
+        public int JobFailOverPort { get; set; }
+
         public IJobDetail JobDetails { get; set; } = new JobDetail();
 
         public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();

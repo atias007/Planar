@@ -41,13 +41,13 @@ public class JobHistory
     [DisplayFormat(Format = "N0")]
     public int? EffectedRows { get; set; }
 
-    [DisplayFormat(MaximumChars = DataMaximumLength)]
+    [DisplayFormat(MaximumChars = DataMaximumLength + 250)]
     public string? Data { get; set; }
 
-    [DisplayFormat(SpecialFormat = SpecialFormat.Log, MaximumChars = LogMaximumLength)]
+    [DisplayFormat(SpecialFormat = SpecialFormat.Log, MaximumChars = LogMaximumLength + 250)]
     public string? Log { get; set; }
 
-    [DisplayFormat(MaximumChars = LogMaximumLength)]
+    [DisplayFormat(MaximumChars = LogMaximumLength + 250)]
     public string? Exception { get; set; }
 
     public int ExceptionCount { get; set; }

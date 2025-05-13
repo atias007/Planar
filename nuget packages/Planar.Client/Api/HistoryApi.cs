@@ -1,5 +1,6 @@
 ﻿using Planar.Client.Entities;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,25 +44,25 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<string> GetDataAsync(long id, CancellationToken cancellationToken = default)
+        public async Task<Stream> GetDataAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
             var restRequest = new RestRequest("history/{id}/data", HttpMethod.Get)
                .AddSegmentParameter("id", id);
 
-            var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
             return result;
         }
 
-        public async Task<string> GetExceptionAsync(long id, CancellationToken cancellationToken = default)
+        public async Task<Stream> GetExceptionAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
             var restRequest = new RestRequest("history/{id}/exception", HttpMethod.Get)
                .AddSegmentParameter("id", id);
 
-            var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
             return result;
         }
 
@@ -101,14 +102,14 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<string> GetLogAsync(long id, CancellationToken cancellationToken = default)
+        public async Task<Stream> GetLogAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
             var restRequest = new RestRequest("history/{id}/log", HttpMethod.Get)
                .AddSegmentParameter("id", id);
 
-            var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
             return result;
         }
 
