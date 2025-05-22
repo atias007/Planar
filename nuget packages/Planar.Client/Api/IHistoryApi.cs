@@ -64,6 +64,13 @@ namespace Planar.Client
         /// <summary>
         ///
         /// </summary>
+        /// <param name="instanceId"></param>
+        /// <returns></returns>
+        Task<Stream> GetDataAsync(string instanceId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
+        /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         Task<Stream> GetLogAsync(long id, CancellationToken cancellationToken = default);
@@ -71,9 +78,23 @@ namespace Planar.Client
         /// <summary>
         ///
         /// </summary>
+        /// <param name="instanceId"></param>
+        /// <returns></returns>
+        Task<Stream> GetLogAsync(string instanceId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
+        /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         Task<Stream> GetExceptionAsync(long id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="instanceId"></param>
+        /// <returns></returns>
+        Task<Stream> GetExceptionAsync(string instanceId, CancellationToken cancellationToken = default);
 
 #if NETSTANDARD2_0
 

@@ -46,11 +46,17 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<DbDataReader> GetHistoryDataById(long id);
 
+    Task<DbDataReader> GetHistoryDataByInstanceId(string instanceid);
+
     Task<DbDataReader> GetHistoryExceptionById(long id);
+
+    Task<DbDataReader> GetHistoryExceptionByInstanceId(string instanceid);
 
     Task<IEnumerable<string>> GetHistoryJobIds();
 
     Task<DbDataReader> GetHistoryLogById(long id);
+
+    Task<DbDataReader> GetHistoryLogByInstanceId(string instanceid);
 
     Task<int?> GetHistoryStatusById(long id);
 
@@ -346,6 +352,22 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return reader;
     }
 
+    public async Task<DbDataReader> GetHistoryDataByInstanceId(string instanceid)
+    {
+        const string query = "SELECT Data FROM JobInstanceLog WHERE InstanceId = @InstanceId";
+
+        var def = new CommandDefinition
+        (
+            commandText: query,
+            parameters: new { InstanceId = instanceid },
+            commandType: CommandType.Text
+        );
+
+        var connection = _context.Database.GetDbConnection();
+        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        return reader;
+    }
+
     public async Task<DbDataReader> GetHistoryExceptionById(long id)
     {
         const string query = "SELECT Exception FROM JobInstanceLog WHERE Id = @Id";
@@ -353,6 +375,21 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         (
             commandText: query,
             parameters: new { Id = id },
+            commandType: CommandType.Text
+        );
+
+        var connection = _context.Database.GetDbConnection();
+        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        return reader;
+    }
+
+    public async Task<DbDataReader> GetHistoryExceptionByInstanceId(string instanceid)
+    {
+        const string query = "SELECT Exception FROM JobInstanceLog WHERE InstanceId = @InstanceId";
+        var def = new CommandDefinition
+        (
+            commandText: query,
+            parameters: new { InstanceId = instanceid },
             commandType: CommandType.Text
         );
 
@@ -376,6 +413,21 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         (
             commandText: query,
             parameters: new { Id = id },
+            commandType: CommandType.Text
+        );
+
+        var connection = _context.Database.GetDbConnection();
+        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        return reader;
+    }
+
+    public async Task<DbDataReader> GetHistoryLogByInstanceId(string instanceid)
+    {
+        const string query = "SELECT Log FROM JobInstanceLog WHERE InstanceId = @InstanceId";
+        var def = new CommandDefinition
+        (
+            commandText: query,
+            parameters: new { InstanceId = instanceid },
             commandType: CommandType.Text
         );
 

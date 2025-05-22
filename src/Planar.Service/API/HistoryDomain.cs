@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.Hooks.General;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -68,26 +69,29 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     {
         var data = await DataLayer.GetHistoryById(id);
         var result = ValidateExistingEntity(data, "history");
-
-        // === fix bug cause save \r\n in database ===
-        result.Data = result.Data?.Trim();
-
-        if (result.Data?.Length > JobHistory.DataMaximumLength)
-        {
-            result.Data += $"\r\n...\r\n('data' property return only top {JobHistory.DataMaximumLength:N0} charecters)";
-        }
-
-        if (result.Exception?.Length > JobHistory.LogMaximumLength)
-        {
-            result.Data += $"\r\n...\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
-        }
-
-        if (result.Log?.Length > JobHistory.LogMaximumLength)
-        {
-            result.Data += $"\r\n...\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
-        }
-
+        FixJobInstanceLogTextLength(result);
         return result;
+    }
+
+    private static void FixJobInstanceLogTextLength(JobInstanceLog log)
+    {
+        // === fix bug cause save \r\n in database ===
+        log.Data = log.Data?.Trim();
+
+        if (log.Data?.Length > JobHistory.DataMaximumLength)
+        {
+            log.Data = log.Data[0..JobHistory.DataMaximumLength] + $"\r\n...\r\n('data' property return only top {JobHistory.DataMaximumLength:N0} charecters)";
+        }
+
+        if (log.Exception?.Length > JobHistory.LogMaximumLength)
+        {
+            log.Exception = log.Exception[0..JobHistory.DataMaximumLength] + $"\r\n...\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+        }
+
+        if (log.Log?.Length > JobHistory.LogMaximumLength)
+        {
+            log.Log = log.Log[0..JobHistory.DataMaximumLength] + $"\r\n...\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+        }
     }
 
     public async Task<int> GetHistoryStatusById(long id)
@@ -100,9 +104,7 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     {
         var data = await DataLayer.GetHistoryByInstanceId(instanceid);
         var result = ValidateExistingEntity(data, "history");
-
-        // === fix bug cause save \r\n in database ===
-        result.Data = result.Data?.Trim();
+        FixJobInstanceLogTextLength(result);
         return result;
     }
 
@@ -112,6 +114,18 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         if (!await reader.ReadAsync())
         {
             throw new RestNotFoundException($"history with id {id} not found");
+        }
+
+        var result = await reader.GetStreamFromText(0);
+        return result;
+    }
+
+    public async Task<Stream> GetHistoryDataByInstanceId(string instanceid)
+    {
+        using var reader = await DataLayer.GetHistoryDataByInstanceId(instanceid);
+        if (!await reader.ReadAsync())
+        {
+            throw new RestNotFoundException($"history with instance id {instanceid} not found");
         }
 
         var result = await reader.GetStreamFromText(0);
@@ -130,6 +144,18 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         return result;
     }
 
+    public async Task<Stream> GetHistoryLogByInstanceId(string instanceid)
+    {
+        using var reader = await DataLayer.GetHistoryLogByInstanceId(instanceid);
+        if (!await reader.ReadAsync())
+        {
+            throw new RestNotFoundException($"history with instance id {instanceid} not found");
+        }
+
+        var result = await reader.GetStreamFromText(0);
+        return result;
+    }
+
     public async Task<Stream> GetHistoryExceptionById(long id)
     {
         using var reader = await DataLayer.GetHistoryExceptionById(id);
@@ -137,6 +163,19 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         if (!await reader.ReadAsync())
         {
             throw new RestNotFoundException($"history with id {id} not found");
+        }
+
+        var result = await reader.GetStreamFromText(0);
+        return result;
+    }
+
+    public async Task<Stream> GetHistoryExceptionByInstanceId(string instanceid)
+    {
+        using var reader = await DataLayer.GetHistoryExceptionByInstanceId(instanceid);
+
+        if (!await reader.ReadAsync())
+        {
+            throw new RestNotFoundException($"history with instanceid id {instanceid} not found");
         }
 
         var result = await reader.GetStreamFromText(0);

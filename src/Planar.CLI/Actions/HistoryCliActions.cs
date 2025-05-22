@@ -73,7 +73,7 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     public static async Task<CliActionResponse> GetHistoryById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredString(request, nameof(request.Id));
-        if (IsOnlyDigits(request.Id.ToString()))
+        if (IsOnlyDigits(request.Id))
         {
             return await GetHistoryById(request.Id, cancellationToken);
         }
@@ -109,12 +109,20 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     }
 
     [Action("data")]
-    public static async Task<CliActionResponse> GetHistoryDataById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetHistoryDataById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredLong(request, nameof(request.Id));
-
-        var restRequest = new RestRequest("history/{id}/data", Method.Get)
-           .AddParameter("id", request.Id, ParameterType.UrlSegment);
+        RestRequest restRequest;
+        if (IsOnlyDigits(request.Id))
+        {
+            restRequest = new RestRequest("history/{id}/data", Method.Get)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+        }
+        else
+        {
+            restRequest = new RestRequest("history/by-instanceid/{instanceid}/data", Method.Get)
+                .AddParameter("instanceid", request.Id, ParameterType.UrlSegment);
+        }
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Content);
@@ -166,24 +174,40 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     }
 
     [Action("ex")]
-    public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredLong(request, nameof(request.Id));
-
-        var restRequest = new RestRequest("history/{id}/exception", Method.Get)
-           .AddParameter("id", request.Id, ParameterType.UrlSegment);
+        RestRequest restRequest;
+        if (IsOnlyDigits(request.Id))
+        {
+            restRequest = new RestRequest("history/{id}/exception", Method.Get)
+            .AddParameter("id", request.Id, ParameterType.UrlSegment);
+        }
+        else
+        {
+            restRequest = new RestRequest("history/by-instanceid/{instanceid}/exception", Method.Get)
+                .AddParameter("instanceid", request.Id, ParameterType.UrlSegment);
+        }
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Content);
     }
 
     [Action("log")]
-    public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetHistoryLogById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredLong(request, nameof(request.Id));
-
-        var restRequest = new RestRequest("history/{id}/log", Method.Get)
-           .AddParameter("id", request.Id, ParameterType.UrlSegment);
+        RestRequest restRequest;
+        if (IsOnlyDigits(request.Id))
+        {
+            restRequest = new RestRequest("history/{id}/log", Method.Get)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+        }
+        else
+        {
+            restRequest = new RestRequest("history/by-instanceid/{instanceid}/log", Method.Get)
+                .AddParameter("instanceid", request.Id, ParameterType.UrlSegment);
+        }
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         var message = CliFormat.GetLogMarkup(result.Content);

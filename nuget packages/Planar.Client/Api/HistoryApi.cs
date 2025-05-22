@@ -55,12 +55,34 @@ namespace Planar.Client
             return result;
         }
 
+        public async Task<Stream> GetDataAsync(string instanceId, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(instanceId, nameof(instanceId));
+
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}/data", HttpMethod.Get)
+               .AddSegmentParameter("instanceId", instanceId);
+
+            var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
+            return result;
+        }
+
         public async Task<Stream> GetExceptionAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
             var restRequest = new RestRequest("history/{id}/exception", HttpMethod.Get)
                .AddSegmentParameter("id", id);
+
+            var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
+            return result;
+        }
+
+        public async Task<Stream> GetExceptionAsync(string instanceId, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(instanceId, nameof(instanceId));
+
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}/exception", HttpMethod.Get)
+               .AddSegmentParameter("instanceId", instanceId);
 
             var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
             return result;
@@ -108,6 +130,17 @@ namespace Planar.Client
 
             var restRequest = new RestRequest("history/{id}/log", HttpMethod.Get)
                .AddSegmentParameter("id", id);
+
+            var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
+            return result;
+        }
+
+        public async Task<Stream> GetLogAsync(string instanceId, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(instanceId, nameof(instanceId));
+
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}/log", HttpMethod.Get)
+               .AddSegmentParameter("instanceId", instanceId);
 
             var result = await _proxy.InvokeStreamAsync(restRequest, cancellationToken);
             return result;
