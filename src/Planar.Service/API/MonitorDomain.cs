@@ -40,16 +40,15 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     public static List<MonitorEventModel> GetEvents()
     {
         var result =
-            Enum.GetValues(typeof(MonitorEvents))
-            .Cast<MonitorEvents>()
+            Enum.GetValues<MonitorEvents>()
+                .OrderBy(GetEventTypeOrder)
+                .ThenBy(e => e.ToString())
             .Select(e => new MonitorEventModel
             {
                 EventName = e.ToString(),
                 EventTitle = e.GetEnumDescription(),
                 EventType = GetEventTypeTitle(e)
             })
-            .OrderBy(e => e.EventType)
-            .ThenBy(e => e.EventName)
             .ToList();
 
         return result;
@@ -60,11 +59,19 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         const string type1 = "Job Event";
         const string type2 = "Job Event With Parameters";
         const string type3 = "System Event";
+        const string type4 = "Custom Event";
 
         var id = (int)monitorEvents;
         if (id < 200) { return type1; }
         if (id < 300) { return type2; }
-        return type3;
+        if (id < 400) { return type3; }
+        return type4;
+    }
+
+    private static int GetEventTypeOrder(MonitorEvents monitorEvents)
+    {
+        var id = (int)monitorEvents;
+        return (id - (id % 100)) / 100;
     }
 
     public async Task<int> Add(AddMonitorRequest request)

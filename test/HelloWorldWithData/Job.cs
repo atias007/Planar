@@ -33,7 +33,7 @@ namespace HelloWorldWithData
             {
                 Logger.LogInformation("Hello world with data: step {Iteration}", i);
                 await Task.Delay(delay);
-                UpdateProgress(i + 1, DurationSeconds);
+                await UpdateProgressAsync(i + 1, DurationSeconds);
                 await IncreaseEffectedRowsAsync();
             }
 

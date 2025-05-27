@@ -144,10 +144,10 @@ namespace Planar.Job
             }
             finally
             {
-                SafeHandle(() =>
+                await SafeHandleAsync(async () =>
                 {
                     var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
-                    mapperBack.MapJobInstancePropertiesBack(_context, this);
+                    await mapperBack.MapJobInstancePropertiesBack(_context, this);
                 });
 
                 SafeHandle(() => _timer?.Dispose());
@@ -330,11 +330,6 @@ namespace Planar.Job
             }
         }
 
-        public void AddAggregateException(Exception ex, int maxItems = 25)
-        {
-            _baseJobFactory.AddAggregateException(ex, maxItems);
-        }
-
         public async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
         {
             await _baseJobFactory.AddAggregateExceptionAsync(ex, maxItems);
@@ -343,6 +338,11 @@ namespace Planar.Job
         public void CheckAggragateException()
         {
             _baseJobFactory.CheckAggragateException();
+        }
+
+        public async Task RaiseCustomEventAsync(CustomMonitorEvents customMonitorEvents, string message)
+        {
+            await _baseJobFactory.RaiseCustomEventAsync(customMonitorEvents, message);
         }
 
         public DateTime Now()
@@ -406,16 +406,6 @@ namespace Planar.Job
             }
 
             await _baseJobFactory.PutTriggerDataAsync(key, value);
-        }
-
-        public void UpdateProgress(byte value)
-        {
-            _baseJobFactory.UpdateProgress(value);
-        }
-
-        public void UpdateProgress(long current, long total)
-        {
-            _baseJobFactory.UpdateProgress(current, total);
         }
 
         public async Task UpdateProgressAsync(byte value)

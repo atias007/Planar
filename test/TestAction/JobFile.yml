@@ -1,7 +1,7 @@
 ﻿job type: PlanarJob
-name: TestEnvironmentExit
+name: TestCustomEvent
 group: Demo
-description: test environment.exit command
+description: TestCustomEvent
 author: Tsahi Atias (Administrator)
 durable: true
 concurrent: false

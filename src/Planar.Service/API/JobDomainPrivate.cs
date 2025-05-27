@@ -120,7 +120,7 @@ public partial class JobDomain
     private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(GetAllJobsRequest request)
     {
         var matcher =
-            string.IsNullOrEmpty(request.Group) ?
+            string.IsNullOrWhiteSpace(request.Group) ?
             GroupMatcher<JobKey>.AnyGroup() :
             GroupMatcher<JobKey>.GroupEquals(request.Group);
 

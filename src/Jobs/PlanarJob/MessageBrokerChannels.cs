@@ -15,6 +15,7 @@
         UpdateProgress,
         ReportException,
         ReportExceptionV2,
-        HealthCheck
+        HealthCheck,
+        MonitorCustomEvent
     }
 }

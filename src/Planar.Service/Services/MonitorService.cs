@@ -14,6 +14,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Validation;
+using PlanarJob;
 using Quartz;
 using Quartz.Util;
 using System;
@@ -313,6 +314,11 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             return true;
         }
 
+        if (MonitorEventsExtensions.IsCustomMonitorEvent(@event))
+        {
+            return true;
+        }
+
         if (MonitorEventsExtensions.IsMonitorEventHasArguments(@event))
         {
             return await AnalyzeMonitorEventsWithArguments(@event, action, context);
@@ -463,6 +469,14 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             monitor.Exception = jobException.ExceptionText;
             monitor.MostInnerException = jobException.MostInnerExceptionText;
             monitor.MostInnerExceptionMessage = jobException.MostInnerMessage;
+            return;
+        }
+
+        if (exception is PlanarJobCustomMonitorException monitorException)
+        {
+            monitor.Exception = monitorException.Message;
+            monitor.MostInnerException = monitorException.Message;
+            monitor.MostInnerExceptionMessage = monitorException.Message;
             return;
         }
 

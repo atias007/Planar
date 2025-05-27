@@ -206,6 +206,18 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         return result;
     }
 
+    public async Task<IEnumerable<string>> GetAllIds()
+    {
+        var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+        var ids = keys.Select(async k => await Scheduler.GetTrigger(k));
+        await Task.WhenAll(ids);
+        var triggers = ids.Select(t => t.Result).Where(t => t != null);
+        var triggersIds = triggers
+            .Select(t => TriggerHelper.GetTriggerId(t) ?? string.Empty)
+            .Where(id => !string.IsNullOrWhiteSpace(id));
+        return triggersIds;
+    }
+
     public async Task<IEnumerable<PausedTriggerDetails>> GetPausedTriggers()
     {
         var triggers = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());

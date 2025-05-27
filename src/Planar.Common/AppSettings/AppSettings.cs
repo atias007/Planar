@@ -91,6 +91,9 @@ public static class AppSettings
         ValidateRequired(Database.Provider, "provider");
         ValidateRequired(General.ConcurrencyRateLimiting, "concurrency rate limiting");
         ValidateMinimumValue(General.ConcurrencyRateLimiting, minimum: 1, "concurrency rate limiting");
+        ValidateMaxLength(General.InstanceId, maxLength: 50, "instance id");
+        ValidateMinLength(General.InstanceId, minLength: 3, "instance id");
+
         if (Cluster.Clustering && !Database.ProviderAllowClustering)
         {
             throw new AppSettingsException($"'Clustering' is possible when database provider is {Database.Provider}");
@@ -178,6 +181,15 @@ public static class AppSettings
         if (value.Length > maxLength)
         {
             throw new AppSettingsException($"'{fieldName}' have maximum length of {maxLength}. current length is {value.Length}");
+        }
+    }
+
+    private static void ValidateMinLength(string? value, int minLength, string fieldName)
+    {
+        if (value == null) { return; }
+        if (value.Length < minLength)
+        {
+            throw new AppSettingsException($"'{fieldName}' have minimum length of {minLength}. current length is {value.Length}");
         }
     }
 

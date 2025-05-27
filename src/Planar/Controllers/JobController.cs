@@ -78,6 +78,17 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return Ok(result);
     }
 
+    [HttpGet("ids")]
+    [AllowAnonymous]
+    [SwaggerOperation(OperationId = "get_job_ids", Description = "Get all jobs ids", Summary = "Get All Jobs Ids")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetAllIds()
+    {
+        var result = await BusinesLayer.GetAllIds();
+        return Ok(result);
+    }
+
     [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet("jobfilename/{id}")]
     [ViewerAuthorize]

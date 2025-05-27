@@ -88,11 +88,6 @@ namespace Planar.Job
             }
         }
 
-        public void AddAggregateException(Exception ex, int maxItems = 25)
-        {
-            AddAggregateExceptionAsync(ex, maxItems).Wait();
-        }
-
         public void CheckAggragateException()
         {
             lock (Locker)
@@ -119,16 +114,6 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        public void PutJobData(string key, object value)
-#else
-        public void PutJobData(string key, object? value)
-#endif
-        {
-            PutJobDataAsync(key, value).Wait();
-        }
-
-#if NETSTANDARD2_0
-
         public async Task PutJobDataAsync(string key, object value)
 #else
         public async Task PutJobDataAsync(string key, object? value)
@@ -136,16 +121,6 @@ namespace Planar.Job
         {
             var message = new { Key = key, Value = value };
             await MqttClient.PublishAsync(MessageBrokerChannels.PutJobData, message);
-        }
-
-#if NETSTANDARD2_0
-
-        public void PutTriggerData(string key, object value)
-#else
-        public void PutTriggerData(string key, object? value)
-#endif
-        {
-            PutTriggerDataAsync(key, value).Wait();
         }
 
 #if NETSTANDARD2_0
@@ -198,7 +173,7 @@ namespace Planar.Job
             try
             {
                 _effectedRows += value;
-                MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value).Wait();
+                await MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value);
             }
             finally
             {
@@ -212,7 +187,7 @@ namespace Planar.Job
             try
             {
                 _effectedRows = value;
-                MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value).Wait();
+                await MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value);
             }
             finally
             {
@@ -295,16 +270,6 @@ namespace Planar.Job
 
         #region Progress
 
-        public void UpdateProgress(byte value)
-        {
-            UpdateProgressAsync(value).Wait();
-        }
-
-        public void UpdateProgress(long current, long total)
-        {
-            UpdateProgressAsync(current, total).Wait();
-        }
-
         public async Task UpdateProgressAsync(byte value)
         {
             await MqttClient.PublishAsync(MessageBrokerChannels.UpdateProgress, value);
@@ -326,5 +291,24 @@ namespace Planar.Job
         }
 
         #endregion Progress
+
+        #region Monitor
+
+        public async Task RaiseCustomEventAsync(CustomMonitorEvents customMonitorEvents, string message)
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                var number = ((int)customMonitorEvents) - 399;
+                var entity = new { Number = number, Message = message };
+                await MqttClient.PublishAsync(MessageBrokerChannels.MonitorCustomEvent, entity);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+        }
+
+        #endregion Monitor
     }
 }

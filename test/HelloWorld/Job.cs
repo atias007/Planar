@@ -24,7 +24,7 @@ namespace HelloWorld
             {
                 Logger.LogInformation("Hello world: step {Iteration}", i);
                 await Task.Delay(1000);
-                UpdateProgress(i + 1, durationSeconds);
+                await UpdateProgressAsync(i + 1, durationSeconds);
                 await IncreaseEffectedRowsAsync();
             }
 

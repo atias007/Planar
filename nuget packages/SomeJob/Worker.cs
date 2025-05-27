@@ -43,7 +43,7 @@ namespace SomeJob
             var someSettings = Configuration.GetValue<string>("Some New Settings");
             Logger.LogInformation("Configuration: Some New Settings={Value}", someSettings);
 
-            AddAggregateException(new Exception("agg ex"));
+            await AddAggregateExceptionAsync(new Exception("agg ex"));
 
             var exists = context.MergedJobDataMap.Exists("X");
             Logger.LogDebug("Data X Exists: {Value}", exists);
@@ -72,7 +72,7 @@ namespace SomeJob
             Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);
             SomeDate = Now();
             Logger.LogWarning("Recovery: {Recovery}", context.Recovering);
-            UpdateProgress(66);
+            await UpdateProgressAsync(66);
 
             SimpleInt += 5;
             IgnoreData = "x";

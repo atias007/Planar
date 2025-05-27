@@ -57,7 +57,18 @@ namespace Planar
 
         public static bool IsSystemMonitorEvent(int eventId)
         {
-            return eventId >= 300 && eventId <= 400;
+            return eventId >= 300 && eventId < 400;
+        }
+
+        public static bool IsCustomMonitorEvent(MonitorEvents @event)
+        {
+            var eventId = (int)@event;
+            return IsCustomMonitorEvent(eventId);
+        }
+
+        public static bool IsCustomMonitorEvent(int eventId)
+        {
+            return eventId >= 400 && eventId < 500;
         }
     }
 }

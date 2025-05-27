@@ -21,10 +21,10 @@ namespace AggregateException
                 await Task.Delay(1000);
 
                 var ex = new InvalidProgramException($"Invalid program exception {i}");
-                AddAggregateException(ex, 60);
+                await AddAggregateExceptionAsync(ex, 60);
 
                 await IncreaseEffectedRowsAsync();
-                UpdateProgress(i + 1, 10);
+                await UpdateProgressAsync(i + 1, 10);
             }
 
             CheckAggragateException();

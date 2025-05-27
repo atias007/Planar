@@ -229,6 +229,19 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         return result;
     }
 
+    public async Task<IEnumerable<string>> GetAllIds()
+    {
+        var request = new GetAllJobsRequest { JobCategory = AllJobsMembers.All };
+        var jobKeys = await GetJobKeys(request);
+        var ids = jobKeys.Select(async k => await JobKeyHelper.GetJobId(k));
+        await Task.WhenAll(ids);
+        var jobIds = ids.Select(t => t.Result).Where(t => t != null);
+        var result = jobIds
+            .Select(i => i ?? string.Empty)
+            .Where(i => !string.IsNullOrWhiteSpace(i));
+        return result;
+    }
+
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
     {
         var jobs = new List<IJobDetail>();

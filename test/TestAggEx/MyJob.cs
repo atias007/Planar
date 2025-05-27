@@ -33,11 +33,11 @@ namespace TestAggEx
                 }
                 catch (Exception ex)
                 {
-                    AddAggregateException(ex);
+                    await AddAggregateExceptionAsync(ex);
                 }
                 finally
                 {
-                    UpdateProgress(i + 1, 10);
+                    await UpdateProgressAsync(i + 1, 10);
                 }
             }
 

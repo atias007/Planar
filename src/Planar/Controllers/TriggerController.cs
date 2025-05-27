@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
@@ -35,6 +36,17 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     public async Task<ActionResult<TriggerRowDetails>> GetByJob([FromRoute][Required] string jobId)
     {
         var result = await BusinesLayer.GetByJob(jobId);
+        return Ok(result);
+    }
+
+    [HttpGet("ids")]
+    [AllowAnonymous]
+    [SwaggerOperation(OperationId = "get_trigger_ids", Description = "Get all trigger ids", Summary = "Get All Trigger Ids")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetAllIds()
+    {
+        var result = await BusinesLayer.GetAllIds();
         return Ok(result);
     }
 

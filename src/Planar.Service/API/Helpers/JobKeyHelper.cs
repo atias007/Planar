@@ -41,8 +41,6 @@ public class JobKeyHelper(IScheduler scheduler)
         return GetJobId(job);
     }
 
-    
-
     public async Task<string?> GetJobId(string id)
     {
         var jobKey = await GetJobKey(id);

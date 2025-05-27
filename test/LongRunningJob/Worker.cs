@@ -16,7 +16,7 @@ namespace LongRunningJob
         {
             for (int i = 0; i < 130; i++)
             {
-                UpdateProgress(i, 130);
+                await UpdateProgressAsync(i, 130);
                 await SetEffectedRowsAsync(i + 1);
 
                 if (i % 10 == 0)

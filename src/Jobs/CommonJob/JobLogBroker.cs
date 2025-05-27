@@ -40,6 +40,8 @@ public sealed class JobLogBroker : IDisposable
 
     public string Details { get; set; }
 
+    public IJobExecutionContext Context => _context;
+
     private LogLevel LogLevel { get; set; }
 
     private JobExecutionMetadata Metadata

@@ -36,5 +36,7 @@ namespace Planar.Job
         Task UpdateProgressAsync(long current, long total);
 
         Task UpdateProgressAsync(byte value);
+
+        Task RaiseCustomEventAsync(CustomMonitorEvents customMonitorEvents, string message);
     }
 }

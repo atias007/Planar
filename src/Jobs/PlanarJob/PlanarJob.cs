@@ -7,6 +7,7 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.General;
+using PlanarJob;
 using PlanarJobInner;
 using Quartz;
 using System;
@@ -383,6 +384,27 @@ public abstract class PlanarJob(
         };
     }
 
+    protected void SafeScan(MonitorCustomEventInfo customEventInfo, IJobExecutionContext context)
+    {
+        try
+        {
+            var name = $"{nameof(MonitorEvents.CustomEvent1)[..^1]}{customEventInfo.Number}";
+            if (!Enum.TryParse<MonitorEvents>(name, out var @event))
+            {
+                _logger.LogError("monitor event '{Name}' is not valid", name);
+                return;
+            }
+
+            var exception = new PlanarJobCustomMonitorException(customEventInfo.Message ?? "[no message]");
+            MonitorUtil.Scan(@event, context, exception);
+        }
+        catch (Exception ex)
+        {
+            var source = nameof(SafeScan);
+            _logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
+        }
+    }
+
     private void InterceptingPublishAsyncInner(CloudEventArgs e)
     {
         if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
@@ -467,6 +489,11 @@ public abstract class PlanarJob(
             case MessageBrokerChannels.HealthCheck:
                 _isHealthCheck = true;
                 SafeUnsubscribeOutput();
+                break;
+
+            case MessageBrokerChannels.MonitorCustomEvent:
+                var monitorValue = GetCloudEventEntityValue<MonitorCustomEventInfo>(e.CloudEvent);
+                SafeScan(monitorValue, MessageBroker.Context);
                 break;
 
             default:

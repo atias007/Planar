@@ -3,6 +3,7 @@ using Planar.Common;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Planar.Job
 {
@@ -22,7 +23,7 @@ namespace Planar.Job
             _baseJobFactory = baseJobFactory;
         }
 
-        public void MapJobInstancePropertiesBack(IJobExecutionContext context, object instance)
+        public async Task MapJobInstancePropertiesBack(IJobExecutionContext context, object instance)
         {
             try
             {
@@ -32,7 +33,7 @@ namespace Planar.Job
                 foreach (var prop in propInfo)
                 {
                     if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
-                    SafePutData(context, prop, instance);
+                    await SafePutData(context, prop, instance);
                 }
             }
             catch (Exception ex)
@@ -43,7 +44,7 @@ namespace Planar.Job
             }
         }
 
-        private void SafePutData(IJobExecutionContext context, PropertyInfo prop, object instance)
+        private async Task SafePutData(IJobExecutionContext context, PropertyInfo prop, object instance)
         {
             var jobAttribute = prop.GetCustomAttribute<JobDataAttribute>();
             var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
@@ -63,29 +64,29 @@ namespace Planar.Job
 
             if (jobAttribute != null)
             {
-                SafePutJobDataMap(context, prop, instance);
+                await SafePutJobDataMap(context, prop, instance);
             }
 
             if (triggerAttribute != null)
             {
-                SafePutTiggerDataMap(context, prop, instance);
+                await SafePutTiggerDataMap(context, prop, instance);
             }
 
             if (jobAttribute == null && triggerAttribute == null)
             {
                 if (context.JobDetails.JobDataMap.ContainsKey(prop.Name))
                 {
-                    SafePutJobDataMap(context, prop, instance);
+                    await SafePutJobDataMap(context, prop, instance);
                 }
 
                 if (context.TriggerDetails.TriggerDataMap.ContainsKey(prop.Name))
                 {
-                    SafePutTiggerDataMap(context, prop, instance);
+                    await SafePutTiggerDataMap(context, prop, instance);
                 }
             }
         }
 
-        private void SafePutJobDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
+        private async Task SafePutJobDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
         {
 #if NETSTANDARD2_0
             string value = null;
@@ -100,7 +101,8 @@ namespace Planar.Job
                 }
 
                 value = PlanarConvert.ToString(prop.GetValue(instance));
-                _baseJobFactory?.PutJobData(prop.Name, value);
+                if (_baseJobFactory == null) { return; }
+                await _baseJobFactory.PutJobDataAsync(prop.Name, value);
             }
             catch (Exception ex)
             {
@@ -111,7 +113,7 @@ namespace Planar.Job
             }
         }
 
-        private void SafePutTiggerDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
+        private async Task SafePutTiggerDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
         {
 #if NETSTANDARD2_0
             string value = null;
@@ -126,7 +128,8 @@ namespace Planar.Job
                 }
 
                 value = PlanarConvert.ToString(prop.GetValue(instance));
-                _baseJobFactory?.PutTriggerData(prop.Name, value);
+                if (_baseJobFactory == null) { return; }
+                await _baseJobFactory.PutTriggerDataAsync(prop.Name, value);
             }
             catch (Exception ex)
             {
