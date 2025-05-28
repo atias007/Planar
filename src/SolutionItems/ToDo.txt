@@ -382,3 +382,4 @@ V 1.8.0
 - improve 'last' command in cli (save last log in table)
 - add timeout parameter to cli/api/client library for invoke and test command
 - add monitor customs events
+- cli support running command only by type: job id, trigger id, running instance id, log number

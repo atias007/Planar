@@ -7,65 +7,60 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.CLI.General;
 
+internal enum IdType
+{
+    None,
+    JobId,
+    TriggerId
+}
+
 internal static class JobTriggerIdResolver
 {
     private static readonly HashSet<string> _jobIds = [];
     private static readonly HashSet<string> _triggerIds = [];
     private static readonly Timer _timer = new(TimeSpan.FromMinutes(10));
+    private static Timer? _initTimer;
     private static readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
     public static async Task Initialize()
     {
-        try
+        var success = await SafeTimerElapsed();
+        if (!success)
         {
-            await TimerElapsed();
-        }
-        catch
-        {
-            // *** DO NOTHING *** //
+            _initTimer = new Timer(TimeSpan.FromMinutes(1));
+            _initTimer.Elapsed += async (s, e) =>
+            {
+                if (await SafeTimerElapsed())
+                {
+                    _initTimer.Stop();
+                    _initTimer.Dispose();
+                }
+            };
+            _initTimer.Start();
         }
 
-        _timer.Elapsed += async (s, e) => await TimerElapsed();
+        _timer.Elapsed += async (s, e) => await SafeTimerElapsed();
         _timer.Start();
     }
 
-    public static async Task<bool> SafeIsTriggerId(string triggerId)
+    public static async Task<IdType> SafeGetIdType(string id)
     {
         try
         {
-            return await IsTriggerIdInner(triggerId);
+            if (await IsJobIdCached(id)) { return IdType.JobId; }
+            if (await IsTriggerIdCached(id)) { return IdType.TriggerId; }
+            if (await IsJobIdOnline(id)) { return IdType.JobId; }
+            if (await IsTriggerIdOnline(id)) { return IdType.TriggerId; }
+            return IdType.None;
         }
         catch
         {
-            return false;
+            return IdType.None;
         }
     }
 
-    public static async Task<bool> SafeIsJobId(string jobId)
+    private static async Task<bool> IsJobIdOnline(string jobId)
     {
-        try
-        {
-            return await IsJobIdInner(jobId);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static async Task<bool> IsJobIdInner(string jobId)
-    {
-        if (string.IsNullOrWhiteSpace(jobId)) { return false; }
-        await _semaphoreSlim.WaitAsync();
-        try
-        {
-            if (_jobIds.Contains(jobId)) { return true; }
-        }
-        finally
-        {
-            _semaphoreSlim.Release();
-        }
-
         var isJob = await SpecialActions.IsJobId(jobId);
         if (isJob)
         {
@@ -78,25 +73,27 @@ internal static class JobTriggerIdResolver
             {
                 _semaphoreSlim.Release();
             }
-            return true;
         }
 
-        return false;
+        return isJob;
     }
 
-    private static async Task<bool> IsTriggerIdInner(string triggerId)
+    private static async Task<bool> IsJobIdCached(string jobId)
     {
-        if (string.IsNullOrWhiteSpace(triggerId)) { return false; }
+        if (string.IsNullOrWhiteSpace(jobId)) { return false; }
         await _semaphoreSlim.WaitAsync();
         try
         {
-            if (_triggerIds.Contains(triggerId)) { return true; }
+            return _jobIds.Contains(jobId);
         }
         finally
         {
             _semaphoreSlim.Release();
         }
+    }
 
+    private static async Task<bool> IsTriggerIdOnline(string triggerId)
+    {
         var isTrigger = await SpecialActions.IsTriggerId(triggerId);
         if (isTrigger)
         {
@@ -109,24 +106,36 @@ internal static class JobTriggerIdResolver
             {
                 _semaphoreSlim.Release();
             }
-            return true;
         }
 
-        return false;
+        return isTrigger;
     }
 
-    private static async Task TimerElapsed()
+    private static async Task<bool> IsTriggerIdCached(string triggerId)
     {
-        await SafeRefreshJobIds();
-        await SafeRefreshTriggerIds();
+        if (string.IsNullOrWhiteSpace(triggerId)) { return false; }
+        await _semaphoreSlim.WaitAsync();
+        try
+        {
+            return _triggerIds.Contains(triggerId);
+        }
+        finally
+        {
+            _semaphoreSlim.Release();
+        }
     }
 
-    private static async Task SafeRefreshJobIds()
+    private static async Task<bool> SafeTimerElapsed()
+    {
+        return await SafeRefreshJobIds() && await SafeRefreshTriggerIds();
+    }
+
+    private static async Task<bool> SafeRefreshJobIds()
     {
         try
         {
             var jobIds = await SpecialActions.GetJobIds();
-            if (jobIds == null) { return; }
+            if (jobIds == null) { return false; }
             await _semaphoreSlim.WaitAsync();
             try
             {
@@ -135,6 +144,8 @@ internal static class JobTriggerIdResolver
                 {
                     _jobIds.Add(jobId);
                 }
+
+                return true;
             }
             finally
             {
@@ -145,14 +156,16 @@ internal static class JobTriggerIdResolver
         {
             // *** DO NOTHING *** //
         }
+
+        return false;
     }
 
-    private static async Task SafeRefreshTriggerIds()
+    private static async Task<bool> SafeRefreshTriggerIds()
     {
         try
         {
             var triggerIds = await SpecialActions.GetTriggerIds();
-            if (triggerIds == null) { return; }
+            if (triggerIds == null) { return false; }
             await _semaphoreSlim.WaitAsync();
             try
             {
@@ -161,6 +174,8 @@ internal static class JobTriggerIdResolver
                 {
                     _triggerIds.Add(triggerId);
                 }
+
+                return true;
             }
             finally
             {
@@ -171,5 +186,7 @@ internal static class JobTriggerIdResolver
         {
             // *** DO NOTHING *** //
         }
+
+        return false;
     }
 }

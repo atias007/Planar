@@ -20,11 +20,11 @@ namespace Planar.CLI;
 public class CliArgumentsUtil
 {
     private const string OutputTerm = "--inner-cli-output-filename";
-    private const string HistoryRegexTemplate = "^[1-9][0-9]{0,18}$";
+    private const string NumericRegexTemplate = "^[1-9][0-9]{0,18}$";
     private const string JobIdRegexTemplate = "^[a-z0-9]{11}$";
     private const string InstanceIdRegexTemplate = "^[A-Za-z0-9_-]{3,50}[0-9]{1,18}$";
 
-    private static readonly Regex _historyRegex = new(HistoryRegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+    private static readonly Regex _numericRegex = new(NumericRegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(1));
     private static readonly Regex _jobIdRegex = new(JobIdRegexTemplate, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     private static readonly Regex _instanceIdRegex = new(InstanceIdRegexTemplate, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     private readonly string? _outputFilename;
@@ -142,7 +142,7 @@ public class CliArgumentsUtil
         }
     }
 
-    private static void SpecialCase(List<string> args)
+    private static async Task SpecialCase(List<string> args)
     {
         // SPECIAL CASE: accept command with planar keyword
         if (string.Equals(args[0], "planar-cli", StringComparison.OrdinalIgnoreCase))
@@ -151,7 +151,7 @@ public class CliArgumentsUtil
         }
 
         // SPECIAL CASE: enable get history only by type history id
-        if (_historyRegex.IsMatch(args[0]))
+        if (_numericRegex.IsMatch(args[0]))
         {
             args.Insert(0, "history");
             args.Insert(1, "get");
@@ -161,6 +161,19 @@ public class CliArgumentsUtil
         // SPECIAL CASE: job id / trigger id
         if (_jobIdRegex.IsMatch(args[0]))
         {
+            var idType = await JobTriggerIdResolver.SafeGetIdType(args[0]);
+            if (idType == IdType.JobId)
+            {
+                args.Insert(0, "job");
+                args.Insert(1, "get");
+                return;
+            }
+            else if (idType == IdType.TriggerId)
+            {
+                args.Insert(0, "trigger");
+                args.Insert(1, "get");
+                return;
+            }
         }
 
         // SPECIAL CASE: instance id
@@ -172,21 +185,21 @@ public class CliArgumentsUtil
         }
     }
 
-    public static CliActionMetadata? ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
+    public async static Task<(CliActionMetadata? Action, string[] Args)> ValidateArgs(string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
     {
         var list = args.ToList();
-        SpecialCase(list);
+        await SpecialCase(list);
 
         // find match
         var action = FindMatch(list, actionsMetadata);
         args = [.. list];
-        if (action != null && action.Module != InnerCliActions.Command) { return action; }
+        if (action != null && action.Module != InnerCliActions.Command) { return (action, args); }
 
         // find match with swap command and module
         Swap(ref list);
         args = [.. list];
         action = FindMatch(list, actionsMetadata);
-        if (action != null) { return action; }
+        if (action != null) { return (action, args); }
         Swap(ref list);
 
         // special case: enable to list jobs only by type ls or list
@@ -234,7 +247,7 @@ public class CliArgumentsUtil
             if (IsHelpCommand(list[1]))
             {
                 CliHelpGenerator.ShowHelp(list[0], actionsMetadata);
-                return null;
+                return (null, args);
             }
 
             throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
@@ -247,7 +260,7 @@ public class CliArgumentsUtil
             throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
         }
 
-        return action;
+        return (action, args);
     }
 
     public object? GetRequest(CliActionMetadata action, CancellationToken cancellationToken)

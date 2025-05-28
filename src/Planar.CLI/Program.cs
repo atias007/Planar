@@ -42,10 +42,11 @@ internal static class Program
         }
     }
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
         Console.CancelKeyPress += Console_CancelKeyPress;
+        _ = JobTriggerIdResolver.Initialize();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Console.Title = "Planar: Command Line Interface";
@@ -53,7 +54,7 @@ internal static class Program
 
         try
         {
-            Start(args);
+            await Start(args);
         }
         catch (Exception ex)
         {
@@ -192,7 +193,7 @@ internal static class Program
         return true;
     }
 
-    private static CliArgumentsUtil? HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
+    private async static Task<CliArgumentsUtil?> HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
     {
         if (args == null || args.Length == 0)
         {
@@ -204,7 +205,10 @@ internal static class Program
 
         try
         {
-            var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
+            var tuple = await CliArgumentsUtil.ValidateArgs(args, cliActions);
+            var action = tuple.Action;
+            args = tuple.Args;
+
             if (action == null) { return null; }
 
             cliArgument = new CliArgumentsUtil(args)
@@ -750,7 +754,7 @@ internal static class Program
         return false;
     }
 
-    private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions, bool showModules)
+    private async static Task InteractiveMode(IEnumerable<CliActionMetadata> cliActions, bool showModules)
     {
         BaseCliAction.InteractiveMode = true;
         var command = string.Empty;
@@ -774,7 +778,7 @@ internal static class Program
             ResetTimer();
 
             var args = CommandSplitter.SplitCommandLine(command).ToArray();
-            HandleCliCommand(args, cliActions);
+            await HandleCliCommand(args, cliActions);
         }
     }
 
@@ -804,7 +808,7 @@ internal static class Program
         return response;
     }
 
-    private static void Start(string[] args)
+    private static async Task Start(string[] args)
     {
         var cliActions = BaseCliAction.GetAllActions();
 
@@ -816,17 +820,17 @@ internal static class Program
 
         if (args.Length == 0)
         {
-            InteractiveMode(cliActions, showModules: true);
+            await InteractiveMode(cliActions, showModules: true);
         }
         else
         {
-            var cliUtil = HandleCliCommand(args, cliActions);
+            var cliUtil = await HandleCliCommand(args, cliActions);
             if (cliUtil != null)
             {
                 var command = $"{cliUtil.Module}.{cliUtil.Command}";
                 if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
                 {
-                    InteractiveMode(cliActions, showModules: false);
+                    await InteractiveMode(cliActions, showModules: false);
                 }
             }
         }
