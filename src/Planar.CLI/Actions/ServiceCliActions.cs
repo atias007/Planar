@@ -418,7 +418,7 @@ namespace Planar.CLI.Actions
             if (result.IsSuccessStatusCode)
             {
                 Console.Title = $"{CliConsts.Title} ({request.Username})";
-
+                _ = JobTriggerIdResolver.Refresh();
                 return new CliActionResponse(result, message: $"login success ({LoginProxy.Role?.ToLower()})");
             }
             else if (result.StatusCode == HttpStatusCode.Conflict)

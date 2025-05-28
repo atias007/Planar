@@ -12,7 +12,7 @@ namespace Planar.CLI.Proxy;
 
 internal static class RestProxy
 {
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static RestClient? _client;
     public static string Host { get; set; } = ConnectUtil.DefaultHost;
     public static int Port { get; set; } = ConnectUtil.GetDefaultPort();

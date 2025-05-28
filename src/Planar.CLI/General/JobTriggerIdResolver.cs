@@ -43,6 +43,11 @@ internal static class JobTriggerIdResolver
         _timer.Start();
     }
 
+    public static async Task Refresh()
+    {
+        await SafeTimerElapsed();
+    }
+
     public static async Task<IdType> SafeGetIdType(string id)
     {
         try
