@@ -171,10 +171,10 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         if (!MonitorServiceCache.IsCacheValid)
         {
             var items = await LoadAllMonitorItems();
-            MonitorServiceCache.SetCache(items);
+            await MonitorServiceCache.SetCache(items);
         }
 
-        var result = MonitorServiceCache.GetMonitorActions(@event, context);
+        var result = await MonitorServiceCache.GetMonitorActions(@event, context);
         return result;
     }
 
@@ -184,10 +184,10 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         if (!MonitorServiceCache.IsCacheValid)
         {
             var items = await LoadAllMonitorItems();
-            MonitorServiceCache.SetCache(items);
+            await MonitorServiceCache.SetCache(items);
         }
 
-        var result = MonitorServiceCache.GetMonitorActions(@event);
+        var result = await MonitorServiceCache.GetMonitorActions(@event);
         return result;
     }
 
@@ -454,7 +454,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         monitor.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
         monitor.Group = new MonitorGroup(action.Group);
         monitor.MonitorTitle = action.Title;
-        monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
+        monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)));
         monitor.GlobalConfig = Global.GlobalConfig;
         monitor.Environment = AppSettings.General.Environment;
 

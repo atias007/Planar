@@ -476,7 +476,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         using var scope = ServiceProvider.CreateScope();
         var dal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
         var data = await dal.GetMonitorActions();
-        MonitorServiceCache.SetCache(data);
+        await MonitorServiceCache.SetCache(data);
 
         if (clusterReload && AppSettings.Cluster.Clustering)
         {

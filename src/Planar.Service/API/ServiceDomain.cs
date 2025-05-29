@@ -39,6 +39,8 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             Protection = Mapper.Map<ProtectionSettingsInfo>(AppSettings.Protection),
         };
 
+        var nodes = await ClusterUtil.GetAllNodes();
+        result.General.InstanceIds = nodes.Select(n => n.InstanceId);
         if (UserRole != Roles.Administrator)
         {
             result.Database.ConnectionString = scrt;

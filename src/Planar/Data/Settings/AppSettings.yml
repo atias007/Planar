@@ -1,14 +1,14 @@
 general:
   environment: Development
   service name: PlanarService
-  instance id: Default
-  max concurrency: 10
+  instance id: Default                              # unique identifier for this service instance. used for clustering and job distribution. set this value to a unique value in production environment or use AUTO to automatically generate auto id
+  max concurrency: 10                               # the maximum number of concurrent jobs that can run at the same time. default is 10. minimum value 1
   job auto stop span: 02:00:00
   persist running jobs span: 00:15:00
   scheduler startup delay: 00:00:05
-  http port: 2306                                     
+  http port: 2306                                    # port for the http service. change this port if you install multiple planar services on the same machine. default is 2306.                                  
   use https: false	                                 # set this value to true in production environment
-  https port: 2610
+  https port: 2610                                   # port for the https service. change this port if you install multiple planar services on the same machine. default is 2610.
   job port: 206                                      # port for internal job communication. change this port if you install multiple planar services on the same machine. default is 206. 
   certificate file: null                             # certificate file path. set this value in production environment
   certificate password: null                         # certificate password. set this value in production environment
@@ -23,7 +23,7 @@ general:
 database:
   provider: Sqlite                                   # options: SqlServer, Sqlite, PostgreSql, MySql
   connection string: null                            # connection string to the database
-  run migration: true
+  run migration: true                                # run migration on startup
 
 cluster:
   clustering: false

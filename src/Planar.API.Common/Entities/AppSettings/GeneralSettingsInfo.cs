@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Planar.API.Common.Entities
 {
@@ -6,7 +7,7 @@ namespace Planar.API.Common.Entities
     {
         public int MaxConcurrency { get; set; }
         public string ServiceName { get; set; } = string.Empty;
-        public string InstanceId { get; set; } = string.Empty;
+        public IEnumerable<string> InstanceIds { get; set; } = [];
         public TimeSpan JobAutoStopSpan { get; set; }
         public TimeSpan PersistRunningJobsSpan { get; set; }
         public int HttpPort { get; set; }
