@@ -235,13 +235,14 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                 }
 
                 // Log the start of the monitor
+                var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
                 if (@event == MonitorEvents.ExecutionProgressChanged)
                 {
-                    _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, @event, action.Hook, groupNames);
                 }
                 else
                 {
-                    _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, @event, action.Hook, groupNames);
                 }
 
                 // Handle the monitor
@@ -258,7 +259,8 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, action.Hook, action.Group.Name);
+            var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, action.Hook, groupNames);
             await SafeSaveMonitorAlert(action, details, context, ex);
         }
     }
@@ -282,8 +284,9 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             }
             else
             {
+                var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
                 details = GetMonitorDetails(action, info, exception);
-                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, @event, action.Hook, groupNames);
                 await hookInstance.HandleSystem(details, cancellationToken);
                 await SafeSaveMonitorAlert(action, details);
                 return;
@@ -449,12 +452,10 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
     private static void FillMonitor(Monitor.Monitor monitor, MonitorAction action, Exception? exception)
     {
-        monitor.Users = [];
         monitor.EventId = action.EventId;
         monitor.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
-        monitor.Group = new MonitorGroup(action.Group);
+        monitor.Groups = action.Groups.Select(ag => new MonitorGroup(ag));
         monitor.MonitorTitle = action.Title;
-        monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)));
         monitor.GlobalConfig = Global.GlobalConfig;
         monitor.Environment = AppSettings.General.Environment;
 
@@ -560,6 +561,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         {
             if (details == null) { return; }
             if (action.Id == 0) { return; }
+            if (action.Groups.Count == 0) { return; }
 
             var alert = new MonitorAlert();
             MapDetailsToMonitorAlert(details, alert);
@@ -567,10 +569,23 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             MapExceptionMonitorAlert(exception, alert);
             alert.LogInstanceId = context.FireInstanceId;
 
+            var items = new List<MonitorAlert>();
+            foreach (var group in action.Groups)
+            {
+                if (group == null) { continue; }
+                group.Users ??= [];
+
+                var i = CloneMonitorAlert(alert);
+                if (i == null) { continue; }
+                i.GroupId = group.Id;
+                i.GroupName = group.Name;
+                i.UsersCount = group.Users.Count;
+                items.Add(i);
+            }
+
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-            //// Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
-            dbcontext.MonitorAlerts.Add(alert);
+            dbcontext.MonitorAlerts.AddRange(items);
             await dbcontext.SaveChangesAsync();
         }
         catch (Exception ex)
@@ -593,10 +608,23 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             MapActionToMonitorAlert(action, alert);
             MapExceptionMonitorAlert(exception, alert);
 
+            var items = new List<MonitorAlert>();
+            foreach (var group in action.Groups)
+            {
+                if (group == null) { continue; }
+                if (group.Users == null || group.Users.Count == 0) { continue; }
+
+                var i = CloneMonitorAlert(alert);
+                if (i == null) { continue; }
+                i.GroupId = group.Id;
+                i.GroupName = group.Name;
+                i.UsersCount = group.Users.Count;
+                items.Add(i);
+            }
+
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-            //// Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
-            dbcontext.MonitorAlerts.Add(alert);
+            dbcontext.MonitorAlerts.AddRange(items);
             await dbcontext.SaveChangesAsync();
         }
         catch (Exception ex)
@@ -606,6 +634,13 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                 details?.MonitorTitle ?? nullText,
                 details?.EventId ?? 0);
         }
+    }
+
+    private static MonitorAlert? CloneMonitorAlert(MonitorAlert source)
+    {
+        var json = JsonConvert.SerializeObject(source);
+        var clone = JsonConvert.DeserializeObject<MonitorAlert>(json);
+        return clone;
     }
 
     private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
@@ -631,17 +666,14 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
     private static void MapMonitorToMonitorAlert(Monitor.Monitor monitor, MonitorAlert alert)
     {
-        // alert.EventTitle => copy from action and not from monitor
+        // ATTENTION: alert.EventTitle => copy from action and not from monitor (See below)
         alert.AlertDate = DateTime.Now;
         alert.EventId = monitor.EventId;
         alert.MonitorTitle = monitor.MonitorTitle;
-        alert.UsersCount = monitor.Users?.Count ?? 0;
     }
 
     private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
     {
-        alert.GroupId = action.Group.Id;
-        alert.GroupName = action.Group.Name;
         alert.MonitorId = action.Id;
         alert.Hook = action.Hook;
         alert.EventArgument = action.EventArgument;

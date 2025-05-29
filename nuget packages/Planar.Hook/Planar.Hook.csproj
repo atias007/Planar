@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-		<Version>1.7.9.2</Version>
+		<Version>1.7.9.3-beta</Version>
 		<Description>Library for writing monitor hooks for Planar jobs</Description>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>

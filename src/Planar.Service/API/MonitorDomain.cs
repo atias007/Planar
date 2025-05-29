@@ -81,18 +81,21 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
         var mapperData = Resolve<IAutoMapperData>();
         var monitor = Mapper.Map<MonitorAction>(request);
-        monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
+        var groupId = await mapperData.GetGroupId(request.GroupName);
 
         if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
         if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
         monitor.Active = true;
 
-        if (await DataLayer.IsMonitorExists(monitor))
+        if (await DataLayer.IsMonitorExists(monitor, groupId))
         {
             throw new RestConflictException("monitor with same properties already exists");
         }
 
         await DataLayer.AddMonitor(monitor);
+        var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = monitor.Id };
+        await DataLayer.AddMonitorGroup(monitorGroup);
+
         _ = Resolve<MonitorDurationCache>().Flush();
         _ = SetMonitorActionsCache(clusterReload: true);
         return monitor.Id;
@@ -344,10 +347,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         TrimPropertyName(request);
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
         var monitor = ValidateExistingEntity(dbMonitor, "monitor");
-        ForbbidenPartialUpdateProperties(request, "EventId", "GroupId");
-        var mapperData = Resolve<IAutoMapperData>();
+        ForbbidenPartialUpdateProperties(request, "EventId", "Groups");
         var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
-        updateMonitor.GroupName = await mapperData.GetGroupName(monitor.GroupId) ?? string.Empty;
         var validator = Resolve<IValidator<UpdateMonitorRequest>>();
         await SetEntityProperties(updateMonitor, request, validator);
         await Update(updateMonitor);
@@ -389,13 +390,13 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             Active = true,
             EventArgument = null,
             EventId = (int)monitorEvent,
-            Group = group,
-            GroupId = groupId,
             Hook = request.Hook,
             JobGroup = "TestJobGroup",
             JobName = "TestJobName",
             Title = "Test Monitor"
         };
+
+        action.Groups.Add(group);
 
         if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEvent))
         {
@@ -450,9 +451,9 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
         var validator = new MonitorActionValidator();
         validator.ValidateMonitorArguments(request);
-        var mapperData = Resolve<IAutoMapperData>();
+        ////var mapperData = Resolve<IAutoMapperData>();
         var monitor = Mapper.Map<MonitorAction>(request);
-        monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
+        ////monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
         if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
         if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
         if (await DataLayer.IsMonitorExists(monitor, request.Id))

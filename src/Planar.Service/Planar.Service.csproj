@@ -90,16 +90,16 @@
 		<PackageReference Include="AutoMapper" Version="14.0.0" />
 		<PackageReference Include="CronExpressionDescriptor" Version="2.41.0" />
 		<PackageReference Include="FluentValidation" Version="12.0.0" />
-		<PackageReference Include="Google.Protobuf" Version="3.30.2" />
+		<PackageReference Include="Google.Protobuf" Version="3.31.1" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.72.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.5" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
@@ -111,7 +111,7 @@
 		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
 		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
 		<PackageReference Include="Riok.Mapperly" Version="4.2.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.9.0.115408">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.10.0.116381">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

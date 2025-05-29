@@ -3,7 +3,6 @@ using CloudNative.CloudEvents.SystemTextJson;
 using Core.JsonConvertors;
 using Planar.Common;
 using Planar.Hook;
-using Planar.Hooks.Enities;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
@@ -55,7 +54,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
 
     private string? GetUrl(IMonitor monitor)
     {
-        var url = GetParameter("rest-http-url", monitor.Group);
+        var url = GetParameter("rest-http-url", monitor.Groups.First());
         if (string.IsNullOrWhiteSpace(url))
         {
             url = AppSettings.Hooks.Rest.DefaultUrl;

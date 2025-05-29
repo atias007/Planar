@@ -53,7 +53,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
 
     private string? GetChannel(IMonitor monitor)
     {
-        var channel = GetParameter("redis-channel-name", monitor.Group);
+        var channel = GetParameter("redis-channel-name", monitor.Groups.First());
         if (string.IsNullOrWhiteSpace(channel))
         {
             channel = AppSettings.Hooks.Redis.PubSubChannel;

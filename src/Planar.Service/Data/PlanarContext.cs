@@ -70,9 +70,22 @@ public partial class PlanarContext : DbContext
 
             entity.Property(e => e.Active).HasDefaultValue(true);
 
-            entity.HasOne(d => d.Group).WithMany(p => p.MonitorActions)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_MonitorActions_Groups");
+            entity.HasMany(d => d.Groups).WithMany(p => p.Monitors)
+                .UsingEntity<Dictionary<string, object>>(
+                    "MonitorActionsGroup",
+                    r => r.HasOne<Group>().WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_MonitorActionsGroups_Groups"),
+                    l => l.HasOne<MonitorAction>().WithMany()
+                        .HasForeignKey("MonitorId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_MonitorActionsGroups_MonitorActions"),
+                    j =>
+                    {
+                        j.HasKey("MonitorId", "GroupId");
+                        j.ToTable("MonitorActionsGroups");
+                    });
         });
 
         modelBuilder.Entity<MonitorCounter>(entity =>

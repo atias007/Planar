@@ -178,7 +178,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
 
     private IEnumerable<string> GetTeamsUrls(IMonitor monitor)
     {
-        var g = monitor.Group;
+        var g = monitor.Groups.First();
         var fields = new[]
         {
             g.AdditionalField1,

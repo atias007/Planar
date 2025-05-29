@@ -42,7 +42,7 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 
         private static string GetBotToken(IMonitor monitor)
         {
-            var token = GetParameter("telegram-bot-token", monitor.Group);
+            var token = GetParameter("telegram-bot-token", monitor.Groups.First());
             if (string.IsNullOrWhiteSpace(token))
             {
                 token = AppSettings.Hooks.Telegram.BotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
@@ -58,7 +58,7 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 
         private static string GetChatId(IMonitor monitor)
         {
-            var chatid = GetParameter("telegram-chat-id", monitor.Group);
+            var chatid = GetParameter("telegram-chat-id", monitor.Groups.First());
             if (string.IsNullOrWhiteSpace(chatid))
             {
                 chatid = AppSettings.Hooks.Telegram.ChatId; // -1002028679199

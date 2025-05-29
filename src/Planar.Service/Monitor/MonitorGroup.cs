@@ -1,26 +1,17 @@
 ﻿using Planar.Service.Model;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Planar.Service.Monitor
+namespace Planar.Service.Monitor;
+
+public class MonitorGroup(Group group)
 {
-    public class MonitorGroup
-    {
-        public MonitorGroup(Group group)
-        {
-            Id = group.Id;
-            Name = group.Name;
-            AdditionalField1 = group.AdditionalField1;
-            AdditionalField2 = group.AdditionalField2;
-            AdditionalField3 = group.AdditionalField3;
-            AdditionalField4 = group.AdditionalField4;
-            AdditionalField5 = group.AdditionalField5;
-        }
-
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string? AdditionalField1 { get; set; }
-        public string? AdditionalField2 { get; set; }
-        public string? AdditionalField3 { get; set; }
-        public string? AdditionalField4 { get; set; }
-        public string? AdditionalField5 { get; set; }
-    }
+    public int Id { get; set; } = group.Id;
+    public string Name { get; set; } = group.Name;
+    public string? AdditionalField1 { get; set; } = group.AdditionalField1;
+    public string? AdditionalField2 { get; set; } = group.AdditionalField2;
+    public string? AdditionalField3 { get; set; } = group.AdditionalField3;
+    public string? AdditionalField4 { get; set; } = group.AdditionalField4;
+    public string? AdditionalField5 { get; set; } = group.AdditionalField5;
+    public IEnumerable<MonitorUser> Users { get; set; } = group.Users.Select(u => new MonitorUser(u));
 }

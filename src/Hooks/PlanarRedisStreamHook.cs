@@ -1,7 +1,6 @@
 ﻿using Core.JsonConvertors;
 using Planar.Common;
 using Planar.Hook;
-using Planar.Hooks.Enities;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -45,7 +44,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
 
     private string? GetStreamName(IMonitor monitor)
     {
-        var stream = GetParameter("redis-stream-name", monitor.Group);
+        var stream = GetParameter("redis-stream-name", monitor.Groups.First());
         if (string.IsNullOrWhiteSpace(stream))
         {
             stream = AppSettings.Hooks.Redis.PubSubChannel;
@@ -75,7 +74,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
                 new("data-type", typeof(T).Name),
                 new("data", JsonSerializer.Serialize(detials, _jsonSerializerSettings)),
                 new("event-id", detials.EventId),
-                new("group", detials.Group.Name),
+                new("group", detials.Groups.First().Name),
             };
 
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);

@@ -33,18 +33,6 @@ public class MonitorProfile : Profile
         CreateMap<MonitorAlert, MonitorAlertModel>();
         CreateMap<MonitorHook, MonitorHookDetails>().ReverseMap();
 
-        CreateMap<MonitorDetails, MonitorAlert>()
-            .ForMember(d => d.GroupId, map => map.MapFrom(s => s.Group == null ? 0 : s.Group.Id))
-            .ForMember(d => d.GroupName, map => map.MapFrom(s => s.Group == null ? string.Empty : s.Group.Name))
-            .ForMember(d => d.UsersCount, map => map.MapFrom(s => s.Users == null ? 0 : s.Users.Count))
-            .ForMember(d => d.AlertDate, map => map.MapFrom(s => DateTime.Now));
-
-        CreateMap<MonitorSystemDetails, MonitorAlert>()
-            .ForMember(d => d.GroupId, map => map.MapFrom(s => s.Group == null ? 0 : s.Group.Id))
-            .ForMember(d => d.GroupName, map => map.MapFrom(s => s.Group == null ? string.Empty : s.Group.Name))
-            .ForMember(d => d.UsersCount, map => map.MapFrom(s => s.Users == null ? 0 : s.Users.Count))
-            .ForMember(d => d.AlertDate, map => map.MapFrom(s => DateTime.Now));
-
         CreateMap<MonitorMute, MuteItem>();
         CreateMap<MonitorCounter, MuteItem>()
             .ForMember(d => d.DueDate, map => map.MapFrom(s => (s.LastUpdate ?? DateTime.Now).Add(AppSettings.Monitor.MaxAlertsPeriod)));

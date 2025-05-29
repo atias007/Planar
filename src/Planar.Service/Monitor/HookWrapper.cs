@@ -7,120 +7,119 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.Monitor
+namespace Planar.Service.Monitor;
+
+internal class HookWrapper
 {
-    internal class HookWrapper
+    public const string ExecuteMethodName = "ExecuteAsync";
+
+    private HookWrapper(string name, string description)
     {
-        public const string ExecuteMethodName = "Execute";
+        Name = name;
+        Description = description;
+    }
 
-        private HookWrapper(string name, string description)
+    public static HookWrapper CreateInternal(BaseSystemHook instance, ILogger logger)
+    {
+        var wrapper = new HookWrapper(instance.Name, instance.Description)
         {
-            Name = name;
-            Description = description;
-        }
+            HookType = HookTypeMembers.Internal,
+            Instance = instance,
+            ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance),
+            Logger = logger
+        };
 
-        public static HookWrapper CreateInternal(BaseSystemHook instance, ILogger logger)
+        instance.SetLogger(logger);
+        return wrapper;
+    }
+
+    public static HookWrapper CreateExternal(string filename, MonitorHookDetails details, ILogger logger)
+    {
+        return new HookWrapper(details.Name, details.Description)
         {
-            var wrapper = new HookWrapper(instance.Name, instance.Description)
-            {
-                HookType = HookTypeMembers.Internal,
-                Instance = instance,
-                ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance),
-                Logger = logger
-            };
+            HookType = HookTypeMembers.External,
+            Filename = filename,
+            Logger = logger
+        };
+    }
 
-            instance.SetLogger(logger);
-            return wrapper;
-        }
+    internal enum HookTypeMembers
+    {
+        Internal,
+        External
+    }
 
-        public static HookWrapper CreateExternal(string filename, MonitorHookDetails details, ILogger logger)
+    public MethodInfo? ExecuteMethod { get; private set; }
+
+    public HookTypeMembers HookType { get; private set; }
+
+    public BaseSystemHook? Instance { get; private set; }
+
+    public string? Filename { get; private set; }
+
+    public string Name { get; private set; }
+
+    public string Description { get; private set; }
+
+    public ILogger Logger { get; private set; } = null!;
+
+    public Task Handle(MonitorDetails details, CancellationToken cancellationToken)
+    {
+        if (HookType == HookTypeMembers.External)
         {
-            return new HookWrapper(details.Name, details.Description)
-            {
-                HookType = HookTypeMembers.External,
-                Filename = filename,
-                Logger = logger
-            };
-        }
-
-        internal enum HookTypeMembers
-        {
-            Internal,
-            External
-        }
-
-        public MethodInfo? ExecuteMethod { get; private set; }
-
-        public HookTypeMembers HookType { get; private set; }
-
-        public BaseSystemHook? Instance { get; private set; }
-
-        public string? Filename { get; private set; }
-
-        public string Name { get; private set; }
-
-        public string Description { get; private set; }
-
-        public ILogger Logger { get; private set; } = null!;
-
-        public Task Handle(MonitorDetails details, CancellationToken cancellationToken)
-        {
-            if (HookType == HookTypeMembers.External)
-            {
-                HookExecuter exe = null!;
-                return Task.Run(() =>
-                {
-                    exe = new HookExecuter(Logger, Filename);
-                    exe.HandleByExternalHook(details);
-                }, cancellationToken).ContinueWith(t => exe.Dispose(), cancellationToken);
-            }
-
-            if (ExecuteMethod == null)
-            {
-                throw new PlanarMonitorException($"method '{ExecuteMethod}' could not be found in hook '{Name}'");
-            }
-
-            var wrapper = new MonitorMessageWrapper(details);
-            var json = JsonSerializer.Serialize(wrapper);
+            HookExecuter exe = null!;
             return Task.Run(() =>
             {
-                var result = ExecuteMethod.Invoke(Instance, new object[] { json });
-                (result as Task)?.Wait();
-            }, cancellationToken);
+                exe = new HookExecuter(Logger, Filename);
+                exe.HandleByExternalHook(details);
+            }, cancellationToken).ContinueWith(t => exe.Dispose(), cancellationToken);
         }
 
-        public Task HandleSystem(MonitorSystemDetails details, CancellationToken cancellationToken)
+        if (ExecuteMethod == null)
         {
-            if (HookType == HookTypeMembers.External)
-            {
-                HookExecuter exe = null!;
-                return Task.Run(() =>
-                {
-                    exe = new HookExecuter(Logger, Filename);
-                    exe.HandleSystemByExternalHook(details);
-                }, cancellationToken).ContinueWith(t => exe.Dispose(), cancellationToken);
-            }
+            throw new PlanarMonitorException($"method '{ExecuteMethod}' could not be found in hook '{Name}'");
+        }
 
-            if (ExecuteMethod == null)
-            {
-                throw new PlanarMonitorException($"method '{ExecuteMethod}' could not be found in hook '{Name}'");
-            }
+        var wrapper = new MonitorMessageWrapper(details);
+        var json = JsonSerializer.Serialize(wrapper);
+        return Task.Run(() =>
+        {
+            var result = ExecuteMethod.Invoke(Instance, [json]);
+            (result as Task)?.Wait();
+        }, cancellationToken);
+    }
 
-            var wrapper = new MonitorMessageWrapper(details);
-            var json = JsonSerializer.Serialize(wrapper);
-
+    public Task HandleSystem(MonitorSystemDetails details, CancellationToken cancellationToken)
+    {
+        if (HookType == HookTypeMembers.External)
+        {
+            HookExecuter exe = null!;
             return Task.Run(() =>
             {
-                var result = ExecuteMethod.Invoke(Instance, new object[] { json });
-                (result as Task)?.Wait();
-            }, cancellationToken);
+                exe = new HookExecuter(Logger, Filename);
+                exe.HandleSystemByExternalHook(details);
+            }, cancellationToken).ContinueWith(t => exe.Dispose(), cancellationToken);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "reflection base class with internal")]
-        private static MethodInfo SafeGetMethod(string hookName, string methodName, object instance)
+        if (ExecuteMethod == null)
         {
-            var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return method ?? throw new PlanarException($"method {methodName} could not found in hook '{hookName}'");
+            throw new PlanarMonitorException($"method '{ExecuteMethod}' could not be found in hook '{Name}'");
         }
+
+        var wrapper = new MonitorMessageWrapper(details);
+        var json = JsonSerializer.Serialize(wrapper);
+
+        return Task.Run(() =>
+        {
+            var result = ExecuteMethod.Invoke(Instance, [json]);
+            (result as Task)?.Wait();
+        }, cancellationToken);
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "reflection base class with internal")]
+    private static MethodInfo SafeGetMethod(string hookName, string methodName, object instance)
+    {
+        var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+        return method ?? throw new PlanarException($"method {methodName} could not found in hook '{hookName}'");
     }
 }

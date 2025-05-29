@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
@@ -27,7 +28,7 @@ namespace Planar.Hook
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         private static readonly Dictionary<int, string> _menuMapper = new Dictionary<int, string>();
 
-        public static void Start<THook>()
+        public static async Task StartAsync<THook>()
             where THook : BaseHook, new()
         {
             FillArguments();
@@ -38,7 +39,7 @@ namespace Planar.Hook
 
             try
             {
-                Execute<THook>();
+                await ExecuteAsync<THook>();
             }
             catch (Exception ex)
             {
@@ -63,7 +64,7 @@ namespace Planar.Hook
             }
         }
 
-        private static void Execute<THook>()
+        private static async Task ExecuteAsync<THook>()
             where THook : BaseHook, new()
         {
             string json;
@@ -87,7 +88,7 @@ namespace Planar.Hook
             }
 
             var instance = Activator.CreateInstance<THook>();
-            instance.Execute(json);
+            await instance.ExecuteAsync(json);
 
             if (Mode == RunningMode.Debug)
             {
@@ -104,8 +105,9 @@ namespace Planar.Hook
         {
             int selectedIndex;
 
-            Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
-            Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
+            // TODO:
+            //Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
+            //Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
 
             var typeName = typeof(THook).Name;
             Console.Write("type the profile code ");

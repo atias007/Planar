@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Planar.Hook
 {
     internal class Monitor : IMonitor
     {
+        private readonly List<IMonitorGroup> _groups = new List<IMonitorGroup>();
         public string Environment { get; set; } = string.Empty;
 
         public int EventId { get; set; }
@@ -12,10 +14,11 @@ namespace Planar.Hook
 
         public string MonitorTitle { get; set; } = string.Empty;
 
-        public IMonitorGroup Group { get; set; } = new Group();
+        public IEnumerable<IMonitorGroup> Groups => _groups;
 
-        public IEnumerable<IMonitorUser> Users { get; set; } = new List<User>();
+        public IEnumerable<IMonitorUser> Users => Groups.SelectMany(g => g.Users);
 #if NETSTANDARD2_0
+
         public IReadOnlyDictionary<string, string> GlobalConfig { get; set; } = new Dictionary<string, string>();
 #else
         public IReadOnlyDictionary<string, string?> GlobalConfig { get; set; } = new Dictionary<string, string?>();
@@ -31,13 +34,14 @@ namespace Planar.Hook
         public string? MostInnerExceptionMessage { get; set; }
 #endif
 
-        internal void AddUser(IMonitorUser user)
+        internal void AddGroup(IMonitorGroup group)
         {
-            if (user is User castUser)
-            {
-                var users = (List<User>)Users;
-                users.Add(castUser);
-            }
+            _groups.Add(group);
+        }
+
+        internal void ClearGroups()
+        {
+            _groups.Clear();
         }
 
 #if NETSTANDARD2_0

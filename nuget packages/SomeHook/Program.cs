@@ -17,4 +17,4 @@ using SomeHook;
 ////    .WithMessage("Hiiii... Test Message")
 ////    );
 
-PlanarHook.Start<TestHook>();
+await PlanarHook.StartAsync<TestHook>();

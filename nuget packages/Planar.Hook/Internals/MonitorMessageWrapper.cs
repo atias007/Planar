@@ -27,13 +27,11 @@ namespace Planar.Hook
         public void HandleMonitor<T>(T monitor)
             where T : Monitor
         {
-            Users = JsonSerializer.Serialize(monitor.Users);
-            Group = JsonSerializer.Serialize(monitor.Group);
+            Groups = JsonSerializer.Serialize(monitor.Groups);
             GlobalConfig = JsonSerializer.Serialize(monitor.GlobalConfig);
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            monitor.Users = null;
-            monitor.Group = null;
+            monitor.ClearGroups();
             monitor.GlobalConfig = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
@@ -43,16 +41,14 @@ namespace Planar.Hook
 #if NETSTANDARD2_0
         public string Version { get; set; }
         public string Subject { get; set; }
-        public string Users { get; set; }
-        public string Group { get; set; }
+        public string Groups { get; set; }
         public string Details { get; set; }
         public string GlobalConfig { get; set; }
 #else
 
         public string Version { get; set; } = null!;
         public string Subject { get; set; } = null!;
-        public string Users { get; set; } = null!;
-        public string Group { get; set; } = null!;
+        public string Groups { get; set; } = null!;
         public string Details { get; set; } = null!;
         public string GlobalConfig { get; set; } = null!;
 #endif

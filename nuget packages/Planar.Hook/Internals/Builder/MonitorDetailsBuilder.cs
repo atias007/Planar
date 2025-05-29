@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -35,9 +36,10 @@ namespace Planar.Hook
                 TriggerName = "Test Trigger Name",
                 MostInnerException = "Test Most Inner Exception",
                 MostInnerExceptionMessage = "Test Most Inner Exception Message",
-                Group = new MonitorGroupBuilder().Build(),
                 Environment = development
             };
+
+            _monitorDetails.AddGroup(new MonitorGroupBuilder().Build());
         }
 
         public IMonitorDetails Build()
@@ -47,7 +49,11 @@ namespace Planar.Hook
 
         public IMonitorDetailsBuilder AddTestUser()
         {
-            _monitorDetails.AddUser(new MonitorUserBuilder().Build());
+            if (_monitorDetails.Groups.First() is Group group)
+            {
+                group.AddUser(new MonitorUserBuilder().Build());
+            }
+
             return this;
         }
 
@@ -73,14 +79,15 @@ namespace Planar.Hook
             return this;
         }
 
-        public IMonitorDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
-        {
-            var builder = new MonitorUserBuilder();
-            groupBuilder(builder);
-            var user = builder.Build();
-            _monitorDetails.AddUser(user);
-            return this;
-        }
+        // TODO:
+        ////public IMonitorDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
+        ////{
+        ////    var builder = new MonitorUserBuilder();
+        ////    groupBuilder(builder);
+        ////    var user = builder.Build();
+        ////    _monitorDetails.AddUser(user);
+        ////    return this;
+        ////}
 
         public IMonitorDetailsBuilder SetDurable()
         {
@@ -141,7 +148,7 @@ namespace Planar.Hook
             var builder = new MonitorGroupBuilder();
             groupBuilder(builder);
             var group = builder.Build();
-            _monitorDetails.Group = group;
+            _monitorDetails.AddGroup(group);
             return this;
         }
 

@@ -134,7 +134,7 @@ namespace Planar.Service.Validation
                 ValidateNumeric(item);
             }
 
-            return parts.Select(p => int.Parse(p ?? "0")).ToArray();
+            return [.. parts.Select(p => int.Parse(p ?? "0"))];
         }
     }
 }

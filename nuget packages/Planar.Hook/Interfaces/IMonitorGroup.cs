@@ -1,8 +1,11 @@
-﻿namespace Planar.Hook
+﻿using System.Collections.Generic;
+
+namespace Planar.Hook
 {
     public interface IMonitorGroup
     {
         string Name { get; }
+        IEnumerable<IMonitorUser> Users { get; }
 
 #if NETSTANDARD2_0
         string AdditionalField1 { get; }
