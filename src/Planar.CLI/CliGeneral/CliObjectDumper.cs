@@ -51,6 +51,7 @@ internal static class CliObjectDumper
         {
             var value = p.GetValue(obj);
             var r1 = GetRenderableMarkupName(p);
+            if (r1 == null) { continue; }
             var r2 = GetRenderableMarkupValue(value, p);
             table.AddRow(r1, r2);
         }
@@ -59,9 +60,11 @@ internal static class CliObjectDumper
         return table;
     }
 
-    private static Markup GetRenderableMarkupName(PropertyInfo propertyInfo)
+    private static Markup? GetRenderableMarkupName(PropertyInfo propertyInfo)
     {
         var attr = propertyInfo.GetCustomAttribute<DisplayFormatAttribute>();
+        if (attr?.Hide ?? false) { return null; }
+
         var display = string.IsNullOrWhiteSpace(attr?.DisplayName) ? propertyInfo.Name.SplitWords() : attr.DisplayName;
         return new Markup($"[grey74]{display}[/]");
     }

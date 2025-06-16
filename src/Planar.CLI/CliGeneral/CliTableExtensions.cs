@@ -604,17 +604,17 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(paging: response, entityName: "monitor");
 
-        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Group", "Hook", "Active");
+        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hook", "Active");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
             r.Id.ToString(),
             r.Title.EscapeMarkup(),
-            r.EventTitle.EscapeMarkup(),
+            r.Event.EscapeMarkup(),
             r.JobGroup.EscapeMarkup(),
             r.JobName.EscapeMarkup(),
             r.EventArgument.EscapeMarkup(),
-            r.DistributionGroupName.EscapeMarkup(),
+            r.DistributionGroupNames.EscapeMarkup(),
             r.Hook.EscapeMarkup(),
             CliTableFormat.GetBooleanMarkup(r.Active)));
 

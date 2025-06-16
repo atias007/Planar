@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Monitor;
@@ -15,9 +16,7 @@ namespace Planar.Service.Data;
 
 public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
-    Task AddMonitor(MonitorAction request);
-
-    Task AddMonitorGroup(MonitorActionsGroups monitorGroup);
+    Task AddMonitor(MonitorAction request, int groupId);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
@@ -83,9 +82,9 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task<bool> IsMonitorExists(int id);
 
-    Task<bool> IsMonitorExists(MonitorAction monitor, int groupId);
+    Task<bool> IsMonitorExists(MonitorAction monitor);
 
-    Task<bool> IsMonitorExists(MonitorAction monitor, int groupId, int currentUpdateId);
+    Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId);
 
     Task<bool> IsMonitorHookExists(string name);
 
@@ -116,15 +115,20 @@ public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context),
 
 public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
-    public async Task AddMonitor(MonitorAction request)
+    public async Task AddMonitor(MonitorAction request, int groupId)
     {
-        _context.MonitorActions.Add(request);
-        await _context.SaveChangesAsync();
-    }
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            _context.MonitorActions.Add(request);
+            await _context.SaveChangesAsync();
 
-    public async Task AddMonitorGroup(MonitorActionsGroups monitorGroup)
-    {
-        await _context.Database.GetDbConnection().InsertAsync(monitorGroup);
+            var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
+            await _context.Database.GetDbConnection().InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+
+            await tran.CommitAsync();
+        });
     }
 
     public async Task AddMonitorCounter(MonitorCounter counter)
@@ -176,27 +180,41 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<int> DeleteMonitor(MonitorAction request)
     {
-        var count = await _context.MonitorActions
-            .Where(a => a.Id == request.Id)
-            .ExecuteDeleteAsync();
+        var monitor = await _context.MonitorActions
+            .Include(l => l.Groups)
+            .FirstOrDefaultAsync(m => m.Id == request.Id);
 
-        return count;
+        if (monitor == null) { return 0; }
+        monitor.Groups.Clear();
+        _context.MonitorActions.Remove(monitor);
+        await _context.SaveChangesAsync();
+        return 1;
     }
 
     public async Task DeleteMonitorByJobGroup(string jobGroup)
     {
-        await _context.MonitorActions
+        var monitors = await _context.MonitorActions
+            .Include(l => l.Groups)
             .Where(m => m.JobGroup == jobGroup)
-            .ExecuteDeleteAsync();
+            .ToListAsync();
+
+        if (monitors.Count == 0) { return; }
+        monitors.ForEach(m => m.Groups.Clear());
+        monitors.ForEach(m => _context.MonitorActions.Remove(m));
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteMonitorByJobId(string group, string name)
     {
-        await _context.MonitorActions
-            .Where(m =>
-                 m.JobGroup == group &&
-                 m.JobName == name)
-            .ExecuteDeleteAsync();
+        var monitors = await _context.MonitorActions
+           .Include(l => l.Groups)
+           .Where(m => m.JobGroup == group && m.JobName == name)
+           .ToListAsync();
+
+        if (monitors.Count == 0) { return; }
+        monitors.ForEach(m => m.Groups.Clear());
+        monitors.ForEach(m => _context.MonitorActions.Remove(m));
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteMonitorCounterByJobId(string jobId)
@@ -259,6 +277,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return await _context.MonitorActions
             .AsNoTracking()
+            .Include(m => m.Groups)
             .Where(m => m.Id == id)
             .FirstOrDefaultAsync();
     }
@@ -527,24 +546,22 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorCounters.AnyAsync(m => m.JobId == jobId && m.MonitorId == monitorId);
     }
 
-    public async Task<bool> IsMonitorExists(MonitorAction monitor, int groupId)
+    public async Task<bool> IsMonitorExists(MonitorAction monitor)
     {
         return await _context.MonitorActions.AnyAsync(m =>
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
             m.JobGroup == monitor.JobGroup &&
-            m.Groups.Any(g => g.Id == groupId) &&
             m.Hook == monitor.Hook);
     }
 
-    public async Task<bool> IsMonitorExists(MonitorAction monitor, int groupId, int currentUpdateId)
+    public async Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId)
     {
         return await _context.MonitorActions.AnyAsync(m =>
             m.Id != currentUpdateId &&
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
             m.JobGroup == monitor.JobGroup &&
-            m.Groups.Any(g => g.Id == groupId) &&
             m.Hook == monitor.Hook);
     }
 
