@@ -9,7 +9,7 @@
 
         public string JobGroup { get; set; }
 
-        public string EventName { get; set; }
+        public string Event { get; set; }
 
         public string EventArgument { get; set; }
 

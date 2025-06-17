@@ -43,36 +43,42 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        await InvokeStream(monitorDetails);
+        await InvokePubSub(monitorDetails);
     }
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
-        await InvokeStream(monitorDetails);
+        await InvokePubSub(monitorDetails);
     }
 
-    private string? GetChannel(IMonitor monitor)
+    private List<string> GetChannels(IMonitor monitor)
     {
-        var channel = GetParameter("redis-channel-name", monitor.Groups.First());
-        if (string.IsNullOrWhiteSpace(channel))
-        {
-            channel = AppSettings.Hooks.Redis.PubSubChannel;
-        }
-
         if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.PubSubChannel))
         {
             LogError("Redis.Stream.Hook: pub sub channel is null or empty");
-            return null;
+            return [];
         }
 
-        return channel;
+        var channels = new List<string>();
+        foreach (var group in monitor.Groups)
+        {
+            var channel = GetParameter("redis-channel-name", group);
+            if (string.IsNullOrWhiteSpace(channel))
+            {
+                channel = AppSettings.Hooks.Redis.PubSubChannel;
+            }
+
+            if (!string.IsNullOrWhiteSpace(channel)) { channels.Add(channel); }
+        }
+
+        return channels;
     }
 
-    private async Task InvokeStream<T>(T detials)
+    private async Task InvokePubSub<T>(T detials)
         where T : IMonitor
     {
-        var channelName = GetChannel(detials);
-        if (string.IsNullOrWhiteSpace(channelName)) { return; }
+        var channels = GetChannels(detials);
+        if (channels.Count == 0) { return; }
 
         try
         {
@@ -93,8 +99,12 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
             var bytes = _formatter.EncodeStructuredModeMessage(body, out _);
             var json = Encoding.UTF8.GetString(bytes.Span);
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
-            var channel = new RedisChannel(channelName, RedisChannel.PatternMode.Auto);
-            await db.PublishAsync(channel, json);
+
+            foreach (var channelName in channels)
+            {
+                var channel = new RedisChannel(channelName, RedisChannel.PatternMode.Auto);
+                await db.PublishAsync(channel, json);
+            }
         }
         catch (Exception ex)
         {

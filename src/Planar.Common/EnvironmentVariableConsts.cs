@@ -59,7 +59,6 @@
 
         public const string HooksRestDefaultUrl = "PLANAR_HOOKS_REST_DEFAULT_URL";
         public const string HooksTeamsDefaultUrl = "PLANAR_HOOKS_TEAMS_DEFAULT_URL";
-        public const string HooksTeamsSendToMultipleChannels = "PLANAR_HOOKS_TEAMS_SEND_TO_MULTIPLE_CHANNELS";
         public const string HooksTwilioSmsAccountSid = "PLANAR_HOOKS_TWILIO_SMS_ACCOUNT_SID";
         public const string HooksTwilioSmsAuthToken = "PLANAR_HOOKS_TWILIO_SMS_AUTH_TOKEN";
         public const string HooksTwilioSmsFromNumber = "PLANAR_HOOKS_TWILIO_SMS_FROM_NUMBER";

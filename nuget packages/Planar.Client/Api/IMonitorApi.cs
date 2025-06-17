@@ -21,7 +21,7 @@ namespace Planar.Client.Api
 
         Task<MonitorAlertDetails> GetAlertAsync(int alertId, CancellationToken cancellationToken = default);
 
-        Task<PagingResponse<MonitorAlertDetails>> ListAlertsAsync(ListAlertsFilter filter, CancellationToken cancellationToken = default);
+        Task<PagingResponse<MonitorAlertBasicDetails>> ListAlertsAsync(ListAlertsFilter filter, CancellationToken cancellationToken = default);
 
         Task<IEnumerable<MonitorEvent>> ListEventsAsync(CancellationToken cancellationToken = default);
 

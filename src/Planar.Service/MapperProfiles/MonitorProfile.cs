@@ -19,7 +19,7 @@ public class MonitorProfile : Profile
 
         CreateMap<MonitorAction, MonitorItem>()
          .ForMember(t => t.Event, map => map.MapFrom(s => MonitorUtil.GetMonitorEventTitle(s.EventId, s.EventArgument)))
-         .ForMember(t => t.GroupNames, map => map.MapFrom(s => s.Groups.Select(s => s.Name)));
+         .ForMember(t => t.DistributionGroups, map => map.MapFrom(s => s.Groups.Select(s => s.Name)));
 
         CreateMap<UpdateMonitorRequest, MonitorAction>()
             .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.Event ?? string.Empty)))

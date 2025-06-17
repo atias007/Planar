@@ -36,7 +36,6 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         foreach (var url in urls)
         {
             await SendMessageToChannel(url, message);
-            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 
@@ -47,7 +46,6 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         foreach (var url in urls)
         {
             await SendMessageToChannel(url, message);
-            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 
@@ -178,22 +176,20 @@ To send to multiple channels, you can set the following value (in appsettings.ym
 
     private IEnumerable<string> GetTeamsUrls(IMonitor monitor)
     {
-        var g = monitor.Groups.First();
-        var fields = new[]
+        var fields = new List<string?> { AppSettings.Hooks.Teams.DefaultUrl };
+        foreach (var group in monitor.Groups)
         {
-            g.AdditionalField1,
-            g.AdditionalField2,
-            g.AdditionalField3,
-            g.AdditionalField4,
-            g.AdditionalField5,
-            AppSettings.Hooks.Teams.DefaultUrl
-        };
+            fields.Add(group.AdditionalField1);
+            fields.Add(group.AdditionalField2);
+            fields.Add(group.AdditionalField3);
+            fields.Add(group.AdditionalField4);
+            fields.Add(group.AdditionalField5);
+        }
 
         foreach (var item in fields)
         {
             var url = GetTeamsUrl(item);
-            if (url != null) { yield return url; }
-            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
+            if (!string.IsNullOrWhiteSpace(url)) { yield return url; }
         }
     }
 

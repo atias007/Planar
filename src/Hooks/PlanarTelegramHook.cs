@@ -6,14 +6,16 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text.Json;
 
-namespace Planar.Hooks
-{
-    // https://telegram-bot-sdk.readme.io/reference/sendmessage
-    public sealed class PlanarTelegramHook : BaseSystemHook
-    {
-        public override string Name => "Planar.Telegram";
+namespace Planar.Hooks;
 
-        public override string Description =>
+// https://telegram-bot-sdk.readme.io/reference/sendmessage
+public sealed class PlanarTelegramHook : BaseSystemHook
+{
+    record TelegramApiInfo(string ChatId, string TokenId);
+
+    public override string Name => "Planar.Telegram";
+
+    public override string Description =>
 """
 This hook send message via bot to chat using Telegram API.
 You can find the configuration of Telegram is in appsettings.yml (Data folder of Planar).
@@ -25,105 +27,126 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 -------------------------------------
 """;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Telegram URL")]
-        private const string telegramUrl = "https://api.telegram.org/bot{0}/sendMessage";
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Telegram URL")]
+    private const string telegramUrl = "https://api.telegram.org/bot{0}/sendMessage";
 
-        public override async Task Handle(IMonitorDetails monitorDetails)
+    public override async Task Handle(IMonitorDetails monitorDetails)
+    {
+        var message = GetMessage(monitorDetails);
+        var apis = GetTelegramApiInfos(monitorDetails);
+        foreach (var api in apis)
         {
-            var message = GetMessage(monitorDetails);
-            await SendMessage(monitorDetails, message);
+            await SendMessage(api, message);
+        }
+    }
+
+    public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
+    {
+        var message = GetMessage(monitorDetails);
+        var apis = GetTelegramApiInfos(monitorDetails);
+        foreach (var api in apis)
+        {
+            await SendMessage(api, message);
+        }
+    }
+
+    private static List<TelegramApiInfo> GetTelegramApiInfos(IMonitor monitor)
+    {
+        var result = new List<TelegramApiInfo>();
+
+        foreach (var group in monitor.Groups)
+        {
+            var token = GetBotToken(group);
+            var chatid = GetChatId(group);
+            var info = new TelegramApiInfo(chatid, token);
+            result.Add(info);
         }
 
-        public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
+        return result;
+    }
+
+    private static string GetBotToken(IMonitorGroup monitorGroup)
+    {
+        var token = GetParameter("telegram-bot-token", monitorGroup);
+        if (string.IsNullOrWhiteSpace(token))
         {
-            var message = GetMessage(monitorDetails);
-            await SendMessage(monitorDetails, message);
+            token = AppSettings.Hooks.Telegram.BotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
         }
 
-        private static string GetBotToken(IMonitor monitor)
+        if (string.IsNullOrWhiteSpace(token))
         {
-            var token = GetParameter("telegram-bot-token", monitor.Groups.First());
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                token = AppSettings.Hooks.Telegram.BotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
-            }
-
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                throw new PlanarHookException("Telegram bot token is not defined.");
-            }
-
-            return token;
+            throw new PlanarHookException("Telegram bot token is not defined.");
         }
 
-        private static string GetChatId(IMonitor monitor)
+        return token;
+    }
+
+    private static string GetChatId(IMonitorGroup monitorGroup)
+    {
+        var chatid = GetParameter("telegram-chat-id", monitorGroup);
+        if (string.IsNullOrWhiteSpace(chatid))
         {
-            var chatid = GetParameter("telegram-chat-id", monitor.Groups.First());
-            if (string.IsNullOrWhiteSpace(chatid))
-            {
-                chatid = AppSettings.Hooks.Telegram.ChatId; // -1002028679199
-            }
-
-            if (string.IsNullOrWhiteSpace(chatid))
-            {
-                throw new PlanarHookException("Telegram chat id is not defined.");
-            }
-
-            return chatid;
+            chatid = AppSettings.Hooks.Telegram.ChatId; // -1002028679199
         }
 
-        private async Task SendMessage(IMonitor monitor, string message)
+        if (string.IsNullOrWhiteSpace(chatid))
         {
-            var token = GetBotToken(monitor);
-            var chatid = GetChatId(monitor);
+            throw new PlanarHookException("Telegram chat id is not defined.");
+        }
 
-            var entity = new
+        return chatid;
+    }
+
+    private async Task SendMessage(TelegramApiInfo apiInfo, string message)
+    {
+        var entity = new
+        {
+            text = message,
+            parse_mode = "Markdown",
+            //disable_web_page_preview = false,
+            //disable_notification = false,
+            chat_id = apiInfo.ChatId
+        };
+
+        var json = JsonSerializer.Serialize(entity);
+
+        var url = string.Format(telegramUrl, apiInfo.TokenId);
+
+        var request = new HttpRequestMessage
+        {
+            Method = HttpMethod.Post,
+            RequestUri = new Uri(url),
+            Headers =
             {
-                text = message,
-                parse_mode = "Markdown",
-                //disable_web_page_preview = false,
-                //disable_notification = false,
-                chat_id = chatid
-            };
-            var json = JsonSerializer.Serialize(entity);
-
-            var url = string.Format(telegramUrl, token);
-
-            var request = new HttpRequestMessage
+                { "accept", "application/json" }
+            },
+            Content = new StringContent(json)
             {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(url),
                 Headers =
                 {
-                    { "accept", "application/json" }
-                },
-                Content = new StringContent(json)
-                {
-                    Headers =
-                    {
-                        ContentType =  new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
-                    }
+                    ContentType =  new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
                 }
-            };
-
-            using var client = new HttpClient();
-            using var response = await client.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
-            var jtoken = JToken.Parse(body);
-            var ok = jtoken.Value<bool>("ok");
-            if (ok)
-            {
-                LogInformation($"Telegram response Ok with message id {jtoken["result"]?["message_id"]}");
             }
-            else
-            {
-                LogError($"Telegram response error: {jtoken["description"]}");
-            }
-        }
+        };
 
-        private static string GetMessage(IMonitorDetails monitor)
+        using var client = new HttpClient();
+        using var response = await client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        var jtoken = JToken.Parse(body);
+        var ok = jtoken.Value<bool>("ok");
+        if (ok)
         {
-            var template =
+            LogInformation($"Telegram response Ok with message id {jtoken["result"]?["message_id"]}");
+        }
+        else
+        {
+            LogError($"Telegram response error: {jtoken["description"]}");
+        }
+    }
+
+    private static string GetMessage(IMonitorDetails monitor)
+    {
+        var template =
 $"""
 `Planar Monitor Alert`
 
@@ -136,8 +159,8 @@ $"""
 *Author:* {monitor.Author}
 """;
 
-            if (!string.IsNullOrWhiteSpace(monitor.MostInnerExceptionMessage))
-                template +=
+        if (!string.IsNullOrWhiteSpace(monitor.MostInnerExceptionMessage))
+            template +=
 $"""
 
 ---------------
@@ -145,12 +168,12 @@ $"""
 ---------------
 {monitor.MostInnerExceptionMessage}
 """;
-            return template.Replace("_", "-");
-        }
+        return template.Replace("_", "-");
+    }
 
-        private static string GetMessage(IMonitorSystemDetails monitor)
-        {
-            var template =
+    private static string GetMessage(IMonitorSystemDetails monitor)
+    {
+        var template =
 $"""
 **`Planar Monitor Alert`**
 
@@ -159,8 +182,8 @@ $"""
 *Message:* {monitor.Message}
 """;
 
-            if (!string.IsNullOrWhiteSpace(monitor.MostInnerExceptionMessage))
-                template +=
+        if (!string.IsNullOrWhiteSpace(monitor.MostInnerExceptionMessage))
+            template +=
 $"""
 
 ---------------
@@ -168,7 +191,6 @@ $"""
 ---------------
 {monitor.MostInnerExceptionMessage}
 """;
-            return template.Replace("_", "-");
-        }
+        return template.Replace("_", "-");
     }
 }

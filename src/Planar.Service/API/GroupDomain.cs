@@ -201,7 +201,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         var hasMonitor = await DataLayer.IsGroupHasMonitors(groupId);
         if (hasMonitor)
         {
-            throw new RestValidationException("id", "group has one or more monitor item/s and can not be deleted");
+            throw new RestValidationException("id", "group related to one or more monitor item/s and can not be deleted");
         }
     }
 

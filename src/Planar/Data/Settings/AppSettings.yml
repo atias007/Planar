@@ -71,7 +71,6 @@ hooks:
     default url: http://localhost:2306/api/hooks/rest
   teams:
     default url: https://teams.microsoft.com/channel-id
-    send to multiple channels: true
   twilio sms:
     account sid: null
     auth token: null
