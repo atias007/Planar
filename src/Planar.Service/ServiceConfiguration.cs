@@ -45,6 +45,7 @@ namespace Planar.Service
             services.AddSingleton<MonitorUtil>();
             services.AddSingleton<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
             services.AddSingleton<JobMonitorUtil>();
+            services.AddSingleton<SchedulerHealthCheckUtil>();
 
             // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));

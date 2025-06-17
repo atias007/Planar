@@ -27,10 +27,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Model\Role.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Remove="Data\Scripts\Sqlite\BuildJobStatistics.sql" />
 	  <None Remove="Data\Scripts\Sqlite\FillJobCounters.sql" />
 	  <None Remove="Data\Scripts\Sqlite\SetMaxConcurrentExecution.sql" />
@@ -80,10 +76,6 @@
 	  <EmbeddedResource Include="HtmlTemplates\TraceReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\TraceReport\trace_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\TraceReport\trace_row.html" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="Model\Role.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
