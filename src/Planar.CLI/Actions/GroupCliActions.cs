@@ -166,7 +166,7 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliPromptWrapper> FillCliAddGroupRequest(CliAddGroupRequest request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            if (string.IsNullOrWhiteSpace(request.Name))
             {
                 request.Name = CollectCliValue("name", true, 2, 50) ?? string.Empty;
             }
@@ -183,7 +183,7 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliPromptWrapper> FillGetRequest(ICliByNameRequest request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            if (string.IsNullOrWhiteSpace(request.Name))
             {
                 var p1 = await CliPromptUtil.Groups(cancellationToken);
                 if (!p1.IsSuccessful) { return p1; }
@@ -195,7 +195,7 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliPromptWrapper> FillCliSetRoleRequest(CliSetRoleRequest request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            if (string.IsNullOrWhiteSpace(request.Name))
             {
                 var p1 = await CliPromptUtil.Groups(cancellationToken);
                 if (!p1.IsSuccessful) { return p1; }

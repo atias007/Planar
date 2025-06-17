@@ -261,6 +261,60 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return result;
     }
 
+    public async Task AddDistributionGroup(MonitorGroupRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        var groupDal = Resolve<IGroupData>();
+        var groupId = await groupDal.GetGroupId(request.GroupName);
+        if (groupId == 0)
+        {
+            throw new RestNotFoundException($"distribution group '{request.GroupName}' could not be found");
+        }
+
+        if (monitor.Groups.Any(g => g.Id == groupId))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} already have distribution group '{request.GroupName}'");
+        }
+
+        if (monitor.Groups.Count >= 20)
+        {
+            throw new RestValidationException("GroupName", $"could not add the distribution group '{request.GroupName}' because monitor have the maximum allowed of 20 groups");
+        }
+
+        var entity = new MonitorActionGroup { GroupId = groupId, MonitorId = request.MonitorId };
+        await DataLayer.AddMonitorActionGroup(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
+    }
+
+    public async Task RemoveDistributionGroup(MonitorGroupRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        var groupDal = Resolve<IGroupData>();
+        var groupId = await groupDal.GetGroupId(request.GroupName);
+        if (groupId == 0)
+        {
+            throw new RestNotFoundException($"distribution group '{request.GroupName}' could not be found");
+        }
+
+        if (!monitor.Groups.Any(g => g.Id == groupId))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} does not have distribution group '{request.GroupName}'");
+        }
+
+        if (monitor.Groups.Count == 1)
+        {
+            throw new RestValidationException("GroupName", $"could not remove the distribution group '{request.GroupName}' because monitor must have at least one group");
+        }
+
+        var entity = new MonitorActionGroup { GroupId = groupId, MonitorId = request.MonitorId };
+        await DataLayer.RemoveMonitorActionGroup(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
+    }
+
     public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
     {
         TrimPropertyName(request);

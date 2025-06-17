@@ -147,6 +147,34 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
         return NoContent();
     }
 
+    [HttpPatch("add-distribution-group")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "patch_monitor_add_distribution_group", Description = "Add distribution group to monitor", Summary = "Add Distribution Group To Monitor")]
+    [JsonConsumes]
+    [BadRequestResponse]
+    [NoContentResponse]
+    [ConflictResponse]
+    [NotFoundResponse]
+    public async Task<ActionResult> AddDistributionGroup([FromBody] MonitorGroupRequest request)
+    {
+        await BusinesLayer.AddDistributionGroup(request);
+        return NoContent();
+    }
+
+    [HttpPatch("remove-distribution-group")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "patch_monitor_remove_distribution_group", Description = "Remove distribution group from monitor", Summary = "Remove Distribution Group From Monitor")]
+    [JsonConsumes]
+    [BadRequestResponse]
+    [NoContentResponse]
+    [ConflictResponse]
+    [NotFoundResponse]
+    public async Task<ActionResult> RemoveDistributionGroup([FromBody] MonitorGroupRequest request)
+    {
+        await BusinesLayer.RemoveDistributionGroup(request);
+        return NoContent();
+    }
+
     [HttpGet("hooks")]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "get_monitor_hooks", Description = "Get all monitor hooks", Summary = "Get Monitor Hooks")]

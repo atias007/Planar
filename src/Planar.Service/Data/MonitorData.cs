@@ -103,6 +103,10 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
     Task UnMute(string jobId, int monitorId);
 
     Task UpdateMonitorAction(MonitorAction monitor);
+
+    Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup);
+
+    Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup);
 }
 
 public class MonitorDataSqlite(PlanarContext context) : MonitorData(context), IMonitorData
@@ -280,6 +284,18 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .Include(m => m.Groups)
             .Where(m => m.Id == id)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup)
+    {
+        await _context.Database.GetDbConnection().InsertAsync(monitorActionGroup);
+    }
+
+    public async Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup)
+    {
+        await _context.Database.GetDbConnection().DeleteAsync<MonitorActionGroup>(ag =>
+            ag.GroupId == monitorActionGroup.GroupId &&
+            ag.MonitorId == monitorActionGroup.MonitorId);
     }
 
     public async Task<IEnumerable<int>> GetMonitorActionIds()

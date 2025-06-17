@@ -1,11 +1,12 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading;
 
 namespace CommonJob;
 
 internal class LimitQueue<T>(int limit) : ConcurrentQueue<T>
 {
     private readonly int _limit = limit;
-    private readonly object _locker = new();
+    private readonly Lock _locker = new();
 
     public new void Enqueue(T item)
     {

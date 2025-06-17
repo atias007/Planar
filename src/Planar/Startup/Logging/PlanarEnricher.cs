@@ -2,6 +2,7 @@
 using Serilog.Events;
 using System.Runtime.CompilerServices;
 using System;
+using System.Threading;
 
 namespace Planar.Startup.Logging
 {
@@ -12,7 +13,7 @@ namespace Planar.Startup.Logging
 
         private const string MachineNamePropertyName = "MachineName";
 
-        private static readonly object _locker = new();
+        private static readonly Lock _locker = new();
 
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
