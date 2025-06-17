@@ -1,9 +1,11 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Monitor;
 using Planar.Service.Model;
+using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,7 +16,7 @@ namespace Planar.Service.Data;
 
 public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
-    Task AddMonitor(MonitorAction request);
+    Task AddMonitor(MonitorAction request, int groupId);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
@@ -101,6 +103,10 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
     Task UnMute(string jobId, int monitorId);
 
     Task UpdateMonitorAction(MonitorAction monitor);
+
+    Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup);
+
+    Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup);
 }
 
 public class MonitorDataSqlite(PlanarContext context) : MonitorData(context), IMonitorData
@@ -111,13 +117,22 @@ public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context),
 {
 }
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", Justification = "EF Core")]
 public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
-    public async Task AddMonitor(MonitorAction request)
+    public async Task AddMonitor(MonitorAction request, int groupId)
     {
-        _context.MonitorActions.Add(request);
-        await _context.SaveChangesAsync();
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            _context.MonitorActions.Add(request);
+            await _context.SaveChangesAsync();
+
+            var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
+            await _context.Database.GetDbConnection().InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+
+            await tran.CommitAsync();
+        });
     }
 
     public async Task AddMonitorCounter(MonitorCounter counter)
@@ -169,27 +184,41 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<int> DeleteMonitor(MonitorAction request)
     {
-        var count = await _context.MonitorActions
-            .Where(a => a.Id == request.Id)
-            .ExecuteDeleteAsync();
+        var monitor = await _context.MonitorActions
+            .Include(l => l.Groups)
+            .FirstOrDefaultAsync(m => m.Id == request.Id);
 
-        return count;
+        if (monitor == null) { return 0; }
+        monitor.Groups.Clear();
+        _context.MonitorActions.Remove(monitor);
+        await _context.SaveChangesAsync();
+        return 1;
     }
 
     public async Task DeleteMonitorByJobGroup(string jobGroup)
     {
-        await _context.MonitorActions
+        var monitors = await _context.MonitorActions
+            .Include(l => l.Groups)
             .Where(m => m.JobGroup == jobGroup)
-            .ExecuteDeleteAsync();
+            .ToListAsync();
+
+        if (monitors.Count == 0) { return; }
+        monitors.ForEach(m => m.Groups.Clear());
+        monitors.ForEach(m => _context.MonitorActions.Remove(m));
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteMonitorByJobId(string group, string name)
     {
-        await _context.MonitorActions
-            .Where(m =>
-                 m.JobGroup == group &&
-                 m.JobName == name)
-            .ExecuteDeleteAsync();
+        var monitors = await _context.MonitorActions
+           .Include(l => l.Groups)
+           .Where(m => m.JobGroup == group && m.JobName == name)
+           .ToListAsync();
+
+        if (monitors.Count == 0) { return; }
+        monitors.ForEach(m => m.Groups.Clear());
+        monitors.ForEach(m => _context.MonitorActions.Remove(m));
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteMonitorCounterByJobId(string jobId)
@@ -252,8 +281,21 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return await _context.MonitorActions
             .AsNoTracking()
+            .Include(m => m.Groups)
             .Where(m => m.Id == id)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup)
+    {
+        await _context.Database.GetDbConnection().InsertAsync(monitorActionGroup);
+    }
+
+    public async Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup)
+    {
+        await _context.Database.GetDbConnection().DeleteAsync<MonitorActionGroup>(ag =>
+            ag.GroupId == monitorActionGroup.GroupId &&
+            ag.MonitorId == monitorActionGroup.MonitorId);
     }
 
     public async Task<IEnumerable<int>> GetMonitorActionIds()
@@ -270,8 +312,8 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return await _context.MonitorActions
             .AsSplitQuery()
-            .Include(m => m.Group)
-            .ThenInclude(m => m.Users)
+            .Include(m => m.Groups)
+            .ThenInclude(g => g.Users)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -279,9 +321,9 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     public async Task<List<MonitorAction>> GetMonitorActionsByGroup(string group)
     {
         var result = await _context.MonitorActions
-            .Include(m => m.Group)
+            .Include(m => m.Groups)
             .Where(m =>
-                m.JobGroup != null && m.JobGroup.ToLower() == group.ToLower())
+                m.JobGroup != null && m.JobGroup == group)
             .OrderByDescending(d => d.Active)
             .ThenBy(d => d.JobGroup)
             .ThenBy(d => d.JobName)
@@ -294,11 +336,11 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     public async Task<List<MonitorAction>> GetMonitorActionsByJob(string group, string name)
     {
         var result = await _context.MonitorActions
-            .Include(m => m.Group)
+            .Include(m => m.Groups)
             .AsNoTracking()
             .Where(m =>
                 (m.JobGroup == null && m.JobName == null && m.EventId < 300) ||
-                (m.JobGroup == group && (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower())))
+                (m.JobGroup == group && (string.IsNullOrEmpty(m.JobName) || m.JobName == name)))
             .OrderByDescending(d => d.Active)
             .ThenBy(d => d.JobGroup)
             .ThenBy(d => d.JobName)
@@ -312,7 +354,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return _context.MonitorActions
             .AsNoTracking()
-            .Include(i => i.Group)
+            .Include(i => i.Groups)
             .OrderByDescending(d => d.Active)
             .ThenBy(d => d.JobGroup)
             .ThenBy(d => d.JobName)
@@ -342,17 +384,17 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
         if (!string.IsNullOrWhiteSpace(request.EventTitle))
         {
-            query = query.Where(l => l.EventTitle != null && l.EventTitle.ToLower() == request.EventTitle.ToLower());
+            query = query.Where(l => l.EventTitle != null && l.EventTitle == request.EventTitle);
         }
 
         if (!string.IsNullOrWhiteSpace(request.GroupName))
         {
-            query = query.Where(l => l.GroupName.ToLower() == request.GroupName.ToLower());
+            query = query.Where(l => l.GroupName == request.GroupName);
         }
 
         if (!string.IsNullOrWhiteSpace(request.Hook))
         {
-            query = query.Where(l => l.Hook.ToLower() == request.Hook.ToLower());
+            query = query.Where(l => l.Hook == request.Hook);
         }
 
         if (request.MonitorId.HasValue)
@@ -526,7 +568,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
             m.JobGroup == monitor.JobGroup &&
-            m.GroupId == monitor.GroupId &&
             m.Hook == monitor.Hook);
     }
 
@@ -537,7 +578,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
             m.JobGroup == monitor.JobGroup &&
-            m.GroupId == monitor.GroupId &&
             m.Hook == monitor.Hook);
     }
 

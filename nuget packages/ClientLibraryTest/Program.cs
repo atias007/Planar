@@ -8,6 +8,9 @@ var services = new ServiceCollection();
 services.AddPlanarClient(c => c.Host = "http://localhost:2306");
 var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
+
+var monitors = await client.Monitor.ListAsync();
+
 var logStream = await client.History.GetLogAsync(281);
 // convert logStream to byte[]
 

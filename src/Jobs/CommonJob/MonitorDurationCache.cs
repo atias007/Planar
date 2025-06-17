@@ -5,6 +5,7 @@ using Planar.Common.Monitor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CommonJob;
@@ -14,7 +15,7 @@ public sealed class MonitorDurationCache
     private readonly IMemoryCache _memoryCache;
     private readonly IServiceProvider _serviceProvider;
     private const string CacheKey = "MonitorDurationCache";
-    private static readonly object _locker = new();
+    private static readonly Lock _locker = new();
 
     public MonitorDurationCache(IMemoryCache memoryCache, IServiceProvider serviceProvider)
     {

@@ -34,8 +34,9 @@ public partial class Group
     [Unicode(false)]
     public string Role { get; set; } = null!;
 
-    [InverseProperty("Group")]
-    public virtual ICollection<MonitorAction> MonitorActions { get; set; } = new List<MonitorAction>();
+    [ForeignKey("GroupId")]
+    [InverseProperty("Groups")]
+    public virtual ICollection<MonitorAction> Monitors { get; set; } = new List<MonitorAction>();
 
     [ForeignKey("GroupId")]
     [InverseProperty("Groups")]

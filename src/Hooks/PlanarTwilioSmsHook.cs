@@ -105,7 +105,7 @@ Message: {monitorDetails.Message}
 
         if (!phones.Any())
         {
-            LogError($"fail to get valid phones for hook \"{Name}\" with distribution group {monitor.Group.Name}");
+            LogError($"fail to get valid phones for hook \"{Name}\" with distribution group {monitor.Groups.First().Name}");
             return;
         }
 

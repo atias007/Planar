@@ -24,7 +24,7 @@ internal static class DataExtensions
             await writer.WriteAsync(buffer, 0, charsRead);
         }
 
-        writer.Flush(); // Ensure all buffered data is written to the underlying stream.
+        await writer.FlushAsync(); // Ensure all buffered data is written to the underlying stream.
         memoryStream.Position = 0; // Reset position for subsequent reads from the MemoryStream.
         GC.Collect();
         return memoryStream;

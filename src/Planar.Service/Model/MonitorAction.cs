@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model;
 
@@ -26,15 +28,13 @@ public partial class MonitorAction
     [Unicode(false)]
     public string? JobGroup { get; set; }
 
-    public int GroupId { get; set; }
-
     [StringLength(50)]
     [Unicode(false)]
     public string Hook { get; set; } = null!;
 
     public bool Active { get; set; }
 
-    [ForeignKey("GroupId")]
-    [InverseProperty("MonitorActions")]
-    public virtual Group Group { get; set; } = null!;
+    [ForeignKey("MonitorId")]
+    [InverseProperty("Monitors")]
+    public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 }

@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.Actions;
 
@@ -278,6 +279,38 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return new CliActionResponse(result);
     }
 
+    [Action("add-monitor-group")]
+    public static async Task<CliActionResponse> AddMonitorGroup(CliMonitorGroupRequest request, CancellationToken cancellationToken)
+    {
+        var wrapper = await CollectMonitorGroupRequestData(request, cancellationToken);
+        if (!wrapper.IsSuccessful || wrapper.Request == null)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var restRequest = new RestRequest("monitor/add-distribution-group", Method.Patch)
+            .AddBody(wrapper.Request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("remove-monitor-group")]
+    public static async Task<CliActionResponse> RemoveMonitorGroup(CliMonitorGroupRequest request, CancellationToken cancellationToken)
+    {
+        var wrapper = await CollectMonitorGroupRequestData(request, cancellationToken);
+        if (!wrapper.IsSuccessful || wrapper.Request == null)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var restRequest = new RestRequest("monitor/remove-distribution-group", Method.Patch)
+            .AddBody(wrapper.Request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
     private static async Task<CliPromptWrapper> FillAddHookRequest(CliAddHookjRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(request.Filename))
@@ -300,6 +333,24 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
 
         return CliPromptWrapper.Success;
+    }
+
+    private static async Task<RequestBuilderWrapper<CliMonitorGroupRequest>> CollectMonitorGroupRequestData(CliMonitorGroupRequest request, CancellationToken cancellationToken)
+    {
+        request ??= new CliMonitorGroupRequest();
+        if (request.MonitorId == 0)
+        {
+            FillRequiredInt(request, nameof(request.MonitorId));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.GroupName))
+        {
+            var p1 = await CliPromptUtil.Groups(cancellationToken);
+            if (!p1.IsSuccessful) { return RequestBuilderWrapper<CliMonitorGroupRequest>.Fail(p1.FailResponse); }
+            request.GroupName = p1.Value ?? string.Empty;
+        }
+
+        return new RequestBuilderWrapper<CliMonitorGroupRequest> { Request = request };
     }
 
     private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)

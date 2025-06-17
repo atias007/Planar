@@ -163,7 +163,7 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
 
     public async Task<bool> IsGroupHasMonitors(int groupId)
     {
-        var result = await _context.MonitorActions.AnyAsync(m => m.Group.Id == groupId);
+        var result = await _context.MonitorActions.AnyAsync(m => m.Groups.Any(g => g.Id == groupId));
         return result;
     }
 

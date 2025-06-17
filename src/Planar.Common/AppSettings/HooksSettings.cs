@@ -19,7 +19,6 @@ namespace Planar.Common
     public class TeamsHookSettings
     {
         public string? DefaultUrl { get; set; }
-        public bool SendToMultipleChannels { get; set; }
     }
 
     public class TwilioSmsHookSettings

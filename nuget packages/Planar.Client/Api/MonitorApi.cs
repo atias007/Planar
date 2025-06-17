@@ -56,14 +56,14 @@ namespace Planar.Client.Api
             return result;
         }
 
-        public async Task<PagingResponse<MonitorAlertDetails>> ListAlertsAsync(ListAlertsFilter filter, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<MonitorAlertBasicDetails>> ListAlertsAsync(ListAlertsFilter filter, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(filter, nameof(filter));
 
             var restRequest = new RestRequest("monitor/alerts", HttpMethod.Get)
                 .AddEntityToQueryParameter(filter);
 
-            var result = await _proxy.InvokeAsync<PagingResponse<MonitorAlertDetails>>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<PagingResponse<MonitorAlertBasicDetails>>(restRequest, cancellationToken);
             return result;
         }
 

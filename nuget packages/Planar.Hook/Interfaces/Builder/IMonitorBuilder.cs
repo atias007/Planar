@@ -10,9 +10,11 @@ namespace Planar.Hook
 
         T WithMonitorTitle(string monitorTitle);
 
-        T WithGroup(Action<IMonitorGroupBuilder> groupBuilder);
+        // TODO:
+        // T WithGroup(Action<IMonitorGroupBuilder> groupBuilder);
 
-        T AddUsers(Action<IMonitorUserBuilder> groupBuilder);
+        // TODO:
+        // T AddUsers(Action<IMonitorUserBuilder> groupBuilder);
 
 #if NETSTANDARD2_0
 
@@ -30,6 +32,7 @@ namespace Planar.Hook
 
         T WithEnvironment(string environment);
 
-        T AddTestUser();
+        // TODO:
+        //T AddTestUser();
     }
 }

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Planar.Hook
 {
@@ -18,18 +17,18 @@ namespace Planar.Hook
 
         public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
 
-        internal void Execute(string json)
+        internal async Task ExecuteAsync(string json)
         {
             var wrapper = JsonSerializer.Deserialize<MonitorMessageWrapper>(json)
                 ?? throw new PlanarHookException("Fail to deserialize MonitorMessageWrapper");
 
             if (wrapper.Subject == nameof(MonitorDetails))
             {
-                ExecuteHandle(wrapper);
+                await ExecuteHandle(wrapper);
             }
             else if (wrapper.Subject == nameof(MonitorSystemDetails))
             {
-                ExecuteHandleSystem(wrapper);
+                await ExecuteHandleSystem(wrapper);
             }
             else
             {
@@ -37,12 +36,12 @@ namespace Planar.Hook
             }
         }
 
-        private void ExecuteHandle(MonitorMessageWrapper wrapper)
+        private async Task ExecuteHandle(MonitorMessageWrapper wrapper)
         {
             try
             {
                 var monitorDetails = InitializeMessageDetails<MonitorDetails>(wrapper);
-                Handle(monitorDetails).Wait();
+                await Handle(monitorDetails);
             }
             catch (Exception ex)
             {
@@ -50,12 +49,12 @@ namespace Planar.Hook
             }
         }
 
-        private void ExecuteHandleSystem(MonitorMessageWrapper wrapper)
+        private async Task ExecuteHandleSystem(MonitorMessageWrapper wrapper)
         {
             try
             {
                 var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(wrapper);
-                HandleSystem(monitorDetails).Wait();
+                await HandleSystem(monitorDetails);
             }
             catch (Exception ex)
             {
@@ -123,8 +122,12 @@ namespace Planar.Hook
             };
 
             var monitorDetails = SafeDeserialize<T>(messageBroker?.Details, options);
-            monitorDetails.Users = SafeDeserialize<List<User>>(messageBroker?.Users);
-            monitorDetails.Group = SafeDeserialize<Group>(messageBroker?.Group);
+            var tempGroup = SafeDeserialize<List<TempGroup>>(messageBroker?.Groups);
+            foreach (var g in tempGroup)
+            {
+                monitorDetails.AddGroup(new Group(g));
+            }
+
 #if NETSTANDARD2_0
             monitorDetails.GlobalConfig = SafeDeserialize<Dictionary<string, string>>(messageBroker?.GlobalConfig);
 #else

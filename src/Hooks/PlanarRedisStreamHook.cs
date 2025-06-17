@@ -1,7 +1,6 @@
 ﻿using Core.JsonConvertors;
 using Planar.Common;
 using Planar.Hook;
-using Planar.Hooks.Enities;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -43,28 +42,34 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         await InvokeStream(monitorDetails);
     }
 
-    private string? GetStreamName(IMonitor monitor)
+    private List<string> GetStreamNames(IMonitor monitor)
     {
-        var stream = GetParameter("redis-stream-name", monitor.Group);
-        if (string.IsNullOrWhiteSpace(stream))
-        {
-            stream = AppSettings.Hooks.Redis.PubSubChannel;
-        }
-
         if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.StreamName))
         {
             LogError("Redis.Stream.Hook: stream name is null or empty");
-            return null;
+            return [];
         }
 
-        return stream;
+        var streams = new List<string>();
+        foreach (var group in monitor.Groups)
+        {
+            var stream = GetParameter("redis-stream-name", group);
+            if (string.IsNullOrWhiteSpace(stream))
+            {
+                stream = AppSettings.Hooks.Redis.PubSubChannel;
+            }
+
+            if (!string.IsNullOrWhiteSpace(stream)) { streams.Add(stream); }
+        }
+
+        return streams;
     }
 
     private async Task InvokeStream<T>(T detials)
         where T : IMonitor
     {
-        var streamName = GetStreamName(detials);
-        if (string.IsNullOrWhiteSpace(streamName)) { return; }
+        var streams = GetStreamNames(detials);
+        if (streams.Count == 0) { return; }
 
         try
         {
@@ -75,11 +80,15 @@ To use different stream name per group, you can set one of the 'AdditionalField'
                 new("data-type", typeof(T).Name),
                 new("data", JsonSerializer.Serialize(detials, _jsonSerializerSettings)),
                 new("event-id", detials.EventId),
-                new("group", detials.Group.Name),
+                new("group", detials.Groups.First().Name),
             };
 
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
-            await db.StreamAddAsync(streamName, entries);
+
+            foreach (var streamName in streams)
+            {
+                await db.StreamAddAsync(streamName, entries);
+            }
         }
         catch (Exception ex)
         {

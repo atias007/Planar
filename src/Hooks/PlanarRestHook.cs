@@ -3,7 +3,6 @@ using CloudNative.CloudEvents.SystemTextJson;
 using Core.JsonConvertors;
 using Planar.Common;
 using Planar.Hook;
-using Planar.Hooks.Enities;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
@@ -24,7 +23,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
 ----------------------------------------------
 """;
 
-    private static readonly object Locker = new();
+    private static readonly Lock Locker = new();
     private static HttpClient _sharedClient = null!;
 
     private static readonly JsonSerializerOptions _jsonSerializerSettings = new()
@@ -45,43 +44,54 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        await InvokeRest(monitorDetails);
+        var urls = GetUrls(monitorDetails);
+        foreach (var url in urls)
+        {
+            await InvokeRest(monitorDetails, url);
+        }
     }
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
-        await InvokeRest(monitorDetails);
+        var urls = GetUrls(monitorDetails);
+        foreach (var url in urls)
+        {
+            await InvokeRest(monitorDetails, url);
+        }
     }
 
-    private string? GetUrl(IMonitor monitor)
+    private List<string> GetUrls(IMonitor monitor)
     {
-        var url = GetParameter("rest-http-url", monitor.Group);
-        if (string.IsNullOrWhiteSpace(url))
+        var urls = new List<string>();
+        foreach (var group in monitor.Groups)
         {
-            url = AppSettings.Hooks.Rest.DefaultUrl;
+            var url = GetParameter("rest-http-url", group);
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                url = AppSettings.Hooks.Rest.DefaultUrl;
+            }
+
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                LogError("Rest.Hook: url is null or empty");
+                continue;
+            }
+
+            if (!IsValidUri(url))
+            {
+                LogError($"url '{url}' of rest hook is invalid");
+                continue;
+            }
+
+            urls.Add(url);
         }
 
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            LogError("Rest.Hook: url is null or empty");
-            return null;
-        }
-
-        if (!IsValidUri(url))
-        {
-            LogError($"url '{url}' of rest hook is invalid");
-            return null;
-        }
-
-        return url;
+        return urls;
     }
 
-    private async Task InvokeRest<T>(T detials)
+    private async Task InvokeRest<T>(T detials, string url)
         where T : IMonitor
     {
-        var url = GetUrl(detials);
-        if (string.IsNullOrWhiteSpace(url)) { return; }
-
         var body = new CloudEvent
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -89,7 +99,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
             Subject = Name,
             Data = detials,
             DataContentType = MediaTypeNames.Application.Json,
-            Source = new Uri(url!),
+            Source = new Uri(url),
             Type = typeof(T).Name
         };
 

@@ -1,9 +1,8 @@
-﻿namespace Planar.API.Common.Entities
-{
-    public class UpdateMonitorRequest : AddMonitorRequest
-    {
-        public int Id { get; set; }
+﻿namespace Planar.API.Common.Entities;
 
-        public bool Active { get; set; }
-    }
+public class UpdateMonitorRequest : MonitorRequest
+{
+    public int Id { get; set; }
+
+    public bool Active { get; set; }
 }

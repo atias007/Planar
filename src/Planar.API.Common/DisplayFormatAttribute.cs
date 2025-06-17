@@ -12,6 +12,8 @@ public enum SpecialFormat
 [AttributeUsage(AttributeTargets.Property)]
 public class DisplayFormatAttribute : Attribute
 {
+    public bool Hide { get; set; }
+
     public string? Format { get; set; }
 
     public string? DisplayName { get; set; }

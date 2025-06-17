@@ -19,20 +19,22 @@ namespace Planar.Hook
             return this;
         }
 
-        public IMonitorSystemDetailsBuilder AddTestUser()
-        {
-            _monitorDetails.AddUser(new MonitorUserBuilder().Build());
-            return this;
-        }
+        // TODO:
+        ////public IMonitorSystemDetailsBuilder AddTestUser()
+        ////{
+        ////    _monitorDetails.AddUser(new MonitorUserBuilder().Build());
+        ////    return this;
+        ////}
 
-        public IMonitorSystemDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
-        {
-            var builder = new MonitorUserBuilder();
-            groupBuilder(builder);
-            var user = builder.Build();
-            _monitorDetails.AddUser(user);
-            return this;
-        }
+        // TODO:
+        ////public IMonitorSystemDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
+        ////{
+        ////    var builder = new MonitorUserBuilder();
+        ////    groupBuilder(builder);
+        ////    var user = builder.Build();
+        ////    _monitorDetails.AddUser(user);
+        ////    return this;
+        ////}
 
         public IMonitorSystemDetails Build()
         {
@@ -57,14 +59,15 @@ namespace Planar.Hook
             return this;
         }
 
-        public IMonitorSystemDetailsBuilder WithGroup(Action<IMonitorGroupBuilder> groupBuilder)
-        {
-            var builder = new MonitorGroupBuilder();
-            groupBuilder(builder);
-            var group = builder.Build();
-            _monitorDetails.Group = group;
-            return this;
-        }
+        // TODO:
+        ////public IMonitorSystemDetailsBuilder WithGroup(Action<IMonitorGroupBuilder> groupBuilder)
+        ////{
+        ////    var builder = new MonitorGroupBuilder();
+        ////    groupBuilder(builder);
+        ////    var group = builder.Build();
+        ////    _monitorDetails.Group = group;
+        ////    return this;
+        ////}
 
         public IMonitorSystemDetailsBuilder WithMonitorTitle(string monitorTitle)
         {
