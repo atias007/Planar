@@ -2,8 +2,6 @@
 PLAN FOR V 1.8.*
 ----------------
 
-- add health-check system job, save the last running in global variable, check this variable in health-check service, restart service in this variable not active
-
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
