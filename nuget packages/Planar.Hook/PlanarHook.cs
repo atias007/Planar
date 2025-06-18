@@ -118,17 +118,17 @@ namespace Planar.Hook
             Console.WriteLine();
 
             var index = 1;
-            foreach (var p in Debugger.MonitorProfiles)
+            foreach (var key in Debugger.MonitorProfiles.Keys)
             {
-                PrintMenuItem(p.Key, index.ToString());
-                _menuMapper.Add(index, p.Key);
+                PrintMenuItem(key, index.ToString());
+                _menuMapper.Add(index, key);
                 index++;
             }
 
-            foreach (var p in Debugger.MonitorSystemProfiles)
+            foreach (var key in Debugger.MonitorSystemProfiles.Keys)
             {
-                PrintMenuItem(p.Key, index.ToString());
-                _menuMapper.Add(index, p.Key);
+                PrintMenuItem(key, index.ToString());
+                _menuMapper.Add(index, key);
                 index++;
             }
 
