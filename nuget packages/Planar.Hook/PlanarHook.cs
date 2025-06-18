@@ -44,9 +44,9 @@ namespace Planar.Hook
             catch (Exception ex)
             {
                 var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {typeof(THook).Name}" };
-                Console.Error.WriteLine(log.ToString());
+                await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
-                Console.Error.WriteLine(log.ToString());
+                await Console.Error.WriteLineAsync(log.ToString());
             }
         }
 
@@ -105,9 +105,8 @@ namespace Planar.Hook
         {
             int selectedIndex;
 
-            // TODO:
-            //Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
-            //Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
+            Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
+            Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
 
             var typeName = typeof(THook).Name;
             Console.Write("type the profile code ");
@@ -119,17 +118,17 @@ namespace Planar.Hook
             Console.WriteLine();
 
             var index = 1;
-            foreach (var p in Debugger.MonitorProfiles)
+            foreach (var key in Debugger.MonitorProfiles.Keys)
             {
-                PrintMenuItem(p.Key, index.ToString());
-                _menuMapper.Add(index, p.Key);
+                PrintMenuItem(key, index.ToString());
+                _menuMapper.Add(index, key);
                 index++;
             }
 
-            foreach (var p in Debugger.MonitorSystemProfiles)
+            foreach (var key in Debugger.MonitorSystemProfiles.Keys)
             {
-                PrintMenuItem(p.Key, index.ToString());
-                _menuMapper.Add(index, p.Key);
+                PrintMenuItem(key, index.ToString());
+                _menuMapper.Add(index, key);
                 index++;
             }
 

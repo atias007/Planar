@@ -10,6 +10,7 @@ var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
 
 var monitors = await client.Monitor.ListAsync();
+Console.WriteLine(monitors);
 
 var logStream = await client.History.GetLogAsync(281);
 // convert logStream to byte[]

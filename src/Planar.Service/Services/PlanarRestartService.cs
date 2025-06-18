@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.General;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
@@ -9,58 +10,66 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Timer = System.Timers.Timer;
 
 namespace Planar.Service.Services;
 
-internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IHostedService, IDisposable
+internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IHostedService
 {
     private const int _bytesInMegaByte = 1024 * 1024;
     private int _memoryHighCount;
-    private readonly Timer _timer = new(TimeSpan.FromMinutes(1));
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
     private readonly ILogger<PlanarRestartService> _logger = serviceProvider.GetRequiredService<ILogger<PlanarRestartService>>();
+    private readonly SchedulerHealthCheckUtil _schedulerHealthCheckUtil = serviceProvider.GetRequiredService<SchedulerHealthCheckUtil>();
     private DateTimeOffset? _lastMemoryLog;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
-
-    public void Dispose()
-    {
-        _timer.Dispose();
-    }
+    private Task _monitorTask = Task.CompletedTask;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _timer.Elapsed += TimerElapsed;
-        _timer.Start();
-        return Task.CompletedTask;
+        _monitorTask = Task.Run(async () =>
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken); // Check every minute
+                await SafeCheckForRestart();
+            }
+        }, cancellationToken);
+
+        return _monitorTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _timer?.Stop();
         Interlocked.Exchange(ref _memoryHighCount, 0);
-        return Task.CompletedTask;
+        try { await _monitorTask; } catch { /* swallow */ }
     }
 
-    private void TimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    private async Task SafeCheckForRestart()
     {
         try
         {
             // 1. Obtain the current application process
-            Process currentProcess = Process.GetCurrentProcess();
+            var currentProcess = Process.GetCurrentProcess();
 
             // 2. Obtain the used memory by the process
             var usedMemory = currentProcess.PrivateMemorySize64 / _bytesInMegaByte;
 
             if (IsMemoryHigh(usedMemory))
             {
-                _ = GracefullShutDown(usedMemory);
+                SafeLog(usedMemory);
+                if (!AppSettings.Protection.RestartOnHighMemoryUsage) { return; }
+                await GracefulShutDown();
+            }
+            else if (!await IsSchedulerHealthy())
+            {
+                _logger.LogCritical("scheduler engine is unhealthy. start graceful end of the process. stand by scheduler");
+                await GracefulShutDown();
             }
             else
             {
-                _ = CheckForRegularRestart();
+                await CheckForRegularRestart();
             }
         }
         catch (Exception ex)
@@ -76,7 +85,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
             var current = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
             if (current == 0)
             {
-                await GracefullRestart();
+                await GracefulRestart();
             }
 
             return;
@@ -97,6 +106,19 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         if (DateTimeOffset.UtcNow >= _nextRegularRestart)
         {
             _invokeRegularRestart = true;
+        }
+    }
+
+    private async Task<bool> IsSchedulerHealthy()
+    {
+        try
+        {
+            return await _schedulerHealthCheckUtil.IsHealthyAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail to check scheduler health status");
+            return true; // If we can't determine health, assume healthy
         }
     }
 
@@ -150,17 +172,15 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private async Task GracefullShutDown(long usedMemory)
+    private async Task GracefulShutDown()
     {
-        SafeLog(usedMemory);
-        if (!AppSettings.Protection.RestartOnHighMemoryUsage) { return; }
         await SafeStandBy();
         await SafeShutdown();
         await SafeDelay();
         CloseApplication();
     }
 
-    private async Task GracefullRestart()
+    private async Task GracefulRestart()
     {
         SafeRestartLog();
         SafeMonitorRegularApplicationRestart();
@@ -194,7 +214,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
             {
                 if (withLog)
                 {
-                    _logger.LogCritical("memory usage is too high. stop the apllication");
+                    _logger.LogCritical("stop the apllication due to system failure");
                 }
 
                 var app = _serviceProvider.GetRequiredService<IHostApplicationLifetime>();
@@ -255,7 +275,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "fail to shutdown scheduler (regular restart or high memory usage)");
+            _logger.LogCritical(ex, "fail to shutdown scheduler (regular restart / high memory usage / scheduler unhealthy)");
         }
     }
 
@@ -263,7 +283,6 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     {
         try
         {
-            _timer.Stop();
             await _scheduler.Standby();
         }
         catch

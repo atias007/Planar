@@ -376,11 +376,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         [YamlMember(Alias = "job type")]
         public string? JobType { get; set; }
 
-#pragma warning disable S3459 // Unassigned members should be removed
-#pragma warning disable S1144 // Unused private types or members should be removed
-        public string? Name { get; set; }
-#pragma warning restore S1144 // Unused private types or members should be removed
-#pragma warning restore S3459 // Unassigned members should be removed
+        public string? Name { get; set; } = null!;
     }
 
     public async Task<string> GetJobFilename(string id)
@@ -485,16 +481,9 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             var next = t.GetNextFireTimeUtc();
             if (next == null) { continue; }
             var nextDate = next.Value.LocalDateTime;
-            if (result == null)
+            if (result == null || nextDate < result)
             {
                 result = nextDate;
-            }
-            else
-            {
-                if (nextDate < result)
-                {
-                    result = nextDate;
-                }
             }
         }
 
@@ -511,16 +500,9 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             var prev = t.GetPreviousFireTimeUtc();
             if (prev == null) { continue; }
             var prevDate = prev.Value.LocalDateTime;
-            if (result == null)
+            if (result == null || prevDate > result)
             {
                 result = prevDate;
-            }
-            else
-            {
-                if (prevDate > result)
-                {
-                    result = prevDate;
-                }
             }
         }
 
@@ -818,6 +800,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         var newTrigger = TriggerBuilder.Create()
             .WithIdentity(triggerKey)
             .UsingJobData(Consts.TriggerId, triggerId)
+            .WithPriority(int.MaxValue)
             .StartAt(request.DueDate)
             .WithSimpleSchedule(b =>
             {

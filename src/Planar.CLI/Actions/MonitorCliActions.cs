@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.Actions;
 
@@ -46,7 +45,16 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("delete")]
     public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredInt(request, nameof(request.Id));
+        if (request.Id == 0)
+        {
+            var monitorWrapper = await CliPromptUtil.Monitors(writeSelection: true, cancellationToken);
+            if (!monitorWrapper.IsSuccessful || monitorWrapper.Value == null)
+            {
+                return new CliActionResponse(monitorWrapper.FailResponse);
+            }
+
+            request.Id = monitorWrapper.Value.Id;
+        }
 
         if (!ConfirmAction($"remove monitor id {request.Id}")) { return CliActionResponse.Empty; }
 
@@ -59,7 +67,16 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("get")]
     public static async Task<CliActionResponse> GetMonitoActions(CliGetByIdRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredInt(request, nameof(request.Id));
+        if (request.Id == 0)
+        {
+            var monitorWrapper = await CliPromptUtil.Monitors(writeSelection: true, cancellationToken);
+            if (!monitorWrapper.IsSuccessful || monitorWrapper.Value == null)
+            {
+                return new CliActionResponse(monitorWrapper.FailResponse);
+            }
+
+            request.Id = monitorWrapper.Value.Id;
+        }
 
         var restRequest = new RestRequest("monitor/{id}", Method.Get)
             .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -141,7 +158,17 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("update")]
     public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityByIdRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredInt(request, nameof(request.Id));
+        if (request.Id == 0)
+        {
+            var monitorWrapper = await CliPromptUtil.Monitors(writeSelection: true, cancellationToken);
+            if (!monitorWrapper.IsSuccessful || monitorWrapper.Value == null)
+            {
+                return new CliActionResponse(monitorWrapper.FailResponse);
+            }
+
+            request.Id = monitorWrapper.Value.Id;
+        }
+
         FillRequiredString(request, nameof(request.PropertyName));
         FillOptionalString(request, nameof(request.PropertyValue));
 
@@ -340,7 +367,13 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         request ??= new CliMonitorGroupRequest();
         if (request.MonitorId == 0)
         {
-            FillRequiredInt(request, nameof(request.MonitorId));
+            var monitorWrapper = await CliPromptUtil.Monitors(writeSelection: true, cancellationToken);
+            if (!monitorWrapper.IsSuccessful || monitorWrapper.Value == null)
+            {
+                return RequestBuilderWrapper<CliMonitorGroupRequest>.Fail(monitorWrapper.FailResponse);
+            }
+
+            request.MonitorId = monitorWrapper.Value.Id;
         }
 
         if (string.IsNullOrWhiteSpace(request.GroupName))
@@ -505,7 +538,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
     private static string GetEventForTest()
     {
-        var names = Enum.GetNames(typeof(TestMonitorEvents));
+        var names = Enum.GetNames<TestMonitorEvents>();
         var selectedEvent = PromptSelection(names, "monitor event");
 
         if (string.IsNullOrEmpty(selectedEvent))

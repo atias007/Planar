@@ -23,7 +23,7 @@ public sealed class PersistDataJob(IServiceScopeFactory scopeFactory, ILogger<Pe
     {
         const string description = "system job for persist log & exception from running jobs";
         var span = AppSettings.General.PersistRunningJobsSpan;
-        await Schedule<PersistDataJob>(scheduler, description, span, stoppingToken: stoppingToken);
+        await ScheduleHighPriority<PersistDataJob>(scheduler, description, span, stoppingToken: stoppingToken);
     }
 
     private async Task SafeDoWork(IJobExecutionContext context)
