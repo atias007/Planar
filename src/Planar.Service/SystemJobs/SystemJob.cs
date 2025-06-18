@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.SystemJobs;
 
@@ -18,7 +17,7 @@ public abstract class SystemJob
         where T : IJob
     {
         var jobId = ServiceUtil.GenerateId();
-        var job = JobBuilder.Create(typeof(T))
+        var job = JobBuilder.Create<T>()
             .WithIdentity(jobKey)
             .UsingJobData(Consts.JobId, jobId)
             .DisallowConcurrentExecution()
@@ -28,6 +27,14 @@ public abstract class SystemJob
             .Build();
 
         return job;
+    }
+
+    protected static JobKey CreateJobKey<T>()
+        where T : IJob
+    {
+        var name = typeof(T).Name;
+        var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
+        return jobKey;
     }
 
     protected static void SafeSetLastRun(IJobExecutionContext context, ILogger logger)
@@ -42,16 +49,8 @@ public abstract class SystemJob
         }
     }
 
-    protected static JobKey CreateJobKey<T>()
-        where T : IJob
-    {
-        var name = typeof(T).Name;
-        var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
-        return jobKey;
-    }
-
     protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, CancellationToken stoppingToken = default)
-                        where T : IJob
+        where T : IJob
     {
         var jobKey = CreateJobKey<T>();
         var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
@@ -63,38 +62,32 @@ public abstract class SystemJob
         return jobKey;
     }
 
-    protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
-                    where T : IJob
+    protected static Task<JobKey> ScheduleHighPriority<T>(IScheduler scheduler, string description, TimeSpan interval, DateTime? startDate = null, CancellationToken stoppingToken = default)
+        where T : IJob
     {
-        var jobKey = CreateJobKey<T>();
-        var job = await GetJobDetails(scheduler, jobKey, span, startDate, stoppingToken);
-        if (job != null) { return jobKey; }
-        job = CreateJob<T>(jobKey, description);
+        return Schedule<T>(scheduler, description, interval, int.MaxValue, startDate, stoppingToken);
+    }
 
-        var triggerId = ServiceUtil.GenerateId();
-        DateTimeOffset jobStart;
-        if (startDate == null)
+    protected static Task<JobKey> ScheduleLowPriority<T>(IScheduler scheduler, string description, TimeSpan interval, DateTime? startDate = null, CancellationToken stoppingToken = default)
+        where T : IJob
+    {
+        return Schedule<T>(scheduler, description, interval, int.MinValue, startDate, stoppingToken);
+    }
+
+    private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, TimeSpan span)
+    {
+        builder
+        .WithInterval(span)
+        .RepeatForever();
+
+        if (span.TotalMinutes > 15)
         {
-            jobStart = new DateTimeOffset(DateTime.Now);
-            jobStart = jobStart.AddSeconds(-jobStart.Second);
-            jobStart = jobStart.Add(span);
+            builder.WithMisfireHandlingInstructionFireNow();
         }
         else
         {
-            jobStart = new DateTimeOffset(startDate.Value);
+            builder.WithMisfireHandlingInstructionNextWithExistingCount();
         }
-
-        var trigger = TriggerBuilder.Create()
-            .WithIdentity(jobKey.Name, jobKey.Group)
-            .StartAt(jobStart)
-            .UsingJobData(Consts.TriggerId, triggerId)
-            .WithSimpleSchedule(s => BuildSimpleSchedule(s, span))
-            .WithPriority(int.MinValue)
-            .Build();
-
-        await scheduler.ScheduleJob(job, [trigger], true, stoppingToken);
-
-        return jobKey;
     }
 
     private static async Task<IJobDetail?> GetJobDetails(IScheduler scheduler, JobKey jobKey, TimeSpan triggerInterval, DateTime? startDate, CancellationToken stoppingToken = default)
@@ -130,19 +123,37 @@ public abstract class SystemJob
             .AddSeconds(date.Second);
     }
 
-    private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, TimeSpan span)
+    private static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan interval, int priority, DateTime? startDate, CancellationToken stoppingToken)
+        where T : IJob
     {
-        builder
-        .WithInterval(span)
-        .RepeatForever();
+        var jobKey = CreateJobKey<T>();
+        var job = await GetJobDetails(scheduler, jobKey, interval, startDate, stoppingToken);
+        if (job != null) { return jobKey; }
+        job = CreateJob<T>(jobKey, description);
 
-        if (span.TotalMinutes > 15)
+        var triggerId = ServiceUtil.GenerateId();
+        DateTimeOffset jobStart;
+        if (startDate == null)
         {
-            builder.WithMisfireHandlingInstructionFireNow();
+            jobStart = new DateTimeOffset(DateTime.Now);
+            jobStart = jobStart.AddSeconds(-jobStart.Second);
+            jobStart = jobStart.Add(interval);
         }
         else
         {
-            builder.WithMisfireHandlingInstructionNextWithExistingCount();
+            jobStart = new DateTimeOffset(startDate.Value);
         }
+
+        var trigger = TriggerBuilder.Create()
+            .WithIdentity(jobKey.Name, jobKey.Group)
+            .StartAt(jobStart)
+            .UsingJobData(Consts.TriggerId, triggerId)
+            .WithSimpleSchedule(s => BuildSimpleSchedule(s, interval))
+            .WithPriority(priority)
+            .Build();
+
+        await scheduler.ScheduleJob(job, [trigger], true, stoppingToken);
+
+        return jobKey;
     }
 }

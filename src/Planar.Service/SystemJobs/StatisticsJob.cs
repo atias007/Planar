@@ -33,7 +33,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
         const string description = "System job for saving statistics data to database";
         var span = TimeSpan.FromHours(24);
         var start = DateTime.Now.Date.AddDays(1).AddMinutes(5);
-        await Schedule<StatisticsJob>(scheduler, description, span, start, stoppingToken);
+        await ScheduleLowPriority<StatisticsJob>(scheduler, description, span, start, stoppingToken);
     }
 
     private async Task SafeDoWork(IJobExecutionContext context)

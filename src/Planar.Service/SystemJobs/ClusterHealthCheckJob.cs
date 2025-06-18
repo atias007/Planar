@@ -54,7 +54,7 @@ public sealed class ClusterHealthCheckJob : SystemJob, IJob
     {
         const string description = "System job for check health of cluster nodes";
         var span = AppSettings.Cluster.HealthCheckInterval;
-        var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
+        var jobKey = await ScheduleHighPriority<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
 
         if (AppSettings.Cluster.Clustering)
         {
