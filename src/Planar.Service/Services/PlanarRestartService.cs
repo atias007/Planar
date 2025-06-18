@@ -24,10 +24,11 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     private DateTimeOffset? _lastMemoryLog;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
+    private Task _monitorTask = Task.CompletedTask;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _ = Task.Run(async () =>
+        _monitorTask = Task.Run(async () =>
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -36,13 +37,13 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
             }
         }, cancellationToken);
 
-        return Task.CompletedTask;
+        return _monitorTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         Interlocked.Exchange(ref _memoryHighCount, 0);
-        return Task.CompletedTask;
+        try { await _monitorTask; } catch { /* swallow */ }
     }
 
     private async Task SafeCheckForRestart()
@@ -117,7 +118,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         catch (Exception ex)
         {
             _logger.LogError(ex, "fail to check scheduler health status");
-            return true; // If we can't determine health, assume unhealthy
+            return true; // If we can't determine health, assume healthy
         }
     }
 
