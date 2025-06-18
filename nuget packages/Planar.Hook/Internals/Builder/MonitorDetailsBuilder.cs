@@ -49,12 +49,32 @@ namespace Planar.Hook
 
         public IMonitorDetailsBuilder AddTestUser()
         {
-            if (_monitorDetails.Groups.First() is Group group)
+            var group = GetGroup();
+            group.AddUser(new MonitorUserBuilder().Build());
+            return this;
+        }
+
+        public IMonitorDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
+        {
+            var builder = new MonitorUserBuilder();
+            groupBuilder(builder);
+            var user = builder.Build();
+            var group = GetGroup();
+            group.AddUser(user);
+            return this;
+        }
+
+        private Group GetGroup()
+        {
+            if (_monitorDetails.Groups.Any() && _monitorDetails.Groups.FirstOrDefault() is Group group)
             {
-                group.AddUser(new MonitorUserBuilder().Build());
+                return group;
             }
 
-            return this;
+            // If no groups exist, create a new one
+            var newGroup = (Group)new MonitorGroupBuilder().Build();
+            _monitorDetails.AddGroup(newGroup);
+            return newGroup;
         }
 
 #if NETSTANDARD2_0
@@ -78,16 +98,6 @@ namespace Planar.Hook
             _monitorDetails.AddGlobalConfig(key, value);
             return this;
         }
-
-        // TODO:
-        ////public IMonitorDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
-        ////{
-        ////    var builder = new MonitorUserBuilder();
-        ////    groupBuilder(builder);
-        ////    var user = builder.Build();
-        ////    _monitorDetails.AddUser(user);
-        ////    return this;
-        ////}
 
         public IMonitorDetailsBuilder SetDurable()
         {

@@ -2,7 +2,7 @@
 
 namespace Planar.Hook
 {
-    public interface IMonitorBuilder<T> where T : class
+    public interface IMonitorBuilder<out T> where T : class
     {
         T WithEventId(int eventId);
 
@@ -10,11 +10,9 @@ namespace Planar.Hook
 
         T WithMonitorTitle(string monitorTitle);
 
-        // TODO:
-        // T WithGroup(Action<IMonitorGroupBuilder> groupBuilder);
+        T WithGroup(Action<IMonitorGroupBuilder> groupBuilder);
 
-        // TODO:
-        // T AddUsers(Action<IMonitorUserBuilder> groupBuilder);
+        T AddUsers(Action<IMonitorUserBuilder> groupBuilder);
 
 #if NETSTANDARD2_0
 
@@ -32,7 +30,6 @@ namespace Planar.Hook
 
         T WithEnvironment(string environment);
 
-        // TODO:
-        //T AddTestUser();
+        T AddTestUser();
     }
 }

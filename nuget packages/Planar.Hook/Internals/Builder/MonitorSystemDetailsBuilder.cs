@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Planar.Hook
 {
@@ -19,22 +20,35 @@ namespace Planar.Hook
             return this;
         }
 
-        // TODO:
-        ////public IMonitorSystemDetailsBuilder AddTestUser()
-        ////{
-        ////    _monitorDetails.AddUser(new MonitorUserBuilder().Build());
-        ////    return this;
-        ////}
+        public IMonitorSystemDetailsBuilder AddTestUser()
+        {
+            var group = GetGroup();
+            group.AddUser(new MonitorUserBuilder().Build());
+            return this;
+        }
 
-        // TODO:
-        ////public IMonitorSystemDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
-        ////{
-        ////    var builder = new MonitorUserBuilder();
-        ////    groupBuilder(builder);
-        ////    var user = builder.Build();
-        ////    _monitorDetails.AddUser(user);
-        ////    return this;
-        ////}
+        public IMonitorSystemDetailsBuilder AddUsers(Action<IMonitorUserBuilder> groupBuilder)
+        {
+            var builder = new MonitorUserBuilder();
+            groupBuilder(builder);
+            var user = builder.Build();
+            var group = GetGroup();
+            group.AddUser(user);
+            return this;
+        }
+
+        private Group GetGroup()
+        {
+            if (_monitorDetails.Groups.Any() && _monitorDetails.Groups.FirstOrDefault() is Group group)
+            {
+                return group;
+            }
+
+            // If no groups exist, create a new one
+            var newGroup = (Group)new MonitorGroupBuilder().Build();
+            _monitorDetails.AddGroup(newGroup);
+            return newGroup;
+        }
 
         public IMonitorSystemDetails Build()
         {
@@ -59,15 +73,14 @@ namespace Planar.Hook
             return this;
         }
 
-        // TODO:
-        ////public IMonitorSystemDetailsBuilder WithGroup(Action<IMonitorGroupBuilder> groupBuilder)
-        ////{
-        ////    var builder = new MonitorGroupBuilder();
-        ////    groupBuilder(builder);
-        ////    var group = builder.Build();
-        ////    _monitorDetails.Group = group;
-        ////    return this;
-        ////}
+        public IMonitorSystemDetailsBuilder WithGroup(Action<IMonitorGroupBuilder> groupBuilder)
+        {
+            var builder = new MonitorGroupBuilder();
+            groupBuilder(builder);
+            var group = builder.Build();
+            _monitorDetails.AddGroup(group);
+            return this;
+        }
 
         public IMonitorSystemDetailsBuilder WithMonitorTitle(string monitorTitle)
         {
