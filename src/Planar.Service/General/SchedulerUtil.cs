@@ -92,6 +92,12 @@ public class SchedulerUtil
         return result;
     }
 
+    public async Task<int> CountRunningJobs(CancellationToken cancellationToken = default)
+    {
+        var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+        return jobs.Count;
+    }
+
     public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
     {
         var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);

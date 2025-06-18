@@ -84,6 +84,7 @@ internal static class AutoResumeJobUtil
         var dueDate = DateTime.Now.Add(span);
         var newTrigger = TriggerBuilder.Create()
              .WithIdentity(triggerKey)
+             .WithPriority(int.MaxValue)
              .UsingJobData(Consts.TriggerId, triggerId)
              .UsingJobData(ResumeType, resumeType.ToString())
              .UsingJobData(JobKeyName, key.Name)

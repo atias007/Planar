@@ -383,5 +383,8 @@ V 1.8.0
 -------
 - improve 'last' command in cli (save last log in table)
 - add timeout parameter to cli/api/client library for invoke and test command
-- add monitor customs events
+- add monitor custom events
 - cli support running command only by type: job id, trigger id, running instance id, log number
+- set priority for system jobs
+- add option to add multiple distribution groups to monitor
+- add system health check system job (ensure that the scheduler is running)

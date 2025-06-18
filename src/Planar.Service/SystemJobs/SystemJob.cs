@@ -49,6 +49,7 @@ public abstract class SystemJob
         }
     }
 
+    // For circuit breaker job, we need to ensure that the job is scheduled without any trigger.
     protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, CancellationToken stoppingToken = default)
         where T : IJob
     {
