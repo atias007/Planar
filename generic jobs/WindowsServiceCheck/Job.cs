@@ -180,8 +180,8 @@ internal partial class Job : BaseCheckJob
 
         if (disabled)
         {
-            service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in {status} start type";
-            throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} start type");
+            service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is disabled";
+            throw new CheckException($"service '{service.Name}' on host '{service.Host}' is disabled");
         }
 
         service.Result.AutoStartMode = startType == ServiceStartMode.Automatic;

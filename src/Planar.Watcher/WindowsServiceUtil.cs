@@ -4,7 +4,7 @@ using System.Management;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
-namespace Common;
+namespace Planar.Watcher;
 
 public sealed class WindowsServiceUtil(ILogger logger, string serviceName, string host)
 {
@@ -23,7 +23,7 @@ public sealed class WindowsServiceUtil(ILogger logger, string serviceName, strin
         }
         catch (System.ServiceProcess.TimeoutException)
         {
-            if (!restart) { throw new CheckException($"timeout waiting for status {status} of service {controller.ServiceName}"); }
+            if (!restart) { throw new InvalidOperationException($"timeout waiting for status {status} of service {controller.ServiceName}"); }
 #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
             logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status for long time. kill the process", serviceName, host, controller.Status);
 #pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
