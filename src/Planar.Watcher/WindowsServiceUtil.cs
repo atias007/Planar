@@ -65,12 +65,12 @@ public sealed class WindowsServiceUtil(ILogger logger, string serviceName, strin
                 int returnCode = Convert.ToInt32(outParams["returnValue"], CultureInfo.CurrentCulture);
                 if (returnCode != 0)
                 {
-                    Console.WriteLine("Error killing process: " + returnCode);
+                    logger.LogWarning("Error killing process: {ReturnCode}", returnCode);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                logger.LogCritical(ex, "Error killing process");
             }
         }
     }

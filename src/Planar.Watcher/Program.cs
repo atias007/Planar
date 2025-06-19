@@ -27,7 +27,16 @@ builder.Services.AddLogging(builder =>
     builder.AddSerilog();
 });
 
-builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+try
+{
+    builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    var host = builder.Build();
+    await host.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Host terminated unexpectedly");
+    throw;
+}
 
-var host = builder.Build();
-await host.RunAsync();
+Log.CloseAndFlush();

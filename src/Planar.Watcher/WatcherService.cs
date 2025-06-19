@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Serilog.Core;
+using Serilog;
 using System.ServiceProcess;
 
 namespace Planar.Watcher;
 
-internal class WatcherService(ILogger<WatcherService> logger, IConfiguration configuration) : BackgroundService
+internal class WatcherService(ILogger<WatcherService> logger, IConfiguration configuration, IHostApplicationLifetime lifetime) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
 
@@ -18,8 +18,8 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await Task.Delay(_interval, stoppingToken);
             SafeCheckServiceStatus(settings);
+            await Task.Delay(_interval, stoppingToken);
         }
     }
 
@@ -134,10 +134,17 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
         if (settings == null)
         {
             logger.LogError("Failed to load settings from appsettings.json configuration file");
-            Environment.Exit(1);
+            Exit();
+            ArgumentNullException.ThrowIfNull(settings);
         }
 
         return settings;
+    }
+
+    private void Exit()
+    {
+        Log.CloseAndFlush();
+        lifetime.StopApplication();
     }
 
     private void ValidateSettings(Settings settings)
@@ -145,22 +152,26 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
         if (string.IsNullOrWhiteSpace(settings.ServiceName))
         {
             logger.LogError("ServiceName is not configured in appsettings.json");
-            Environment.Exit(1);
+            Exit();
+            return;
         }
         if (string.IsNullOrWhiteSpace(settings.Host))
         {
             logger.LogError("Host is not configured in appsettings.json");
-            Environment.Exit(1);
+            Exit();
+            return;
         }
         if (settings.StartServiceTimeout <= TimeSpan.Zero)
         {
             logger.LogError("StartServiceTimeout must be greater than zero");
-            Environment.Exit(1);
+            Exit();
+            return;
         }
         if (settings.StopPendingServiceTimeout <= TimeSpan.Zero)
         {
             logger.LogError("StopPendingServiceTimeout must be greater than zero");
-            Environment.Exit(1);
+            Exit();
+            return;
         }
     }
 }
