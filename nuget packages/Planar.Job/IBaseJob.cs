@@ -38,5 +38,21 @@ namespace Planar.Job
         Task UpdateProgressAsync(byte value);
 
         Task RaiseCustomEventAsync(CustomMonitorEvents customMonitorEvents, string message);
+
+#if NETSTANDARD2_0
+
+        Task InvokeJobAsync(string id, InvokeJobOptions options = null);
+
+#else
+        Task InvokeJobAsync(string id, InvokeJobOptions? options = null);
+#endif
+
+#if NETSTANDARD2_0
+
+        Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions options = null);
+
+#else
+        Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions? options = null);
+#endif
     }
 }

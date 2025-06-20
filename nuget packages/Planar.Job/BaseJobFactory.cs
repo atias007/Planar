@@ -309,6 +309,44 @@ namespace Planar.Job
             }
         }
 
+#if NETSTANDARD2_0
+
+        public async Task InvokeJobAsync(string id, InvokeJobOptions options = null)
+#else
+        public async Task InvokeJobAsync(string id, InvokeJobOptions? options = null)
+#endif
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                var entity = new { Id = id, Options = options };
+                await MqttClient.PublishAsync(MessageBrokerChannels.InvokeJob, entity);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+        }
+
+#if NETSTANDARD2_0
+
+        public async Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions options = null)
+#else
+        public async Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions? options = null)
+#endif
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                var entity = new { Id = id, DueDate = dueDate, Options = options };
+                await MqttClient.PublishAsync(MessageBrokerChannels.QueueInvokeJob, entity);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+        }
+
         #endregion Monitor
     }
 }
