@@ -1,8 +1,11 @@
 ﻿using CloudNative.CloudEvents;
 using CommonJob;
 using CommonJob.MessageBrokerEntities;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
@@ -11,6 +14,7 @@ using PlanarJob;
 using PlanarJobInner;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -25,7 +29,8 @@ public abstract class PlanarJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil,
-    IClusterUtil clusterUtil) : BaseProcessJob<PlanarJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
+    IClusterUtil clusterUtil,
+    IServiceProvider serviceProvider) : BaseProcessJob<PlanarJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
     private readonly Lock ConsoleLocker = new();
     private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
@@ -33,6 +38,7 @@ public abstract class PlanarJob(
     private string? _contextFilename;
 
     private PlanarJobExecutionException? _executionException;
+    private readonly List<PlanarJobException> _jobActionExceptions = [];
 
     public override async Task Execute(IJobExecutionContext context)
     {
@@ -58,7 +64,7 @@ public abstract class PlanarJob(
             ValidateHealthCheck();
             LogProcessInformation();
             CheckProcessCancel();
-            CheckJobErrorReport();
+            CheckJobError();
         }
         catch (Exception ex)
         {
@@ -129,10 +135,20 @@ public abstract class PlanarJob(
         }
     }
 
-    private void CheckJobErrorReport()
+    private void CheckJobError()
     {
-        if (_executionException == null) { return; }
-        throw _executionException;
+        if (_executionException == null && _jobActionExceptions.Count == 0) { return; }
+
+        if (_executionException == null && _jobActionExceptions.Count == 1) { throw _jobActionExceptions[0]; }
+        if (_executionException == null && _jobActionExceptions.Count > 1) { throw new AggregateException("there are multiple job invoke errors", _jobActionExceptions); }
+
+        if (_executionException != null && _jobActionExceptions.Count == 0) { throw _executionException; }
+        if (_executionException != null && _jobActionExceptions.Count > 0)
+        {
+            var list = new List<Exception> { _executionException };
+            list.AddRange(_jobActionExceptions);
+            throw new AggregateException("there are multiple errors", list);
+        }
     }
 
     private void ValidateExeFile()
@@ -346,15 +362,15 @@ public abstract class PlanarJob(
         }
         catch (PlanarJobException ex)
         {
-            _logger.LogCritical(ex, "Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
+            _logger.LogCritical(ex, "fail intercepting published message on MQTT broker event. {Error}", ex.Message);
         }
         catch (JobMonitorException ex)
         {
-            _logger.LogError(ex, "Fail to execute monitor event");
+            _logger.LogError(ex, "fail to execute monitor event");
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "Fail intercepting published message on MQTT broker event");
+            _logger.LogCritical(ex, "fail intercepting published message on MQTT broker event");
         }
     }
 
@@ -496,9 +512,80 @@ public abstract class PlanarJob(
                 SafeScan(monitorValue, MessageBroker.Context);
                 break;
 
+            case MessageBrokerChannels.InvokeJob:
+                var invokeValue = GetCloudEventEntityValue<InvokeJobModel>(e.CloudEvent);
+                _ = RunInvokeJob(invokeValue);
+                break;
+
+            case MessageBrokerChannels.QueueInvokeJob:
+                var queueInvokeValue = GetCloudEventEntityValue<QueueInvokeJobModel>(e.CloudEvent);
+                _ = RunQueueInvokeJob(queueInvokeValue);
+                break;
+
             default:
                 _logger.LogWarning("PlanarJob intercepting published message with unsupported channel {Channel}", channel);
                 break;
         }
+    }
+
+    private async Task RunInvokeJob(InvokeJobModel invokeJob)
+    {
+        var request = new QueueInvokeJobRequest
+        {
+            Id = invokeJob.Id,
+            Data = invokeJob.Options.Data,
+            NowOverrideValue = invokeJob.Options.NowOverrideValue,
+            Timeout = invokeJob.Options.Timeout,
+            DueDate = DateTime.Now.AddSeconds(3) // Default due date for invoke job is 3 seconds from now
+        };
+
+        await RunQueueInvokeJob(request);
+    }
+
+    private async Task RunQueueInvokeJob(QueueInvokeJobModel invokeJob)
+    {
+        var request = new QueueInvokeJobRequest
+        {
+            Id = invokeJob.Id,
+            Data = invokeJob.Options.Data,
+            NowOverrideValue = invokeJob.Options.NowOverrideValue,
+            Timeout = invokeJob.Options.Timeout,
+            DueDate = invokeJob.DueDate
+        };
+
+        await RunQueueInvokeJob(request);
+    }
+
+    private async Task RunQueueInvokeJob(QueueInvokeJobRequest request)
+    {
+        var validator = serviceProvider.GetRequiredService<IValidator<QueueInvokeJobRequest>>();
+        var jobActions = serviceProvider.GetRequiredService<IJobActions>();
+
+        var validationResult = validator.Validate(request);
+        if (!validationResult.IsValid)
+        {
+            var errorMessage = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            Log(LogLevel.Error, $"validation failed for job invoke. job id {request.Id}. error: {errorMessage}");
+            _jobActionExceptions.Add(new PlanarJobException($"validation failed for job invoke. job id {request.Id}"));
+            return;
+        }
+
+        try
+        {
+            var trigger = await jobActions.QueueInvoke(request);
+            Log(LogLevel.Information, $"job invoke request queued successfully. job id {request.Id}. trigger id {trigger.Id}");
+        }
+        catch (Exception ex)
+        {
+            Log(LogLevel.Error, $"job invoke failed for. job id {request.Id}. error: {ex.Message}");
+            _jobActionExceptions.Add(new PlanarJobException($"job invoke failed for. job id {request.Id}. error: {ex.Message}"));
+        }
+    }
+
+    private void Log(LogLevel level, string message)
+    {
+        var logEntity = new LogEntity(level, message);
+        MessageBroker.AppendLog(logEntity);
+        WriteToConsole(logEntity);
     }
 }

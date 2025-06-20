@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.General;
 using Quartz;
+using System;
 
 namespace Planar;
 
@@ -12,6 +13,7 @@ public class PlanarJobNoConcurrent(
     ILogger<PlanarJobNoConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil,
-    IClusterUtil clusterUtil) : PlanarJob(logger, dataLayer, jobMonitorUtil, clusterUtil)
+    IClusterUtil clusterUtil,
+    IServiceProvider serviceProvider) : PlanarJob(logger, dataLayer, jobMonitorUtil, clusterUtil, serviceProvider)
 {
 }

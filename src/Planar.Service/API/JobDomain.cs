@@ -26,7 +26,8 @@ using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
-public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
+public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory)
+    : BaseJobBL<JobDomain, IJobData>(serviceProvider), IJobActions
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
 

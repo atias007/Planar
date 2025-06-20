@@ -39,6 +39,8 @@ namespace Planar.Service
             services.AddScoped<ClusterDomain>();
             services.AddScoped<MetricsDomain>();
 
+            services.AddScoped<IJobActions, JobDomain>(p => p.GetRequiredService<JobDomain>());
+
             // Utils
             services.AddSingleton<ClusterUtil>();
             services.AddSingleton<IClusterUtil>(p => p.GetRequiredService<ClusterUtil>());
