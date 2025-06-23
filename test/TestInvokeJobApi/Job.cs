@@ -16,8 +16,13 @@ internal class Job : BaseJob
         Logger.LogInformation("Executing TestInvokeJobApi Job...");
         Logger.LogInformation("Wait 10 seconds...");
         await Task.Delay(10_000);
-        Logger.LogInformation("Invoke hello world with data");
-        await base.InvokeJobAsync("Demo.HelloWorld With Data");
+        Logger.LogInformation("Invoke TestInvokeJobApi2");
+        await InvokeJobAsync("Demo.TestInvokeJobApi2", new InvokeJobOptions
+        {
+            Timeout = TimeSpan.FromSeconds(111),
+            Data = new Dictionary<string, string?> { { "Key1", "Value1" }, { "Key2", "Value2" } },
+            NowOverrideValue = DateTime.Now.Date.AddHours(1).AddMinutes(1).AddSeconds(1).AddMilliseconds(1),
+        });
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

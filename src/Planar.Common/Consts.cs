@@ -16,6 +16,11 @@ namespace Planar
             RetryCounter,
             RetrySpan,
             MaxRetries,
+            SequenceJobKeyDataKey,
+            SequenceInstanceIdDataKey,
+            SequenceTriggerIdDataKey,
+            InvokeJobJobIdDataKey,
+            InvokeJobInstanceIdDataKey,
             RetryTriggerGroup,
             QueueInvokeTriggerGroup,
             RetryTriggerNamePrefix,
@@ -26,6 +31,7 @@ namespace Planar
             NowOverrideValue,
             Author,
             CircuitBreaker,
+            CircuitBreakerTriggerGroup,
             LogRetentionDays
         };
 

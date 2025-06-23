@@ -84,8 +84,8 @@ public abstract class PlanarJob(
     {
         try
         {
-            if (context.JobDetail.JobDataMap.TryGetValue(Consts.InvokeJobJobIdDataKey, out var jobIdObj) &&
-                context.JobDetail.JobDataMap.TryGetValue(Consts.InvokeJobInstanceIdDataKey, out var instanceIdObj))
+            if (context.MergedJobDataMap.TryGetValue(Consts.InvokeJobJobIdDataKey, out var jobIdObj) &&
+                context.MergedJobDataMap.TryGetValue(Consts.InvokeJobInstanceIdDataKey, out var instanceIdObj))
             {
                 var jobId = jobIdObj?.ToString() ?? "[no job id]";
                 var instanceId = instanceIdObj?.ToString() ?? "[no instance id]";
@@ -595,11 +595,12 @@ public abstract class PlanarJob(
 
         try
         {
+            var jobKey = await jobActions.InternalJobPrepareQueueInvoke(request);
             request.Data ??= [];
             request.Data.TryAdd(Consts.InvokeJobJobIdDataKey, MessageBroker.Context.JobDetail.Key.ToString());
             request.Data.TryAdd(Consts.InvokeJobInstanceIdDataKey, MessageBroker.Context.FireInstanceId);
 
-            var trigger = await jobActions.QueueInvoke(request);
+            var trigger = await jobActions.InternalJobQueueInvoke(request, jobKey);
             Log(LogLevel.Information, $"job invoke queued successfully. job id: {request.Id}. trigger id: {trigger.Id}");
         }
         catch (Exception ex)

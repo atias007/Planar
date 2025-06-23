@@ -781,13 +781,16 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
     }
 
-    public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
+    public async Task<JobKey> InternalJobPrepareQueueInvoke(QueueInvokeJobRequest request)
     {
-        // build new job
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
         ValidateDataMap(request.Data, "queue invoke");
+        return jobKey;
+    }
 
+    public async Task<PlanarIdResponse> InternalJobQueueInvoke(QueueInvokeJobRequest request, JobKey jobKey)
+    {
         var job = await Scheduler.GetJobDetail(jobKey);
         if (job == null) { return new PlanarIdResponse(); }
 
@@ -803,7 +806,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         var newTrigger = TriggerBuilder.Create()
             .WithIdentity(triggerKey)
             .UsingJobData(Consts.TriggerId, triggerId)
-            .WithPriority(int.MaxValue)
+            .WithPriority(int.MaxValue - 2)
             .StartAt(request.DueDate)
             .WithSimpleSchedule(b =>
             {
@@ -817,12 +820,15 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
         }
 
-        if (request.Data != null && request.Data.Count != 0)
+        request.Data ??= [];
+        if (request.NowOverrideValue.HasValue)
         {
-            foreach (var item in request.Data)
-            {
-                newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
-            }
+            request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
+        }
+
+        foreach (var item in request.Data)
+        {
+            newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
         }
 
         try
@@ -836,9 +842,15 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             throw;
         }
 
-        AuditJobSafe(jobKey, "job queue invoked", request);
-
         return new PlanarIdResponse { Id = triggerId };
+    }
+
+    public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
+    {
+        var jobKey = await InternalJobPrepareQueueInvoke(request);
+        var response = await InternalJobQueueInvoke(request, jobKey);
+        AuditJobSafe(jobKey, "job queue invoked", request);
+        return response;
     }
 
     public async Task Remove(string id)

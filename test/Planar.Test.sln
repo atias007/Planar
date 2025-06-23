@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryLeak", "MemoryLeak\Me
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestInvokeJobApi", "TestInvokeJobApi\TestInvokeJobApi.csproj", "{ABE8525A-FDC9-472E-9161-1E43C89B142A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestInvokeJobApi2", "TestInvokeJobApi2\TestInvokeJobApi2.csproj", "{87A4DD88-1DA1-4FC3-8891-3B850913B440}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +121,10 @@ Global
 		{ABE8525A-FDC9-472E-9161-1E43C89B142A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABE8525A-FDC9-472E-9161-1E43C89B142A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABE8525A-FDC9-472E-9161-1E43C89B142A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
