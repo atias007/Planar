@@ -6,7 +6,7 @@ namespace PlanarJob;
 internal class InvokeJobModel
 {
     public string Id { get; set; } = null!;
-    public InvokeJobOptions Options { get; set; } = null!;
+    public InvokeJobOptions? Options { get; set; } = null!;
 }
 
 internal class QueueInvokeJobModel : InvokeJobModel

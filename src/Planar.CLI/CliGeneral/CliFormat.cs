@@ -9,7 +9,7 @@ namespace Planar.CLI.CliGeneral
         internal const string WarningColor = "khaki3";
         internal const string OkColor = "green";
         internal const string ErrorColor = "Red";
-        //internal const string Suggestion = "turquoise2";
+        internal const string Suggestion = "turquoise2";
 
         internal static readonly string Seperator = string.Empty.PadLeft(50, '-');
 

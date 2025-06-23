@@ -276,18 +276,20 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
 
         // fill IsActive property
-        var jobList = jobs.Select(j => MapJobDetailsSlim(j).Result).ToList();
+        var jobList = jobs
+            .Select(async j => await MapJobDetailsSlim(j))
+            .Select(t => t.Result);
 
         // filter by active
         if (request.Active.HasValue)
         {
             if (request.Active.Value)
             {
-                jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive).ToList();
+                jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive && r.Active != JobActiveMembers.NoTrigger);
             }
             else
             {
-                jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive).ToList();
+                jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive || r.Active == JobActiveMembers.NoTrigger);
             }
         }
 
@@ -299,7 +301,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             .SetPaging(request)
             .ToList();
 
-        return new PagingResponse<JobBasicDetails>(request, result, jobList.Count);
+        return new PagingResponse<JobBasicDetails>(request, result, jobList.Count());
     }
 
     public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
@@ -1007,6 +1009,11 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         if (isActive == JobActiveMembers.Active)
         {
             throw new RestValidationException("id", "all job triggers are active. there is no trigger to auto resume");
+        }
+
+        if (isActive == JobActiveMembers.NoTrigger)
+        {
+            throw new RestValidationException("id", "job has no triggers to auto resume");
         }
 
         await CancelQueuedResumeJob(jobKey);

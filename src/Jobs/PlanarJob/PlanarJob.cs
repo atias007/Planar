@@ -49,6 +49,7 @@ public abstract class PlanarJob(
             await Initialize(context);
             ValidateProcessJob();
             ValidateExeFile();
+            SafeLogInvokeJobDetails(context);
             context.CancellationToken.Register(OnCancel);
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
             var startInfo = GetProcessStartInfo();
@@ -76,6 +77,28 @@ public abstract class PlanarJob(
             FinalizeProcess();
             UnregisterMqttBrokerService(context.FireInstanceId);
             SafeDeleteContextFile();
+        }
+    }
+
+    private void SafeLogInvokeJobDetails(IJobExecutionContext context)
+    {
+        try
+        {
+            if (context.JobDetail.JobDataMap.TryGetValue(Consts.InvokeJobJobIdDataKey, out var jobIdObj) &&
+                context.JobDetail.JobDataMap.TryGetValue(Consts.InvokeJobInstanceIdDataKey, out var instanceIdObj))
+            {
+                var jobId = jobIdObj?.ToString() ?? "[no job id]";
+                var instanceId = instanceIdObj?.ToString() ?? "[no instance id]";
+                MessageBroker.AppendLog(LogLevel.Information, Seperator);
+                MessageBroker.AppendLog(LogLevel.Information, "job was invoked from another planar job");
+                MessageBroker.AppendLog(LogLevel.Information, $"invoker job key: {jobId}");
+                MessageBroker.AppendLog(LogLevel.Information, $"invoker instance id: {instanceId}");
+                MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail to log invoke job details at {Method}", nameof(SafeLogInvokeJobDetails));
         }
     }
 
@@ -514,12 +537,12 @@ public abstract class PlanarJob(
 
             case MessageBrokerChannels.InvokeJob:
                 var invokeValue = GetCloudEventEntityValue<InvokeJobModel>(e.CloudEvent);
-                _ = RunInvokeJob(invokeValue);
+                RunInvokeJob(invokeValue).Wait();
                 break;
 
             case MessageBrokerChannels.QueueInvokeJob:
                 var queueInvokeValue = GetCloudEventEntityValue<QueueInvokeJobModel>(e.CloudEvent);
-                _ = RunQueueInvokeJob(queueInvokeValue);
+                RunQueueInvokeJob(queueInvokeValue).Wait();
                 break;
 
             default:
@@ -533,9 +556,9 @@ public abstract class PlanarJob(
         var request = new QueueInvokeJobRequest
         {
             Id = invokeJob.Id,
-            Data = invokeJob.Options.Data,
-            NowOverrideValue = invokeJob.Options.NowOverrideValue,
-            Timeout = invokeJob.Options.Timeout,
+            Data = invokeJob.Options?.Data,
+            NowOverrideValue = invokeJob.Options?.NowOverrideValue,
+            Timeout = invokeJob.Options?.Timeout,
             DueDate = DateTime.Now.AddSeconds(3) // Default due date for invoke job is 3 seconds from now
         };
 
@@ -547,9 +570,9 @@ public abstract class PlanarJob(
         var request = new QueueInvokeJobRequest
         {
             Id = invokeJob.Id,
-            Data = invokeJob.Options.Data,
-            NowOverrideValue = invokeJob.Options.NowOverrideValue,
-            Timeout = invokeJob.Options.Timeout,
+            Data = invokeJob.Options?.Data,
+            NowOverrideValue = invokeJob.Options?.NowOverrideValue,
+            Timeout = invokeJob.Options?.Timeout,
             DueDate = invokeJob.DueDate
         };
 
@@ -565,20 +588,24 @@ public abstract class PlanarJob(
         if (!validationResult.IsValid)
         {
             var errorMessage = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-            Log(LogLevel.Error, $"validation failed for job invoke. job id {request.Id}. error: {errorMessage}");
+            Log(LogLevel.Error, $"validation failed for job invoke. job id: {request.Id}. error: {errorMessage}");
             _jobActionExceptions.Add(new PlanarJobException($"validation failed for job invoke. job id {request.Id}"));
             return;
         }
 
         try
         {
+            request.Data ??= [];
+            request.Data.TryAdd(Consts.InvokeJobJobIdDataKey, MessageBroker.Context.JobDetail.Key.ToString());
+            request.Data.TryAdd(Consts.InvokeJobInstanceIdDataKey, MessageBroker.Context.FireInstanceId);
+
             var trigger = await jobActions.QueueInvoke(request);
-            Log(LogLevel.Information, $"job invoke request queued successfully. job id {request.Id}. trigger id {trigger.Id}");
+            Log(LogLevel.Information, $"job invoke queued successfully. job id: {request.Id}. trigger id: {trigger.Id}");
         }
         catch (Exception ex)
         {
             Log(LogLevel.Error, $"job invoke failed for. job id {request.Id}. error: {ex.Message}");
-            _jobActionExceptions.Add(new PlanarJobException($"job invoke failed for. job id {request.Id}. error: {ex.Message}"));
+            _jobActionExceptions.Add(new PlanarJobException($"job invoke failed for. job id: {request.Id}. error: {ex.Message}"));
         }
     }
 

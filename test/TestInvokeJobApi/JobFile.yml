@@ -1,0 +1,12 @@
+﻿job type: PlanarJob
+name: TestInvokeJobApi
+group: Demo
+description: Test Invoke Job Api
+durable: true
+concurrent: false
+properties:
+  filename: TestInvokeJobApi.exe
+simple triggers:
+  - name: default_trigger
+    interval: 01:00:00
+    misfire behaviour: FireNow

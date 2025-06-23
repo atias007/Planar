@@ -6,7 +6,8 @@ public enum JobActiveMembers
 {
     Active,
     PartiallyActive,
-    Inactive
+    Inactive,
+    NoTrigger
 }
 
 public class JobBasicDetails

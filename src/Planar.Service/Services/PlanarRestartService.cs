@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Services;
 
-internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IHostedService
+internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
     private const int _bytesInMegaByte = 1024 * 1024;
     private int _memoryHighCount;
@@ -24,26 +24,16 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     private DateTimeOffset? _lastMemoryLog;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
-    private Task _monitorTask = Task.CompletedTask;
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _monitorTask = Task.Run(async () =>
+        while (!stoppingToken.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken); // Check every minute
-                await SafeCheckForRestart();
-            }
-        }, cancellationToken);
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // Check every minute
+            await SafeCheckForRestart();
+        }
 
-        return _monitorTask;
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
         Interlocked.Exchange(ref _memoryHighCount, 0);
-        try { await _monitorTask; } catch { /* swallow */ }
     }
 
     private async Task SafeCheckForRestart()
