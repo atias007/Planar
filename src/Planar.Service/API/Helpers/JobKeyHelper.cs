@@ -6,7 +6,6 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API.Helpers;
 

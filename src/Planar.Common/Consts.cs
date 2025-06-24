@@ -16,6 +16,11 @@ namespace Planar
             RetryCounter,
             RetrySpan,
             MaxRetries,
+            SequenceJobKeyDataKey,
+            SequenceInstanceIdDataKey,
+            SequenceTriggerIdDataKey,
+            InvokeJobJobIdDataKey,
+            InvokeJobInstanceIdDataKey,
             RetryTriggerGroup,
             QueueInvokeTriggerGroup,
             RetryTriggerNamePrefix,
@@ -26,6 +31,7 @@ namespace Planar
             NowOverrideValue,
             Author,
             CircuitBreaker,
+            CircuitBreakerTriggerGroup,
             LogRetentionDays
         };
 
@@ -43,6 +49,10 @@ namespace Planar
         public const string SequenceJobKeyDataKey = "__Sequence_Job_Key";
         public const string SequenceInstanceIdDataKey = "__Sequence_Instance_Id";
         public const string SequenceTriggerIdDataKey = "__Sequence_Trigger_Id";
+
+        public const string InvokeJobJobIdDataKey = "__InvokeJob_Job_Id";
+        public const string InvokeJobInstanceIdDataKey = "__InvokeJob_Instance_Id";
+
         public const int DefaultMaxRetries = 3;
 
         public const string QueueInvokeTriggerGroup = "__QueueInvoke";

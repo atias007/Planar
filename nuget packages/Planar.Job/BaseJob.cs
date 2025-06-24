@@ -5,11 +5,13 @@ using Planar.Common;
 using Planar.Job.Logger;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using YamlDotNet.Core.Tokens;
 using Timer = System.Timers.Timer;
 
 namespace Planar.Job
@@ -129,7 +131,7 @@ namespace Planar.Job
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
                 var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
                 _timer = new Timer(timeoutms);
-                _timer.Elapsed += async (s, e) => await TimerElapsed(s, e);
+                _timer.Elapsed += async (s, e) => await TimerElapsed();
                 _timer.Start();
 
                 var task = ExecuteJob(_context);
@@ -228,7 +230,6 @@ namespace Planar.Job
         {
             try
             {
-                // TODO: change the port to variable
                 MqttClient.StartFailOver(_context.FireInstanceId, _context.JobFailOverPort);
                 await MqttClient.PingAsync();
                 await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
@@ -270,7 +271,7 @@ namespace Planar.Job
             _executeResetEvent?.Set();
         }
 
-        private void SafeHandle(Action action)
+        private static void SafeHandle(Action action)
         {
             try
             {
@@ -282,7 +283,7 @@ namespace Planar.Job
             }
         }
 
-        private async Task SafeHandleAsync(Func<Task> action)
+        private static async Task SafeHandleAsync(Func<Task> action)
         {
             try
             {
@@ -319,14 +320,38 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        protected static void ValidateMaxLength(string value, int length, string name)
+        private static void ValidateMaxLength(string value, int length, string name)
 #else
-        protected static void ValidateMaxLength(string? value, int length, string name)
+        private static void ValidateMaxLength(string? value, int length, string name)
 #endif
         {
             if (value != null && value.Length > length)
             {
                 throw new PlanarJobException($"{name} length is invalid. maximum length is {length}".Trim());
+            }
+        }
+
+        private static void ValidateFutureDate(DateTime date, string name)
+        {
+            if (date <= DateTime.Now)
+            {
+                throw new PlanarJobException($"{name} must be greater then now");
+            }
+        }
+
+        private static void ValidateRequired(string value, string name)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new PlanarJobException($"{name} is required");
+            }
+        }
+
+        private static void ValidateNotZero(TimeSpan? value, string name)
+        {
+            if (value != null && value == TimeSpan.Zero)
+            {
+                throw new PlanarJobException($"{name} is invalid. ${name} must be greater then 0");
             }
         }
 
@@ -423,9 +448,36 @@ namespace Planar.Job
             await _baseJobFactory.IncreaseEffectedRowsAsync(value);
         }
 
-        public async Task SetEffectedRowsAsync(int value = 1)
+        public async Task SetEffectedRowsAsync(int value)
         {
             await _baseJobFactory.SetEffectedRowsAsync(value);
+        }
+
+#if NETSTANDARD2_0
+
+        public Task InvokeJobAsync(string id, InvokeJobOptions options = null)
+
+#else
+        public Task InvokeJobAsync(string id, InvokeJobOptions? options = null)
+#endif
+        {
+            ValidateJobId(id);
+            ValidateInvokeOptions(options);
+            return _baseJobFactory.InvokeJobAsync(id, options);
+        }
+
+#if NETSTANDARD2_0
+
+        public Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions options = null)
+#else
+        public Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions? options = null)
+#endif
+        {
+            ValidateFutureDate(dueDate, nameof(dueDate));
+            ValidateJobId(id);
+            ValidateInvokeOptions(options);
+
+            return _baseJobFactory.QueueInvokeJobAsync(id, dueDate, options);
         }
 
         private static void FilterJobData(IDataMap dictionary)
@@ -486,7 +538,7 @@ namespace Planar.Job
             }
         }
 
-        private bool ContainsKey(string key, IDataMap data)
+        private static bool ContainsKey(string key, IDataMap data)
         {
             return data.Any(k => string.Equals(k.Key, key, StringComparison.OrdinalIgnoreCase));
         }
@@ -503,7 +555,7 @@ namespace Planar.Job
             if (PlanarJob.Mode == RunningMode.Debug)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(text);
+                await Console.Error.WriteLineAsync(text);
                 Console.ResetColor();
             }
         }
@@ -603,7 +655,7 @@ namespace Planar.Job
             Logger.LogInformation("job version: {Version}", Version);
         }
 
-        private async Task TimerElapsed(object sender, ElapsedEventArgs e)
+        private async Task TimerElapsed()
         {
             try
             {
@@ -626,6 +678,58 @@ namespace Planar.Job
             }
 
             Environment.Exit(-1);
+        }
+
+        private static void ValidateJobId(string id)
+        {
+            ValidateRequired(id, nameof(id));
+            ValidateRange(id, 11, 101, nameof(id));
+        }
+
+#if NETSTANDARD2_0
+
+        private static void ValidateInvokeOptions(InvokeJobOptions options)
+#else
+        private static void ValidateInvokeOptions(InvokeJobOptions? options)
+#endif
+        {
+            if (options == null) { return; }
+
+            ValidateNotZero(options.Timeout, $"{nameof(options)}.{nameof(options.Timeout)}");
+            ValidateDataMap(options.Data);
+        }
+
+#if NETSTANDARD2_0
+
+        private static void ValidateDataMap(Dictionary<string, string> data)
+#else
+        private static void ValidateDataMap(Dictionary<string, string?>? data)
+#endif
+
+        {
+            if (data == null || data.Count == 0) { return; }
+
+            if (data.Count > Consts.MaximumJobDataItems)
+            {
+                throw new PlanarJobException($"options.Data has more then {Consts.MaximumJobDataItems:N0} items");
+            }
+
+            foreach (var item in data)
+            {
+                ValidateMaxLength(item.Key, 1000, $"options.Data.{item.Key}");
+                ValidateMaxLength(item.Value, 1000, $"options.Data.{item.Value}");
+            }
+
+            var invalidKeys = data
+                .Where(item => !Consts.IsDataKeyValid(item.Key))
+                .Select(item => item.Key)
+                .ToList();
+
+            if (invalidKeys.Count > 0)
+            {
+                var keys = string.Join(",", invalidKeys);
+                throw new PlanarJobException($"options.Data key(s) '{keys}' is invalid");
+            }
         }
     }
 }

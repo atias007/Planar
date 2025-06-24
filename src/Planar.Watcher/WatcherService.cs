@@ -161,17 +161,18 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
             Exit();
             return;
         }
+
         if (settings.StartServiceTimeout <= TimeSpan.Zero)
         {
             logger.LogError("StartServiceTimeout must be greater than zero");
             Exit();
             return;
         }
+
         if (settings.StopPendingServiceTimeout <= TimeSpan.Zero)
         {
             logger.LogError("StopPendingServiceTimeout must be greater than zero");
             Exit();
-            return;
         }
     }
 }

@@ -120,7 +120,7 @@ public static class JobHelper
     public static async Task<JobActiveMembers> GetJobActiveMode(IScheduler scheduler, JobKey jobKey)
     {
         var triggers = await scheduler.GetTriggersOfJob(jobKey);
-        if (triggers == null || triggers.Count == 0) { return JobActiveMembers.Inactive; }
+        if (triggers == null || triggers.Count == 0) { return JobActiveMembers.NoTrigger; }
 
         var hasActive = false;
         var hasInactive = false;

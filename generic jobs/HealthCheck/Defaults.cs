@@ -16,7 +16,7 @@ internal class Defaults : BaseDefault, IEndpoint
     public Defaults(IConfigurationSection section) : base(section, Empty)
     {
         var empty = Empty;
-        SuccessStatusCodes = section.GetValue<int[]?>("success status codes") ?? empty.SuccessStatusCodes;
+        SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>() ?? empty.SuccessStatusCodes;
         Timeout = section.GetValue<TimeSpan?>("timeout") ?? empty.Timeout;
     }
 

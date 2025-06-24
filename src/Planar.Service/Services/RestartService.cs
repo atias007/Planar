@@ -13,40 +13,42 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Services;
 
-internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IHostedService
+internal sealed class RestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
     private const int _bytesInMegaByte = 1024 * 1024;
     private int _memoryHighCount;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
-    private readonly ILogger<PlanarRestartService> _logger = serviceProvider.GetRequiredService<ILogger<PlanarRestartService>>();
-    private readonly SchedulerHealthCheckUtil _schedulerHealthCheckUtil = serviceProvider.GetRequiredService<SchedulerHealthCheckUtil>();
+    private readonly ILogger<RestartService> _logger = serviceProvider.GetRequiredService<ILogger<RestartService>>();
+    private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private DateTimeOffset? _lastMemoryLog;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
-    private Task _monitorTask = Task.CompletedTask;
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _monitorTask = Task.Run(async () =>
+        while (!stoppingToken.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken); // Check every minute
-                await SafeCheckForRestart();
-            }
-        }, cancellationToken);
+            await Wait(stoppingToken);
+            await SafeCheckForRestart(stoppingToken);
+        }
 
-        return _monitorTask;
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
         Interlocked.Exchange(ref _memoryHighCount, 0);
-        try { await _monitorTask; } catch { /* swallow */ }
     }
 
-    private async Task SafeCheckForRestart()
+    private static async Task Wait(CancellationToken stoppingToken)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // Check every minute
+        }
+        catch (TaskCanceledException)
+        {
+            // *** DO NOHING *** //
+        }
+    }
+
+    private async Task SafeCheckForRestart(CancellationToken stoppingToken)
     {
         try
         {
@@ -58,18 +60,20 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
 
             if (IsMemoryHigh(usedMemory))
             {
+                if (stoppingToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
                 SafeLog(usedMemory);
                 if (!AppSettings.Protection.RestartOnHighMemoryUsage) { return; }
-                await GracefulShutDown();
+                await GracefulShutDown(stoppingToken);
             }
             else if (!await IsSchedulerHealthy())
             {
+                if (stoppingToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
                 _logger.LogCritical("scheduler engine is unhealthy. start graceful end of the process. stand by scheduler");
-                await GracefulShutDown();
+                await GracefulShutDown(stoppingToken);
             }
             else
             {
-                await CheckForRegularRestart();
+                await CheckForRegularRestart(stoppingToken);
             }
         }
         catch (Exception ex)
@@ -78,14 +82,14 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private async Task CheckForRegularRestart()
+    private async Task CheckForRegularRestart(CancellationToken cancellationToken)
     {
         if (_invokeRegularRestart)
         {
-            var current = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
+            var current = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
             if (current == 0)
             {
-                await GracefulRestart();
+                await GracefulRestart(cancellationToken);
             }
 
             return;
@@ -113,7 +117,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     {
         try
         {
-            return await _schedulerHealthCheckUtil.IsHealthyAsync();
+            return await _schedulerUtil.IsHealthyAsync();
         }
         catch (Exception ex)
         {
@@ -157,13 +161,14 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private void SafeMonitorRegularApplicationRestart()
+    private void SafeMonitorRegularApplicationRestart(CancellationToken cancellationToken)
     {
         try
         {
             var info = new MonitorSystemInfo("Regular restart invoked. Original restart date {{OriginDate}}");
             info.MessagesParameters.Add("OriginDate", _nextRegularRestart.ToString());
             info.AddMachineName();
+            if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
             MonitorUtil.SafeSystemScan(serviceScopeFactory, _logger, MonitorEvents.RegularApplicationRestart, info, null);
         }
         catch (Exception ex)
@@ -172,22 +177,22 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private async Task GracefulShutDown()
+    private async Task GracefulShutDown(CancellationToken cancellationToken)
     {
-        await SafeStandBy();
-        await SafeShutdown();
-        await SafeDelay();
-        CloseApplication();
+        await SafeStandBy(cancellationToken);
+        await SafeShutdown(withLog: true, cancellationToken);
+        await SafeDelay(withLog: true, cancellationToken);
+        CloseApplication(withLog: true, cancellationToken);
     }
 
-    private async Task GracefulRestart()
+    private async Task GracefulRestart(CancellationToken cancellationToken)
     {
-        SafeRestartLog();
-        SafeMonitorRegularApplicationRestart();
-        await SafeStandBy();
-        await SafeShutdown(withLog: false);
-        await SafeDelay(withLog: false);
-        CloseApplication(withLog: false);
+        SafeRestartLog(cancellationToken);
+        SafeMonitorRegularApplicationRestart(cancellationToken);
+        await SafeStandBy(cancellationToken);
+        await SafeShutdown(withLog: false, cancellationToken);
+        await SafeDelay(withLog: false, cancellationToken);
+        CloseApplication(withLog: false, cancellationToken);
     }
 
     private DateTime? GetNextRegularRestartDate()
@@ -206,7 +211,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private void CloseApplication(bool withLog = true)
+    private void CloseApplication(bool withLog, CancellationToken cancellationToken)
     {
         try
         {
@@ -219,9 +224,9 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
 
                 var app = _serviceProvider.GetRequiredService<IHostApplicationLifetime>();
                 app.StopApplication();
-            });
+            }, cancellationToken);
 
-            var success = task.Wait(TimeSpan.FromMinutes(5));
+            var success = task.Wait(TimeSpan.FromMinutes(5), cancellationToken);
             if (!success)
             {
                 Environment.Exit(-1);
@@ -233,45 +238,48 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private async Task SafeDelay(bool withLog = true)
+    private async Task SafeDelay(bool withLog, CancellationToken cancellationToken)
     {
         try
         {
             // extra time to handle monitors
             if (withLog)
             {
+                if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
                 _logger.LogCritical("memory usage is too high. wait extra 30 seconds to handle monitoring");
             }
-            await Task.Delay(30_000);
+            await Task.Delay(30_000, cancellationToken);
         }
         catch (Exception ex)
         {
+            if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
             _logger.LogCritical(ex, "fail to delay shutdown (regular restart or high memory usage)");
         }
     }
 
-    private async Task SafeShutdown(bool withLog = true)
+    private async Task SafeShutdown(bool withLog, CancellationToken cancellationToken)
     {
         try
         {
-            var count = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
-            if (withLog)
+            var count = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
+            if (count > 0 && withLog)
             {
-                _logger.LogCritical("memory usage is too high. shut down scheduler (with wait until complete {Count} current tasks)", count);
+                _logger.LogCritical("shut down scheduler (with wait until complete {Count} current tasks)", count);
             }
         }
         catch (Exception ex)
         {
             if (withLog)
             {
-                _logger.LogCritical(ex, "memory usage is too high. shut down scheduler (with wait until complete current tasks)");
+                _logger.LogCritical(ex, "fail to shut down scheduler");
             }
         }
 
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
-            await _scheduler.Shutdown(true, cts.Token);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
+            await _scheduler.Shutdown(true, linked.Token);
         }
         catch (Exception ex)
         {
@@ -279,11 +287,11 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private async Task SafeStandBy()
+    private async Task SafeStandBy(CancellationToken cancellationToken)
     {
         try
         {
-            await _scheduler.Standby();
+            await _scheduler.Standby(cancellationToken);
         }
         catch
         {
@@ -307,10 +315,11 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
-    private void SafeRestartLog()
+    private void SafeRestartLog(CancellationToken cancellationToken)
     {
         try
         {
+            if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
             _logger.LogWarning("regular restart invoked. original restart date {Date}", _nextRegularRestart);
         }
         catch

@@ -70,12 +70,12 @@ public class MainService : BackgroundService
             return;
         }
 
-        _lifetime.ApplicationStopping.Register(() =>
+        _lifetime.ApplicationStopping.Register(async () =>
         {
             _logger.LogInformation("IsCancellationRequested = {Value}", stoppingToken.IsCancellationRequested);
             try
             {
-                RemoveSchedulerCluster().Wait();
+                await RemoveSchedulerCluster();
             }
             catch (Exception ex)
             {
@@ -84,7 +84,7 @@ public class MainService : BackgroundService
 
             try
             {
-                _schedulerUtil.Shutdown(stoppingToken).Wait();
+                await _schedulerUtil.Shutdown(stoppingToken);
             }
             catch
             {

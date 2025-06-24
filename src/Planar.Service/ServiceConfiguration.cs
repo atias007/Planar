@@ -39,6 +39,8 @@ namespace Planar.Service
             services.AddScoped<ClusterDomain>();
             services.AddScoped<MetricsDomain>();
 
+            services.AddScoped<IJobActions, JobDomain>(p => p.GetRequiredService<JobDomain>());
+
             // Utils
             services.AddSingleton<ClusterUtil>();
             services.AddSingleton<IClusterUtil>(p => p.GetRequiredService<ClusterUtil>());
@@ -71,7 +73,7 @@ namespace Planar.Service
             services.AddHostedService(p => p.GetRequiredService<AuditService>());
             services.AddHostedService(p => p.GetRequiredService<MonitorService>());
             services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
-            services.AddHostedService<PlanarRestartService>();
+            services.AddHostedService<RestartService>();
             if (AppSettings.Authentication.HasAuthontication)
             {
                 services.AddHostedService(p => p.GetRequiredService<SecurityService>());

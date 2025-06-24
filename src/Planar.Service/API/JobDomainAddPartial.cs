@@ -416,7 +416,7 @@ public partial class JobDomain
 
         foreach (var item in data)
         {
-            ValidateRange(item.Key, 1, 100, "key", $"{title} data".Trim());
+            ValidateRange(item.Key, 1, 200, "key", $"{title} data".Trim());
             ValidateMaxLength(item.Value, 1000, "value", $"{title} data".Trim());
         }
 

@@ -16,6 +16,8 @@
         ReportException,
         ReportExceptionV2,
         HealthCheck,
-        MonitorCustomEvent
+        MonitorCustomEvent,
+        InvokeJob,
+        QueueInvokeJob
     }
 }

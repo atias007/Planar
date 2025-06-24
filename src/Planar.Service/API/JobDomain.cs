@@ -26,7 +26,8 @@ using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
-public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
+public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory)
+    : BaseJobBL<JobDomain, IJobData>(serviceProvider), IJobActions
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
 
@@ -275,18 +276,20 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
 
         // fill IsActive property
-        var jobList = jobs.Select(j => MapJobDetailsSlim(j).Result).ToList();
+        var jobList = jobs
+            .Select(async j => await MapJobDetailsSlim(j))
+            .Select(t => t.Result);
 
         // filter by active
         if (request.Active.HasValue)
         {
             if (request.Active.Value)
             {
-                jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive).ToList();
+                jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive && r.Active != JobActiveMembers.NoTrigger);
             }
             else
             {
-                jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive).ToList();
+                jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive || r.Active == JobActiveMembers.NoTrigger);
             }
         }
 
@@ -298,7 +301,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             .SetPaging(request)
             .ToList();
 
-        return new PagingResponse<JobBasicDetails>(request, result, jobList.Count);
+        return new PagingResponse<JobBasicDetails>(request, result, jobList.Count());
     }
 
     public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
@@ -778,13 +781,16 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
     }
 
-    public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
+    public async Task<JobKey> InternalJobPrepareQueueInvoke(QueueInvokeJobRequest request)
     {
-        // build new job
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
         ValidateDataMap(request.Data, "queue invoke");
+        return jobKey;
+    }
 
+    public async Task<PlanarIdResponse> InternalJobQueueInvoke(QueueInvokeJobRequest request, JobKey jobKey)
+    {
         var job = await Scheduler.GetJobDetail(jobKey);
         if (job == null) { return new PlanarIdResponse(); }
 
@@ -800,7 +806,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         var newTrigger = TriggerBuilder.Create()
             .WithIdentity(triggerKey)
             .UsingJobData(Consts.TriggerId, triggerId)
-            .WithPriority(int.MaxValue)
+            .WithPriority(int.MaxValue - 2)
             .StartAt(request.DueDate)
             .WithSimpleSchedule(b =>
             {
@@ -814,12 +820,15 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
         }
 
-        if (request.Data != null && request.Data.Count != 0)
+        request.Data ??= [];
+        if (request.NowOverrideValue.HasValue)
         {
-            foreach (var item in request.Data)
-            {
-                newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
-            }
+            request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
+        }
+
+        foreach (var item in request.Data)
+        {
+            newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
         }
 
         try
@@ -833,9 +842,15 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             throw;
         }
 
-        AuditJobSafe(jobKey, "job queue invoked", request);
-
         return new PlanarIdResponse { Id = triggerId };
+    }
+
+    public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
+    {
+        var jobKey = await InternalJobPrepareQueueInvoke(request);
+        var response = await InternalJobQueueInvoke(request, jobKey);
+        AuditJobSafe(jobKey, "job queue invoked", request);
+        return response;
     }
 
     public async Task Remove(string id)
@@ -1006,6 +1021,11 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         if (isActive == JobActiveMembers.Active)
         {
             throw new RestValidationException("id", "all job triggers are active. there is no trigger to auto resume");
+        }
+
+        if (isActive == JobActiveMembers.NoTrigger)
+        {
+            throw new RestValidationException("id", "job has no triggers to auto resume");
         }
 
         await CancelQueuedResumeJob(jobKey);

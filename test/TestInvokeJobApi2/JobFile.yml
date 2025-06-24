@@ -1,0 +1,8 @@
+﻿job type: PlanarJob
+name: TestInvokeJobApi2
+group: Demo
+description: Test Invoke Job Api
+durable: true
+concurrent: false
+properties:
+  filename: TestInvokeJobApi2.exe

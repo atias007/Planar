@@ -103,6 +103,12 @@ public abstract class SystemJob
             return null;
         }
 
+        if (await scheduler.GetTriggerState(simpleTrigger.Key, stoppingToken) == TriggerState.Error) // job with faulted trigger
+        {
+            await scheduler.DeleteJob(jobKey, stoppingToken);
+            return null;
+        }
+
         var existsInterval = Convert.ToInt32(Math.Floor(simpleTrigger.RepeatInterval.TotalSeconds));
         var currentInterval = Convert.ToInt32(Math.Floor(triggerInterval.TotalSeconds));
         if (startDate == null && existsInterval == currentInterval) { return job; }

@@ -109,6 +109,7 @@ public static class CliTableFormat
     {
         if (active == JobActiveMembers.Active) { return $"  {jobId}"; }
         if (active == JobActiveMembers.PartiallyActive) { return $"[{CliFormat.WarningColor}]{bullet}[/] {jobId}"; }
+        if (active == JobActiveMembers.NoTrigger) { return $"[{CliFormat.Suggestion}]{bullet}[/] {jobId}"; }
         if (active == JobActiveMembers.Inactive) { return $"[{CliFormat.ErrorColor}]{bullet}[/] {jobId}"; }
 
         return jobId;
@@ -372,6 +373,7 @@ public static class CliTableFormat
         {
             JobActiveMembers.Active => $"[{CliFormat.OkColor}]{text}[/]",
             JobActiveMembers.PartiallyActive => $"[{CliFormat.WarningColor}]{text}[/]",
+            JobActiveMembers.NoTrigger => $"[{CliFormat.Suggestion}]{text}[/]",
             JobActiveMembers.Inactive => $"[{CliFormat.ErrorColor}]{text}[/]",
             _ => text,
         };
