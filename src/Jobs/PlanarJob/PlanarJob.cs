@@ -169,12 +169,10 @@ public abstract class PlanarJob(
         else
         {
             if (_jobActionExceptions.Count == 0) { throw _executionException; }
-            if (_jobActionExceptions.Count > 0)
-            {
-                var list = new List<Exception> { _executionException };
-                list.AddRange(_jobActionExceptions);
-                throw new AggregateException("there are multiple errors", list);
-            }
+
+            var list = new List<Exception> { _executionException };
+            list.AddRange(_jobActionExceptions);
+            throw new AggregateException("there are multiple errors", list);
         }
     }
 
