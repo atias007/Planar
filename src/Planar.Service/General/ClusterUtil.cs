@@ -772,7 +772,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
 
     private async Task RegisterCurrentNodeIfNotExists(IEnumerable<ClusterNode> allNodes)
     {
-        if (!allNodes.Any(n => n.IsCurrentNode) && _schedulerUtil.IsSchedulerRunning)
+        if (!allNodes.Any(n => n.IsCurrentNode) && await _schedulerUtil.IsHealthyAsync())
         {
             var currentNode = new ClusterNode
             {

@@ -43,8 +43,8 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         using var scope = _serviceScopeFactory.CreateScope();
         var logger = scope.ServiceProvider.GetService<ILogger<ClusterService>>();
         var schedulerUtil = scope.ServiceProvider.GetService<SchedulerUtil>();
-        schedulerUtil.HealthCheck(logger);
-        return await Task.FromResult(new Empty());
+        await schedulerUtil.HealthCheck(logger);
+        return new Empty();
     }
 
     // OK

@@ -20,7 +20,7 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
         var result = await DataLayer.GetClusterNodes();
         if (!AppSettings.Cluster.Clustering && result.Count == 1)
         {
-            var hc = SchedulerUtil.IsSchedulerRunning;
+            var hc = await SchedulerUtil.IsHealthyAsync();
             if (hc)
             {
                 result[0].HealthCheckDate = DateTime.Now;

@@ -56,7 +56,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         var serviceUnavaliable = false;
         var result = new StringBuilder();
 
-        var hc = SchedulerUtil.IsSchedulerRunning;
+        var hc = await SchedulerUtil.IsHealthyAsync();
         if (hc)
         {
             result.AppendLine("scheduler: healthy");

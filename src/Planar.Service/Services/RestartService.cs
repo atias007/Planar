@@ -13,14 +13,14 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Services;
 
-internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
+internal sealed class RestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
     private const int _bytesInMegaByte = 1024 * 1024;
     private int _memoryHighCount;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
-    private readonly ILogger<PlanarRestartService> _logger = serviceProvider.GetRequiredService<ILogger<PlanarRestartService>>();
-    private readonly SchedulerHealthCheckUtil _schedulerHealthCheckUtil = serviceProvider.GetRequiredService<SchedulerHealthCheckUtil>();
+    private readonly ILogger<RestartService> _logger = serviceProvider.GetRequiredService<ILogger<RestartService>>();
+    private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private DateTimeOffset? _lastMemoryLog;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
@@ -86,7 +86,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     {
         if (_invokeRegularRestart)
         {
-            var current = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
+            var current = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
             if (current == 0)
             {
                 await GracefulRestart(cancellationToken);
@@ -117,7 +117,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     {
         try
         {
-            return await _schedulerHealthCheckUtil.IsHealthyAsync();
+            return await _schedulerUtil.IsHealthyAsync();
         }
         catch (Exception ex)
         {
