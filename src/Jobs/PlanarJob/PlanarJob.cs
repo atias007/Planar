@@ -160,17 +160,21 @@ public abstract class PlanarJob(
 
     private void CheckJobError()
     {
-        if (_executionException == null && _jobActionExceptions.Count == 0) { return; }
-
-        if (_executionException == null && _jobActionExceptions.Count == 1) { throw _jobActionExceptions[0]; }
-        if (_executionException == null && _jobActionExceptions.Count > 1) { throw new AggregateException("there are multiple job invoke errors", _jobActionExceptions); }
-
-        if (_executionException != null && _jobActionExceptions.Count == 0) { throw _executionException; }
-        if (_executionException != null && _jobActionExceptions.Count > 0)
+        if (_executionException == null)
         {
-            var list = new List<Exception> { _executionException };
-            list.AddRange(_jobActionExceptions);
-            throw new AggregateException("there are multiple errors", list);
+            if (_jobActionExceptions.Count == 0) { return; }
+            if (_jobActionExceptions.Count == 1) { throw _jobActionExceptions[0]; }
+            if (_jobActionExceptions.Count > 1) { throw new AggregateException("there are multiple job invoke errors", _jobActionExceptions); }
+        }
+        else
+        {
+            if (_jobActionExceptions.Count == 0) { throw _executionException; }
+            if (_jobActionExceptions.Count > 0)
+            {
+                var list = new List<Exception> { _executionException };
+                list.AddRange(_jobActionExceptions);
+                throw new AggregateException("there are multiple errors", list);
+            }
         }
     }
 

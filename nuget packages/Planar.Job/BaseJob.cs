@@ -333,7 +333,7 @@ namespace Planar.Job
 
         private static void ValidateFutureDate(DateTime date, string name)
         {
-            if (date != null && date <= DateTime.Now)
+            if (date <= DateTime.Now)
             {
                 throw new PlanarJobException($"{name} must be greater then now");
             }
