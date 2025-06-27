@@ -30,12 +30,48 @@ public partial class JobDomain
 
     private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
 
+    private static readonly string[] _cronValues = ["auto", "donothing", "fireandproceed", "ignoremisfires"];
+
     private static readonly Regex _regex = new(
-        NameRegexTemplate
+            NameRegexTemplate
             .Replace("@MinNameLength@", MinNameLength.ToString())
             .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
+    private static readonly string[] _simpleValues = ["auto", "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount"];
     private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
+
+    public static void ValidateDataMap(Dictionary<string, string?>? data, string title)
+    {
+        if (data == null) { return; }
+
+        var dataCount = CountUserJobDataItems(data);
+        if (dataCount > Consts.MaximumJobDataItems)
+        {
+            throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})".Trim());
+        }
+
+        if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
+        {
+            throw new RestValidationException("key", $"{title} data key must have value".Trim());
+        }
+
+        foreach (var item in data)
+        {
+            ValidateRange(item.Key, 1, 200, "key", $"{title} data".Trim());
+            ValidateMaxLength(item.Value, 1000, "value", $"{title} data".Trim());
+        }
+
+        var invalidKeys = data
+                .Where(item => !Consts.IsDataKeyValid(item.Key))
+                .Select(item => item.Key)
+                .ToList();
+
+        if (invalidKeys.Count > 0)
+        {
+            var keys = string.Join(',', invalidKeys);
+            throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
+        }
+    }
 
     public async Task<PlanarIdResponse> Add(SetJobPathRequest request)
     {
@@ -69,30 +105,29 @@ public partial class JobDomain
 
     private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
     {
-        if (!string.IsNullOrEmpty(trigger.MisfireBehaviour))
+        if (string.IsNullOrWhiteSpace(trigger.MisfireBehaviour)) { return; }
+
+        var value = trigger.MisfireBehaviour.ToLower().Replace(" ", string.Empty);
+        switch (value)
         {
-            var value = trigger.MisfireBehaviour.ToLower();
-            switch (value)
-            {
-                case "donothing":
-                    builder.WithMisfireHandlingInstructionDoNothing();
-                    break;
+            case "donothing":
+                builder.WithMisfireHandlingInstructionDoNothing();
+                break;
 
-                case "fireandproceed":
-                    builder.WithMisfireHandlingInstructionFireAndProceed();
-                    break;
+            case "fireandproceed":
+                builder.WithMisfireHandlingInstructionFireAndProceed();
+                break;
 
-                case "ignoremisfires":
-                    builder.WithMisfireHandlingInstructionIgnoreMisfires();
-                    break;
+            case "ignoremisfires":
+                builder.WithMisfireHandlingInstructionIgnoreMisfires();
+                break;
 
-                default:
-                    break;
-            }
+            default:
+                break;
         }
     }
 
-    private static void BuidSimpleSchedule(SimpleScheduleBuilder builder, JobSimpleTriggerMetadata trigger)
+    private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, JobSimpleTriggerMetadata trigger)
     {
         // Interval
         builder = builder.WithInterval(trigger.Interval);
@@ -110,7 +145,7 @@ public partial class JobDomain
         // MisfireBehaviour
         if (!string.IsNullOrEmpty(trigger.MisfireBehaviour))
         {
-            var value = trigger.MisfireBehaviour.ToLower();
+            var value = trigger.MisfireBehaviour.ToLower().Replace(" ", string.Empty);
             switch (value)
             {
                 case "firenow":
@@ -137,6 +172,7 @@ public partial class JobDomain
                     builder.WithMisfireHandlingInstructionNowWithRemainingCount();
                     break;
 
+                case "auto":
                 default:
                     break;
             }
@@ -217,7 +253,7 @@ public partial class JobDomain
                 trigger = trigger.EndAt(new DateTimeOffset(t.End.Value));
             }
 
-            trigger = trigger.WithSimpleSchedule(s => BuidSimpleSchedule(s, t));
+            trigger = trigger.WithSimpleSchedule(s => BuildSimpleSchedule(s, t));
 
             return trigger.Build();
         });
@@ -397,39 +433,6 @@ public partial class JobDomain
             if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("cron expression", "cron expression is mandatory in cron trigger"); }
             if (!ValidationUtil.IsValidCronExpression(t.CronExpression)) { throw new RestValidationException("cron expression", $"cron expression '{t.CronExpression}' is invalid"); }
         });
-    }
-
-    public static void ValidateDataMap(Dictionary<string, string?>? data, string title)
-    {
-        if (data == null) { return; }
-
-        var dataCount = CountUserJobDataItems(data);
-        if (dataCount > Consts.MaximumJobDataItems)
-        {
-            throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})".Trim());
-        }
-
-        if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
-        {
-            throw new RestValidationException("key", $"{title} data key must have value".Trim());
-        }
-
-        foreach (var item in data)
-        {
-            ValidateRange(item.Key, 1, 200, "key", $"{title} data".Trim());
-            ValidateMaxLength(item.Value, 1000, "value", $"{title} data".Trim());
-        }
-
-        var invalidKeys = data
-                .Where(item => !Consts.IsDataKeyValid(item.Key))
-                .Select(item => item.Key)
-                .ToList();
-
-        if (invalidKeys.Count > 0)
-        {
-            var keys = string.Join(',', invalidKeys);
-            throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
-        }
     }
 
     private static JobKey ValidateJobMetadata(SetJobRequest metadata, IScheduler scheduler)
@@ -639,21 +642,19 @@ public partial class JobDomain
 
     private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
     {
-        var simpleValues = new[] { "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount" };
         container.SimpleTriggers?.ForEach(t =>
         {
-            if (t.MisfireBehaviour.HasValue() && simpleValues.NotContains(t.MisfireBehaviour?.ToLower()))
+            if (t.MisfireBehaviour.HasValue() && _simpleValues.NotContains(t.MisfireBehaviour?.ToLower()?.Replace(" ", string.Empty)))
             {
-                throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
+                throw new RestValidationException("misfire behaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
             }
         });
 
-        var cronValues = new[] { "donothing", "fireandproceed", "ignoremisfires" };
         container.CronTriggers?.ForEach(t =>
         {
-            if (t.MisfireBehaviour.HasValue() && cronValues.NotContains(t.MisfireBehaviour?.ToLower()))
+            if (t.MisfireBehaviour.HasValue() && _cronValues.NotContains(t.MisfireBehaviour?.ToLower()?.Replace(" ", string.Empty)))
             {
-                throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
+                throw new RestValidationException("misfire behaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
             }
         });
     }

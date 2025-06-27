@@ -56,10 +56,10 @@ simple triggers:                      # List of simple triggers
     end: 2021-09-19 23:59:00          # End date
     interval: 00:01:00                # Interval in [days.]hours:minutes:seconds format
     repeat count: 100                 # Repeat count
-    misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
+    misfire behaviour: auto           # [ auto | fire now | ignore misfires | next with existing count | next with remaining count | now with existing count | now with remaining count ]
     priority: 1                       # Priority [value between 0 to 100]
     calendar: null                    # Calendar name
-    timeout: 00:30:00                 # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
+    timeout: 00:30:00                 # Execution timeout. if the timeout span passed then the cancel command is executed [value between 00:01:00 to 1.00:00:00]
     retry span: 01:00:00              # The time span between retries [value between 00:00:01 to 1.00:00:00]
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
@@ -70,7 +70,7 @@ simple triggers:                      # List of simple triggers
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     cron expression: 0 15 10 ? * MON-FRI     # Cron expression [mandatory]
-    misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
+    misfire behaviour: auto                  # [ auto | do nothing | fire and proceed | ignore misfires ]
     priority: 1                              # Priority [value between 0 to 100]
     calendar: null                           # Calendar name
     timeout: 00:30:00                        # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
