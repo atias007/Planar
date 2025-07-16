@@ -30,7 +30,7 @@
 	  <PackageReference Include="FluentValidation" Version="12.0.0" />
 	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
 	  <PackageReference Include="MQTTnet.Server" Version="5.0.1.1416" />
-	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.11.0.117924">
+	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.14.0.120626">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
