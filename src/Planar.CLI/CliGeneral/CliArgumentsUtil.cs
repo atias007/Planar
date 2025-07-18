@@ -607,7 +607,7 @@ public class CliArgumentsUtil
         if (hour != null) { return TimeSpan.FromHours(hour.Value); }
 
         var day = GetCleanValues(value, "day", "days");
-        if (day != null) { return TimeSpan.FromHours(day.Value); }
+        if (day != null) { return TimeSpan.FromDays(day.Value); }
 
         return null;
 
