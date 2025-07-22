@@ -438,6 +438,8 @@ public partial class JobDomain
     private static JobKey ValidateJobMetadata(SetJobRequest metadata, IScheduler scheduler)
     {
         metadata.JobData ??= [];
+        metadata.SimpleTriggers ??= [];
+        metadata.CronTriggers ??= [];
 
         #region Trim
 
@@ -914,8 +916,8 @@ public partial class JobDomain
         public TriggerPool(ITriggersContainer container)
         {
             var temp = new List<BaseTrigger>();
-            temp.AddRange(container.SimpleTriggers);
-            temp.AddRange(container.CronTriggers);
+            if (container.SimpleTriggers != null) { temp.AddRange(container.SimpleTriggers); }
+            if (container.CronTriggers != null) { temp.AddRange(container.CronTriggers); }
             Triggers = temp;
         }
 
