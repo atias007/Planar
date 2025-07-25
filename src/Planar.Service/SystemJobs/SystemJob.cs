@@ -63,99 +63,67 @@ public abstract class SystemJob
         return jobKey;
     }
 
-    protected static Task<JobKey> ScheduleHighPriority<T>(IScheduler scheduler, string description, TimeSpan interval, DateTime? startDate = null, CancellationToken stoppingToken = default)
+    protected static Task<JobKey> ScheduleHighPriority<T>(IScheduler scheduler, string description, string cronexpr, CancellationToken stoppingToken = default)
         where T : IJob
     {
-        return Schedule<T>(scheduler, description, interval, int.MaxValue, startDate, stoppingToken);
+        return Schedule<T>(scheduler, description, cronexpr, int.MaxValue, stoppingToken);
     }
 
-    protected static Task<JobKey> ScheduleLowPriority<T>(IScheduler scheduler, string description, TimeSpan interval, DateTime? startDate = null, CancellationToken stoppingToken = default)
+    protected static Task<JobKey> ScheduleLowPriority<T>(IScheduler scheduler, string description, string cronexpr, CancellationToken stoppingToken = default)
         where T : IJob
     {
-        return Schedule<T>(scheduler, description, interval, int.MinValue, startDate, stoppingToken);
+        return Schedule<T>(scheduler, description, cronexpr, int.MinValue, stoppingToken);
     }
 
-    private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, TimeSpan span)
-    {
-        builder
-        .WithInterval(span)
-        .RepeatForever();
-
-        if (span.TotalMinutes > 15)
-        {
-            builder.WithMisfireHandlingInstructionFireNow();
-        }
-        else
-        {
-            builder.WithMisfireHandlingInstructionNextWithExistingCount();
-        }
-    }
-
-    private static async Task<IJobDetail?> GetJobDetails(IScheduler scheduler, JobKey jobKey, TimeSpan triggerInterval, DateTime? startDate, CancellationToken stoppingToken = default)
+    private static async Task<IJobDetail?> GetJobDetails(IScheduler scheduler, JobKey jobKey, string cronexpr, CancellationToken stoppingToken = default)
     {
         var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
         if (job == null) { return null; }
 
         var triggers = await scheduler.GetTriggersOfJob(jobKey, stoppingToken);
-        if (triggers.FirstOrDefault() is not ISimpleTrigger simpleTrigger) // job without trigger
+
+        // job without trigger
+        if (triggers.FirstOrDefault() is not ICronTrigger cronTrigger)
         {
             await scheduler.DeleteJob(jobKey, stoppingToken);
             return null;
         }
 
-        if (await scheduler.GetTriggerState(simpleTrigger.Key, stoppingToken) == TriggerState.Error) // job with faulted trigger
+        // job with multiple trigger
+        if (triggers.Count > 1)
         {
             await scheduler.DeleteJob(jobKey, stoppingToken);
             return null;
         }
 
-        var existsInterval = Convert.ToInt32(Math.Floor(simpleTrigger.RepeatInterval.TotalSeconds));
-        var currentInterval = Convert.ToInt32(Math.Floor(triggerInterval.TotalSeconds));
-        if (startDate == null && existsInterval == currentInterval) { return job; }
+        // job with faulted trigger
+        if (await scheduler.GetTriggerState(cronTrigger.Key, stoppingToken) == TriggerState.Error)
+        {
+            await scheduler.DeleteJob(jobKey, stoppingToken);
+            return null;
+        }
 
-        var existsStartDate = NormalizeDateTime(simpleTrigger.StartTimeUtc.DateTime);
-        var currentStartDate = NormalizeDateTime(startDate.GetValueOrDefault().ToUniversalTime());
+        // same cron expression
+        if (string.Equals(cronTrigger.CronExpressionString, cronexpr, StringComparison.OrdinalIgnoreCase)) { return job; }
 
-        var diff = Math.Abs((existsStartDate - currentStartDate).TotalSeconds);
-        if (existsInterval == currentInterval && diff <= 60) { return job; }
         await scheduler.DeleteJob(jobKey, stoppingToken);
         return null;
     }
 
-    private static DateTime NormalizeDateTime(DateTime date)
-    {
-        return DateTime.Now.Date
-            .AddHours(date.Hour)
-            .AddMinutes(date.Minute)
-            .AddSeconds(date.Second);
-    }
-
-    private static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan interval, int priority, DateTime? startDate, CancellationToken stoppingToken)
+    private static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, string cronexpr, int priority, CancellationToken stoppingToken)
         where T : IJob
     {
         var jobKey = CreateJobKey<T>();
-        var job = await GetJobDetails(scheduler, jobKey, interval, startDate, stoppingToken);
+        var job = await GetJobDetails(scheduler, jobKey, cronexpr, stoppingToken);
         if (job != null) { return jobKey; }
         job = CreateJob<T>(jobKey, description);
 
         var triggerId = ServiceUtil.GenerateId();
-        DateTimeOffset jobStart;
-        if (startDate == null)
-        {
-            jobStart = new DateTimeOffset(DateTime.Now);
-            jobStart = jobStart.AddSeconds(-jobStart.Second);
-            jobStart = jobStart.Add(interval);
-        }
-        else
-        {
-            jobStart = new DateTimeOffset(startDate.Value);
-        }
 
         var trigger = TriggerBuilder.Create()
             .WithIdentity(jobKey.Name, jobKey.Group)
-            .StartAt(jobStart)
             .UsingJobData(Consts.TriggerId, triggerId)
-            .WithSimpleSchedule(s => BuildSimpleSchedule(s, interval))
+            .WithCronSchedule(cronexpr, b => b.WithMisfireHandlingInstructionFireAndProceed())
             .WithPriority(priority)
             .Build();
 

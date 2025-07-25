@@ -25,9 +25,8 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "System job for clearing history records from database";
-        var span = TimeSpan.FromHours(24);
-        var start = DateTime.Now.Date.AddDays(1).AddMinutes(30);
-        await ScheduleLowPriority<ClearHistoryJob>(scheduler, description, span, start, stoppingToken);
+        var cronexpr = "0 30 0 ? * *";
+        await ScheduleLowPriority<ClearHistoryJob>(scheduler, description, cronexpr, stoppingToken);
     }
 
     private async Task SafeDoWork(IJobExecutionContext context)

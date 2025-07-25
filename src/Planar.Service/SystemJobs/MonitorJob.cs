@@ -46,8 +46,8 @@ internal class MonitorJob(IServiceScopeFactory scopeFactory, ILogger<MonitorJob>
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "system job for reset monitors with mute status";
-        var span = TimeSpan.FromMinutes(15);
-        await ScheduleHighPriority<MonitorJob>(scheduler, description, span, stoppingToken: stoppingToken);
+        var cronexp = "0 0,15,30,45 * ? * *";
+        await ScheduleHighPriority<MonitorJob>(scheduler, description, cronexp, stoppingToken: stoppingToken);
     }
 
     private async Task ResetMonitorCounter()

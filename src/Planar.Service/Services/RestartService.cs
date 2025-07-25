@@ -22,6 +22,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     private readonly ILogger<RestartService> _logger = serviceProvider.GetRequiredService<ILogger<RestartService>>();
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private DateTimeOffset? _lastMemoryLog;
+    private DateTimeOffset _startup = DateTimeOffset.UtcNow;;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
 
@@ -50,6 +51,12 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
 
     private async Task SafeCheckForRestart(CancellationToken stoppingToken)
     {
+        if (_startup.Subtract(DateTimeOffset.UtcNow).TotalMinutes < 5)
+        {
+            // Skip the first 5 minute after startup to avoid false positives
+            return;
+        }
+
         try
         {
             // 1. Obtain the current application process

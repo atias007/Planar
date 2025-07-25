@@ -8,6 +8,7 @@ using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using TimeSpanConverter;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.SystemJobs;
@@ -22,8 +23,8 @@ public sealed class PersistDataJob(IServiceScopeFactory scopeFactory, ILogger<Pe
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "system job for persist log & exception from running jobs";
-        var span = AppSettings.General.PersistRunningJobsSpan;
-        await ScheduleHighPriority<PersistDataJob>(scheduler, description, span, stoppingToken: stoppingToken);
+        var cronexpr = AppSettings.General.PersistRunningJobsSpan.ToCronExpression();
+        await ScheduleHighPriority<PersistDataJob>(scheduler, description, cronexpr, stoppingToken: stoppingToken);
     }
 
     private async Task SafeDoWork(IJobExecutionContext context)

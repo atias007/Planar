@@ -17,7 +17,23 @@ namespace Planar.CLI.CliGeneral
         private const string header1 = "<COMMAND>";
         private const string header2 = "<ARGUMENTS>";
 
-        public static void ShowLogo()
+        // https://www.asciiart.eu/text-to-ascii-art
+        // https://patorjk.com/software/taag/#p=display&f=Ivrit&t=planar%0APLANAR
+        public static void ShowLogo2()
+        {
+            const string logo = """
+                       _
+                 _ __ | | __ _ _ __   __ _ _ __
+                | '_ \| |/ _` | '_ \ / _` | '__|
+                | |_) | | (_| | | | | (_| | |
+                | .__/|_|\__,_|_| |_|\__,_|_|
+                |_|
+
+                """;
+            AnsiConsole.Write(new Markup($"[steelblue1]{logo}[/]"));
+        }
+
+        public static void ShowLogo1()
         {
             AnsiConsole.Write(new FigletText("Planar")
                 .LeftJustified()

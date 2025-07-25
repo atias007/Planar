@@ -6,6 +6,7 @@ using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using TimeSpanConverter;
 
 namespace Planar.Service.SystemJobs;
 
@@ -53,8 +54,8 @@ public sealed class ClusterHealthCheckJob : SystemJob, IJob
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "System job for check health of cluster nodes";
-        var span = AppSettings.Cluster.HealthCheckInterval;
-        var jobKey = await ScheduleHighPriority<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
+        var cronexpr = AppSettings.Cluster.HealthCheckInterval.ToCronExpression();
+        var jobKey = await ScheduleHighPriority<ClusterHealthCheckJob>(scheduler, description, cronexpr, stoppingToken: stoppingToken);
 
         if (AppSettings.Cluster.Clustering)
         {
