@@ -5,6 +5,7 @@ Solutions
 ----------------------------------------
 * Planar
 * Planar.Packages
+* Planar.GenericJobs
 * Planar.Test
 
 ----------------------------------------
@@ -45,15 +46,15 @@ GitHub
 `planar`: the main windows service
 `planar-cli`: command line interface tool
 `database_migrations`: setup helper tool for installing and updating versions of SQL scripts
-install CLI tool as dotnet tool as follow: `dotnet tool install --global planar-cli`
+install CLI tool as a dotnet tool as follows: `dotnet tool install --global planar-cli`
 
 # Planar For Docker
 
-`docker-compose-sqlite.yml`: docker compose file to run configured service using Sqlite.
-`docker-compose-sqlserver.yml`: docker compose file to run configured service & MS SQL Express instance.
+`docker-compose-sqlite.yml`: docker compose file to run the configured service using SQLite.
+`docker-compose-sqlserver.yml`: docker compose file to run the configured service & MS SQL Express instance.
 
-- create new local foder 
+- create a new local folder 
 - download and save the docker compose file to the new folder
-- open terminal / command line pointing to the new folder
+- open terminal/command line pointing to the new folder
 - run command: `docker-compose -f docker-compose-sqlite.yml -p planar up -d`
 - run command: `docker-compose -f docker-compose-sqlserver.yml -p planar up -d`

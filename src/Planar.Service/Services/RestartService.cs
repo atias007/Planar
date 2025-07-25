@@ -22,7 +22,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     private readonly ILogger<RestartService> _logger = serviceProvider.GetRequiredService<ILogger<RestartService>>();
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private DateTimeOffset? _lastMemoryLog;
-    private DateTimeOffset _startup = DateTimeOffset.UtcNow;;
+    private readonly DateTimeOffset _startup = DateTimeOffset.UtcNow;
     private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
 
