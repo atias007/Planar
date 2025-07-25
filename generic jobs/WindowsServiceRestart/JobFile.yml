@@ -10,10 +10,10 @@ log retention days: 3                 # How many days the running logs will reta
 properties:                           # Properties for job with 'PlanarJob' type
   filename: HealthCheck.exe           # Name of assembly file [mandatory, up to 500 characters]
 
-simple triggers:                      # List of simple triggers
-  - name: every-hour-trigger          # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
-    interval: 01:00:00                # Interval
-    start: 00:00:00                   # Start time
-    misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
-    timeout: 00:10:00                 # Execution timeout. If timout span passed then cancel command is executed
-    
+cron triggers:                               # List of cron triggers
+  - name: twicw-day-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    cron expression: 0 0 6,20 ? * *          # Cron expression [mandatory]
+    misfire behaviour: fire and proceed      # [ auto | do nothing | fire and proceed | ignore misfires ]
+    timeout: 00:30:00                        # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
+    retry span: 01:00:00                     # The time span between retries [value between 00:00:01 to 1.00:00:00]
+    max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]

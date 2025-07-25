@@ -16,3 +16,9 @@ simple triggers:                      # List of simple triggers
     start: 00:00:00                   # Start time
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     timeout: 00:30:00                 # Execution timeout. If timout span passed then cancel command is executed
+
+cron triggers:                               # List of cron triggers
+  - name: four-time-day-trigger              # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    cron expression: 0 0 0,6,12,18 ? * *     # Cron expression [mandatory]
+    misfire behaviour: fire and proceed      # [ auto | do nothing | fire and proceed | ignore misfires ]
+    timeout: 00:30:00                        # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
