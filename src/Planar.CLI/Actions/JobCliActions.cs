@@ -1235,9 +1235,9 @@ public class JobCliActions : BaseCliAction<JobCliActions>
            .AddQueryParameter("filter", $"Id eq {logId}")
            .AddQueryParameter("select", "Duration,EffectedRows,ExceptionCount,Status");
 
-        var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
-
-        if (result.StatusCode == HttpStatusCode.NotFound || result.Data == null)
+        var result = await RestProxy.Invoke<JobHistoryOdataWrapper>(restRequest, cancellationToken);
+        var data = result.Data?.Value?.FirstOrDefault();
+        if (result.StatusCode == HttpStatusCode.NotFound || data == null)
         {
             Console.WriteLine();
             throw new CliException($"could not found log data for log id {logId}");
@@ -1245,13 +1245,13 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         if (!result.IsSuccessful) { return new CliActionResponse(result); }
 
-        var finalSpan = TimeSpan.FromMilliseconds(result.Data.Duration.GetValueOrDefault());
-        AnsiConsole.Markup($"Effected Row(s): {CliTableFormat.FormatNumber(result.Data.EffectedRows)}  |");
-        AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(result.Data.ExceptionCount)}  |");
+        var finalSpan = TimeSpan.FromMilliseconds(data.Duration.GetValueOrDefault());
+        AnsiConsole.Markup($"Effected Row(s): {CliTableFormat.FormatNumber(data.EffectedRows)}  |");
+        AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionCount)}  |");
         AnsiConsole.Markup($"  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}  |");
         AnsiConsole.MarkupLine($"  End Time: --:--:--     ");
         AnsiConsole.Markup(" [gold3_1][[x]][/] ");
-        if (result.Data.Status == 0)
+        if (data.Status == 0)
         {
             AnsiConsole.Markup("[green]Success[/]");
         }
@@ -1270,7 +1270,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         table.AddRow($"[grey54]history log[/] [grey62]{logId}[/]");
         table.AddRow($"[grey54]history data[/] [grey62]{logId}[/]");
 
-        if (result.Data.Status == 1)
+        if (data.Status == 1)
         {
             table.AddRow($"[grey54]history ex[/] [grey62]{logId}[/]");
         }

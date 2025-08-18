@@ -3,6 +3,7 @@ using Planar.Client.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -496,13 +497,17 @@ namespace Planar.Client
 
         private async Task CheckLog(Func<RunningJobDetails, Task> callback, long logId, CancellationToken cancellationToken)
         {
-            var restTestRequest = new RestRequest("history/{id}", HttpMethod.Get)
-               .AddSegmentParameter("id", logId);
+            var restRequest = new RestRequest("odata/HistoryData", HttpMethod.Get)
+                .AddQueryParameter("filter", $"Id eq {logId}")
+                .AddQueryParameter("select", "Duration,EffectedRows,ExceptionCount,Status");
+
             HistoryDetails status;
 
             try
             {
-                status = await _proxy.InvokeAsync<HistoryDetails>(restTestRequest, cancellationToken);
+                var wrapper = await _proxy.InvokeAsync<HistoryOdataWrapper>(restRequest, cancellationToken);
+                status = wrapper?.Value?.FirstOrDefault()
+                    ?? throw new PlanarNotFoundException($"could not found log data for log id {logId}");
             }
             catch (PlanarNotFoundException)
             {
