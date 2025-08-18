@@ -53,7 +53,7 @@ internal partial class Job : BaseCheckJob
         var alerts = GetAlerts(Configuration, defaults, states);
         MapTitles(Configuration, alerts);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         await SafeInvokeCheck(alerts, InvokeAlertCheckInner, context.TriggerDetails);
 
@@ -172,11 +172,11 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private void InvokeAlertCheckInner(SeqAlert alert)
+    private async Task InvokeAlertCheckInner(SeqAlert alert)
     {
         const string shared = "(shared)";
 
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
 
         var state = alert.AlertState;
         var title = alert.Title;

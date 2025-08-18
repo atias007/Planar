@@ -5,16 +5,16 @@ using System.Globalization;
 
 public class CheckSpanTracker(IBaseJob baseJob)
 {
-    public bool IsSpanValid<T>(T entity)
+    public async Task<bool> IsSpanValid<T>(T entity)
         where T : BaseDefault, ICheckElement
     {
         return
             entity.AllowedFailSpan != null &&
             entity.AllowedFailSpan != TimeSpan.Zero &&
-            entity.AllowedFailSpan > LastFailSpan(entity);
+            entity.AllowedFailSpan > await LastFailSpan(entity);
     }
 
-    private TimeSpan LastFailSpan(ICheckElement element)
+    private async Task<TimeSpan> LastFailSpan(ICheckElement element)
     {
         var key = GetKey(element);
         if (baseJob.Context.MergedJobDataMap.TryGet(key, out var value)
@@ -26,14 +26,14 @@ public class CheckSpanTracker(IBaseJob baseJob)
             return span;
         }
 
-        baseJob.PutJobData(key, DateTimeOffset.UtcNow.ToString(CultureInfo.CurrentCulture));
+        await baseJob.PutJobDataAsync(key, DateTimeOffset.UtcNow.ToString(CultureInfo.CurrentCulture));
         return TimeSpan.Zero;
     }
 
-    public void ResetFailSpan(ICheckElement element)
+    public async Task ResetFailSpan(ICheckElement element)
     {
         var key = GetKey(element);
-        baseJob.RemoveJobData(key);
+        await baseJob.RemoveJobDataAsync(key);
     }
 
     private static string GetKey(ICheckElement element) => $"last.fail.{element.Key}";

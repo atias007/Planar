@@ -56,7 +56,7 @@ internal partial class Job : BaseCheckJob
         var healthCheck = GetHealthCheck(Configuration, defaults);
         ValidateRequired(rediskeys, "keys");
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner, context.TriggerDetails);
         await SafeInvokeCheck(rediskeys, InvokeKeyCheckInner, context.TriggerDetails);
@@ -247,7 +247,7 @@ internal partial class Job : BaseCheckJob
             }
         }
 
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
     }
 
     private async Task InvokeKeyCheckInner(RedisKey key)
@@ -290,7 +290,7 @@ internal partial class Job : BaseCheckJob
         }
 
         Logger.LogInformation("redis check success for key '{Key}'", key.Key);
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
     }
 
     private static void ValidateHealthCheck(HealthCheck healthCheck)

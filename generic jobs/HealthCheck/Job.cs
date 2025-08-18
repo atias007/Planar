@@ -44,7 +44,7 @@ internal partial class Job : BaseCheckJob
         ValidateDuplicateNames(endpoints, "endpoints");
 
         endpoints = GetEndpointsWithHost(endpoints, hosts);
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         using var client = CreateHttpClient(endpoints);
 
@@ -206,7 +206,7 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",
                 endpoint.Name, uri);
 
-            IncreaseEffectedRows();
+            await IncreaseEffectedRowsAsync();
             return;
         }
 

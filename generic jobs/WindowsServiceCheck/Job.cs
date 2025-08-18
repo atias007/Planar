@@ -41,7 +41,7 @@ internal partial class Job : BaseCheckJob
 
         services = GetServicesWithHost(services, hosts);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         await SafeInvokeCheck(services, InvokeServiceInner, context.TriggerDetails);
 
@@ -137,11 +137,11 @@ internal partial class Job : BaseCheckJob
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-    private void InvokeServiceInner(Service service)
+    private async Task InvokeServiceInner(Service service)
     {
         try
         {
-            InvokeServiceInnerInner(service);
+            await InvokeServiceInnerInner(service);
         }
         catch (InvalidOperationException ex)
         {
@@ -156,7 +156,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private void InvokeServiceInnerInner(Service service)
+    private async Task InvokeServiceInnerInner(Service service)
     {
         if (string.IsNullOrWhiteSpace(service.Host))
         {
@@ -196,7 +196,7 @@ internal partial class Job : BaseCheckJob
         {
             service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
             Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-            IncreaseEffectedRows();
+            await IncreaseEffectedRowsAsync();
             return;
         }
 
@@ -210,7 +210,7 @@ internal partial class Job : BaseCheckJob
             {
                 service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-                IncreaseEffectedRows();
+                await IncreaseEffectedRowsAsync();
                 return;
             }
         }
@@ -231,7 +231,7 @@ internal partial class Job : BaseCheckJob
                 service.Result.Started = true;
                 service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-                IncreaseEffectedRows();
+                await IncreaseEffectedRowsAsync();
                 return;
             }
         }
@@ -245,7 +245,7 @@ internal partial class Job : BaseCheckJob
             {
                 service.ResultMessage = $"service '{service.Name}' on host '{service.Host}' is in running status";
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-                IncreaseEffectedRows();
+                await IncreaseEffectedRowsAsync();
                 return;
             }
         }

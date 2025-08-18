@@ -39,7 +39,7 @@ internal partial class Job : BaseCheckJob
 
         services = GetServicesWithHost(services, hosts);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         using var client = new HttpClient();
         await SafeInvokeOperation(services, InvokeServiceInner, context.TriggerDetails);
@@ -112,7 +112,7 @@ internal partial class Job : BaseCheckJob
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-    private void InvokeServiceInner(Service service)
+    private async Task InvokeServiceInner(Service service)
     {
         if (string.IsNullOrWhiteSpace(service.Host))
         {
@@ -180,7 +180,7 @@ internal partial class Job : BaseCheckJob
         if (status == ServiceControllerStatus.Running)
         {
             Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
-            IncreaseEffectedRows();
+            await IncreaseEffectedRowsAsync();
         }
         else
         {

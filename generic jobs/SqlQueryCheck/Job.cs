@@ -60,7 +60,7 @@ internal partial class Job : BaseCheckJob
         var queries = GetQueries(Configuration, defaults, connStrings);
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         await SafeInvokeCheck(queries, InvokeQueryCheckInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(queries.AsEnumerable());
@@ -99,7 +99,7 @@ internal partial class Job : BaseCheckJob
         {
             checkQuery.ResultMessage = $"query {checkQuery.Name} query executed successfully";
             Logger.LogInformation("query '{Name}' executed successfully", checkQuery.Name);
-            IncreaseEffectedRows();
+            await IncreaseEffectedRowsAsync();
         }
     }
 

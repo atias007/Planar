@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.11.0.117924">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.0.120848">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -16,8 +16,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Management" Version="9.0.6" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.6" />
+    <PackageReference Include="System.Management" Version="9.0.8" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.8" />
   </ItemGroup>
 
   <ItemGroup>

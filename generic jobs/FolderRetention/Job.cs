@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
 using Polly.Retry;
+using System.Threading.Tasks;
 
 namespace FolderRetention;
 
@@ -46,7 +47,7 @@ internal partial class Job : BaseCheckJob
         }
 
         folders = GetFoldersWithHost(folders, hosts);
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         await SafeInvokeOperation(folders, InvokeFoldersInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(folders.AsEnumerable());
@@ -199,11 +200,11 @@ internal partial class Job : BaseCheckJob
             var file = kv.Key;
             try
             {
-                _policy.Execute(() =>
+                _policy.Execute(async () =>
                 {
                     file.Delete();
                     Logger.LogInformation("file '{FileName}' deleted from folder '{Path}', reason: {Reason}", file.FullName, path, kv.Value);
-                    EffectedRows++;
+                    await IncreaseEffectedRowsAsync();
                 });
                 Interlocked.Increment(ref success);
             }

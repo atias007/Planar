@@ -6,8 +6,8 @@ namespace SeqAlertsCheck;
 
 internal class SeqServer
 {
-    public string Url { get; set; } = string.Empty; //
-    public string? ApiKey { get; set; } //
+    public string Url { get; set; } = string.Empty;
+    public string? ApiKey { get; set; }
     public bool IsEmpty => string.IsNullOrWhiteSpace(Url);
 
     public SeqServer()

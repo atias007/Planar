@@ -67,7 +67,7 @@ internal partial class Job : BaseCheckJob
         var queues = GetQueue(Configuration, defaults, keys);
         var bundles = GetQueuesBundle(Configuration, defaults, keys);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         // health check
         var checks = server.Hosts.Select(h => new HealthCheck(healthCheck, h));
@@ -291,7 +291,7 @@ internal partial class Job : BaseCheckJob
             throw;
         }
 
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
     }
 
     private async Task InvokeNodeCheckInner(Node node, Server server)
@@ -334,7 +334,7 @@ internal partial class Job : BaseCheckJob
                 }
             }
 
-            IncreaseEffectedRows();
+            await IncreaseEffectedRowsAsync();
         }
     }
 
@@ -403,7 +403,7 @@ internal partial class Job : BaseCheckJob
             throw;
         }
 
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
         await Task.CompletedTask;
     }
 

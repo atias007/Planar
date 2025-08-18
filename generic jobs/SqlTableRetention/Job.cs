@@ -51,7 +51,7 @@ internal partial class Job : BaseCheckJob
     {
         Initialize(ServiceProvider);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         var defaults = GetDefaults(Configuration);
         var names = GetConnectionStringNames(Configuration);
         var connStrings = GetConnectionStrings(Configuration, names);
@@ -103,7 +103,7 @@ internal partial class Job : BaseCheckJob
         var count = await cmd.ExecuteNonQueryAsync();
         if (count < 0) { count = 0; }
         Logger.LogInformation("retention '{Name}' executed successfully with {Count} effected row(s)", table.Name, count.ToString("N0", CultureInfo.CurrentCulture));
-        EffectedRows += count;
+        await IncreaseEffectedRowsAsync(count);
     }
 
     private static string GetQuery(Table table)

@@ -12,7 +12,7 @@ internal class SeqAlert : BaseDefault, ICheckElement, IVetoEntity
         AlertState = state;
     }
 
-    public string Key { get; private set; } = string.Empty;
+    public string Key { get; private set; }
     public string Title { get; set; }
     public AlertStateEntity AlertState { get; private set; }
 }

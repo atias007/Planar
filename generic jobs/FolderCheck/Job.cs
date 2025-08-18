@@ -39,7 +39,7 @@ internal partial class Job : BaseCheckJob
 
         folders = GetFoldersWithHost(folders, hosts);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
 
         await SafeInvokeCheck(folders, InvokeFolderInner, context.TriggerDetails);
 
@@ -170,7 +170,7 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private void InvokeFolderInner(Folder folder)
+    private async Task InvokeFolderInner(Folder folder)
     {
         var path = folder.GetFullPath();
         ValidatePathExists(path);
@@ -241,7 +241,7 @@ internal partial class Job : BaseCheckJob
         Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
                         folder.Name, path);
 
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
     }
 
     private static void ValidateFolder(Folder folder)

@@ -54,7 +54,7 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(keys, "keys");
         ValidateDuplicateKeys(keys, "keys");
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         await SafeInvokeOperation(keys, InvokeKeyCheckInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(keys.AsEnumerable());
@@ -130,7 +130,7 @@ internal partial class Job : BaseCheckJob
                     await RedisFactory.Invoke(key, commands[0], commands[1..]);
 
                 done = true;
-                IncreaseEffectedRows();
+                await IncreaseEffectedRowsAsync();
                 Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
                 exists = await RedisFactory.Exists(key);
             }
@@ -153,7 +153,7 @@ internal partial class Job : BaseCheckJob
             if (setexpire)
             {
                 done = true;
-                IncreaseEffectedRows();
+                await IncreaseEffectedRowsAsync();
                 Logger.LogInformation("set expire date {Date} for key '{Key}'", key.NextExpireCronDate, key.Key);
             }
         }

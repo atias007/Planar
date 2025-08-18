@@ -12,7 +12,6 @@ namespace Common;
 
 public abstract partial class BaseCheckJob : BaseJob
 {
-    private static readonly object _locker = new();
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
     private General _general = null!;
     private CheckSpanTracker _spanTracker = null!;
@@ -333,14 +332,6 @@ public abstract partial class BaseCheckJob : BaseJob
         return dic;
     }
 
-    protected void IncreaseEffectedRows()
-    {
-        lock (_locker)
-        {
-            EffectedRows = EffectedRows.GetValueOrDefault() + 1;
-        }
-    }
-
     [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Infrastructure")]
     protected void Initialize(IServiceProvider serviceProvider)
     {
@@ -413,12 +404,12 @@ public abstract partial class BaseCheckJob : BaseJob
                         });
             }
 
-            _spanTracker.ResetFailSpan(entity);
+            await _spanTracker.ResetFailSpan(entity);
             entity.RunStatus = CheckStatus.Success;
         }
         catch (Exception ex)
         {
-            entity.RunStatus = SafeHandleCheckException(entity, ex);
+            entity.RunStatus = await SafeHandleCheckException(entity, ex);
             OnFail(entity, ex);
         }
     }
@@ -644,7 +635,7 @@ public abstract partial class BaseCheckJob : BaseJob
         }
     }
 
-    private CheckStatus SafeHandleCheckException<T>(T entity, Exception ex)
+    private async Task<CheckStatus> SafeHandleCheckException<T>(T entity, Exception ex)
           where T : BaseDefault, ICheckElement
     {
         try
@@ -653,11 +644,11 @@ public abstract partial class BaseCheckJob : BaseJob
             {
                 Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
-                AddAggregateException(ex);
+                await AddAggregateExceptionAsync(ex);
                 return CheckStatus.Exception;
             }
 
-            if (_spanTracker.IsSpanValid(entity))
+            if (await _spanTracker.IsSpanValid(entity))
             {
                 Logger.LogWarning("check failed for '{Key}' but error span is valid. reason: {Message}",
                     entity.Key, ex.Message);
@@ -674,12 +665,12 @@ public abstract partial class BaseCheckJob : BaseJob
         }
         catch (Exception innerEx)
         {
-            AddAggregateException(innerEx);
+            await AddAggregateExceptionAsync(innerEx);
             return CheckStatus.Exception;
         }
     }
 
-    private void SafeHandleOperationException<T>(T entity, Exception ex)
+    private async Task SafeHandleOperationException<T>(T entity, Exception ex)
                                     where T : ICheckElement
     {
         try
@@ -687,7 +678,7 @@ public abstract partial class BaseCheckJob : BaseJob
             if (ex is not CheckException checkException)
             {
                 Logger.LogError(ex, "operation failed for '{Key}'. reason: {Message}", entity.Key, ex.Message);
-                AddAggregateException(ex);
+                await AddAggregateExceptionAsync(ex);
             }
             else
             {
@@ -697,7 +688,7 @@ public abstract partial class BaseCheckJob : BaseJob
         }
         catch (Exception innerEx)
         {
-            AddAggregateException(innerEx);
+            await AddAggregateExceptionAsync(innerEx);
         }
     }
 
@@ -714,7 +705,7 @@ public abstract partial class BaseCheckJob : BaseJob
         }
         catch (Exception ex)
         {
-            SafeHandleOperationException(entity, ex);
+            await SafeHandleOperationException(entity, ex);
             entity.RunStatus = OperationStatus.Exception;
         }
     }

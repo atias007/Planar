@@ -35,7 +35,7 @@ internal partial class Job : BaseCheckJob
         var pools = GetApplicationPool(Configuration, defaults);
         ValidateRequired(hosts, "hosts");
         pools = GetApplicationPoolsWithHost(pools, hosts);
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         await SafeInvokeOperation(pools, InvokeApplicationPoolInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(pools.AsEnumerable());

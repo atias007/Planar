@@ -39,7 +39,7 @@ internal partial class Job : BaseCheckJob
         }
 
         folders = GetFoldersWithHost(folders, hosts);
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         await SafeInvokeOperation(folders, InvokeSyncFoldersInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(folders.AsEnumerable());
@@ -154,21 +154,10 @@ internal partial class Job : BaseCheckJob
         };
 
         var sync = new BlinkSyncLib.Sync(parameters);
-        try
-        {
-            sync.Operation += SyncOperation;
-            var result = sync.Start();
-            PrintSummary(result);
-        }
-        finally
-        {
-            sync.Operation -= SyncOperation;
-        }
-    }
 
-    private void SyncOperation(object? sender, OperationEventArgs e)
-    {
-        EffectedRows = EffectedRows + 1;
+        sync.Operation += async (s, e) => await IncreaseEffectedRowsAsync();
+        var result = sync.Start();
+        PrintSummary(result);
     }
 
     private void PrintSummary(SyncResults result)

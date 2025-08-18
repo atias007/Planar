@@ -61,7 +61,7 @@ internal partial class Job : BaseCheckJob
         var keys = GetKeys(context);
         var queries = GetQueries(Configuration, defaults, keys);
 
-        EffectedRows = 0;
+        await SetEffectedRowsAsync(0);
         if (!CheckRequired(queries, "queries")) { return; }
 
         var proxy = new InfluxProxy(server);
@@ -198,7 +198,7 @@ internal partial class Job : BaseCheckJob
         }
 
         Logger.LogInformation("query check success for name '{Name}'", query.Name);
-        IncreaseEffectedRows();
+        await IncreaseEffectedRowsAsync();
     }
 
     private static int GetRecordsCount(List<FluxTable> tables)
