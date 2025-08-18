@@ -1230,7 +1230,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     private static async Task<CliActionResponse?> TestStep5CheckLog(long logId, CancellationToken cancellationToken)
     {
-        // HistoryData?select=
         var restRequest = new RestRequest("odata/HistoryData", Method.Get)
            .AddQueryParameter("filter", $"Id eq {logId}")
            .AddQueryParameter("select", "Duration,EffectedRows,ExceptionCount,Status");
