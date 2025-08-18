@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Hooks.General;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -186,6 +187,10 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     {
         request.SetPagingDefaults();
         request.LastDays ??= 365;
+        if (request.JobId.HasValue())
+        {
+            request.JobId = await JobKeyHelper.GetJobId(request.JobId);
+        }
         var last = await DataLayer.GetLastHistoryCallForJob(request);
 
         var mapper = new JobLastRunMapper();
