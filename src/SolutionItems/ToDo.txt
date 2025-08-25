@@ -388,3 +388,7 @@ V 1.8.0
 - add system health check system job (ensure that the scheduler is running)
 - add Planar.Watcher service (windows service) to monitor the scheduler and restart it if needed
 - add option to invoke job directly from planar job code (using nuget package)
+
+V 1.8.1
+-------
+- add retry parameters to job queue/invoke api/cli/client library
