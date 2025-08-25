@@ -174,10 +174,24 @@ namespace Planar.Client
 
 #if NETSTANDARD2_0
 
-        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string> data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default);
+        Task InvokeAsync(
+            string id,
+            TimeSpan? timeout = null,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string> data = null,
+            int? maxRetries = null,
+            TimeSpan? retrySpan = null,
+            CancellationToken cancellationToken = default);
 
 #else
-        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string?>? data = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default);
+        Task InvokeAsync(
+            string id,
+            TimeSpan? timeout = null,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string?>? data = null,
+            int? maxRetries = null,
+            TimeSpan? retrySpan = null,
+            CancellationToken cancellationToken = default);
 #endif
 
         /// <summary>
@@ -270,6 +284,8 @@ namespace Planar.Client
             TimeSpan? timeout,
             DateTime? nowOverrideValue = null,
             Dictionary<string, string> data = null,
+            int? maxRetries = null,
+            TimeSpan? retrySpan = null,
             CancellationToken cancellationToken = default);
 
 #else
@@ -279,6 +295,8 @@ namespace Planar.Client
             TimeSpan? timeout,
             DateTime? nowOverrideValue = null,
             Dictionary<string, string?>? data = null,
+            int? maxRetries = null,
+            TimeSpan? retrySpan = null,
             CancellationToken cancellationToken = default);
 #endif
 

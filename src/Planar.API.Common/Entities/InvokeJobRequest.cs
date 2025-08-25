@@ -14,4 +14,10 @@ public class InvokeJobRequest : JobOrTriggerKey
 
     [YamlMember(Alias = "data")]
     public Dictionary<string, string?>? Data { get; set; }
+
+    [YamlMember(Alias = "retry span")]
+    public TimeSpan? RetrySpan { get; set; }
+
+    [YamlMember(Alias = "max retries")]
+    public int? MaxRetries { get; set; }
 }

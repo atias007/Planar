@@ -21,4 +21,8 @@ internal class InvokeJobOptions
     public TimeSpan? Timeout { get; set; }
 
     public Dictionary<string, string?>? Data { get; set; }
+
+    public TimeSpan? RetrySpan { get; set; }
+
+    public int? MaxRetries { get; set; }
 }

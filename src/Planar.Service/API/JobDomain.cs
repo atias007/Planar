@@ -1,6 +1,7 @@
 ﻿using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -803,6 +804,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             throw new RestValidationException("due date", $"job already has queue invoke trigger with date {request.DueDate:yyyy-MM-dd HH:mm:ss}");
         }
 
+        // Basic
         var newTrigger = TriggerBuilder.Create()
             .WithIdentity(triggerKey)
             .UsingJobData(Consts.TriggerId, triggerId)
@@ -814,6 +816,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             })
             .ForJob(job);
 
+        // Timeout
         if (request.Timeout.HasValue)
         {
             var timeoutValue = request.Timeout.Value.Ticks.ToString();
@@ -821,14 +824,29 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
 
         request.Data ??= [];
+
+        // Now override
         if (request.NowOverrideValue.HasValue)
         {
             request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
         }
 
+        // Data
         foreach (var item in request.Data)
         {
             newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
+        }
+
+        // Retry span, Max retries
+        if (request.RetrySpan.HasValue)
+        {
+            newTrigger = newTrigger.UsingJobData(Consts.RetrySpan, request.RetrySpan.Value.ToSimpleTimeString());
+        }
+
+        // Max retries
+        if (request.MaxRetries.HasValue)
+        {
+            newTrigger = newTrigger.UsingJobData(Consts.MaxRetries, request.MaxRetries.Value.ToString());
         }
 
         try

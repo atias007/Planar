@@ -22,6 +22,8 @@ internal class Job : BaseJob
             Timeout = TimeSpan.FromSeconds(111),
             Data = new Dictionary<string, string?> { { "Key1", "Value1" }, { "Key2", "Value2" } },
             NowOverrideValue = DateTime.Now.Date.AddHours(1).AddMinutes(1).AddSeconds(1).AddMilliseconds(1),
+            MaxRetries = 5,
+            RetrySpan = TimeSpan.FromSeconds(30)
         });
     }
 

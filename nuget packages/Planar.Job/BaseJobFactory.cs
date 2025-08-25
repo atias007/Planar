@@ -309,6 +309,10 @@ namespace Planar.Job
             }
         }
 
+        #endregion Monitor
+
+        #region InvokeJob
+
 #if NETSTANDARD2_0
 
         public async Task InvokeJobAsync(string id, InvokeJobOptions options = null)
@@ -316,6 +320,7 @@ namespace Planar.Job
         public async Task InvokeJobAsync(string id, InvokeJobOptions? options = null)
 #endif
         {
+            ValidateInvokeJobOptions(options);
             await _semaphoreSlim.WaitAsync();
             try
             {
@@ -335,6 +340,7 @@ namespace Planar.Job
         public async Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions? options = null)
 #endif
         {
+            ValidateInvokeJobOptions(options);
             await _semaphoreSlim.WaitAsync();
             try
             {
@@ -347,6 +353,25 @@ namespace Planar.Job
             }
         }
 
-        #endregion Monitor
+#if NETSTANDARD2_0
+
+        private static void ValidateInvokeJobOptions(InvokeJobOptions options)
+#else
+        private static void ValidateInvokeJobOptions(InvokeJobOptions? options)
+#endif
+        {
+            if (options == null) { return; }
+            if (options.MaxRetries.HasValue && !options.RetrySpan.HasValue)
+            {
+                throw new PlanarJobException("RetrySpan value must be set when MaxRetries is specified");
+            }
+
+            if (options.RetrySpan.HasValue && !options.MaxRetries.HasValue)
+            {
+                throw new PlanarJobException("MaxRetries value must be set when RetrySpan is specified");
+            }
+        }
+
+        #endregion InvokeJob
     }
 }

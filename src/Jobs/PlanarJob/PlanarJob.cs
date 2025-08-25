@@ -561,7 +561,9 @@ public abstract class PlanarJob(
             Data = invokeJob.Options?.Data,
             NowOverrideValue = invokeJob.Options?.NowOverrideValue,
             Timeout = invokeJob.Options?.Timeout,
-            DueDate = DateTime.Now.AddSeconds(3) // Default due date for invoke job is 3 seconds from now
+            DueDate = DateTime.Now.AddSeconds(3), // Default due date for invoke job is 3 seconds from now
+            MaxRetries = invokeJob.Options?.MaxRetries,
+            RetrySpan = invokeJob.Options?.RetrySpan
         };
 
         await RunQueueInvokeJob(request);
@@ -575,7 +577,9 @@ public abstract class PlanarJob(
             Data = invokeJob.Options?.Data,
             NowOverrideValue = invokeJob.Options?.NowOverrideValue,
             Timeout = invokeJob.Options?.Timeout,
-            DueDate = invokeJob.DueDate
+            DueDate = invokeJob.DueDate,
+            MaxRetries = invokeJob.Options?.MaxRetries,
+            RetrySpan = invokeJob.Options?.RetrySpan
         };
 
         await RunQueueInvokeJob(request);

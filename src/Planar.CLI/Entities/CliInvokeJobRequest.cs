@@ -14,4 +14,10 @@ public class CliInvokeJobRequest : CliJobKey
 
     [ActionProperty("t", "timeout")]
     public TimeSpan? Timeout { get; set; }
+
+    [ActionProperty("mr", "max-retries")]
+    public int? MaxRetries { get; set; }
+
+    [ActionProperty("rs", "retry-span")]
+    public TimeSpan? RetrySpan { get; set; }
 }

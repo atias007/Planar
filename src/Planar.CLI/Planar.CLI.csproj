@@ -4,7 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net9.0</TargetFramework>
 		<AssemblyName>planar-cli</AssemblyName>
-		<Version>1.8.0.2</Version>
+		<Version>1.8.0.3</Version>
 		<StartupObject>Planar.CLI.Program</StartupObject>
 		<Nullable>enable</Nullable>
 
@@ -42,7 +42,7 @@
 	<ItemGroup>
 		<PackageReference Include="AsciiChart.Sharp" Version="1.0.3" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="RestSharp" Version="112.1.0" />
 		<PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="112.1.0" />
