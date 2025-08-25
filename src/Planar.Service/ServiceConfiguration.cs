@@ -50,7 +50,7 @@ namespace Planar.Service
             services.AddSingleton<SchedulerHealthCheckUtil>();
 
             // AutoMapper
-            services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
+            services.AddAutoMapper(c => c.LicenseKey = null, Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
 
             // DAL
             services.AddPlanarDataLayerWithContext();
