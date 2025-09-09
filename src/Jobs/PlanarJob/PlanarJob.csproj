@@ -28,7 +28,7 @@
 	<ItemGroup>
 	  <PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
 	  <PackageReference Include="FluentValidation" Version="12.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.8" />
+	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
 	  <PackageReference Include="MQTTnet.Server" Version="5.0.1.1416" />
 	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.0.120848">
 	    <PrivateAssets>all</PrivateAssets>
