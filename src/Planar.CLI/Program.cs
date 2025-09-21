@@ -762,7 +762,7 @@ internal static class Program
         if (showModules)
         {
             Console.Clear();
-            CliHelpGenerator.ShowLogo2();
+            CliHelpGenerator.ShowLogo3();
             Console.WriteLine();
             CliHelpGenerator.ShowModules();
         }
