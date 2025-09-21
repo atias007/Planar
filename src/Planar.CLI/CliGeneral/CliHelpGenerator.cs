@@ -38,12 +38,12 @@ namespace Planar.CLI.CliGeneral
             // https://patorjk.com/software/taag/
             // https://coolors.co/palettes/trending
             Console.WriteLine();
-            AnsiConsole.MarkupLine(@"[#023e8a]  ██████╗ ██╗      █████╗ ███╗   ██╗ █████╗ ██████╗ [/]");
-            AnsiConsole.MarkupLine(@"[#0077b6]  ██╔══██╗██║     ██╔══██╗████╗  ██║██╔══██╗██╔══██╗[/]");
-            AnsiConsole.MarkupLine(@"[#0096c7]  ██████╔╝██║     ███████║██╔██╗ ██║███████║██████╔╝[/]");
-            AnsiConsole.MarkupLine(@"[#00b4d8]  ██╔═══╝ ██║     ██╔══██║██║╚██╗██║██╔══██║██╔══██╗[/]");
-            AnsiConsole.MarkupLine(@"[#48cae4]  ██║     ███████╗██║  ██║██║ ╚████║██║  ██║██║  ██║[/]");
-            AnsiConsole.MarkupLine(@"[#90e0ef]  ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝[/]");
+            AnsiConsole.MarkupLine("[#023e8a]  ██████╗ ██╗      █████╗ ███╗   ██╗ █████╗ ██████╗ [/]");
+            AnsiConsole.MarkupLine("[#0077b6]  ██╔══██╗██║     ██╔══██╗████╗  ██║██╔══██╗██╔══██╗[/]");
+            AnsiConsole.MarkupLine("[#0096c7]  ██████╔╝██║     ███████║██╔██╗ ██║███████║██████╔╝[/]");
+            AnsiConsole.MarkupLine("[#00b4d8]  ██╔═══╝ ██║     ██╔══██║██║╚██╗██║██╔══██║██╔══██╗[/]");
+            AnsiConsole.MarkupLine("[#48cae4]  ██║     ███████╗██║  ██║██║ ╚████║██║  ██║██║  ██║[/]");
+            AnsiConsole.MarkupLine($"[#90e0ef]  ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝  [[vesrion {Program.Version}]][/]");
         }
 
         public static void ShowLogo1()
