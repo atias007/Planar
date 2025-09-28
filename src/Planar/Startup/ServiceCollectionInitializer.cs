@@ -1,9 +1,8 @@
 ﻿using Core.JsonConvertors;
-using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +16,9 @@ using Prometheus;
 using System;
 using System.Net;
 using System.Threading.RateLimiting;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
+using SharpGrip.FluentValidation.AutoValidation.Shared.Extensions;
+using FluentValidation;
 
 namespace Planar.Startup;
 

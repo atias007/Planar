@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -29,7 +30,7 @@ namespace Planar.Service
                     var instance = ActivatorUtilities.CreateInstance(provider, p) as Profile;
                     cfg.AddProfile(instance);
                 }
-            })));
+            }, LoggerFactory.Create(c => c.AddConsole()))));
 
             return services;
         }
