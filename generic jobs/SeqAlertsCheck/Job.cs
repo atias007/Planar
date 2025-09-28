@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
-using Seq.Api.Model.Alerting;
 using System.Text;
 
 namespace SeqAlertsCheck;
@@ -85,7 +84,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private List<SeqAlert> GetAlerts(IConfiguration configuration, Defaults defaults, IEnumerable<AlertStateEntity> states)
+    private List<SeqAlert> GetAlerts(IConfiguration configuration, Defaults defaults, IEnumerable<AlertState> states)
     {
         var includes = configuration.GetSection("include alert ids").Get<List<string>>() ?? [];
         var excludes = configuration.GetSection("exclude alert ids").Get<List<string>>() ?? [];
@@ -113,7 +112,7 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private List<SeqAlert> GetIncludeAlerts(Defaults defaults, IEnumerable<AlertStateEntity> states, IEnumerable<string> include)
+    private List<SeqAlert> GetIncludeAlerts(Defaults defaults, IEnumerable<AlertState> states, IEnumerable<string> include)
     {
         var result = new List<SeqAlert>();
         foreach (var item in include)
@@ -135,7 +134,7 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private List<SeqAlert> GetExcludeAlerts(Defaults defaults, IEnumerable<AlertStateEntity> states, IEnumerable<string> excludes)
+    private List<SeqAlert> GetExcludeAlerts(Defaults defaults, IEnumerable<AlertState> states, IEnumerable<string> excludes)
     {
         var result = new List<SeqAlert>();
 

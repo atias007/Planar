@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Seq.Api;
-using Seq.Api.Model.Alerting;
+using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace SeqAlertsCheck;
 
@@ -20,14 +20,20 @@ internal class SeqServer
         ApiKey = configuration.GetSection("server:api key").Value ?? string.Empty;
     }
 
-    public async Task<IEnumerable<AlertStateEntity>> GetAlerts()
+    public async Task<IEnumerable<AlertState>> GetAlerts()
     {
-        var connection =
-            string.IsNullOrWhiteSpace(ApiKey) ?
-            new SeqConnection(Url) :
-            new SeqConnection(Url, ApiKey);
+        using var client = new HttpClient();
+        client.BaseAddress = new Uri(Url);
+        const string path = "/api/alertstate";
+        if (!string.IsNullOrWhiteSpace(ApiKey))
+        {
+            client.DefaultRequestHeaders.Add("X-Seq-ApiKey", ApiKey);
+        }
 
-        var result = await connection.AlertState.ListAsync();
+        var response = await client.GetAsync(path);
+
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<IEnumerable<AlertState>>() ?? [];
         return result;
     }
 }

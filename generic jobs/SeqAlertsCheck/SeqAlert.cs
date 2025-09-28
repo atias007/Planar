@@ -1,11 +1,10 @@
 ﻿using Common;
-using Seq.Api.Model.Alerting;
 
 namespace SeqAlertsCheck;
 
 internal class SeqAlert : BaseDefault, ICheckElement, IVetoEntity
 {
-    public SeqAlert(AlertStateEntity state, Defaults defaults) : base(defaults)
+    public SeqAlert(AlertState state, Defaults defaults) : base(defaults)
     {
         Key = state.AlertId;
         Title = state.Title;
@@ -14,5 +13,5 @@ internal class SeqAlert : BaseDefault, ICheckElement, IVetoEntity
 
     public string Key { get; private set; }
     public string Title { get; set; }
-    public AlertStateEntity AlertState { get; private set; }
+    public AlertState AlertState { get; private set; }
 }
