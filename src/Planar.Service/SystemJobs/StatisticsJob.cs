@@ -140,7 +140,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
     {
         var data = serviceProvider.GetRequiredService<IMetricsData>();
         var logsQuery = data.GetNullAnomaly();
-        var config = new MapperConfiguration(cfg => cfg.AddProfile<MetricsProfile>());
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MetricsProfile>(), LoggerFactory.Create(b => b.AddConsole()));
         var mapper = config.CreateMapper();
         var logs = await mapper.ProjectTo<JobInstanceLogForStatistics>(logsQuery).ToListAsync();
         var statistics = await SafeSetStatisticsCache();
