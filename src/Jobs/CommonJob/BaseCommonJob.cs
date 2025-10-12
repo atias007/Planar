@@ -114,10 +114,32 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         }
     }
 
-    protected void StartMonitorDuration(IJobExecutionContext context)
+    protected Task SafeStartMonitorDuration(IJobExecutionContext context)
     {
-        var minutes = jobMonitorUtil.MonitorDurationCache.GetMonitorMinutes(context);
-        if (!minutes.Any()) { return; }
+        try
+        {
+            return StartMonitorDuration(context);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Error start monitor duration: {Message}", ex.Message);
+            return Task.CompletedTask;
+        }
+    }
+
+    protected async Task StartMonitorDuration(IJobExecutionContext context)
+    {
+        const int maxMonitor = 10;
+        var minutes = await jobMonitorUtil.MonitorDurationCache.GetMonitorMinutes(context);
+        if (minutes.Count == 0) { return; }
+        if (minutes.Count > maxMonitor)
+        {
+            minutes = [.. minutes.Take(maxMonitor)];
+            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Warning, $"this job has more then {maxMonitor} duration limit monitors");
+            MessageBroker.AppendLog(LogLevel.Warning, $"only following limits (in minutes) will be monitord: {string.Join(",", minutes.OrderBy(m => m))}");
+            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        }
 
         _durationTokenSource = new();
 

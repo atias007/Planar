@@ -26,7 +26,7 @@ public abstract class SequenceJob(
         {
             await Initialize(context);
             await ValidateSequenceJob(ExecutionCancellationToken);
-            StartMonitorDuration(context);
+            _ = SafeStartMonitorDuration(context);
             SequenceManager.RegisterSequence(context.FireInstanceId, this);
             var task = ExecuteSequence(context);
             await WaitForJobTask(context, task);

@@ -15,29 +15,29 @@ public sealed class MonitorDurationCache
     private readonly IMemoryCache _memoryCache;
     private readonly IServiceProvider _serviceProvider;
     private const string CacheKey = "MonitorDurationCache";
-    private static readonly Lock _locker = new();
+    private static readonly SemaphoreSlim _locker = new(1, 1);
 
     public MonitorDurationCache(IMemoryCache memoryCache, IServiceProvider serviceProvider)
     {
         _memoryCache = memoryCache;
         _serviceProvider = serviceProvider;
-        _ = FillCacheAsync();
+        _ = FillCache();
     }
 
-    public IEnumerable<int> GetMonitorMinutes(Quartz.IJobExecutionContext context)
+    public async Task<List<int>> GetMonitorMinutes(Quartz.IJobExecutionContext context)
     {
         if (!_memoryCache.TryGetValue<List<MonitorCacheItem>>(CacheKey, out var data))
         {
-            FillCache();
+            await FillCache();
             if (!_memoryCache.TryGetValue(CacheKey, out data))
             {
-                var empty = Array.Empty<int>();
+                var empty = Array.Empty<int>().ToList();
                 _memoryCache.Set(CacheKey, empty, TimeSpan.FromMinutes(20));
                 return empty;
             }
         }
 
-        if (data == null || data.Count == 0) { return Array.Empty<int>(); }
+        if (data == null || data.Count == 0) { return []; }
 
         var key = context.JobDetail.Key;
         var result = data.Where(d =>
@@ -48,6 +48,8 @@ public sealed class MonitorDurationCache
                 (d.JobGroup == key.Group && d.JobName == key.Name)
             ))
             .Select(d => d.DurationLimit.GetValueOrDefault())
+            .Distinct()
+            .OrderBy(d => d)
             .ToList();
 
         return result;
@@ -55,30 +57,27 @@ public sealed class MonitorDurationCache
 
     public async Task Flush()
     {
-        await FillCacheAsync();
+        await FillCache();
     }
 
-    private async Task FillCacheAsync()
+    private async Task FillCache()
     {
-        await Task.Run(FillCache);
-    }
-
-    private void FillCache()
-    {
-        lock (_locker)
+        await _locker.WaitAsync();
+        try
         {
-            try
-            {
-                _memoryCache.Remove(CacheKey);
+            _memoryCache.Remove(CacheKey);
 
-                var dataLayer = _serviceProvider.GetRequiredService<IMonitorDurationDataLayer>();
-                var data = dataLayer.GetDurationMonitorActions().Result;
-                _memoryCache.Set(CacheKey, data, TimeSpan.FromHours(1));
-            }
-            catch (Exception ex)
-            {
-                SafeLogCacheError(ex);
-            }
+            var dataLayer = _serviceProvider.GetRequiredService<IMonitorDurationDataLayer>();
+            var data = await dataLayer.GetDurationMonitorActions();
+            _memoryCache.Set(CacheKey, data, TimeSpan.FromHours(1));
+        }
+        catch (Exception ex)
+        {
+            SafeLogCacheError(ex);
+        }
+        finally
+        {
+            _locker.Release();
         }
     }
 

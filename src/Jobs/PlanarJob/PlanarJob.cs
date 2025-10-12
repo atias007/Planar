@@ -53,7 +53,7 @@ public abstract class PlanarJob(
             context.CancellationToken.Register(OnCancel);
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
             var startInfo = GetProcessStartInfo();
-            StartMonitorDuration(context);
+            _ = SafeStartMonitorDuration(context);
             var success = StartProcess(startInfo, timeout);
             StopMonitorDuration();
             if (!success)

@@ -22,7 +22,7 @@ public class RestJob(
         {
             await Initialize(context);
             ValidateRestJob();
-            StartMonitorDuration(context);
+            _ = SafeStartMonitorDuration(context);
             var task = ExecuteRest(context);
             await WaitForJobTask(context, task);
             StopMonitorDuration();

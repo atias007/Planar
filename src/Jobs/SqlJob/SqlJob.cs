@@ -25,7 +25,7 @@ public abstract class SqlJob(
         {
             await Initialize(context);
             ValidateSqlJob();
-            StartMonitorDuration(context);
+            _ = SafeStartMonitorDuration(context);
             var task = ExecuteSql(context);
             await WaitForJobTask(context, task);
             StopMonitorDuration();

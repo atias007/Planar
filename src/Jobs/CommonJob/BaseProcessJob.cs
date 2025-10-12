@@ -88,10 +88,10 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
     {
         SafeInvoke(() => _process?.CancelErrorRead());
         SafeInvoke(() => _process?.CancelOutputRead());
-        SafeInvoke(() => _process?.Close());
-        SafeInvoke(() => _process?.Dispose());
         SafeInvoke(() => { if (_process != null) { _process.EnableRaisingEvents = false; } });
         SafeUnsubscribeOutput();
+        SafeInvoke(() => _process?.Close());
+        SafeInvoke(() => _process?.Dispose());
         SafeInvoke(() => { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } });
     }
 
@@ -181,27 +181,32 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
     protected bool StartProcess(ProcessStartInfo startInfo, TimeSpan timeout)
     {
-        _process = Process.Start(startInfo);
-        if (_process == null)
+        _process = new Process { StartInfo = startInfo };
+        if (_listenOutput) { _process.OutputDataReceived += ProcessOutputDataReceived; }
+        if (_listenOutput) { _process.ErrorDataReceived += ProcessOutputDataReceived; }
+        _process.EnableRaisingEvents = true;
+
+        try
+        {
+            _process.Start();
+        }
+        catch (Exception ex)
         {
             var filename =
                 string.IsNullOrWhiteSpace(FileProperties.Path) ?
                 FileProperties.Filename :
                 Path.Combine(FileProperties.Path, FileProperties.Filename);
 
-            throw new PlanarException($"could not start process {filename}");
+            throw new PlanarException($"could not start process {filename}", ex);
         }
 
-        _process.EnableRaisingEvents = true;
-        _process.BeginOutputReadLine();
-        _process.BeginErrorReadLine();
-
-        if (_listenOutput) { _process.OutputDataReceived += ProcessOutputDataReceived; }
-        if (_listenOutput) { _process.ErrorDataReceived += ProcessOutputDataReceived; }
         _processMetricsTimer.Elapsed += MetricsTimerElapsed;
         _processMetricsTimer.Start();
 
+        _process.BeginOutputReadLine();
+        _process.BeginErrorReadLine();
         _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
+
         if (!_process.HasExited)
         {
             MessageBroker.AppendLog(LogLevel.Error, $"process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");

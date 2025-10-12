@@ -30,7 +30,7 @@ public abstract class SqlTableReportJob(
         {
             await Initialize(context);
             ValidateSqlJob();
-            StartMonitorDuration(context);
+            _ = SafeStartMonitorDuration(context);
             var task = Task.Run(() => Generate(context));
             await WaitForJobTask(context, task);
             StopMonitorDuration();
