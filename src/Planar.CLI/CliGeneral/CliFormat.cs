@@ -1,6 +1,7 @@
 ﻿using Spectre.Console;
 using System.Linq;
 using System.Text;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -26,13 +27,28 @@ namespace Planar.CLI.CliGeneral
         public static Panel? GetSuggestionPanel(string? message)
         {
             if (string.IsNullOrWhiteSpace(message)) { return null; }
-            var markup = $"[deepskyblue3_1]{message.EscapeMarkup().Trim()}[/]";
+            var markup = $"[deepskyblue2]{message.EscapeMarkup().Trim()}[/]";
 
             var panel = new Panel(markup)
             {
                 Border = BoxBorder.Rounded,
-                Header = new PanelHeader(" suggestion "),
-                BorderStyle = new Style(foreground: Color.DeepSkyBlue3_1)
+                Header = new PanelHeader(" :check_box_with_check: suggestion "),
+                BorderStyle = new Style(foreground: Color.DeepSkyBlue2)
+            };
+
+            return panel;
+        }
+
+        public static Panel? GetErrorPanel(string? message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) { return null; }
+            var markup = $"[{ErrorColor}]{message.EscapeMarkup().Trim()}[/]";
+
+            var panel = new Panel(markup)
+            {
+                Border = BoxBorder.Rounded,
+                Header = new PanelHeader($" :cross_mark: error "),
+                BorderStyle = new Style(foreground: Color.Red)
             };
 
             return panel;

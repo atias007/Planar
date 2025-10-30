@@ -227,14 +227,15 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             sb.AppendLine("the following triggers are not in Paused state:");
             foreach (var item in notPaused)
             {
-                sb.AppendLine($" * {item}");
+                sb.AppendLine($" • {item}");
             }
             sb.AppendLine();
             sb.AppendLine("pause the job before make any update");
 
             var suggestion = new StringBuilder();
-            suggestion.AppendLine("use the following command to pause the job");
-            suggestion.AppendLine($"planar-cli job pause {id}");
+            suggestion.AppendLine("use the following command to pause the job:");
+            suggestion.AppendLine();
+            suggestion.AppendLine($"  planar-cli job pause {id}");
 
             var cliMessage = sb.ToString();
             var suggestionMessage = suggestion.ToString();

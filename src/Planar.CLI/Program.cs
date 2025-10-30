@@ -14,6 +14,7 @@ using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -152,7 +153,18 @@ internal static class Program
     {
         var cliHeaderMessage = GetCliMessage(response);
         if (string.IsNullOrWhiteSpace(cliHeaderMessage)) { return false; }
-        MarkupCliLine(CliFormat.GetValidationErrorMarkup(cliHeaderMessage));
+        var lines = cliHeaderMessage.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).ToImmutableList();
+        if (lines.Count == 1)
+        {
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(lines[0]));
+        }
+        else
+        {
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(lines[0]));
+            var panelMessage = string.Join(Environment.NewLine, lines.Skip(1));
+            var panel = CliFormat.GetErrorPanel(panelMessage);
+            MarkupCli(panel);
+        }
 
         var cliHeaderSuggestion = GetCliSuggestion(response);
         if (string.IsNullOrWhiteSpace(cliHeaderSuggestion)) { return false; }
