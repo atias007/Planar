@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("report", "Actions to execute, schedule and configure reports", Synonyms = "reports")]
+    [Module("report", "execute, schedule and configure reports", Synonyms = "reports")]
     public class ReportCliActions : BaseCliAction<ReportCliActions>
     {
         [Action("enable")]

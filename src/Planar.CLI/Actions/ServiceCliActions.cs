@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions;
 
-[Module("service", "Actions to operate service, check alive, list calendars and more")]
+[Module("service", "operate service, check alive, list calendars and more")]
 public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 {
     [Action("halt")]

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions;
 
-[Module("config", "Actions to add, remove, list & update global parameters", Synonyms = "configs")]
+[Module("config", "add, remove, list & update global parameters", Synonyms = "configs")]
 public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 {
     [Action("get")]

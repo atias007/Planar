@@ -11,8 +11,6 @@ namespace Planar.CLI.CliGeneral
         internal const string ErrorColor = "Red";
         internal const string Suggestion = "turquoise2";
 
-        internal static readonly string Seperator = string.Empty.PadLeft(50, '-');
-
         public static string GetWarningMarkup(string? message)
         {
             message ??= string.Empty;
@@ -25,18 +23,19 @@ namespace Planar.CLI.CliGeneral
             return $"[black on {ErrorColor}]error:[/] [{ErrorColor}]{message.EscapeMarkup()}[/]";
         }
 
-        public static string GetSuggestionMarkup(string? message)
+        public static Panel? GetSuggestionPanel(string? message)
         {
-            if (string.IsNullOrWhiteSpace(message)) { return string.Empty; }
-            var sb = new StringBuilder();
-            //sb.Append($"[{Suggestion}]");
-            sb.AppendLine(Seperator);
-            sb.AppendLine("suggestion:");
-            sb.AppendLine();
-            sb.AppendLine(message.EscapeMarkup().Trim());
-            sb.Append(Seperator);
-            //sb.AppendLine("[/]");
-            return sb.ToString();
+            if (string.IsNullOrWhiteSpace(message)) { return null; }
+            var markup = $"[deepskyblue3_1]{message.EscapeMarkup().Trim()}[/]";
+
+            var panel = new Panel(markup)
+            {
+                Border = BoxBorder.Rounded,
+                Header = new PanelHeader(" suggestion "),
+                BorderStyle = new Style(foreground: Color.DeepSkyBlue3_1)
+            };
+
+            return panel;
         }
 
         public static string GetValidationErrorMarkup(string? message)

@@ -11,6 +11,7 @@ using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -155,7 +156,7 @@ internal static class Program
 
         var cliHeaderSuggestion = GetCliSuggestion(response);
         if (string.IsNullOrWhiteSpace(cliHeaderSuggestion)) { return false; }
-        MarkupCliLine(CliFormat.GetSuggestionMarkup(cliHeaderSuggestion));
+        MarkupCli(CliFormat.GetSuggestionPanel(cliHeaderSuggestion));
 
         return true;
     }
@@ -572,8 +573,8 @@ internal static class Program
             {
                 MarkupCliLine(CliFormat.GetErrorMarkup(valEx.Message));
                 AnsiConsole.WriteLine();
-                var suggest = CliFormat.GetSuggestionMarkup(valEx.Suggenstion);
-                MarkupCliLine(suggest);
+                var suggest = CliFormat.GetSuggestionPanel(valEx.Suggenstion);
+                MarkupCli(suggest);
             }
             else
             {
@@ -868,5 +869,16 @@ internal static class Program
         }
 
         AnsiConsole.MarkupLine(message);
+    }
+
+    private static void MarkupCli(IRenderable? renderable)
+    {
+        if (renderable == null) { return; }
+        if (Console.CursorLeft != 0)
+        {
+            Console.WriteLine();
+        }
+
+        AnsiConsole.Write(renderable);
     }
 }

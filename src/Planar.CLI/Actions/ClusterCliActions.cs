@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions;
 
-[Module("cluster", "Actions to monitor cluster nodes, test communication and do some operatins")]
+[Module("cluster", "monitor cluster nodes, test communication and do some operatins")]
 public class ClusterCliActions : BaseCliAction<ClusterCliActions>
 {
     [Action("nodes")]
