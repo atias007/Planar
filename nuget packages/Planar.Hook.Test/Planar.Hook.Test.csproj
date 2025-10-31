@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	  <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-	  <Version>1.8.0.4</Version>
+	  <Version>1.8.0.5</Version>
 	  <Description>Library for writing unit tests for Planar jobs monitor hooks</Description>
 	  <RepositoryType>git</RepositoryType>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
