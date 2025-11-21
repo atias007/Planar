@@ -11,6 +11,7 @@ using Planar.Service.General.Hash;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -47,6 +48,10 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             result.Smtp.Username = scrt;
             result.Smtp.Password = scrt;
         }
+
+        var currentProcess = Process.GetCurrentProcess();
+        var startTime = currentProcess.StartTime.ToUniversalTime();
+        result.General.UpTime = DateTime.UtcNow - startTime;
 
         return await Task.FromResult(result);
     }

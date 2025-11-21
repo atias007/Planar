@@ -1,19 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace Planar.Controllers
+namespace Planar.Controllers;
+
+[ApiController]
+[EnableRateLimiting("concurrency")]
+public abstract class BaseController<TBusinesLayer>(TBusinesLayer businesLayer) : ControllerBase
 {
-    [ApiController]
-    [EnableRateLimiting("concurrency")]
-    public abstract class BaseController<TBusinesLayer> : ControllerBase
-    {
-        private readonly TBusinesLayer _businesLayer;
-
-        protected BaseController(TBusinesLayer businesLayer)
-        {
-            _businesLayer = businesLayer;
-        }
-
-        protected TBusinesLayer BusinesLayer => _businesLayer;
-    }
+    protected TBusinesLayer BusinesLayer => businesLayer;
 }
