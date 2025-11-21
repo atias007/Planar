@@ -173,7 +173,7 @@ namespace Planar.Job
             try
             {
                 _effectedRows += value;
-                await MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value);
+                await MqttClient.PublishAsync(MessageBrokerChannels.IncreaseEffectedRows, value);
             }
             finally
             {

@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Planar.CLI.DataProtect;
 using RestSharp;
 using RestSharp.Serializers.NewtonsoftJson;
+using Spectre.Console.Extensions;
 using System;
 using System.Net;
 using System.Threading;
@@ -69,17 +70,19 @@ internal static class RestProxy
 
     public static async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request, CancellationToken cancellationToken)
     {
-        SetDefaultRequestTimeout(request);
-        var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
-        if (await RefreshToken(response, cancellationToken))
-        {
-            response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
-        }
-
-        return response;
+        var task = InvokeInner<TResponse>(request, cancellationToken);
+        var result = await task.Spinner();
+        return result;
     }
 
     public static async Task<RestResponse> Invoke(RestRequest request, CancellationToken cancellationToken)
+    {
+        var task = InvokeInner(request, cancellationToken);
+        var result = await task.Spinner();
+        return result;
+    }
+
+    public static async Task<RestResponse> InvokeInner(RestRequest request, CancellationToken cancellationToken)
     {
         SetDefaultRequestTimeout(request);
         var response = await Proxy.ExecuteAsync(request, cancellationToken);
@@ -94,6 +97,18 @@ internal static class RestProxy
     internal static string GetSchema(bool secureProtocol)
     {
         return secureProtocol ? "https" : "http";
+    }
+
+    public static async Task<RestResponse<TResponse>> InvokeInner<TResponse>(RestRequest request, CancellationToken cancellationToken)
+    {
+        SetDefaultRequestTimeout(request);
+        var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
+        if (await RefreshToken(response, cancellationToken))
+        {
+            response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
+        }
+
+        return response;
     }
 
     private static async Task<bool> RefreshToken(RestResponse response, CancellationToken cancellationToken)

@@ -11,7 +11,7 @@ internal static class SpecialActions
     public static async Task<IEnumerable<string>?> GetJobIds(CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("job/ids", Method.Get);
-        var response = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        var response = await RestProxy.InvokeInner<IEnumerable<string>>(restRequest, cancellationToken);
         if (!response.IsSuccessful || response.Data == null) { return null; }
         return response.Data;
     }
@@ -19,7 +19,7 @@ internal static class SpecialActions
     public static async Task<IEnumerable<string>?> GetTriggerIds(CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("trigger/ids", Method.Get);
-        var response = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        var response = await RestProxy.InvokeInner<IEnumerable<string>>(restRequest, cancellationToken);
         if (!response.IsSuccessful || response.Data == null) { return null; }
         return response.Data;
     }
@@ -30,7 +30,7 @@ internal static class SpecialActions
         var restRequest = new RestRequest("job/{id}", Method.Get)
             .AddParameter("id", id, ParameterType.UrlSegment);
 
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        var result = await RestProxy.InvokeInner(restRequest, cancellationToken);
         return result.IsSuccessStatusCode;
     }
 
@@ -40,7 +40,7 @@ internal static class SpecialActions
         var restRequest = new RestRequest("trigger/{triggerId}", Method.Get)
             .AddParameter("triggerId", id, ParameterType.UrlSegment);
 
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        var result = await RestProxy.InvokeInner(restRequest, cancellationToken);
         return result.IsSuccessStatusCode;
     }
 }

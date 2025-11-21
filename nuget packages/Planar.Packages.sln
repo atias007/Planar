@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11123.170 d18.0
+VisualStudioVersion = 18.0.11123.170
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Job", "Planar.Job\Planar.Job.csproj", "{147036DE-C9EB-474E-99F6-061DE1DFB5A7}"
 EndProject
@@ -27,8 +27,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientLibraryTest", "Client
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{2DD352CF-F699-4BB0-AA2E-385B3EBDC875}"
 	ProjectSection(SolutionItems) = preProject
-		publish.bat = publish.bat
-		publish.cli.bat = publish.cli.bat
+		publish_all.bat = publish_all.bat
+		publish_cli.bat = publish_cli.bat
+		publish_no_cli.bat = publish_no_cli.bat
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NugetTest", "NugetTest\NugetTest.csproj", "{2E0044E8-8764-42B8-B423-836A1898B21D}"

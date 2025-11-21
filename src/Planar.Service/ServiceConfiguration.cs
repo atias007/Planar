@@ -21,9 +21,6 @@ namespace Planar.Service
             // Quartz
             services.AddQuartzService();
 
-            // Main Service
-            services.AddTransient<MainService>();
-
             // Domain layers
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();
@@ -56,11 +53,6 @@ namespace Planar.Service
             services.AddPlanarDataLayerWithContext();
 
             // Service
-            services.AddSingleton<MainService>();
-            services.AddSingleton<AuditService>();
-            services.AddSingleton<MonitorService>();
-            services.AddSingleton<SecurityService>();
-            services.AddSingleton<MqttBrokerService>();
             services.AddSingleton<MonitorDurationCache>();
 
             // Scheduler
@@ -69,10 +61,10 @@ namespace Planar.Service
             services.AddSingleton<JobKeyHelper>();
 
             // Hosted Services
-            services.AddHostedService(p => p.GetRequiredService<MainService>());
-            services.AddHostedService(p => p.GetRequiredService<AuditService>());
-            services.AddHostedService(p => p.GetRequiredService<MonitorService>());
-            services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
+            services.AddHostedService<MainService>();
+            services.AddHostedService<AuditService>();
+            services.AddHostedService<MonitorService>();
+            services.AddHostedService<MqttBrokerService>();
             services.AddHostedService<RestartService>();
             if (AppSettings.Authentication.HasAuthontication)
             {

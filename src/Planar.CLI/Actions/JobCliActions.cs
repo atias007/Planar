@@ -7,6 +7,7 @@ using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
+using Spectre.Console.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

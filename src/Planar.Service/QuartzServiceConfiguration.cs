@@ -35,7 +35,7 @@ public static class QuartzServiceConfiguration
         {
             q.SchedulerName = AppSettings.General.ServiceName;
             q.SchedulerId = AppSettings.General.InstanceId;
-            q.UseDefaultThreadPool(tp => { tp.MaxConcurrency = 10; });
+            q.UseDefaultThreadPool(tp => { tp.MaxConcurrency = AppSettings.General.MaxConcurrency; });
 
             // this also injects scoped services (like EF DbContext)
             // MicrosoftDependencyInjectionJobFactory is the default for DI configuration, this method will be removed later on
