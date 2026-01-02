@@ -78,7 +78,7 @@ public static class CliTableFormat
         }
         else
         {
-            return $"{dateTime.ToShortDateString()}";
+            return $"{dateTime:d}";
         }
     }
 
@@ -96,12 +96,12 @@ public static class CliTableFormat
 
     public static string FormatTime(DateTime dateTime)
     {
-        return $"{dateTime.ToShortTimeString()}";
+        return $"{dateTime:t}";
     }
 
     public static string FormatExceptionCount(int count)
     {
-        if (count <= 0) { return "0"; }
+        if (count <= 0) { return "-"; }
         return $"[red]{count:N0}[/]";
     }
 

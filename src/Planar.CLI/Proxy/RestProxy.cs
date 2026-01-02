@@ -82,6 +82,16 @@ internal static class RestProxy
         return result;
     }
 
+    public static Task<RestResponse<TResponse>> InvokeWithoutSpinner<TResponse>(RestRequest request, CancellationToken cancellationToken)
+    {
+        return InvokeInner<TResponse>(request, cancellationToken);
+    }
+
+    public static Task<RestResponse> InvokeWithoutSpinner(RestRequest request, CancellationToken cancellationToken)
+    {
+        return InvokeInner(request, cancellationToken);
+    }
+
     public static async Task<RestResponse> InvokeInner(RestRequest request, CancellationToken cancellationToken)
     {
         SetDefaultRequestTimeout(request);

@@ -16,9 +16,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.Actions;
 
@@ -948,20 +950,18 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
             .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
-        var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+        var runResult = await RestProxy.InvokeWithoutSpinner<RunningJobDetails>(restRequest, cancellationToken);
 
         var counter = 0;
         while (!runResult.IsSuccessful && counter < 3)
         {
             await Task.Delay(500, cancellationToken);
-            runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+            runResult = await RestProxy.InvokeWithoutSpinner<RunningJobDetails>(restRequest, cancellationToken);
             counter++;
         }
 
         if (!runResult.IsSuccessful)
         {
-            // Not Found: job finish in very short time
-            AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: 100%  |  ");
             if (runResult.StatusCode == HttpStatusCode.NotFound) { return (null, true, runResult); }
 
             // Fail to get running data
@@ -987,16 +987,15 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         var restRequest = new RestRequest("history/{id}/status", Method.Get)
             .AddParameter("id", logId, ParameterType.UrlSegment);
-        var result = await RestProxy.Invoke<int>(restRequest, cancellationToken);
+        var result = await RestProxy.InvokeWithoutSpinner<int>(restRequest, cancellationToken);
         if (!result.IsSuccessful) { return true; }
         return result.Data == -1;
     }
 
     private static async Task<(RestResponse<RunningJobDetails>, DateTime?)> LongPollingGetRunningData(
             RestResponse<RunningJobDetails> runResult,
-        string instanceId,
-        DateTime invokeDate,
-        CancellationToken cancellationToken)
+            string instanceId,
+            CancellationToken cancellationToken)
     {
         var data = runResult.Data;
         var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
@@ -1009,7 +1008,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         var counter = 1;
         while (counter <= 3)
         {
-            runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+            runResult = await RestProxy.InvokeWithoutSpinner<RunningJobDetails>(restRequest, cancellationToken);
             if (runResult.IsSuccessful) { break; }
             if (runResult.StatusCode == HttpStatusCode.NotFound) { break; }
             if (runResult.StatusCode == HttpStatusCode.BadRequest) { break; }
@@ -1018,8 +1017,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
 
         var estimateEnd = GetEstimatedEndTime(runResult);
-        WriteRunningData(runResult, invokeDate, estimateEnd);
-
         return (runResult, estimateEnd);
     }
 
@@ -1177,54 +1174,55 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         var result = await InitGetRunningData(instanceId, cancellationToken);
         if (result.Item2) { return result.Item1; }
 
-        Console.WriteLine();
-
         Task dataTask = Task.CompletedTask;
         var runResult = result.Item3;
         DateTime? estimateEnd = null;
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            var brk = WriteRunningData(runResult, invokeDate, estimateEnd);
-            if (brk)
-            {
-                var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
-                if (!isRunning) { break; }
-            }
 
-            if (dataTask.Status == TaskStatus.RanToCompletion)
+        var table = GetRunningTable(runResult, invokeDate, estimateEnd);
+        if (table == null)
+        {
+            var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
+            if (!isRunning) { return null; }
+            table = new Table();
+        }
+
+        await AnsiConsole.Live(table)
+            .AutoClear(true)
+            .StartAsync(async ctx =>
             {
-                dataTask = Task.Run(async () =>
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    var data = await LongPollingGetRunningData(runResult, instanceId, invokeDate, cancellationToken);
-                    runResult = data.Item1;
-                    estimateEnd = data.Item2;
-                }, cancellationToken);
-            }
+                    var success = UpdateRunningTable(table, ctx, runResult, invokeDate, estimateEnd);
+                    if (!success)
+                    {
+                        var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
+                        if (!isRunning) { break; }
+                    }
 
-            // wait for 1 sec then break and write running data on screen
-            for (int i = 0; i < 5; i++)
-            {
-                await Task.Delay(200, cancellationToken);
-                if (dataTask.Status == TaskStatus.RanToCompletion) { break; }
-            }
+                    if (dataTask.Status == TaskStatus.RanToCompletion)
+                    {
+                        dataTask = Task.Run(async () =>
+                        {
+                            var (result, estimateEnd) = await LongPollingGetRunningData(runResult, instanceId, cancellationToken);
+                            runResult = result;
+                            UpdateRunningTable(table, ctx, runResult, invokeDate, estimateEnd);
+                        }, cancellationToken);
+                    }
 
-            if (!runResult.IsSuccessful)
-            {
-                var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
-                if (!isRunning) { break; }
-            }
-        }
+                    // wait for 1 sec then break and write running data on screen
+                    for (int i = 0; i < 5; i++)
+                    {
+                        await Task.Delay(200, cancellationToken);
+                        if (dataTask.Status == TaskStatus.RanToCompletion) { break; }
+                    }
 
-        Console.CursorTop -= 1;
-
-        if (cancellationToken.IsCancellationRequested)
-        {
-            AnsiConsole.WriteLine();
-        }
-        else
-        {
-            AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: 100%  |  ");
-        }
+                    if (!runResult.IsSuccessful)
+                    {
+                        var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
+                        if (!isRunning) { break; }
+                    }
+                }
+            });
 
         return null;
     }
@@ -1235,7 +1233,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
            .AddQueryParameter("filter", $"Id eq {logId}")
            .AddQueryParameter("select", "Duration,EffectedRows,ExceptionCount,Status");
 
-        var result = await RestProxy.Invoke<JobHistoryOdataWrapper>(restRequest, cancellationToken);
+        var result = await RestProxy.InvokeWithoutSpinner<JobHistoryOdataWrapper>(restRequest, cancellationToken);
         var data = result.Data?.Value?.FirstOrDefault();
         if (result.StatusCode == HttpStatusCode.NotFound || data == null)
         {
@@ -1245,11 +1243,8 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         if (!result.IsSuccessful) { return new CliActionResponse(result); }
 
-        var finalSpan = TimeSpan.FromMilliseconds(data.Duration.GetValueOrDefault());
-        AnsiConsole.Markup($"Effected Row(s): {CliTableFormat.FormatNumber(data.EffectedRows)}  |");
-        AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionCount)}  |");
-        AnsiConsole.Markup($"  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}  |");
-        AnsiConsole.MarkupLine($"  End Time: --:--:--     ");
+        var table = GetRunningTable(data, data.Duration.GetValueOrDefault());
+        AnsiConsole.Write(table);
         AnsiConsole.Markup(" [gold3_1][[x]][/] ");
         if (data.Status == 0)
         {
@@ -1263,7 +1258,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         Console.WriteLine();
         Console.WriteLine();
 
-        var table = new Table();
+        table = new Table();
         table.AddColumn(new TableColumn(new Markup("[grey54]Get more information by the following commands[/]")));
         table.BorderColor(Color.FromInt32(242));
         table.AddRow($"[grey54]history get[/] [grey62]{logId}[/]");
@@ -1280,26 +1275,62 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return null;
     }
 
-    private static bool WriteRunningData(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
+    private static bool UpdateRunningTable(Table table, LiveDisplayContext context, RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
     {
-        lock (_locker)
-        {
-            if (runResult.Data == null) { return true; }
-            var data = runResult.Data;
+        if (runResult.Data == null) { return false; }
+        var data = runResult.Data;
+        var span = DateTimeOffset.Now.Subtract(invokeDate);
+        var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
+        table.UpdateCell(0, 0, $"[gray]{data.Progress}%[/]");
+        table.UpdateCell(0, 1, $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]");
+        table.UpdateCell(0, 2, CliTableFormat.FormatExceptionCount(data.ExceptionsCount));
+        table.UpdateCell(0, 3, $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]");
+        table.UpdateCell(0, 4, $"[gray]{CliTableFormat.FormatTimeSpan(endSpan)}[/]");
+        context.Refresh();
+        return true;
+    }
 
-            Console.CursorTop -= 1;
-            var span = DateTimeOffset.Now.Subtract(invokeDate);
-            var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
-            var title =
-                    $" [gold3_1][[x]][/] Progress: [wheat1]{data.Progress}[/]%  |" +
-                    $"  Effected Row(s): [wheat1]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]  |" +
-                    $"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionsCount)}  |" +
-                    $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
-                    $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(endSpan)}[/]     ";
-            AnsiConsole.MarkupLine(title);
+    private static Table? GetRunningTable(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
+    {
+        if (runResult.Data == null) { return null; }
+        var data = runResult.Data;
+        var span = DateTimeOffset.Now.Subtract(invokeDate);
+        var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
 
-            return false;
-        }
+        var table = new Table();
+        table.AddColumn("Progress", col => col.Centered());
+        table.AddColumn("Effected Row(s)", col => col.Centered());
+        table.AddColumn("Exception Count", col => col.Centered());
+        table.AddColumn("Run Time", col => col.Centered());
+        table.AddColumn("End Time");
+        table.AddRow(
+            $"[gray]{data.Progress}%[/]",
+            $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
+            CliTableFormat.FormatExceptionCount(data.ExceptionsCount),
+            $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",
+            $"[gray]{CliTableFormat.FormatTimeSpan(endSpan)}[/]");
+
+        return table;
+    }
+
+    private static Table GetRunningTable(JobHistory data, int duration)
+    {
+        var span = TimeSpan.FromMilliseconds(duration);
+        var table = new Table();
+        table.AddColumn("Progress", col => col.Centered());
+        table.AddColumn("Effected Row(s)", col => col.Centered());
+        table.AddColumn("Exception Count", col => col.Centered());
+        table.AddColumn("Run Time", col => col.Centered());
+        table.AddColumn("End Time");
+
+        table.AddRow(
+            "[gray]100%[/]",
+            $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
+            CliTableFormat.FormatExceptionCount(data.ExceptionCount),
+            $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",
+            "[gray]--:--:--[/]");
+
+        return table;
     }
 
     private static void CollectCliAutoResumeRequest(CliAutoResumeRequest request)
