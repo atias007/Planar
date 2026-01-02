@@ -808,17 +808,6 @@ public partial class JobDomain
     {
         ValidateRequestNoNull(request);
 
-        ////try
-        ////{
-        ////    ServiceUtil.ValidateJobFolderExists(request.JobFileInfo.Directory.FullName);
-        ////    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-        ////    await util.ValidateJobFolderExists(request.Folder);
-        ////}
-        ////catch (PlanarException ex)
-        ////{
-        ////    throw new RestValidationException("folder", ex.Message);
-        ////}
-
         try
         {
             ServiceUtil.ValidateJobFileExists(request.JobFilePath);
