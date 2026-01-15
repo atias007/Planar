@@ -7,7 +7,6 @@ using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
-using Spectre.Console.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,11 +15,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.Actions;
 
@@ -1118,7 +1115,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     private static async Task<CliActionResponse?> TestStep0CheckJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
     {
         // (0) Check for running job
-        AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Check job...");
+        AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Check job…");
         var result = await CheckAlreadyRunningJob(request, cancellationToken);
         if (result.IsSuccessful) { return null; }
 
@@ -1128,7 +1125,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     private static async Task<CliActionResponse?> TestStep1InvokeJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
     {
         // (1) Invoke job
-        AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job...");
+        AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job…");
         var result = await InvokeJobInner(request, cancellationToken);
         if (result.IsSuccessful)
         {
@@ -1140,7 +1137,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     private static async Task<TestData> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate, CancellationToken cancellationToken)
     {
-        AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
+        AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id… ");
 
         var result = new TestData();
         var response = await GetLastInstanceId(request.Id, invokeDate, cancellationToken);
@@ -1245,17 +1242,15 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         var table = GetRunningTable(data, data.Duration.GetValueOrDefault());
         AnsiConsole.Write(table);
-        AnsiConsole.Markup(" [gold3_1][[x]][/] ");
         if (data.Status == 0)
         {
-            AnsiConsole.Markup("[green]Success[/]");
+            AnsiConsole.MarkupLine("[black on green] Success [/]");
         }
         else
         {
-            AnsiConsole.Markup($"[red]Fail[/]");
+            AnsiConsole.MarkupLine($"[black on red] Fail [/]");
         }
 
-        Console.WriteLine();
         Console.WriteLine();
 
         table = new Table();
@@ -1281,13 +1276,32 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         var data = runResult.Data;
         var span = DateTimeOffset.Now.Subtract(invokeDate);
         var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
-        table.UpdateCell(0, 0, $"[gray]{data.Progress}%[/]");
+        table.UpdateCell(0, 0, CreateProgressBarMarkup(data.Progress));
         table.UpdateCell(0, 1, $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]");
         table.UpdateCell(0, 2, CliTableFormat.FormatExceptionCount(data.ExceptionsCount));
         table.UpdateCell(0, 3, $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]");
         table.UpdateCell(0, 4, $"[gray]{CliTableFormat.FormatTimeSpan(endSpan)}[/]");
         context.Refresh();
         return true;
+    }
+
+    /// <summary>
+    /// Helper method to create a simple text-based progress bar representation using Markup.
+    /// You could also use a custom renderable that visually looks more like Spectre's standard progress bar.
+    /// </summary>
+    private static Markup CreateProgressBarMarkup(int percentage, Color? color = null)
+    {
+        color ??= Color.Gold3_1;
+        int completedChars = percentage / 5; // Each char is 5%
+        int remainingChars = 20 - completedChars;
+
+        // Build the bar: [▬▬▬▬▬▬▬▬▬▬       ] 50%
+        var bar = new StringBuilder();
+        bar.Append('▬', completedChars);
+        bar.Append(' ', remainingChars);
+        var space = percentage < 10 ? "  " : (percentage < 100 ? " " : string.Empty);
+        var final = $"[{color.Value}][[{bar}]][/] {percentage}%{space}";
+        return new Markup(final);
     }
 
     private static Table? GetRunningTable(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
