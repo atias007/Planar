@@ -19,6 +19,7 @@ internal class ServiceProfiler : Profile
         CreateMap<MonitorSettings, MonitorSettingsInfo>();
         CreateMap<RetentionSettings, RetentionSettingsInfo>();
         CreateMap<ProtectionSettings, ProtectionSettingsInfo>();
+        CreateMap<CentralConfigSettings, CentralConfigInfo>();
         CreateMap<WorkingHourScope, WorkingHourScopeModel>();
     }
 }

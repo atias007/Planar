@@ -10,6 +10,7 @@
         public SmtpSettingsInfo Smtp { get; set; } = null!;
         public MonitorSettingsInfo Monitor { get; set; } = null!;
         public ProtectionSettingsInfo Protection { get; set; } = null!;
+        public CentralConfigInfo CentralConfig { get; set; } = null!;
         public HooksSettingsInfo Hooks { get; } = new HooksSettingsInfo();
     }
 }

@@ -41,6 +41,8 @@ public static class AppSettings
 
     public static ProtectionSettings Protection { get; private set; } = new();
 
+    public static CentralConfigSettings CentralConfig { get; private set; } = new();
+
     public static void Initialize(IConfiguration configuration)
     {
         Console.WriteLine("[x] Initialize AppSettings");
@@ -56,6 +58,7 @@ public static class AppSettings
         InitializeMonitor(configuration);
         InitializeProtection(configuration);
         InitializeHooks(configuration);
+        InitializeCentralConfig(configuration);
 
         // Database
         Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Sqlite");
@@ -112,6 +115,13 @@ public static class AppSettings
             Console.WriteLine(string.Empty.PadLeft(40, '*'));
             Console.ResetColor();
         }
+    }
+
+    private static void InitializeCentralConfig(IConfiguration configuration)
+    {
+        CentralConfig.Url = GetSettings(configuration, EC.CentralConfigUrlVariableKey, "central config", "Url", string.Empty);
+        if (string.IsNullOrWhiteSpace(CentralConfig.Url)) { return; }
+        ValidateUri(CentralConfig.Url, "central config url");
     }
 
     private static void InitializeSmtp(IConfiguration configuration)

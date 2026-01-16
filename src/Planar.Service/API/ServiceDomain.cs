@@ -38,6 +38,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             Smtp = Mapper.Map<SmtpSettingsInfo>(AppSettings.Smtp),
             Monitor = Mapper.Map<MonitorSettingsInfo>(AppSettings.Monitor),
             Protection = Mapper.Map<ProtectionSettingsInfo>(AppSettings.Protection),
+            CentralConfig = Mapper.Map<CentralConfigInfo>(AppSettings.CentralConfig),
         };
 
         var nodes = await ClusterUtil.GetAllNodes();

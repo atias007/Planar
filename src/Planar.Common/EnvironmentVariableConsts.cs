@@ -1,4 +1,6 @@
-﻿namespace Planar.Common
+﻿using Quartz.Impl;
+
+namespace Planar.Common
 {
     public static class EnvironmentVariableConsts
     {
@@ -37,6 +39,8 @@
         public const string JobPortVariableKey = "PLANAR_JOB_PORT";
         public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPS_REDIRECT";
         public const string UseHttpsVariableKey = "PLANAR_HTTPS";
+
+        public const string CentralConfigUrlVariableKey = "PLANAR_CENTRAL_CONFIG_URL";
 
         public const string SmtpHost = "PLANAR_SMTP_HOST";
         public const string SmtpPort = "PLANAR_SMTP_PORT";
