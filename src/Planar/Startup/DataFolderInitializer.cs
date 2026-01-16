@@ -1,10 +1,8 @@
 ﻿using Planar.Service.General;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Twilio.Base;
 
 namespace Planar.Startup
 {
@@ -12,7 +10,7 @@ namespace Planar.Startup
     {
         public static void CreateFolderAndFiles()
         {
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = typeof(DataFolderInitializer).Assembly;
             var names = assembly.GetManifestResourceNames();
 
             _ = CreateJobFiles();

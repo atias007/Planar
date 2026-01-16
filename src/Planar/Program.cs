@@ -12,7 +12,7 @@ namespace Planar
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Log.CloseAndFlush();
             DataFolderInitializer.CreateFolderAndFiles();
-            AppSettingsInitializer.Initialize();
+            await AppSettingsInitializer.Initialize();
             DbFactory.InitializeRepoDb();
             WorkingHoursInitializer.Initialize();
             DatabaseMigrationInitializer.RunMigration();

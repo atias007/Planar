@@ -55,7 +55,7 @@ protection:
   regular restart expression: null     # cron expression for timing regular restart. the time is estimated. restart will occur when no jobs is currently running. set to null for no regular restart. the default null
 
 central config:                        # centralized configuration. set the url or file path of json configuration which will be inject to all jobs at startup
-  url: http://server/api/config        # url to get the centralized configuration json. for file path use file:// prefix
+  url: file:///api/config        # url to get the centralized configuration json. for file path use file:// prefix
 
 smtp: 
   from address: admin@planar.me

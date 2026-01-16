@@ -9,7 +9,8 @@ namespace Planar
         Settings,
         Calendars,
         Jobs,
-        MonitorHooks
+        MonitorHooks,
+        CentralConfig
     }
 
     internal static class FolderConsts
@@ -19,6 +20,7 @@ namespace Planar
         private const string Calendars = "Calendars";
         private const string Jobs = "Jobs";
         private const string MonitorHooks = "MonitorHooks";
+        private const string CentralConfig = "CentralConfig";
 
         private static string BasePath => AppDomain.CurrentDomain.BaseDirectory;
 
@@ -114,6 +116,7 @@ namespace Planar
                 PlanarSpecialFolder.Calendars => Calendars,
                 PlanarSpecialFolder.Jobs => Jobs,
                 PlanarSpecialFolder.MonitorHooks => MonitorHooks,
+                PlanarSpecialFolder.CentralConfig => CentralConfig,
                 _ => throw new ArgumentNullException($"special folder {planarFolder} is not supported"),
             };
 #endif
