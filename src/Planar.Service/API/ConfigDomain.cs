@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NetEscapades.Configuration.Yaml;
 using Planar.API.Common.Entities;
@@ -7,6 +6,7 @@ using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Quartz.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -69,16 +69,18 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         Global.SetGlobalConfig(final);
     }
 
-    public async Task<GlobalConfig> Get(string key)
+    public async Task<GlobalConfigModel> Get(string key)
     {
         var data = await DataLayer.GetGlobalConfig(key) ?? throw new RestNotFoundException($"global config with key '{key}' not found");
-        return data;
+        var result = Mapper.Map<GlobalConfigModel>(data);
+        return result;
     }
 
-    public async Task<IEnumerable<GlobalConfig>> GetAll()
+    public async Task<IEnumerable<GlobalConfigModel>> GetAll()
     {
         var data = await DataLayer.GetAllGlobalConfig();
-        return data;
+        var result = Mapper.Map<IEnumerable<GlobalConfigModel>>(data);
+        return result;
     }
 
     public static IEnumerable<KeyValueItem> GetAllFlat()
@@ -90,23 +92,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return data;
     }
 
-    public async Task Put(GlobalConfig request)
-    {
-        request.Key = request.Key.Trim();
-        var exists = await DataLayer.IsGlobalConfigExists(request.Key);
-        if (exists)
-        {
-            await DataLayer.UpdateGlobalConfig(request);
-        }
-        else
-        {
-            await DataLayer.AddGlobalConfig(request);
-        }
-
-        await Flush();
-    }
-
-    public async Task Add(GlobalConfig request)
+    public async Task Add(GlobalConfigModel request)
     {
         request.Key = request.Key.Trim();
         var exists = await DataLayer.IsGlobalConfigExists(request.Key);
@@ -116,11 +102,12 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestConflictException($"key {request.Key} already exists");
         }
 
-        await DataLayer.AddGlobalConfig(request);
+        var globalConfig = Mapper.Map<GlobalConfig>(request);
+        await DataLayer.AddGlobalConfig(globalConfig);
         await Flush();
     }
 
-    public async Task Update(GlobalConfig request)
+    public async Task Update(GlobalConfigModel request)
     {
         request.Key = request.Key.Trim();
         var exists = await DataLayer.IsGlobalConfigExists(request.Key);
@@ -129,7 +116,8 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestNotFoundException();
         }
 
-        await DataLayer.UpdateGlobalConfig(request);
+        var globalConfig = Mapper.Map<GlobalConfig>(request);
+        await DataLayer.UpdateGlobalConfig(globalConfig);
         await Flush();
     }
 

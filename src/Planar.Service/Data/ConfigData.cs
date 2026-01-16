@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,9 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task<GlobalConfig?> GetGlobalConfig(string key)
     {
-        var result = await _context.GlobalConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.Key == key);
+        var result = await _context.GlobalConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == key);
         return result;
     }
 
@@ -46,7 +49,10 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default)
     {
-        var result = await _context.GlobalConfigs.AsNoTracking().OrderBy(p => p.Key).ToListAsync(stoppingToken);
+        var result = await _context.GlobalConfigs
+            .AsNoTracking()
+            .OrderBy(p => p.Key)
+            .ToListAsync(stoppingToken);
         return result;
     }
 

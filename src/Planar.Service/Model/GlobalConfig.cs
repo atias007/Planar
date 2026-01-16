@@ -19,4 +19,10 @@ public partial class GlobalConfig
     [StringLength(10)]
     [Unicode(false)]
     public string Type { get; set; } = null!;
+
+    [StringLength(1000)]
+    public string? SourceUrl { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? LastUpdate { get; set; }
 }
