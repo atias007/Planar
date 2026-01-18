@@ -26,4 +26,15 @@ public static class CustomValidatorsExtensions
     {
         return ruleBuilder.Must(b => b == null || b != TimeSpan.Zero).WithMessage("time span must be different from zero");
     }
+
+    public static IRuleBuilderOptions<T, string?> IsUri<T>(this IRuleBuilder<T, string?> ruleBuilder)
+    {
+        return ruleBuilder.Must(b => b == null || IsValidUri(b)).WithMessage("{PropertyName} has invalid url format");
+    }
+
+    private static bool IsValidUri(string uriString)
+    {
+        return Uri.TryCreate(uriString, UriKind.Absolute, out var uriResult)
+               && (uriResult.Scheme == Uri.UriSchemeFile || uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+    }
 }

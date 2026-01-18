@@ -10,7 +10,10 @@ namespace Planar.Service.MapperProfiles;
 
 public class MonitorProfile : Profile
 {
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public MonitorProfile()
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         CreateMap<AddMonitorRequest, MonitorAction>()
             .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.Event ?? string.Empty)))

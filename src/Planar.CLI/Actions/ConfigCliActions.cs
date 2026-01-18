@@ -51,8 +51,9 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
+        FillOptionalString(request, nameof(request.SourceUrl));
 
-        var data = new { request.Key, request.Value, Type = GlobalConfigTypes.String.ToString().ToLower() };
+        var data = new { request.Key, request.Value, request.SourceUrl };
         var restRequest = new RestRequest("config", Method.Post)
             .AddBody(data);
 
@@ -78,13 +79,14 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         return await LoadConfig(request, GlobalConfigTypes.Json, cancellationToken);
     }
 
-    [Action("put")]
-    public static async Task<CliActionResponse> Put(CliConfigRequest request, CancellationToken cancellationToken = default)
+    [Action("update")]
+    public static async Task<CliActionResponse> Update(CliConfigRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
+        FillOptionalString(request, nameof(request.SourceUrl));
 
-        var data = new { request.Key, request.Value, Type = "string" };
+        var data = new { request.Key, request.Value, request.SourceUrl };
         var restRequest = new RestRequest("config", Method.Put)
             .AddBody(data);
 

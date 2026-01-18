@@ -6,11 +6,12 @@ using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
-using Quartz.Util;
+using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -71,15 +72,16 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     public async Task<GlobalConfigModel> Get(string key)
     {
+        key = key.SafeTrim() ?? string.Empty;
         var data = await DataLayer.GetGlobalConfig(key) ?? throw new RestNotFoundException($"global config with key '{key}' not found");
-        var result = Mapper.Map<GlobalConfigModel>(data);
+        var result = GlobalConfig.ToGlobalConfigModel(data);
         return result;
     }
 
     public async Task<IEnumerable<GlobalConfigModel>> GetAll()
     {
         var data = await DataLayer.GetAllGlobalConfig();
-        var result = Mapper.Map<IEnumerable<GlobalConfigModel>>(data);
+        var result = GlobalConfig.ToGlobalConfigModel(data);
         return result;
     }
 
@@ -92,7 +94,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return data;
     }
 
-    public async Task Add(GlobalConfigModel request)
+    public async Task Add(GlobalConfigModelAddRequest request)
     {
         request.Key = request.Key.Trim();
         var exists = await DataLayer.IsGlobalConfigExists(request.Key);
@@ -102,21 +104,23 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestConflictException($"key {request.Key} already exists");
         }
 
-        var globalConfig = Mapper.Map<GlobalConfig>(request);
+        request.Value = await GetSourceUrlContent(request);
+
+        var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
         await DataLayer.AddGlobalConfig(globalConfig);
         await Flush();
     }
 
-    public async Task Update(GlobalConfigModel request)
+    public async Task Update(GlobalConfigModelAddRequest request)
     {
         request.Key = request.Key.Trim();
-        var exists = await DataLayer.IsGlobalConfigExists(request.Key);
-        if (!exists)
-        {
-            throw new RestNotFoundException();
-        }
+        var exists = await DataLayer.GetGlobalConfig(request.Key) ?? throw new RestNotFoundException();
+        request.Value = await GetSourceUrlContent(request);
 
-        var globalConfig = Mapper.Map<GlobalConfig>(request);
+        request.Value ??= exists.Value;
+        request.SourceUrl ??= exists.SourceUrl;
+
+        var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
         await DataLayer.UpdateGlobalConfig(globalConfig);
         await Flush();
     }
@@ -160,5 +164,51 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             Logger.LogWarning(ex, "invalid json format at global config key '{Key}'", config.Key);
             return [];
         }
+    }
+
+    private static async Task<string?> GetSourceUrlContent(GlobalConfigModelAddRequest request)
+    {
+        if (string.IsNullOrEmpty(request.SourceUrl)) { return request.Value; }
+        try
+        {
+            var content = await GetSourceUrlContent(request.SourceUrl);
+            if (string.IsNullOrWhiteSpace(request.Type))
+            {
+                if (ValidationUtil.IsJsonValid(content)) { request.Type = nameof(GlobalConfigTypes.Json).ToLower(); }
+                else if (ValidationUtil.IsYmlValid(content)) { request.Type = nameof(GlobalConfigTypes.Yml).ToLower(); }
+                else { throw new InvalidDataException("source url content type could not be determined. content should be json or yml format"); }
+
+                return content;
+            }
+
+            if (
+                request.Type.Equals(nameof(GlobalConfigTypes.Json), StringComparison.OrdinalIgnoreCase)
+                && !ValidationUtil.IsJsonValid(content))
+            {
+                throw new InvalidDataException("source url content is not valid json format");
+            }
+
+            if (
+                request.Type.Equals(nameof(GlobalConfigTypes.Yml), StringComparison.OrdinalIgnoreCase)
+                && !ValidationUtil.IsYmlValid(content))
+            {
+                throw new InvalidDataException("source url content is not valid yml format");
+            }
+
+            return content;
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("source url", $"unable to get content from source url '{request.SourceUrl}'. message: {ex.Message}");
+        }
+    }
+
+    private static async Task<string> GetSourceUrlContent(string sourceUrl)
+    {
+        using var httpClient = new HttpClient();
+        var response = await httpClient.GetAsync(sourceUrl);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        return content;
     }
 }
