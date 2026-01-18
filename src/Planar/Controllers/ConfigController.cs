@@ -93,7 +93,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [NoContentResponse]
     public async Task<ActionResult> Flush()
     {
-        await BusinesLayer.Flush();
+        await BusinesLayer.FlushWithReloadExternalSourceUrl();
         return NoContent();
     }
 }

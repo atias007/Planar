@@ -28,7 +28,46 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestNotFoundException($"global config with key '{key}' not found");
         }
 
-        await Flush();
+        AuditSecuritySafe($"config key '{key}' was deleted");
+
+        _ = Flush();
+    }
+
+    public async Task FlushWithReloadExternalSourceUrl(CancellationToken cancellationToken = default)
+    {
+        var allConfigs = await DataLayer.GetExternalSourceGlobalConfig(cancellationToken);
+        string? message = null;
+        foreach (var config in allConfigs)
+        {
+            var request = new GlobalConfigModelAddRequest
+            {
+                Key = config.Key,
+                SourceUrl = config.SourceUrl,
+            };
+
+            try
+            {
+                await SetSourceUrlContent(request);
+            }
+            catch (Exception ex)
+            {
+                message ??= $"unable to reload source url for config key '{config.Key}' with url '{config.SourceUrl}'. message: {ex.Message}";
+                Logger.LogError(ex, "unable to reload source url for config key '{Key}' with url '{SourceUrl}'", config.Key, config.SourceUrl);
+            }
+
+            if (config.Value != request.Value)
+            {
+                var updatedConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
+                await DataLayer.UpdateGlobalConfig(updatedConfig);
+                Logger.LogInformation("config key '{Key}' was reloaded", updatedConfig.Key);
+            }
+        }
+
+        await Flush(cancellationToken);
+        if (message != null)
+        {
+            throw new RestValidationException("source url", message);
+        }
     }
 
     public async Task Flush(CancellationToken stoppingToken = default)
@@ -43,10 +82,13 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     public async Task FlushInner(CancellationToken stoppingToken = default)
     {
         var prms = await DataLayer.GetAllGlobalConfig(stoppingToken);
+
+        // string
         var final = prms
             .Where(p => string.Equals(p.Type, GlobalConfigTypes.String.ToString(), StringComparison.OrdinalIgnoreCase))
             .ToDictionary(p => p.Key.Trim(), p => p.Value);
 
+        // yml
         var yamls = prms
             .Where(p =>
                 string.Equals(p.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase) &&
@@ -58,6 +100,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             final = final.Merge(ymlDic);
         }
 
+        // json
         var json = prms
             .Where(p => string.Equals(p.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase));
 
@@ -104,25 +147,27 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestConflictException($"key {request.Key} already exists");
         }
 
-        request.Value = await GetSourceUrlContent(request);
+        await SetSourceUrlContent(request);
 
         var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
         await DataLayer.AddGlobalConfig(globalConfig);
-        await Flush();
+        AuditSecuritySafe($"config key '{request.Key}' was added");
+        _ = Flush();
     }
 
     public async Task Update(GlobalConfigModelAddRequest request)
     {
         request.Key = request.Key.Trim();
         var exists = await DataLayer.GetGlobalConfig(request.Key) ?? throw new RestNotFoundException();
-        request.Value = await GetSourceUrlContent(request);
+        await SetSourceUrlContent(request);
 
         request.Value ??= exists.Value;
         request.SourceUrl ??= exists.SourceUrl;
 
         var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
         await DataLayer.UpdateGlobalConfig(globalConfig);
-        await Flush();
+        AuditSecuritySafe($"config key '{request.Key}' was updated");
+        _ = Flush();
     }
 
     private IDictionary<string, string?> GetYmlConfiguration(GlobalConfig config)
@@ -166,9 +211,9 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    private static async Task<string?> GetSourceUrlContent(GlobalConfigModelAddRequest request)
+    private static async Task SetSourceUrlContent(GlobalConfigModelAddRequest request)
     {
-        if (string.IsNullOrEmpty(request.SourceUrl)) { return request.Value; }
+        if (string.IsNullOrEmpty(request.SourceUrl)) { return; }
         try
         {
             var content = await GetSourceUrlContent(request.SourceUrl);
@@ -178,7 +223,8 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
                 else if (ValidationUtil.IsYmlValid(content)) { request.Type = nameof(GlobalConfigTypes.Yml).ToLower(); }
                 else { throw new InvalidDataException("source url content type could not be determined. content should be json or yml format"); }
 
-                return content;
+                request.Value = content;
+                return;
             }
 
             if (
@@ -195,7 +241,8 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
                 throw new InvalidDataException("source url content is not valid yml format");
             }
 
-            return content;
+            request.Value = content;
+            return;
         }
         catch (Exception ex)
         {
@@ -205,10 +252,23 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     private static async Task<string> GetSourceUrlContent(string sourceUrl)
     {
-        using var httpClient = new HttpClient();
-        var response = await httpClient.GetAsync(sourceUrl);
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
-        return content;
+        var uri = new Uri(sourceUrl);
+        if (uri.IsFile && uri.IsAbsoluteUri)
+        {
+            return await File.ReadAllTextAsync(uri.LocalPath);
+        }
+        else if (uri.IsFile && !uri.IsAbsoluteUri)
+        {
+            var path = Path.Combine(FolderConsts.BasePath, uri.LocalPath);
+            return await File.ReadAllTextAsync(path);
+        }
+        else
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync(sourceUrl);
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            return content;
+        }
     }
 }

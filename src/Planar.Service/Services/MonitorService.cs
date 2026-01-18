@@ -38,9 +38,9 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         try
         {
             var reader = _channel.Reader;
-            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
+
+            await foreach (var monitor in reader.ReadAllAsync(stoppingToken))
             {
-                if (!reader.TryRead(out var monitor)) { continue; }
                 if (IsInternalEvent(monitor)) { continue; }
 
                 switch (monitor.Type)

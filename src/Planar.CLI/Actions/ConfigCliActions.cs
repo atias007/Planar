@@ -1,6 +1,5 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
-using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
@@ -51,7 +50,6 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
-        FillOptionalString(request, nameof(request.SourceUrl));
 
         var data = new { request.Key, request.Value, request.SourceUrl };
         var restRequest = new RestRequest("config", Method.Post)
@@ -84,7 +82,6 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
-        FillOptionalString(request, nameof(request.SourceUrl));
 
         var data = new { request.Key, request.Value, request.SourceUrl };
         var restRequest = new RestRequest("config", Method.Put)

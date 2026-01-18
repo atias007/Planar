@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup - Copy.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0003 -history last log - Copy.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0003 -history last log.sql" />
     <EmbeddedResource Include="Scripts\Planar_0004 - config source.sql" />
     <EmbeddedResource Include="Scripts\Planar_0002 - fix job properties.sql" />
   </ItemGroup>

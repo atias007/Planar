@@ -14,6 +14,8 @@ public interface IConfigData : IBaseDataLayer
 
     Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default);
 
+    Task<IEnumerable<GlobalConfig>> GetExternalSourceGlobalConfig(CancellationToken stoppingToken = default);
+
     Task<GlobalConfig?> GetGlobalConfig(string key);
 
     Task<bool> IsGlobalConfigExists(string key);
@@ -53,6 +55,17 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
             .AsNoTracking()
             .OrderBy(p => p.Key)
             .ToListAsync(stoppingToken);
+        return result;
+    }
+
+    public async Task<IEnumerable<GlobalConfig>> GetExternalSourceGlobalConfig(CancellationToken stoppingToken = default)
+    {
+        var result = await _context.GlobalConfigs
+            .AsNoTracking()
+            .Where(p => !string.IsNullOrWhiteSpace(p.SourceUrl))
+            .OrderBy(p => p.Key)
+            .ToListAsync(stoppingToken);
+
         return result;
     }
 
