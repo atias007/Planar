@@ -82,6 +82,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
+        FillOptionalString(request, nameof(request.SourceUrl));
 
         var data = new { request.Key, request.Value, request.SourceUrl };
         var restRequest = new RestRequest("config", Method.Put)

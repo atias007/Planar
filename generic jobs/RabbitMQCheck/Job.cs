@@ -33,6 +33,8 @@ internal partial class Job : BaseCheckJob
 
     partial void Finalayze(FinalayzeDetails<IEnumerable<HealthCheck>> details);
 
+    partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
@@ -103,6 +105,11 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterSpanCheck();
+    }
+
+    protected override void BaseOnFail<T>(T entity, Exception ex, int? retryCount)
+    {
+        OnFail(entity, ex, retryCount);
     }
 
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
