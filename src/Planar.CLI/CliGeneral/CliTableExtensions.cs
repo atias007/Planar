@@ -682,7 +682,7 @@ internal static class CliTableExtensions
         response.ForEach(r => table.Table.AddRow(
             r.Key.EscapeMarkup(),
             SafeCliString(LimitValue(r.Value)),
-            r.Type.EscapeMarkup(),
+            r.Type?.EscapeMarkup() ?? string.Empty,
             SafeCliString(LimitValue(r.SourceUrl)),
             CliTableFormat.FormatDateTime(r.LastUpdate)));
 

@@ -103,8 +103,9 @@ public class MonitorScanProducer(Channel<MonitorScanMessage> channel, ILogger<Mo
         {
             if (message.Type != MonitorScanType.ScanSystem) { return; }
             if (message.MonitorSystemInfo == null) { return; }
+
             var message2 = new MonitorScanMessage(Common.MonitorEvents.AnySystemEvent, message.MonitorSystemInfo, message.Exception);
-            if (!channel.Writer.TryWrite(message))
+            if (!channel.Writer.TryWrite(message2))
             {
                 await channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false);
                 await channel.Writer.WriteAsync(message2, cancellationToken).ConfigureAwait(false);

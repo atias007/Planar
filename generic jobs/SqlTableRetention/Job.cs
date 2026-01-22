@@ -124,7 +124,7 @@ internal partial class Job : BaseCheckJob
         string query;
         if (string.IsNullOrWhiteSpace(table.Condition))
         {
-            query = $"TUNCATE TABLE {tableName}";
+            query = $"TRUNCATE TABLE {tableName}";
         }
         else
         {
