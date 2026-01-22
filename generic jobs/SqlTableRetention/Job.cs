@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using Sql;
+using System.Buffers.Text;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -24,6 +26,8 @@ internal partial class Job : BaseCheckJob
     partial void VetoTable(Table table);
 
     partial void Finalayze(FinalayzeDetails<IEnumerable<Table>> details);
+
+    partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -67,6 +71,11 @@ internal partial class Job : BaseCheckJob
         Finalayze();
     }
 
+    protected override void BaseOnFail<T>(T entity, Exception ex, int? retryCount)
+    {
+        OnFail(entity, ex, retryCount);
+    }
+
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterSpanCheck();
@@ -100,10 +109,13 @@ internal partial class Job : BaseCheckJob
         };
 
         await connection.OpenAsync();
-        var count = await cmd.ExecuteNonQueryAsync();
+        var sw = Stopwatch.StartNew();
+        var count = (long?)(await cmd.ExecuteScalarAsync()) ?? 0;
+        sw.Stop();
         if (count < 0) { count = 0; }
-        Logger.LogInformation("retention '{Name}' executed successfully with {Count} effected row(s)", table.Name, count.ToString("N0", CultureInfo.CurrentCulture));
-        await IncreaseEffectedRowsAsync(count);
+        Logger.LogInformation("retention '{Name}' done. effected rows: {Count:N0}, elapsed: {Elapsed:hh\\:mm\\:ss}", table.Name, count, sw.Elapsed);
+        var effected = count > int.MaxValue ? 0 : Convert.ToInt32(count);
+        await IncreaseEffectedRowsAsync(effected);
     }
 
     private static string GetQuery(Table table)
@@ -112,19 +124,30 @@ internal partial class Job : BaseCheckJob
         string query;
         if (string.IsNullOrWhiteSpace(table.Condition))
         {
-            query = $"TUNCATE TABLE {tableName}";
+            query = $"TRUNCATE TABLE {tableName}";
         }
         else
         {
             query = $"""
-        DECLARE @batchSize INT = {table.BatchSize};
+                DECLARE @TotalDeletedRows BIGINT = 0;
+                DECLARE @RowsAffected INT;
 
-        WHILE EXISTS (SELECT TOP 1 1 FROM {tableName} WITH(NOLOCK) WHERE {table.Condition})
-        BEGIN
-          DELETE TOP (@batchSize) FROM {tableName}
-          WHERE {table.Condition};
-        END
-        """;
+                WHILE 1 = 1
+                BEGIN
+                    DELETE TOP ({table.BatchSize})
+                    FROM {tableName}
+                    WHERE {table.Condition};
+
+                    SET @RowsAffected = @@ROWCOUNT;
+                    SET @TotalDeletedRows = @TotalDeletedRows + @RowsAffected;
+
+                    IF @RowsAffected = 0 BREAK;
+
+                    WAITFOR DELAY '00:00:01';
+                END
+
+                SELECT @TotalDeletedRows;
+                """;
         }
 
         return query;
@@ -174,7 +197,7 @@ internal partial class Job : BaseCheckJob
 
     private List<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings, Defaults defaults)
     {
-        var tables = new List<Table>();
+        var result = new List<Table>();
         var section = configuration.GetRequiredSection("tables");
         foreach (var item in section.GetChildren())
         {
@@ -185,16 +208,16 @@ internal partial class Job : BaseCheckJob
             if (CheckVeto(key, "table")) { continue; }
 
             ValidateTable(key);
-            tables.Add(key);
+            result.Add(key);
         }
 
-        return tables;
+        return result;
     }
 
     private static List<string> GetConnectionStringNames(IConfiguration configuration)
     {
         var result = new List<string>();
-        var section = configuration.GetRequiredSection("queries");
+        var section = configuration.GetRequiredSection("tables");
         foreach (var item in section.GetChildren())
         {
             var name = item.GetValue<string>("connection string name");

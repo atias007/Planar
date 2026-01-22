@@ -170,6 +170,7 @@ public class MainService : BackgroundService
             await MonitorJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
             await CircuitBreakerJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
             await SchedulerHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+            await ConfigReloadJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
 
             await SummaryReportJob.Schedule(_schedulerUtil.Scheduler, SummaryReportJob.ReportName, stoppingToken);
             await PausedReportJob.Schedule(_schedulerUtil.Scheduler, PausedReportJob.ReportName, stoppingToken);

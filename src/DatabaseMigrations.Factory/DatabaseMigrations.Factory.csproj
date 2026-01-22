@@ -82,6 +82,7 @@
     <None Remove="Scripts\Planar_0067 - HistoryLastLog.sql" />
     <None Remove="Scripts\Planar_0068 - del_hist_sp.sql" />
     <None Remove="Scripts\Planar_0069 - monitor_action_groups.sql" />
+    <None Remove="Scripts\Planar_0070 - add_configsource.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -153,6 +154,7 @@
     <EmbeddedResource Include="Scripts\Planar_0067 - HistoryLastLog.sql" />
     <EmbeddedResource Include="Scripts\Planar_0068 - del_hist_sp.sql" />
     <EmbeddedResource Include="Scripts\Planar_0069 - monitor_action_groups.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0070 - add_configsource.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

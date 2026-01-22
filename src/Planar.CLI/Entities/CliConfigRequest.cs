@@ -6,5 +6,8 @@ namespace Planar.CLI.Entities
     {
         [ActionProperty(DefaultOrder = 1)]
         public string? Value { get; set; }
+
+        [ActionProperty("u", "url", Name = "source url")]
+        public string? SourceUrl { get; set; }
     }
 }

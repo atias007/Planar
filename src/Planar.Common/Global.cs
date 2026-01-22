@@ -5,55 +5,54 @@ using System.Linq;
 using System.Reflection;
 using Version = System.Version;
 
-namespace Planar.Common
+namespace Planar.Common;
+
+public static class Global
 {
-    public static class Global
+    private static Version? _version;
+
+    public static Version Version
     {
-        private static Version? _version;
-
-        public static Version Version
+        get
         {
-            get
+            if (_version == null)
             {
-                if (_version == null)
-                {
-                    _version = Assembly.GetExecutingAssembly().GetName().Version ?? new Version();
-                }
-
-                return _version;
-            }
-        }
-
-        public static Dictionary<string, string?> GlobalConfig { get; private set; } = [];
-
-        public static LogLevel LogLevel { get; set; }
-
-        public static string Environment { get; set; } = "Unknown";
-
-        public static void SetGlobalConfig(Dictionary<string, string?> config)
-        {
-            GlobalConfig = config;
-        }
-
-        public static void Clear()
-        {
-            GlobalConfig = [];
-        }
-
-        public static SortedDictionary<string, string?> ConvertDataMapToDictionary(JobDataMap? map)
-        {
-            if (map == null)
-            {
-                return [];
+                _version = Assembly.GetExecutingAssembly().GetName().Version ?? new Version();
             }
 
-            var dic = map
-                .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
-                .OrderBy(k => k.Key)
-                .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
-
-            var result = new SortedDictionary<string, string?>(dic);
-            return result;
+            return _version;
         }
+    }
+
+    public static Dictionary<string, string?> GlobalConfig { get; private set; } = [];
+
+    public static LogLevel LogLevel { get; set; }
+
+    public static string Environment { get; set; } = "Unknown";
+
+    public static void SetGlobalConfig(Dictionary<string, string?> config)
+    {
+        GlobalConfig = config;
+    }
+
+    public static void Clear()
+    {
+        GlobalConfig = [];
+    }
+
+    public static SortedDictionary<string, string?> ConvertDataMapToDictionary(JobDataMap? map)
+    {
+        if (map == null)
+        {
+            return [];
+        }
+
+        var dic = map
+            .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
+            .OrderBy(k => k.Key)
+            .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
+
+        var result = new SortedDictionary<string, string?>(dic);
+        return result;
     }
 }

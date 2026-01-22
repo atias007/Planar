@@ -4,3 +4,4 @@ server:
   ssl: false
   user: null
   password: null
+  service name: null             # optional, used for sentinel or clustered servers

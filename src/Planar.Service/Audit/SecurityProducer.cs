@@ -4,29 +4,29 @@ using System;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace Planar.Service.Audit
-{
-    public class SecurityProducer(Channel<SecurityMessage> channel, ILogger<SecurityProducer> logger)
-    {
-        public void Publish(SecurityMessage message)
-        {
-            if (AppSettings.Authentication.NoAuthontication) { return; }
-            _ = SafePublishInner(message);
-        }
+namespace Planar.Service.Audit;
 
-        private async Task SafePublishInner(SecurityMessage message)
+public class SecurityProducer(Channel<SecurityMessage> channel, ILogger<SecurityProducer> logger)
+{
+    public void Publish(SecurityMessage message)
+    {
+        if (AppSettings.Authentication.NoAuthontication) { return; }
+        _ = SafePublishInner(message);
+    }
+
+    private async Task SafePublishInner(SecurityMessage message)
+    {
+        try
         {
-            try
+            if (!channel.Writer.TryWrite(message))
             {
-                while (await channel.Writer.WaitToWriteAsync().ConfigureAwait(false))
-                {
-                    if (channel.Writer.TryWrite(message)) { break; }
-                }
+                await channel.Writer.WaitToWriteAsync().ConfigureAwait(false);
+                await channel.Writer.WriteAsync(message).ConfigureAwait(false);
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "fail to publish security message. the message: {@Message}", message);
-            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "fail to publish security message. the message: {@Message}", message);
         }
     }
 }

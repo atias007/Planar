@@ -1296,11 +1296,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         int remainingChars = 20 - completedChars;
 
         // Build the bar: [▬▬▬▬▬▬▬▬▬▬       ] 50%
-        var bar = new StringBuilder();
-        bar.Append('▬', completedChars);
-        bar.Append(' ', remainingChars);
+        var bar = new string('▬', completedChars);
+        var tail = new string('▬', remainingChars);
         var space = percentage < 10 ? "  " : (percentage < 100 ? " " : string.Empty);
-        var final = $"[{color.Value}][[{bar}]][/] {percentage}%{space}";
+        var final = $"[{color.Value}][[{bar}[/][Gray15]{tail}[/][{color.Value}]]][/] {percentage}%{space}";
         return new Markup(final);
     }
 
@@ -1337,8 +1336,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         table.AddColumn("Run Time", col => col.Centered());
         table.AddColumn("End Time");
 
+        var bar = new string('▬', 20);
+
         table.AddRow(
-            "[gray]100%[/]",
+            $"[gray][[{bar}]] 100%[/] ",
             $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
             CliTableFormat.FormatExceptionCount(data.ExceptionCount),
             $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",

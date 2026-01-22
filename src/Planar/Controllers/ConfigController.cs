@@ -39,10 +39,10 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [HttpGet("{key}")]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "get_config_key", Description = "Get global configuration by key", Summary = "Get Global Configuration")]
-    [OkJsonResponse(typeof(GlobalConfig))]
+    [OkJsonResponse(typeof(GlobalConfigModel))]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<GlobalConfig>> Get([FromRoute][Required] string key)
+    public async Task<ActionResult<GlobalConfigModel>> Get([FromRoute][Required] string key)
     {
         key = WebUtility.UrlDecode(key);
         var result = await BusinesLayer.Get(key);
@@ -56,7 +56,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [CreatedResponse]
     [BadRequestResponse]
     [ConflictResponse]
-    public async Task<ActionResult> Add([FromBody] GlobalConfig request)
+    public async Task<ActionResult> Add([FromBody] GlobalConfigModel request)
     {
         await BusinesLayer.Add(request);
         return CreatedAtAction(nameof(Get), new { key = request.Key }, null);
@@ -69,7 +69,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult> Update([FromBody] GlobalConfig request)
+    public async Task<ActionResult> Update([FromBody] GlobalConfigModel request)
     {
         await BusinesLayer.Update(request);
         return NoContent();
@@ -93,7 +93,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [NoContentResponse]
     public async Task<ActionResult> Flush()
     {
-        await BusinesLayer.Flush();
+        await BusinesLayer.FlushWithReloadExternalSourceUrl();
         return NoContent();
     }
 }

@@ -676,10 +676,16 @@ internal static class CliTableExtensions
     internal static CliTable GetTable(List<CliGlobalConfig>? response)
     {
         var table = new CliTable(showCount: true);
-        table.Table.AddColumns("Key", "Value", "Type");
+        table.Table.AddColumns("Key", "Value", "Type", "Source Url", "Last Update");
 
         if (response == null) { return table; }
-        response.ForEach(r => table.Table.AddRow(r.Key.EscapeMarkup(), SafeCliString(LimitValue(r.Value)), r.Type.EscapeMarkup()));
+        response.ForEach(r => table.Table.AddRow(
+            r.Key.EscapeMarkup(),
+            SafeCliString(LimitValue(r.Value)),
+            r.Type?.EscapeMarkup() ?? string.Empty,
+            SafeCliString(LimitValue(r.SourceUrl)),
+            CliTableFormat.FormatDateTime(r.LastUpdate)));
+
         return table;
     }
 
@@ -735,9 +741,9 @@ internal static class CliTableExtensions
         return SafeCliString(value.ToString(), displayNull: true);
     }
 
-    private static string LimitValue(string? value, int limit = 100)
+    private static string LimitValue(string? value, int limit = 100, bool displayNull = false)
     {
-        if (value == null) { return "[null]".EscapeMarkup(); }
+        if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
         if (string.IsNullOrEmpty(value)) { return string.Empty; }
 
         value = SafeCliString(value);

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace Planar
+namespace Planar // === DO NOT CHANGE THE NAMESPACE SCOPE === //
 {
     internal enum PlanarSpecialFolder
     {
@@ -20,7 +20,7 @@ namespace Planar
         private const string Jobs = "Jobs";
         private const string MonitorHooks = "MonitorHooks";
 
-        private static string BasePath => AppDomain.CurrentDomain.BaseDirectory;
+        public static string BasePath => AppDomain.CurrentDomain.BaseDirectory;
 
         public const string JobFileName = "JobFile.yml";
         public const string JobFileExtPattern = "*.yml";
@@ -33,28 +33,28 @@ namespace Planar
         public static string GetAbsoluteSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
         {
 #if NETSTANDARD2_0
-            string specialPath;
-            switch (planarFolder)
-            {
-                case PlanarSpecialFolder.Settings:
-                    specialPath = Settings; // Assuming Settings is a string variable/property
-                    break;
+        string specialPath;
+        switch (planarFolder)
+        {
+            case PlanarSpecialFolder.Settings:
+                specialPath = Settings; // Assuming Settings is a string variable/property
+                break;
 
-                case PlanarSpecialFolder.Calendars:
-                    specialPath = Calendars; // Assuming Calendars is a string variable/property
-                    break;
+            case PlanarSpecialFolder.Calendars:
+                specialPath = Calendars; // Assuming Calendars is a string variable/property
+                break;
 
-                case PlanarSpecialFolder.Jobs:
-                    specialPath = Jobs; // Assuming Jobs is a string variable/property
-                    break;
+            case PlanarSpecialFolder.Jobs:
+                specialPath = Jobs; // Assuming Jobs is a string variable/property
+                break;
 
-                case PlanarSpecialFolder.MonitorHooks:
-                    specialPath = MonitorHooks; // Assuming MonitorHooks is a string variable/property
-                    break;
+            case PlanarSpecialFolder.MonitorHooks:
+                specialPath = MonitorHooks; // Assuming MonitorHooks is a string variable/property
+                break;
 
-                default:
-                    throw new ArgumentNullException($"special folder {planarFolder} is not supported");
-            }
+            default:
+                throw new ArgumentNullException($"special folder {planarFolder} is not supported");
+        }
 #else
             var specialPath = planarFolder switch
             {
@@ -85,28 +85,28 @@ namespace Planar
         {
 #if NETSTANDARD2_0
 
-            string specialPath;
-            switch (planarFolder)
-            {
-                case PlanarSpecialFolder.Settings:
-                    specialPath = Settings; // Assuming Settings is a string variable/property
-                    break;
+        string specialPath;
+        switch (planarFolder)
+        {
+            case PlanarSpecialFolder.Settings:
+                specialPath = Settings; // Assuming Settings is a string variable/property
+                break;
 
-                case PlanarSpecialFolder.Calendars:
-                    specialPath = Calendars; // Assuming Calendars is a string variable/property
-                    break;
+            case PlanarSpecialFolder.Calendars:
+                specialPath = Calendars; // Assuming Calendars is a string variable/property
+                break;
 
-                case PlanarSpecialFolder.Jobs:
-                    specialPath = Jobs; // Assuming Jobs is a string variable/property
-                    break;
+            case PlanarSpecialFolder.Jobs:
+                specialPath = Jobs; // Assuming Jobs is a string variable/property
+                break;
 
-                case PlanarSpecialFolder.MonitorHooks:
-                    specialPath = MonitorHooks; // Assuming MonitorHooks is a string variable/property
-                    break;
+            case PlanarSpecialFolder.MonitorHooks:
+                specialPath = MonitorHooks; // Assuming MonitorHooks is a string variable/property
+                break;
 
-                default:
-                    throw new ArgumentNullException($"special folder {planarFolder} is not supported");
-            }
+            default:
+                throw new ArgumentNullException($"special folder {planarFolder} is not supported");
+        }
 #else
             var specialPath = planarFolder switch
             {

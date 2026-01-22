@@ -18,6 +18,8 @@ internal partial class Job : BaseCheckJob
 
     partial void Finalayze(FinalayzeDetails<IEnumerable<Folder>> details);
 
+    partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
+
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
@@ -46,6 +48,11 @@ internal partial class Job : BaseCheckJob
         var details = GetFinalayzeDetails(folders.AsEnumerable());
         Finalayze(details);
         Finalayze();
+    }
+
+    protected override void BaseOnFail<T>(T entity, Exception ex, int? retryCount)
+    {
+        OnFail(entity, ex, retryCount);
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

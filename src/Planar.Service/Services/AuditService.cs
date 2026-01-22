@@ -32,12 +32,9 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
         try
         {
             var reader = _channel.Reader;
-            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
+            await foreach (var msg in reader.ReadAllAsync(stoppingToken))
             {
-                if (reader.TryRead(out var msg))
-                {
-                    await SafeSaveAudit(msg);
-                }
+                await SafeSaveAudit(msg);
             }
         }
         catch (OperationCanceledException)

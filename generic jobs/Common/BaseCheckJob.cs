@@ -16,6 +16,8 @@ public abstract partial class BaseCheckJob : BaseJob
     private General _general = null!;
     private CheckSpanTracker _spanTracker = null!;
 
+    protected abstract void BaseOnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
+
     partial void OnFail<T>(T entity, Exception ex) where T : BaseDefault, ICheckElement;
 
     protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration, List<string> names)

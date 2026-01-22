@@ -26,6 +26,8 @@ internal partial class Job : BaseCheckJob
 
     partial void Finalayze(FinalayzeDetails<IEnumerable<InfluxQuery>> details);
 
+    partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
@@ -199,6 +201,11 @@ internal partial class Job : BaseCheckJob
 
         Logger.LogInformation("query check success for name '{Name}'", query.Name);
         await IncreaseEffectedRowsAsync();
+    }
+
+    protected override void BaseOnFail<T>(T entity, Exception ex, int? retryCount)
+    {
+        OnFail(entity, ex, retryCount);
     }
 
     private static int GetRecordsCount(List<FluxTable> tables)
