@@ -6,3 +6,4 @@ server:
   ssl: false
   user: some_username
   password: strong_password
+  service name: null             # optional, used for sentinel or clustered servers

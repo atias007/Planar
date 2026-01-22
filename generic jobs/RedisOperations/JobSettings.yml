@@ -8,14 +8,14 @@ defaults:                                       # default values for all endpoin
   retry interval: 00:00:05                      # the interval between retry attemps
   allowed fail span: null                       # the time span which violation of the folder will be considered ok
 
-# server:                                      # the redis server parameters to be use. usualy this section defined in specific environment job settings
+# server:                                       # the redis server parameters to be use. usualy this section defined in specific environment job settings
 #   endpoints: 
 #     - redis-server-1:6379
 #     - redis-server-2:6379
 #   ssl: false
 #   user: null
 #   password: null
-
+#   service name: null                          # optional, used for sentinel or clustered servers
 
 keys:
   - key: foo                                    # the key to be used in redis
@@ -23,7 +23,7 @@ keys:
     expire cron: 0 0 0 * * *                    # set expire by cron expression for the key. examples: end of day=0 0 0 ? * * *  start of every month=0 0 0 1 * ? *
     default command: INCRBY foo 0               # command to run if key not exists
     mandatory: true                             # is the existence of the key mandatory or not. the default is true
-    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
-      - every-1-hour                            
-      - end-of-day
+    # bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+    #   - every-1-hour                            
+    #   - end-of-day
     active: true                                # the default is true

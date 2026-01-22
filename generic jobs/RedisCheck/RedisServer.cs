@@ -9,5 +9,6 @@ internal class RedisServer
     public string? User { get; set; }
     public string? Password { get; set; }
     public List<string> Endpoints { get; set; } = [];
+    public string? ServiceName { get; set; }
     public bool IsEmpty => Endpoints.Count == 0;
 }

@@ -16,6 +16,7 @@ internal static class RedisFactory
     internal static string? User { get; private set; }
     internal static string? Password { get; private set; }
     internal static IEnumerable<string> Endpoints { get; private set; } = [];
+    internal static string? ServiceName { get; set; }
 
     public static void Initialize(IConfiguration configuration)
     {
@@ -25,6 +26,7 @@ internal static class RedisFactory
         User = section.GetValue<string?>("user");
         Password = section.GetValue<string?>("password");
         Endpoints = section.GetSection("endpoints").Get<string[]>() ?? [];
+        ServiceName = section.GetValue<string?>("service name");
     }
 
     public async static Task<TimeSpan> Ping()
