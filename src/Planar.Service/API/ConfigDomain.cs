@@ -242,7 +242,6 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             }
 
             request.Value = content;
-            return;
         }
         catch (Exception ex)
         {

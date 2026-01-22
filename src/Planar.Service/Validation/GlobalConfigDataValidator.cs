@@ -27,7 +27,7 @@ public class GlobalConfigDataValidator : AbstractValidator<GlobalConfigModelAddR
             .When(f =>
                 string.Equals(f.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(f.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase))
-            .WithMessage(f => "{PropertyName} is required when config type is " + f.Type.ToLower());
+            .WithMessage(f => "{PropertyName} is required when config type is " + f.Type?.ToLower());
 
         RuleFor(f => f.Value)
             .Must(ValidationUtil.IsYmlValid)
