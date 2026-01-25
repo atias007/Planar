@@ -18,8 +18,6 @@ public abstract partial class BaseCheckJob : BaseJob
 
     protected abstract void BaseOnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
-    partial void OnFail<T>(T entity, Exception ex) where T : BaseDefault, ICheckElement;
-
     protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration, List<string> names)
     {
         var sections = new string[] { "connection strings", "ConnectionStrings" };
@@ -396,9 +394,10 @@ public abstract partial class BaseCheckJob : BaseJob
                         .WaitAndRetryAsync(
                             retryCount: entity.RetryCount.GetValueOrDefault(),
                             sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
-                             onRetry: (ex, _) =>
+                             onRetry: (ex, _, count, _) =>
                              {
                                  Logger.LogWarning("retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
+                                 CallOnFail(entity, ex, count);
                              })
                         .ExecuteAsync(async () =>
                         {
@@ -412,7 +411,20 @@ public abstract partial class BaseCheckJob : BaseJob
         catch (Exception ex)
         {
             entity.RunStatus = await SafeHandleCheckException(entity, ex);
-            OnFail(entity, ex);
+            CallOnFail(entity, ex, null);
+        }
+    }
+
+    private void CallOnFail<T>(T entity, Exception ex, int? retryCount)
+        where T : BaseDefault, ICheckElement
+    {
+        try
+        {
+            BaseOnFail(entity, ex, retryCount);
+        }
+        catch (Exception loggerEx)
+        {
+            Logger.LogError(loggerEx, "unhandled exception while invoke OnFail for '{Key}'. reason: {Message}", entity.Key, loggerEx.Message);
         }
     }
 
