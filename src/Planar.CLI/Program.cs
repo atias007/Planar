@@ -46,6 +46,7 @@ internal static class Program
 
     public static async Task Main(string[] args)
     {
+        ReadLine.HistoryEnabled = true;
         Console.OutputEncoding = Encoding.UTF8;
         Console.CancelKeyPress += Console_CancelKeyPress;
         _ = JobTriggerIdResolver.Initialize();
@@ -54,9 +55,12 @@ internal static class Program
             Console.Title = "Planar: Command Line Interface";
         }
 
+        var cliActions = BaseCliAction.GetAllActions();
+        ReadLine.AutoCompletionHandler = new AutoCompleteHandler(cliActions);
+
         try
         {
-            await Start(args);
+            await Start(args, cliActions);
         }
         catch (Exception ex)
         {
@@ -787,7 +791,7 @@ internal static class Program
             var color = ConnectUtil.Current.GetCliMarkupColor();
             var username = string.IsNullOrWhiteSpace(LoginProxy.Username) ? null : $"@{LoginProxy.Username}";
             AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}{username}[/]> ");
-            command = Console.ReadLine();
+            command = ReadLine.Read();
             ResetTimer();
 
             var args = CommandSplitter.SplitCommandLine(command).ToArray();
@@ -821,10 +825,8 @@ internal static class Program
         return response;
     }
 
-    private static async Task Start(string[] args)
+    private static async Task Start(string[] args, IEnumerable<CliActionMetadata> cliActions)
     {
-        var cliActions = BaseCliAction.GetAllActions();
-
 #if DEBUG
         //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
