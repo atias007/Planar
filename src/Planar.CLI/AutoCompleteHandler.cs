@@ -30,7 +30,7 @@ internal class AutoCompleteHandler(IEnumerable<CliActionMetadata> actions) : IAu
     {
         try
         {
-            return GetSuggestionsInner(text, index);
+            return GetSuggestionsInner(text);
         }
         catch
         {
@@ -39,7 +39,7 @@ internal class AutoCompleteHandler(IEnumerable<CliActionMetadata> actions) : IAu
         }
     }
 
-    private string[] GetSuggestionsInner(string text, int index)
+    private string[] GetSuggestionsInner(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) { return []; }
         var split = text.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -69,8 +69,7 @@ internal class AutoCompleteHandler(IEnumerable<CliActionMetadata> actions) : IAu
         else
         {
             var command = modules
-                .Where(m => m.Commands.Contains(commandText, StringComparer.OrdinalIgnoreCase))
-                .FirstOrDefault();
+                .FirstOrDefault(m => m.Commands.Contains(commandText, StringComparer.OrdinalIgnoreCase));
 
             if (command == null) { return []; }
 
