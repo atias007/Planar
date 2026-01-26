@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git push:*)",
-      "Bash(cloc:*)"
+      "Bash(cloc:*)",
+      "Bash(git add:*)"
     ]
   }
 }

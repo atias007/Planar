@@ -1,5 +1,4 @@
 ﻿using Planar.Client.Entities;
-using Planar.Client.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -14,15 +13,34 @@ namespace Planar.Client.Api
         {
         }
 
-        public Task DeleteAsync(string key, CancellationToken cancellationToken = default)
+#if NETSTANDARD2_0
+
+        public async Task AddAsync(string key, string value, string sourceUrl = null, ConfigType? configType = null, CancellationToken cancellationToken = default)
+#else
+        public async Task AddAsync(string key, string? value, string? sourceUrl = null, ConfigType? configType = null, CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(key, nameof(key));
-            throw new NotImplementedException();
+
+            var data = new { key, value, sourceUrl, Type = configType?.ToString().ToLower() };
+            var restRequest = new RestRequest("config", HttpMethod.Post)
+                    .AddBody(data);
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public Task FlushAsync(CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(key, nameof(key));
+
+            var restRequest = new RestRequest("config/{key}", HttpMethod.Delete)
+                .AddSegmentParameter("key", key);
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task FlushAsync(CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("config/flush", HttpMethod.Post);
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task<GlobalConfig> GetAsync(string key, CancellationToken cancellationToken = default)
@@ -50,27 +68,18 @@ namespace Planar.Client.Api
 
 #if NETSTANDARD2_0
 
-        public async Task PutAsync(string key, string value, ConfigType configType = ConfigType.String, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(string key, string value, string sourceUrl = null, ConfigType? configType = null, CancellationToken cancellationToken = default)
 #else
-        public async Task PutAsync(string key, string? value, ConfigType configType = ConfigType.String, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(string key, string? value, string? sourceUrl = null, ConfigType? configType = null, CancellationToken cancellationToken = default)
 #endif
         {
             ValidateMandatory(key, nameof(key));
 
-            var data = new { key, value, Type = configType.ToString().ToLower() };
-            try
-            {
-                var restRequest = new RestRequest("config", HttpMethod.Post)
-                        .AddBody(data);
-                await _proxy.InvokeAsync(restRequest, cancellationToken);
-            }
-            catch (PlanarNotFoundException)
-            {
-                var restRequest = new RestRequest("config", HttpMethod.Put)
-                    .AddBody(data);
+            var data = new { key, value, sourceUrl, Type = configType?.ToString().ToLower() };
+            var restRequest = new RestRequest("config", HttpMethod.Put)
+                .AddBody(data);
 
-                await _proxy.InvokeAsync(restRequest, cancellationToken);
-            }
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
     }
 }
