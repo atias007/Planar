@@ -3,7 +3,6 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Planar.Service.Model;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,8 +18,8 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [HttpGet]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "get_config", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
-    [OkJsonResponse(typeof(IEnumerable<GlobalConfig>))]
-    public async Task<ActionResult<IEnumerable<GlobalConfig>>> GetAll()
+    [OkJsonResponse(typeof(IEnumerable<GlobalConfigModel>))]
+    public async Task<ActionResult<IEnumerable<GlobalConfigModel>>> GetAll()
     {
         var result = await BusinesLayer.GetAll();
         return Ok(result);
@@ -56,7 +55,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [CreatedResponse]
     [BadRequestResponse]
     [ConflictResponse]
-    public async Task<ActionResult> Add([FromBody] GlobalConfigModel request)
+    public async Task<ActionResult> Add([FromBody] GlobalConfigModelAddRequest request)
     {
         await BusinesLayer.Add(request);
         return CreatedAtAction(nameof(Get), new { key = request.Key }, null);
@@ -69,7 +68,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult> Update([FromBody] GlobalConfigModel request)
+    public async Task<ActionResult> Update([FromBody] GlobalConfigModelAddRequest request)
     {
         await BusinesLayer.Update(request);
         return NoContent();

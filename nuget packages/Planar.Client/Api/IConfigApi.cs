@@ -15,17 +15,33 @@ namespace Planar.Client.Api
 
 #if NETSTANDARD2_0
 
-        Task PutAsync(
+        Task AddAsync(
             string key,
             string value,
-            ConfigType configType = ConfigType.String,
+            string sourceUrl = null,
+            ConfigType? configType = null,
+            CancellationToken cancellationToken = default);
+
+        Task UpdateAsync(
+            string key,
+            string value,
+            string sourceUrl = null,
+            ConfigType? configType = null,
             CancellationToken cancellationToken = default);
 
 #else
-        Task PutAsync(
+        Task AddAsync(
             string key,
             string? value,
-            ConfigType configType = ConfigType.String,
+            string? sourceUrl = null,
+            ConfigType? configType = null,
+            CancellationToken cancellationToken = default);
+
+        Task UpdateAsync(
+            string key,
+            string? value,
+            string? sourceUrl = null,
+            ConfigType? configType = null,
             CancellationToken cancellationToken = default);
 #endif
 
