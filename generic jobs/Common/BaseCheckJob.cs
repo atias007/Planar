@@ -236,7 +236,7 @@ public abstract partial class BaseCheckJob : BaseJob
     {
         if (value == null || !value.Any())
         {
-            throw new InvalidDataException($"'{fieldName}' section is missing or empty");
+            throw new InvalidDataException($"'{fieldName}' field at '{section}' section is missing or empty");
         }
     }
 
