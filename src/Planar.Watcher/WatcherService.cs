@@ -68,7 +68,7 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
 
         if (status == ServiceControllerStatus.StartPending || status == ServiceControllerStatus.ContinuePending)
         {
-            logger.LogWarning("service is in {Status} status. waiting for running status...", status);
+            logger.LogWarning("service is in {Status} status. waiting for running status…", status);
             status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Running, settings.StartServiceTimeout, restart: settings.KillPendingServiceProcess);
             if (status == ServiceControllerStatus.Running)
             {
@@ -79,7 +79,7 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
 
         if (status == ServiceControllerStatus.StopPending)
         {
-            logger.LogWarning("service is in {Status} status. waiting for stopped status...", status);
+            logger.LogWarning("service is in {Status} status. waiting for stopped status…", status);
             status = winUtil.WaitForStatus(controller, ServiceControllerStatus.Stopped, settings.StopPendingServiceTimeout, restart: settings.KillPendingServiceProcess);
         }
 

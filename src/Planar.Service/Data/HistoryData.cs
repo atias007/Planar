@@ -324,7 +324,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
                         Fail = g.Count(x => x.Status == 1)
                     };
 
-        var result = await query.FirstOrDefaultAsync();
+        var result = await query.OrderBy(q => q.Success).FirstOrDefaultAsync();
         return result;
     }
 

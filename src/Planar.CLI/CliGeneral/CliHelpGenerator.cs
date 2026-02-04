@@ -30,7 +30,7 @@ internal static class CliHelpGenerator
         AnsiConsole.MarkupLine("[#00b4d8]  ██╔═══╝ ██║     ██╔══██║██║╚██╗██║██╔══██║██╔══██╗[/]");
         AnsiConsole.MarkupLine("[#48cae4]  ██║     ███████╗██║  ██║██║ ╚████║██║  ██║██║  ██║[/]");
         AnsiConsole.MarkupLine($"[#90e0ef]  ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝[/]");
-        AnsiConsole.MarkupLine($"  vesrion {Program.Version}");
+        AnsiConsole.MarkupLine($"  [#FF875F][[vesrion {Program.Version}]][/]");
     }
 
     public static void ShowModules()

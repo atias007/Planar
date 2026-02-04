@@ -4,10 +4,13 @@ using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.General;
 using Quartz;
+using SqlJob;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Planar;
 
@@ -42,64 +45,17 @@ public abstract class SqlJob(
 
     private async Task ExecuteSql(IJobExecutionContext context)
     {
-        await Task.Yield();
-
-        if (Properties.Steps == null)
-        {
-            Properties.Steps = [];
-        }
+        if (Properties.Steps == null) { Properties.Steps = []; }
 
         var total = Properties.Steps.Count;
         MessageBroker.AppendLog(LogLevel.Information, $"start sql job with {total} steps");
-        var isOnlyDefaultConnection =
-            !string.IsNullOrWhiteSpace(Properties.DefaultConnectionName) &&
-            Properties.Steps.Exists(s => string.IsNullOrWhiteSpace(s.ConnectionName));
 
         DbConnection? defaultConnection = null;
         DbTransaction? transaction = null;
 
         try
         {
-            if (isOnlyDefaultConnection)
-            {
-                defaultConnection = new SqlConnection(Properties.DefaultConnectionString);
-                MessageBroker.AppendLog(LogLevel.Information, $"open default sql connection with connection name: {Properties.DefaultConnectionName}");
-                await defaultConnection.OpenAsync(ExecutionCancellationToken);
-                if (Properties.Transaction)
-                {
-                    var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
-                    transaction = await defaultConnection.BeginTransactionAsync(isolation, ExecutionCancellationToken);
-                    MessageBroker.AppendLog(LogLevel.Information, $"begin transaction with isolation level {isolation}");
-                }
-            }
-            var counter = 0;
-
-            foreach (var step in Properties.Steps)
-            {
-                await ExecuteSqlStep(context, step, defaultConnection, transaction, ExecutionCancellationToken);
-                counter++;
-                var progress = Convert.ToByte(counter * 100.0 / total);
-
-                try
-                {
-                    MessageBroker.UpdateProgress(progress);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Fail to update job progress");
-                }
-            }
-
-            if (_exceptions.Count != 0)
-            {
-                throw new AggregateException("there is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
-            }
-
-            if (transaction != null)
-            {
-                await transaction.CommitAsync(ExecutionCancellationToken);
-                MessageBroker.AppendLog(LogLevel.Information, "commit transaction");
-            }
+            await ExecuteSqlInner(context, defaultConnection, transaction, total);
         }
         catch
         {
@@ -118,6 +74,60 @@ public abstract class SqlJob(
         }
     }
 
+    private async Task ExecuteSqlInner(
+        IJobExecutionContext context,
+        DbConnection? defaultConnection,
+        DbTransaction? transaction,
+        int total)
+    {
+        if (Properties.Steps == null) { Properties.Steps = []; }
+
+        var isOnlyDefaultConnection =
+            !string.IsNullOrWhiteSpace(Properties.DefaultConnectionName) &&
+            Properties.Steps.Exists(s => string.IsNullOrWhiteSpace(s.ConnectionName));
+
+        if (isOnlyDefaultConnection)
+        {
+            defaultConnection = new SqlConnection(Properties.DefaultConnectionString);
+            MessageBroker.AppendLog(LogLevel.Information, $"open default sql connection with connection name: {Properties.DefaultConnectionName}");
+            await defaultConnection.OpenAsync(ExecutionCancellationToken);
+            if (Properties.Transaction)
+            {
+                var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
+                transaction = await defaultConnection.BeginTransactionAsync(isolation, ExecutionCancellationToken);
+                MessageBroker.AppendLog(LogLevel.Information, $"begin transaction with isolation level {isolation}");
+            }
+        }
+        var counter = 0;
+
+        foreach (var step in Properties.Steps)
+        {
+            await ExecuteSqlStep(context, step, defaultConnection, transaction, ExecutionCancellationToken);
+            counter++;
+            var progress = Convert.ToByte(counter * 100.0 / total);
+
+            try
+            {
+                MessageBroker.UpdateProgress(progress);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to update job progress");
+            }
+        }
+
+        if (_exceptions.Count != 0)
+        {
+            throw new AggregateException("there is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
+        }
+
+        if (transaction != null)
+        {
+            await transaction.CommitAsync(ExecutionCancellationToken);
+            MessageBroker.AppendLog(LogLevel.Information, "commit transaction");
+        }
+    }
+
     private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection, DbTransaction? transaction, CancellationToken cancellationToken)
     {
         var tuple = await GetDbConnection(step, defaultConnection, cancellationToken);
@@ -128,7 +138,7 @@ public abstract class SqlJob(
         {
             MessageBroker.AppendLog(LogLevel.Information, $"start execute step name '{step.Name}'...");
 
-            DbCommand cmd = connection.CreateCommand();
+            var cmd = connection.CreateCommand();
             var script = GetScript(context, step);
             cmd.CommandText = script;
             cmd.CommandType = CommandType.Text;
@@ -144,15 +154,20 @@ public abstract class SqlJob(
 
             var timer = new Stopwatch();
             timer.Start();
-            var rows = await cmd.ExecuteNonQueryAsync(cancellationToken);
+            var rows = await ExecuteCommand(cmd, step, cancellationToken);
             timer.Stop();
+            if (rows == -1) { rows = null; }
             var elapsedTitle =
                 timer.ElapsedMilliseconds < 60000 ?
                 $"{timer.Elapsed.Seconds}.{timer.Elapsed.Milliseconds:000}ms" :
                 $"{timer.Elapsed:hh\\:mm\\:ss}";
 
-            MessageBroker.AppendLog(LogLevel.Information, $"step name '{step.Name}' executed with {rows} effected row(s). Elapsed: {elapsedTitle}");
-            MessageBroker.IncreaseEffectedRows(rows);
+            var strRows = rows == null ? "no" : rows.GetValueOrDefault().ToString(CultureInfo.CurrentCulture);
+            MessageBroker.AppendLog(LogLevel.Information, $"step name '{step.Name}' executed with {strRows} effected row(s). Elapsed: {elapsedTitle}");
+            if (rows.GetValueOrDefault() > 0)
+            {
+                MessageBroker.IncreaseEffectedRows(rows.GetValueOrDefault());
+            }
         }
         catch (Exception ex)
         {
@@ -166,6 +181,74 @@ public abstract class SqlJob(
                 await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
             }
         }
+    }
+
+    private async Task<int?> ExecuteCommand(DbCommand command, SqlStep step, CancellationToken cancellationToken)
+    {
+        using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        switch (step.GetEffectedRowsSource())
+        {
+            default:
+                // === case EffectedRowsSourceMembers.Default ===
+                if (step.LogResultSet)
+                {
+                    MessageBroker.AppendLog(LogLevel.Warning, "log result set is disabled if the effected rows source is: default. use none or scalar");
+                }
+
+                return reader.RecordsAffected;
+
+            case EffectedRowsSourceMembers.Scalar:
+            case EffectedRowsSourceMembers.None:
+                return await WriteReaderToLog(reader, step, cancellationToken);
+        }
+    }
+
+    protected async Task<int?> WriteReaderToLog(DbDataReader reader, SqlStep step, CancellationToken cancellationToken)
+    {
+        int? result = null;
+        if (!step.LogResultSet)
+        {
+            do
+            {
+                if (!await reader.ReadAsync(cancellationToken)) { continue; }
+                var strResult = Convert.ToString(reader.GetValue(0));
+                if (int.TryParse(strResult, CultureInfo.CurrentCulture, out var iresult))
+                {
+                    result = iresult;
+                }
+            } while (await reader.NextResultAsync(cancellationToken));
+
+            return result;
+        }
+
+        if (reader.FieldCount == 0) { return null; }
+        var data = new List<(string? Table, object? Scalar)>();
+        do
+        {
+            var table = reader.ToAsciiTable(out var scalar);
+            data.Add((table, scalar));
+        } while (await reader.NextResultAsync(cancellationToken));
+
+        if (data.Count == 0) { return null; }
+
+        if (step.GetEffectedRowsSource() == EffectedRowsSourceMembers.Scalar)
+        {
+            var (_, scalar) = data.LastOrDefault();
+            var strLast = Convert.ToString(scalar);
+            if (int.TryParse(strLast, CultureInfo.CurrentCulture, out var iresult))
+            {
+                result = iresult;
+            }
+        }
+
+        foreach (var (table, _) in data)
+        {
+            if (string.IsNullOrWhiteSpace(table)) { continue; }
+            MessageBroker.AppendLog(LogLevel.Information, Environment.NewLine + table);
+        }
+
+        return result;
     }
 
     private async Task<Tuple<DbConnection, bool>> GetDbConnection(SqlStep step, DbConnection? defaultConnection, CancellationToken cancellationToken)

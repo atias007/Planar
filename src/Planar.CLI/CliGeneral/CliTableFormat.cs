@@ -50,11 +50,11 @@ public static class CliTableFormat
     {
         if (DateTime.Today == dateTime.Date)
         {
-            return $"today      {dateTime.ToLongTimeString()}";
+            return $"today      {dateTime:T}";
         }
         else
         {
-            return $"{dateTime.ToShortDateString()} {dateTime.ToLongTimeString()}";
+            return $"{dateTime:d} {dateTime:T}";
         }
     }
 

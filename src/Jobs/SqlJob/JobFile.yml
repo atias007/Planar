@@ -22,10 +22,14 @@ properties:                                   # Job Properties
       filename: step1.sql                     # Script filename [1 to 100 characters]
       connection name: <name>                 # Specific connection string to sql server database [mandatory if no default connection name, 1 to 500 characters]
       timeout: 00:00:30                       # Timeout span for step. The default is 30 seconds
+      effected rows source: default           # Source of effected rows count [default | scalar | none
+      log result set: false                   # Boolean [true/false]. Log the result set of the script execution. The default is false
     - name: Step2
       filename: step2.sql
       connection name: <name>
       timeout: 00:00:30
+      effected rows source: default
+      log result set: false
 
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker

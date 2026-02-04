@@ -81,17 +81,17 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
 
         if (log.Data?.Length > JobHistory.DataMaximumLength)
         {
-            log.Data = log.Data[0..JobHistory.DataMaximumLength] + $"\r\n...\r\n('data' property return only top {JobHistory.DataMaximumLength:N0} charecters)";
+            log.Data = log.Data[0..JobHistory.DataMaximumLength] + $"\r\n…\r\n('data' property return only top {JobHistory.DataMaximumLength:N0} charecters)";
         }
 
         if (log.Exception?.Length > JobHistory.LogMaximumLength)
         {
-            log.Exception = log.Exception[0..JobHistory.DataMaximumLength] + $"\r\n...\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+            log.Exception = log.Exception[0..JobHistory.DataMaximumLength] + $"\r\n…\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
         }
 
         if (log.Log?.Length > JobHistory.LogMaximumLength)
         {
-            log.Log = log.Log[0..JobHistory.DataMaximumLength] + $"\r\n...\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+            log.Log = log.Log[0..JobHistory.DataMaximumLength] + $"\r\n…\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
         }
     }
 

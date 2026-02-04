@@ -282,7 +282,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             .AddBody(new { request.Filename });
 
         restRequest.Timeout = TimeSpan.FromMilliseconds(25_000);
-        AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 20 seconds)[/]");
+        AnsiConsole.MarkupLine($"[grey62]  > (please wait… this action may take up to 20 seconds)[/]");
 
         var result = await RestProxy.Invoke<MonitorHookDetails>(restRequest, cancellationToken);
         var table = CliTableExtensions.GetTable(result.Data);

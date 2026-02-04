@@ -30,7 +30,7 @@ namespace Planar.CLI.Actions
             if (request.Seconds <= 0) { throw new ArgumentException("seconds must be greater than 0"); }
             if (request.Seconds > 1_200) { throw new ArgumentException("seconds must be less than or equals 1200 seconds"); }
 
-            await Console.Out.WriteLineAsync($"sleeping {request.Seconds:N0} seconds...   ");
+            await Console.Out.WriteLineAsync($"sleeping {request.Seconds:N0} seconds…   ");
 
             for (var i = 0; i < request.Seconds; i++)
             {
@@ -38,7 +38,7 @@ namespace Planar.CLI.Actions
                 await Task.Delay(1000, cancellationToken);
                 Console.CursorLeft = 0;
                 Console.CursorTop -= 1;
-                await Console.Out.WriteLineAsync($"sleeping {request.Seconds - 1 - i:N0} seconds...   ");
+                await Console.Out.WriteLineAsync($"sleeping {request.Seconds - 1 - i:N0} seconds…   ");
             }
 
             Console.CursorLeft = 0;

@@ -253,7 +253,7 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
                         Trace = g.Count(x => x.Level == "Trace")
                     };
 
-        var result = await query.FirstOrDefaultAsync();
+        var result = await query.OrderBy(q => q.Information).FirstOrDefaultAsync();
         return result;
     }
 
