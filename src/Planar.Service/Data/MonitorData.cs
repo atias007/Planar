@@ -312,6 +312,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return await _context.MonitorActions
             .AsSplitQuery()
+            .Where(m => m.Active)
             .Include(m => m.Groups)
             .ThenInclude(g => g.Users)
             .AsNoTracking()
