@@ -64,7 +64,7 @@ namespace Planar.Client
         public static T Deserialize<T>(string json) where T : class
 
 #else
-        public static T? Deserialize<T>(string? json) where T: class
+        public static T? Deserialize<T>(string? json) where T : class
 #endif
         {
             if (string.IsNullOrWhiteSpace(json)) { return null; }
