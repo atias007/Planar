@@ -41,8 +41,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="AsciiChart.Sharp" Version="1.0.3" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageReference Include="ReadLine" Version="2.0.1" />
 		<PackageReference Include="RestSharp" Version="112.1.0" />
