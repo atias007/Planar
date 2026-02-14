@@ -79,8 +79,8 @@ internal static class CliHelpGenerator
         AnsiConsole.WriteLine();
 
         var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliCommand} ";
-        var space = string.IsNullOrEmpty(cliCommand) ? string.Empty : " ";
-        var prefix = $"{space}{cliCommand}";
+        var spaceChar = string.IsNullOrEmpty(cliCommand) ? string.Empty : " ";
+        var prefix = $"{spaceChar}{cliCommand}";
         var lastSpace = string.IsNullOrEmpty(module) ? string.Empty : " ";
         if (string.IsNullOrEmpty(prefix)) { prefix = " "; }
 
@@ -111,7 +111,7 @@ internal static class CliHelpGenerator
         {
             var mu = new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}");
             grid.AddRow(
-                new Markup($"[khaki1]{ac.CommandDisplayName}{space}[/]"),
+                new Markup($"[khaki1]{ac.CommandDisplayName}{spaceChar}[/]"),
                 mu
             );
         }

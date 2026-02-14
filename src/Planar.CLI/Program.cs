@@ -792,11 +792,21 @@ internal static class Program
             var username = string.IsNullOrWhiteSpace(LoginProxy.Username) ? null : $"@{LoginProxy.Username}";
             AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}{username}[/]> ");
             command = ReadLine.Read();
+
+            // Add a way to break out of the loop and method
+            if (string.Equals(command, "exit", StringComparison.OrdinalIgnoreCase))
+            {
+                AnsiConsole.MarkupLine("[yellow]Exiting interactive mode...[/]");
+                break;
+            }
+
             ResetTimer();
 
             var args = CommandSplitter.SplitCommandLine(command).ToArray();
             await HandleCliCommand(args, cliActions);
         }
+
+        await _timer.DisposeAsync();
     }
 
     private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object? param = null, bool noParameters = false)
