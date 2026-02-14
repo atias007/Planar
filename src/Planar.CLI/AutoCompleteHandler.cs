@@ -23,10 +23,10 @@ internal class AutoCompleteHandler(IEnumerable<CliActionMetadata> actions) : IAu
 
     public string[] GetSuggestions(string text, int index)
     {
-        return GetSuggestionsSafe(text, index);
+        return GetSuggestionsSafe(text);
     }
 
-    private string[] GetSuggestionsSafe(string text, int index)
+    private string[] GetSuggestionsSafe(string text)
     {
         try
         {

@@ -57,7 +57,11 @@ namespace Planar.Job
             var request = new HttpRequestMessage(HttpMethod.Post, resource);
             var content = new StringContent(body, Encoding.UTF8, contentType);
             request.Content = content;
-            request.Content.Headers.ContentType.MediaType = contentType;
+            if (request.Content.Headers.ContentType != null)
+            {
+                request.Content.Headers.ContentType.MediaType = contentType;
+            }
+
             return request;
         }
 
