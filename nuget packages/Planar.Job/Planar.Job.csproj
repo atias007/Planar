@@ -68,7 +68,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
-		<PackageReference Include="RestSharp" Version="112.1.0" />
+		<PackageReference Include="RestSharp" Version="113.1.0" />
 		<PackageReference Include="System.Text.Json" Version="10.0.3" />
 		<PackageReference Include="YamlDotNet" Version="16.3.0" />
 	</ItemGroup>
