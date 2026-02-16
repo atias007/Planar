@@ -73,6 +73,7 @@ namespace Planar.CLI.Actions
 
         [Action("exit")]
         [Action("quit")]
+        [Action("bye")]
         public static async Task<CliActionResponse> Exit(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();

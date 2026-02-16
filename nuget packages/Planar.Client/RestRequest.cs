@@ -111,10 +111,13 @@ namespace Planar.Client
             var request = new HttpRequestMessage(Method, url);
             if (Body != null)
             {
-                var jsonBody = CoreSerializer.Serialize(Body);
+                var jsonBody = CoreSerializer.Serialize(Body) ?? string.Empty;
                 var content = new StringContent(jsonBody, Encoding.UTF8, contentType);
                 request.Content = content;
-                request.Content.Headers.ContentType.MediaType = contentType;
+                if (request.Content.Headers.ContentType != null)
+                {
+                    request.Content.Headers.ContentType.MediaType = contentType;
+                }
             }
 
             return request;

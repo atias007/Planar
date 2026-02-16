@@ -24,8 +24,6 @@ namespace Planar.CLI.Actions;
 [Module("job", "add, remove, list, update and operate jobs", Synonyms = "jobs")]
 public class JobCliActions : BaseCliAction<JobCliActions>
 {
-    private static readonly Lock _locker = new();
-
     [Action("add")]
     [NullRequest]
     public static async Task<CliActionResponse> AddJob(CliAddJobRequest request, CancellationToken cancellationToken = default)
@@ -399,10 +397,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             Console.Clear();
             using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var reader = new StreamReader(body);
-            while (!reader.EndOfStream)
+            while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var value = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                if (value == null) { break; }
                 if (string.IsNullOrWhiteSpace(value)) { continue; }
                 var log = CliFormat.GetLogMarkup(value) ?? string.Empty;
                 AnsiConsole.Markup(log);
@@ -763,10 +762,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             .StartAsync(async context =>
             {
                 await Task.Yield();
-                while (!reader.EndOfStream)
+                while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var value = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                    if (value == null) { break; }
                     if (string.IsNullOrWhiteSpace(value)) { continue; }
                     if (data.Parse(value))
                     {
@@ -1298,7 +1298,8 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         // Build the bar: [▬▬▬▬▬▬▬▬▬▬       ] 50%
         var bar = new string('▬', completedChars);
         var tail = new string('▬', remainingChars);
-        var space = percentage < 10 ? "  " : (percentage < 100 ? " " : string.Empty);
+        var extraSpace = percentage < 100 ? " " : string.Empty;
+        var space = percentage < 10 ? "  " : extraSpace;
         var final = $"[{color.Value}][[{bar}[/][Gray15]{tail}[/][{color.Value}]]][/] {percentage}%{space}";
         return new Markup(final);
     }
