@@ -794,9 +794,11 @@ internal static class Program
             command = ReadLine.Read();
 
             // Add a way to break out of the loop and method
-            if (string.Equals(command, "exit", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(command, "exit", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(command, "quit", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(command, "bye", StringComparison.OrdinalIgnoreCase))
             {
-                AnsiConsole.MarkupLine("[yellow]Exiting interactive mode...[/]");
+                AnsiConsole.MarkupLine("[yellow]bye bye...[/]");
                 break;
             }
 

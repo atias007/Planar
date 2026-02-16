@@ -1298,7 +1298,8 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         // Build the bar: [▬▬▬▬▬▬▬▬▬▬       ] 50%
         var bar = new string('▬', completedChars);
         var tail = new string('▬', remainingChars);
-        var space = percentage < 10 ? "  " : (percentage < 100 ? " " : string.Empty);
+        var extraSpace = percentage < 100 ? " " : string.Empty;
+        var space = percentage < 10 ? "  " : extraSpace;
         var final = $"[{color.Value}][[{bar}[/][Gray15]{tail}[/][{color.Value}]]][/] {percentage}%{space}";
         return new Markup(final);
     }
