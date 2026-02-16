@@ -89,7 +89,7 @@
 		<PackageReference Include="prometheus-net.AspNetCore.Grpc" Version="8.2.1" />
 		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="9.0.2" />
+		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="9.0.3" />
 		<PackageReference Include="Serilog.Sinks.SQLite.Microsoft" Version="1.0.0" />
 		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Mvc" Version="2.0.0" />
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.19.0.132793">
