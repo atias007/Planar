@@ -45,12 +45,21 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             info.JobDetails.JobDataMap.Remove(key);
         }
 
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
-
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
         await Scheduler.PauseJob(info.JobKey);
+
+        try
+        {
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
 
         AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
     }
@@ -88,14 +97,21 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             AuditJobSafe(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
         }
 
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
-
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-
-        // Pause job
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
         await Scheduler.PauseJob(info.JobKey);
+
+        try
+        {
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     public async Task RemoveData(string id, string key)
@@ -106,14 +122,24 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         ValidateDataKeyExists(info.JobDetails, key, id);
         var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
         info.JobDetails.JobDataMap.Remove(key);
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
         await Scheduler.PauseJob(info.JobKey);
 
-        AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
+        try
+        {
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+
+            AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string? key = null)
@@ -131,7 +157,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         {
             ValidateSystemDataKey(key);
         }
-        await ValidateJobPaused(jobKey);
+
         await ValidateJobNotRunning(jobKey);
         return result;
     }
@@ -994,11 +1020,11 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
-        await ValidateJobPaused(jobKey);
         await ValidateJobNotRunning(jobKey);
 
         var info = await Scheduler.GetJobDetail(jobKey);
         if (info == null) { return; }
+
         var oldAuthor = JobHelper.GetJobAuthor(info);
         request.Author = request.Author?.Trim() ?? string.Empty;
         info.JobDataMap.Put(Consts.Author, request.Author);
@@ -1006,6 +1032,9 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         // Reschedule job
         var triggers = await Scheduler.GetTriggersOfJob(jobKey);
         MonitorUtil.Lock(jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+
+        var pausedTriggers = await GetPausedTriggers(info.Key);
+        await Scheduler.PauseJob(info.Key);
 
         try
         {
@@ -1017,11 +1046,12 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             ValidateTriggerNeverFire(ex);
             throw;
         }
+        finally
+        {
+            await PauseTriggers(info.Key, pausedTriggers);
+        }
 
         AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
-
-        // Pause job
-        await Scheduler.PauseJob(jobKey);
     }
 
     public async Task SetAutoResume(PauseResumeJobRequest request)

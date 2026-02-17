@@ -6,6 +6,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -166,6 +167,12 @@ public partial class JobDomain
         // Validation
         await ValidateUpdateJob(request, options, metadata);
 
+        // save paused triggers before pause job
+        metadata.PausedTriggers = await GetPausedTriggers(metadata.JobKey);
+
+        // pause the job to avoid trigger firing during update
+        await Scheduler.PauseJob(metadata.JobKey);
+
         // Lock monitor events
         MonitorUtil.Lock(metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
@@ -198,7 +205,7 @@ public partial class JobDomain
             throw;
         }
 
-        await Scheduler.PauseJob(metadata.JobKey);
+        await PauseTriggers(metadata.JobKey, metadata.PausedTriggers);
 
         // Update Properties
         await UpdateJobProperties(request, metadata);
@@ -259,11 +266,9 @@ public partial class JobDomain
         metadata.JobKey = ValidateJobMetadata(request, Scheduler);
         ValidateSystemJob(metadata.JobKey);
         await JobKeyHelper.ValidateJobExists(metadata.JobKey);
-        ValidateSystemJob(metadata.JobKey);
         metadata.JobId =
             await JobKeyHelper.GetJobId(metadata.JobKey) ??
             throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
-        await ValidateJobPaused(metadata.JobKey);
         await ValidateJobNotRunning(metadata.JobKey);
     }
 }

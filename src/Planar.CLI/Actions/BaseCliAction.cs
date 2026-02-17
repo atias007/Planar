@@ -419,13 +419,11 @@ namespace Planar.CLI.Actions
         {
             if (!response.IsSuccessful) { return; }
             Util.SetLastJobOrTriggerId(response);
-            AssertUpdated(response.Data?.Id, "job");
         }
 
         protected static void AssertJobDataUpdated(RestResponse response, string id)
         {
             if (!response.IsSuccessful) { return; }
-            AssertUpdated(id, "job");
         }
 
         protected static void AssertTriggerUpdated(RestResponse response, string id)

@@ -9,6 +9,8 @@ namespace Planar.Service.API.Helpers
 
         public IReadOnlyCollection<ITrigger> Triggers { get; set; } = null!;
 
+        public IReadOnlyCollection<TriggerKey> PausedTriggers { get; set; } = null!;
+
         public IJobDetail OldJobDetails { get; set; } = null!;
 
         public IReadOnlyCollection<ITrigger> OldTriggers { get; set; } = null!;

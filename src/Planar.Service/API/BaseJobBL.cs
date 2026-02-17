@@ -208,6 +208,17 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
+    protected async Task<List<TriggerKey>> GetPausedTriggers(JobKey jobKey)
+    {
+        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var paused = triggers
+            .Where(t => Scheduler.GetTriggerState(t.Key).Result == TriggerState.Paused)
+            .Select(t => t.Key)
+            .ToList();
+
+        return paused;
+    }
+
     protected async Task ValidateJobPaused(JobKey jobKey)
     {
         var triggers = await Scheduler.GetTriggersOfJob(jobKey);
@@ -292,6 +303,19 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             {
                 throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
             }
+        }
+    }
+
+    protected async Task PauseTriggers(JobKey jobKey, IEnumerable<TriggerKey> triggers)
+    {
+        if (jobKey == null) { return; }
+        var all_triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var todoTriggers = all_triggers.Where(t => triggers.Any(pt => pt.Equals(t.Key)));
+
+        // Resume paused triggers if any
+        foreach (var t in todoTriggers)
+        {
+            await Scheduler.PauseTrigger(t.Key);
         }
     }
 
