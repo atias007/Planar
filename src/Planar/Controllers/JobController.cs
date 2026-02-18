@@ -38,6 +38,8 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [BadRequestResponse]
     public async Task<ActionResult<PlanarIdResponse>> Apply([FromBody] UpdateJobRequest request)
     {
+        var result = await BusinesLayer.Apply(request);
+        return CreatedAtAction(nameof(Get), result, result);
     }
 
     [HttpPost]
