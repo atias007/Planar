@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Common.Helpers;
 using Planar.Service.Exceptions;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -25,6 +26,15 @@ public class JobKeyHelper(IScheduler scheduler)
         return string.IsNullOrEmpty(metadata.Group) ?
                         new JobKey(metadata.Name) :
                         new JobKey(metadata.Name, metadata.Group);
+    }
+
+    internal static JobKey? GetJobKey(SetJobDynamicRequest request)
+    {
+        if (request.Name == null) { return null; }
+
+        return string.IsNullOrEmpty(request.Group) ?
+                        new JobKey(request.Name) :
+                        new JobKey(request.Name, request.Group);
     }
 
     public async Task<string?> SafeGetJobId(JobKey jobKey)

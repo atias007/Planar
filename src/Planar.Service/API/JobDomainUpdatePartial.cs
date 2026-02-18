@@ -6,7 +6,6 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -19,12 +18,8 @@ public partial class JobDomain
 {
     public async Task<PlanarIdResponse> Update(UpdateJobRequest request)
     {
-        await ValidateAddPath(request);
-        var yml = await GetJobFileContent(request);
-        var dynamicRequest = GetJobDynamicRequest(yml);
-        dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-        var path = ConvertRelativeJobFileToRelativeJobPath(request);
-        properties["path"] = path;
+        var dynamicRequest = await GetDynamicRequest(request);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
         var response = await Update(dynamicRequest, request.Options);
         return response;
     }

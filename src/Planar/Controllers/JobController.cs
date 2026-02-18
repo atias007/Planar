@@ -36,6 +36,16 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [JsonConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
+    public async Task<ActionResult<PlanarIdResponse>> Apply([FromBody] UpdateJobRequest request)
+    {
+    }
+
+    [HttpPost]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "post_job", Description = "Add job by yml file", Summary = "Add Job By Yml File")]
+    [JsonConsumes]
+    [CreatedResponse(typeof(PlanarIdResponse))]
+    [BadRequestResponse]
     [ConflictResponse]
     public async Task<ActionResult<PlanarIdResponse>> Add([FromBody] SetJobPathRequest request)
     {

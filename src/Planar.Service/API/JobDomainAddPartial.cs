@@ -75,14 +75,9 @@ public partial class JobDomain
 
     public async Task<PlanarIdResponse> Add(SetJobPathRequest request)
     {
-        await ValidateAddPath(request);
-        var yml = await GetJobFileContent(request);
-        var dynamicRequest = GetJobDynamicRequest(yml);
-        dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-        var path = ConvertRelativeJobFileToRelativeJobPath(request);
-        properties["path"] = path;
-        var response = await Add(dynamicRequest);
-        return response;
+        var dynamicRequest = await GetDynamicRequest(request);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
+        return await Add(dynamicRequest);
     }
 
     private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
@@ -261,10 +256,10 @@ public partial class JobDomain
         return result;
     }
 
-    private static string ConvertRelativeJobFileToRelativeJobPath(IJobFileRequest request)
+    private static string ConvertRelativeJobFileToRelativeJobPath(string jobPath)
     {
         var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-        var fullname = Path.Combine(jobsPath, request.JobFilePath);
+        var fullname = Path.Combine(jobsPath, jobPath);
         var jobDir = new FileInfo(fullname).Directory?.FullName;
         var path = ServiceUtil.GetJobRelativePath(jobDir);
         return path;

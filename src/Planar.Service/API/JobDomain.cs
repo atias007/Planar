@@ -17,6 +17,7 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -168,6 +169,38 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
     {
         Add,
         Update
+    }
+
+    public async Task<PlanarIdResponse> Apply(UpdateJobRequest request)
+    {
+        var dynamicRequest = await GetDynamicRequest(request);
+        var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
+
+        try
+        {
+            await JobKeyHelper.ValidateJobExists(jobKey);
+            return await Add(dynamicRequest);
+        }
+        catch (RestNotFoundException)
+        {
+            return await Update(dynamicRequest, request.Options);
+        }
+    }
+
+    private async Task<SetJobDynamicRequest> GetDynamicRequest(IJobFileRequest request)
+    {
+        await ValidateAddPath(request);
+        var yml = await GetJobFileContent(request);
+        var dynamicRequest = GetJobDynamicRequest(yml);
+        return dynamicRequest;
+    }
+
+    private void SetDynamicRequestPath(SetJobDynamicRequest dynamicRequest, string jobPath)
+    {
+        dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
+        var path = ConvertRelativeJobFileToRelativeJobPath(jobPath);
+        properties["path"] = path;
     }
 
     public void FailOverPublish(CloudEvent request)
