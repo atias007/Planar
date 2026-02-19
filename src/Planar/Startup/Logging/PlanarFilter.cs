@@ -57,7 +57,11 @@ public class PlanarFilter : ILogEventFilter
 
             if (stringValue.Contains(SwaggerRequestPath))
             {
+#if DEBUG
+                return true;
+#else
                 return false;
+#endif
             }
 
             if (stringValue.StartsWith(ContentRequestPath))

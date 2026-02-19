@@ -180,11 +180,11 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         try
         {
             await JobKeyHelper.ValidateJobExists(jobKey);
-            return await Add(dynamicRequest);
+            return await Update(dynamicRequest, request.Options);
         }
         catch (RestNotFoundException)
         {
-            return await Update(dynamicRequest, request.Options);
+            return await Add(dynamicRequest);
         }
     }
 
@@ -196,7 +196,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         return dynamicRequest;
     }
 
-    private void SetDynamicRequestPath(SetJobDynamicRequest dynamicRequest, string jobPath)
+    private static void SetDynamicRequestPath(SetJobDynamicRequest dynamicRequest, string jobPath)
     {
         dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
         var path = ConvertRelativeJobFileToRelativeJobPath(jobPath);

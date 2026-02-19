@@ -30,9 +30,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return NoContent();
     }
 
-    [HttpPost]
+    [HttpPost("apply")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job", Description = "Add job by yml file", Summary = "Add Job By Yml File")]
+    [SwaggerOperation(OperationId = "post_job_apply", Description = "Add/Update job by yml file", Summary = "Add/Update Job By Yml File")]
     [JsonConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
