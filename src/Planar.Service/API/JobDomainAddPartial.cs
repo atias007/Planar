@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pipelines.Sockets.Unofficial.Arenas;
@@ -70,6 +71,22 @@ public partial class JobDomain
         {
             var keys = string.Join(',', invalidKeys);
             throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
+        }
+    }
+
+    public async Task<PlanarIdResponse> AddRoute(HttpContext httpContext)
+    {
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            var entity = await httpContext.Request.ReadFromJsonAsync<SetJobPathRequest>();
+            var validator = Resolve<IValidator<SetJobPathRequest>>();
+            await validator.ValidateAndThrowAsync(entity);
+            return await Add(entity);
+        }
+        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            return await HandleYaml();
         }
     }
 

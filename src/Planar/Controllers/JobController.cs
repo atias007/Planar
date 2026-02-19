@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +34,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [HttpPost("apply")]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "post_job_apply", Description = "Add/Update job by yml file", Summary = "Add/Update Job By Yml File")]
-    [JsonConsumes]
+    [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     public async Task<ActionResult<PlanarIdResponse>> Apply([FromBody] UpdateJobRequest request)
@@ -45,20 +46,20 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [HttpPost]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "post_job", Description = "Add job by yml file", Summary = "Add Job By Yml File")]
-    [JsonConsumes]
+    [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     [ConflictResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Add([FromBody] SetJobPathRequest request)
+    public async Task<ActionResult<PlanarIdResponse>> Add()
     {
-        var result = await BusinesLayer.Add(request);
+        var result = await BusinesLayer.AddRoute(HttpContext);
         return CreatedAtAction(nameof(Get), result, result);
     }
 
     [HttpPut]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "put_job_id", Description = "Update job", Summary = "Update Job")]
-    [JsonConsumes]
+    [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     [NotFoundResponse]
