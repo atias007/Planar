@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using CommonJob;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -80,21 +81,19 @@ public partial class JobDomain
         if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
         {
             var entity = await httpContext.Request.ReadFromJsonAsync<SetJobPathRequest>();
+            ArgumentNullException.ThrowIfNull(entity);
             var validator = Resolve<IValidator<SetJobPathRequest>>();
             await validator.ValidateAndThrowAsync(entity);
             return await Add(entity);
         }
         else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
         {
-            return await HandleYaml();
+            using var reader = new StreamReader(httpContext.Request.Body);
+            var yml = await reader.ReadToEndAsync();
+            return await Add(yml);
         }
-    }
 
-    public async Task<PlanarIdResponse> Add(SetJobPathRequest request)
-    {
-        var dynamicRequest = await GetDynamicRequest(request);
-        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
-        return await Add(dynamicRequest);
+        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
     }
 
     private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
@@ -137,6 +136,33 @@ public partial class JobDomain
             default:
                 break;
         }
+    }
+
+    private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
+    {
+        if (metadata.JobData == null) { return; }
+        foreach (var item in metadata.JobData)
+        {
+            job.JobDataMap.Put(item.Key, item.Value);
+        }
+    }
+
+    // JobType+Concurrent, JobGroup, JobName, Description, Durable
+    private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
+    {
+        var jobType = GetJobType(request);
+        var jobBuilder = JobBuilder.Create(jobType)
+            .WithIdentity(jobKey)
+            .WithDescription(request.Description)
+            .RequestRecovery();
+
+        if (request.Durable.GetValueOrDefault())
+        {
+            jobBuilder = jobBuilder.StoreDurably(true);
+        }
+
+        var job = jobBuilder.Build();
+        return job;
     }
 
     private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, JobSimpleTriggerMetadata trigger)
@@ -189,33 +215,6 @@ public partial class JobDomain
                     break;
             }
         }
-    }
-
-    private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
-    {
-        if (metadata.JobData == null) { return; }
-        foreach (var item in metadata.JobData)
-        {
-            job.JobDataMap.Put(item.Key, item.Value);
-        }
-    }
-
-    // JobType+Concurrent, JobGroup, JobName, Description, Durable
-    private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
-    {
-        var jobType = GetJobType(request);
-        var jobBuilder = JobBuilder.Create(jobType)
-            .WithIdentity(jobKey)
-            .WithDescription(request.Description)
-            .RequestRecovery();
-
-        if (request.Durable.GetValueOrDefault())
-        {
-            jobBuilder = jobBuilder.StoreDurably(true);
-        }
-
-        var job = jobBuilder.Build();
-        return job;
     }
 
     private static List<ITrigger> BuildTriggers(SetJobRequest job, string jobId)
@@ -357,7 +356,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("path", $"fail to read JobFile.yml. error: {ex.Message}");
+            throw new RestValidationException("path", $"fail to read yml job file definition. error: {ex.Message}");
         }
 
         return dynamicRequest;
@@ -748,6 +747,19 @@ public partial class JobDomain
         }
     }
 
+    private async Task<PlanarIdResponse> Add(SetJobPathRequest request)
+    {
+        var dynamicRequest = await GetDynamicRequest(request);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
+        return await Add(dynamicRequest);
+    }
+
+    private async Task<PlanarIdResponse> Add(string yml)
+    {
+        var dynamicRequest = await GetDynamicRequest(yml);
+        return await Add(dynamicRequest);
+    }
+
     private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request)
     {
         // Validation
@@ -801,7 +813,7 @@ public partial class JobDomain
 
     private async Task<string> GetJobFileContent(IJobFileRequest request)
     {
-        await ValidateAddPath(request);
+        await ValidateJobFileExists(request);
         string yml;
         var filename = GetJobFileFullName(request);
         try
@@ -816,15 +828,19 @@ public partial class JobDomain
         return yml;
     }
 
-    private async Task ValidateAddPath(IJobFileRequest request)
+    private async Task ValidateJobFileExists(IJobFileRequest request)
     {
         ValidateRequestNoNull(request);
+        await ValidateJobFileExists(request.JobFilePath);
+    }
 
+    private async Task ValidateJobFileExists(string path)
+    {
         try
         {
-            ServiceUtil.ValidateJobFileExists(request.JobFilePath);
+            ServiceUtil.ValidateJobFileExists(path);
             var util = ServiceProvider.GetRequiredService<ClusterUtil>();
-            await util.ValidateJobFileExists(null, request.JobFilePath);
+            await util.ValidateJobFileExists(null, path);
         }
         catch (PlanarException ex)
         {
@@ -862,6 +878,11 @@ public partial class JobDomain
         }
 
         await validator.ValidateAndThrowAsync(properties);
+
+        if (properties is IJobPropertiesWithFiles propertiesWithFiles)
+        {
+            error
+        }
     }
 
     private async Task ValidatePropertiesInner(SetJobDynamicRequest request)

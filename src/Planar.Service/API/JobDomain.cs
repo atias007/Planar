@@ -190,8 +190,14 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     private async Task<SetJobDynamicRequest> GetDynamicRequest(IJobFileRequest request)
     {
-        await ValidateAddPath(request);
+        await ValidateJobFileExists(request);
         var yml = await GetJobFileContent(request);
+        var dynamicRequest = GetJobDynamicRequest(yml);
+        return dynamicRequest;
+    }
+
+    private static async Task<SetJobDynamicRequest> GetDynamicRequest(string yml)
+    {
         var dynamicRequest = GetJobDynamicRequest(yml);
         return dynamicRequest;
     }

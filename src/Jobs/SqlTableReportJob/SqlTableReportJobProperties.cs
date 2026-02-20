@@ -3,9 +3,9 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class SqlTableReportJobProperties : IPathJobProperties
+public class SqlTableReportJobProperties : IPathJobProperties, IJobPropertiesWithFiles
 {
-    public string Path { get; set; } = null!;
+    public string Path { get; set; } = string.Empty;
 
     [YamlMember(Alias = "connection name")]
     public string? ConnectionName { get; set; }
@@ -23,4 +23,9 @@ public class SqlTableReportJobProperties : IPathJobProperties
 
     [YamlIgnore]
     internal string? ConnectionString { get; set; }
+
+    public IEnumerable<string> Files =>
+    [
+        string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
+    ];
 }

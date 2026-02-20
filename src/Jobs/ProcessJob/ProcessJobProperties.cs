@@ -29,4 +29,9 @@ public class ProcessJobProperties : BaseProcessJobProperties, IFileJobProperties
 
     [YamlMember(Alias = "fail output regex")]
     public string? FailOutputRegex { get; set; }
+
+    public IEnumerable<string> Files =>
+    [
+        string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
+    ];
 }
