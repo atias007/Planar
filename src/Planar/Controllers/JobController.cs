@@ -37,9 +37,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Apply([FromBody] UpdateJobRequest request)
+    public async Task<ActionResult<PlanarIdResponse>> Apply()
     {
-        var result = await BusinesLayer.Apply(request);
+        var result = await BusinesLayer.ApplyRoute(HttpContext);
         return CreatedAtAction(nameof(Get), result, result);
     }
 

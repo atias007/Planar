@@ -1,14 +1,13 @@
-﻿using Swashbuckle.AspNetCore.Annotations;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net.Mime;
 
 namespace Planar.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class RequestTimeoutResponseAttribute : SwaggerResponseAttribute
+public class RequestTimeoutResponseAttribute : ProducesResponseTypeAttribute
 {
-    public RequestTimeoutResponseAttribute() : base(408)
+    public RequestTimeoutResponseAttribute() : base(typeof(string), 408, MediaTypeNames.Text.Plain)
     {
-        Type = typeof(string);
-        ContentTypes = ["plain/text"];
     }
 }

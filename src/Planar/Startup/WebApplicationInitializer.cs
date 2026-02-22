@@ -85,12 +85,13 @@ namespace Planar.Startup
 
             if (AppSettings.General.SwaggerUI && !app.Environment.IsProduction())
             {
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint($"/swagger/{SwaggerInitializer.SwaggerVersion}/swagger.json", "Planar");
-                    c.InjectStylesheet("/Content/theme-flattop.css");
-                });
+                app.MapOpenApi("/api/openapi.json");
+                ////app.UseSwagger();
+                ////app.UseSwaggerUI(c =>
+                ////{
+                ////    c.SwaggerEndpoint($"/swagger/{SwaggerInitializer.SwaggerVersion}/swagger.json", "Planar");
+                ////    c.InjectStylesheet("/Content/theme-flattop.css");
+                ////});
             }
 
             if (AppSettings.General.UseHttpsRedirect)

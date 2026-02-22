@@ -1,19 +1,18 @@
-﻿using Swashbuckle.AspNetCore.Annotations;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net.Mime;
 
 namespace Planar.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class CreatedResponseAttribute : SwaggerResponseAttribute
+public class CreatedResponseAttribute
+    : ProducesResponseTypeAttribute
 {
-    public CreatedResponseAttribute(Type type) : base(201)
+    public CreatedResponseAttribute(Type type) : base(type, 201, MediaTypeNames.Application.Json)
     {
-        Type = type;
-        ContentTypes = ["application/json"];
     }
 
     public CreatedResponseAttribute() : base(201)
     {
-        Type = null;
     }
 }

@@ -1,14 +1,11 @@
-﻿using Swashbuckle.AspNetCore.Annotations;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net.Mime;
 
 namespace Planar.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class ConflictResponseAttribute : SwaggerResponseAttribute
+public class ConflictResponseAttribute()
+    : ProducesResponseTypeAttribute(typeof(string), 409, MediaTypeNames.Text.Plain)
 {
-    public ConflictResponseAttribute() : base(409, "text/plain")
-    {
-        Type = typeof(string);
-        ContentTypes = ["text/plain"];
-    }
 }
