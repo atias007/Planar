@@ -23,7 +23,6 @@ internal class OldAppSettings
     public short HttpsPort { get; set; }
     public bool UseHttpsRedirect { get; set; }
     public string LogLevel { get; set; }
-    public bool SwaggerUI { get; set; }
     public bool OpenApiUI { get; set; }
     public bool DeveloperExceptionPage { get; set; }
     public int ClearTraceTableOverDays { get; set; }

@@ -169,7 +169,6 @@ namespace Planar.Startup
                 sb.AppendLine($"  https port: {oldAppSettings.HttpsPort}");
                 sb.AppendLine($"  use https redirect: {oldAppSettings.UseHttpsRedirect}");
                 sb.AppendLine($"  log level: {oldAppSettings.LogLevel}");
-                sb.AppendLine($"  swagger ui: {oldAppSettings.SwaggerUI}");
                 sb.AppendLine($"  open api ui: {oldAppSettings.OpenApiUI}");
                 sb.AppendLine($"  developer exception page: {oldAppSettings.DeveloperExceptionPage}");
                 sb.AppendLine($"  concurrency rate limiting: {oldAppSettings.ConcurrencyRateLimiting}");

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,11 +18,11 @@ public class CleanupODataMediaTypesTransformer : IOpenApiDocumentTransformer
                 if (operation.RequestBody?.Content == null) continue;
 
                 var jsonSchema = operation.RequestBody.Content
-                    .FirstOrDefault(c => c.Key == "application/json").Value
+                    .FirstOrDefault(c => c.Key == MediaTypeNames.Application.Json).Value
                     ?? operation.RequestBody.Content.First().Value;
 
                 operation.RequestBody.Content.Clear();
-                operation.RequestBody.Content["application/json"] = jsonSchema;
+                operation.RequestBody.Content[MediaTypeNames.Application.Json] = jsonSchema;
             }
         }
 

@@ -55,11 +55,6 @@ public static class ServiceCollectionInitializer
 
         ODataInitializer.RegisterOData(mvcBuilder);
 
-        if (AppSettings.General.SwaggerUI)
-        {
-            ////services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
-        }
-
         if (AppSettings.General.UseHttpsRedirect)
         {
             services.AddHttpsRedirection(options =>

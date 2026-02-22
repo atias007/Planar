@@ -11,7 +11,6 @@
         public const string TraceRetentionDaysVariableKey = "PLANAR_TRACE_RETENTION_DAYS";
         public const string JobLogRetentionDaysVariableKey = "PLANAR_JOB_LOG_RETENTION_DAYS";
         public const string MetricssRetentionDaysVariableKey = "PLANAR_METRICS_RETENTION_DAYS";
-        public const string SwaggerUIVariableKey = "PLANAR_SWAGGER_UI";
         public const string OpenApiUIVariableKey = "PLANAR_OPENAPI_UI";
         public const string DeveloperExceptionPageVariableKey = "PLANAR_DEVELOPER_EXEPTION_PAGE";
         public const string LogLevelVariableKey = "PLANAR_LOG_LEVEL";

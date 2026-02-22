@@ -31,8 +31,6 @@
 	  <None Remove="Content\logo2.png" />
 	  <None Remove="Content\logo3.png" />
 	  <None Remove="Content\no_access.jpg" />
-	  <None Remove="Content\redoc.standalone.js" />
-	  <None Remove="Content\theme-flattop.css" />
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Certificate\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
@@ -58,13 +56,6 @@
 	  <EmbeddedResource Include="Content\logo2.png" />
 	  <EmbeddedResource Include="Content\logo3.png" />
 	  <EmbeddedResource Include="Content\no_access.jpg" />
-	  <EmbeddedResource Include="Content\planar_openapi.html">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	  </EmbeddedResource>
-	  <EmbeddedResource Include="Content\redoc.standalone.js" />
-	  <EmbeddedResource Include="Content\theme-flattop.css">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	  </EmbeddedResource>
 	  <EmbeddedResource Include="Data\Certificate\readme.md">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
