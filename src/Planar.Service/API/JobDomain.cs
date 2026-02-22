@@ -1,4 +1,5 @@
 ﻿using CloudNative.CloudEvents;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -171,6 +172,27 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         Update
     }
 
+    public async Task<PlanarIdResponse> ApplyRoute(HttpContext httpContext)
+    {
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>();
+            ArgumentNullException.ThrowIfNull(entity);
+            var validator = Resolve<IValidator<UpdateJobRequest>>();
+            await validator.ValidateAndThrowAsync(entity);
+            return await Apply(entity);
+        }
+        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(httpContext.Request.Body);
+            var yml = await reader.ReadToEndAsync();
+            return await Apply(yml);
+        }
+
+        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
+    }
+
     public async Task<PlanarIdResponse> Apply(UpdateJobRequest request)
     {
         var dynamicRequest = await GetDynamicRequest(request);
@@ -181,6 +203,22 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         {
             await JobKeyHelper.ValidateJobExists(jobKey);
             return await Update(dynamicRequest, request.Options);
+        }
+        catch (RestNotFoundException)
+        {
+            return await Add(dynamicRequest);
+        }
+    }
+
+    public async Task<PlanarIdResponse> Apply(string yml)
+    {
+        var dynamicRequest = await GetDynamicRequest(yml);
+        var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
+
+        try
+        {
+            await JobKeyHelper.ValidateJobExists(jobKey);
+            return await Update(dynamicRequest, UpdateJobOptions.Default);
         }
         catch (RestNotFoundException)
         {

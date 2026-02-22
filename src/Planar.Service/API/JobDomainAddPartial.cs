@@ -831,16 +831,16 @@ public partial class JobDomain
     private async Task ValidateJobFileExists(IJobFileRequest request)
     {
         ValidateRequestNoNull(request);
-        await ValidateJobFileExists(request.JobFilePath);
+        await ValidateFileExists(request.JobFilePath);
     }
 
-    private async Task ValidateJobFileExists(string path)
+    private async Task ValidateFileExists(string filename)
     {
         try
         {
-            ServiceUtil.ValidateJobFileExists(path);
+            ServiceUtil.ValidateJobFileExists(filename);
             var util = ServiceProvider.GetRequiredService<ClusterUtil>();
-            await util.ValidateJobFileExists(null, path);
+            await util.ValidateJobFileExists(null, filename);
         }
         catch (PlanarException ex)
         {
@@ -881,7 +881,10 @@ public partial class JobDomain
 
         if (properties is IJobPropertiesWithFiles propertiesWithFiles)
         {
-            error
+            foreach (var item in propertiesWithFiles.Files)
+            {
+                await ValidateFileExists(item);
+            }
         }
     }
 

@@ -221,7 +221,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
     {
         var result = new IsJobAssestsExistReply
         {
-            Exists = ServiceUtil.IsJobFileExists(request.Folder, request.Filename),
+            Exists = ServiceUtil.IsFileExists(request.Folder, request.Filename),
             Path = string.IsNullOrWhiteSpace(request.Folder) ? string.Empty : ServiceUtil.GetJobFolder(request.Folder)
         };
 

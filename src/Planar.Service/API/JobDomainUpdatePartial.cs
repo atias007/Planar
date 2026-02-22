@@ -1,4 +1,6 @@
-﻿using Planar.API.Common.Entities;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
@@ -9,6 +11,7 @@ using Planar.Service.Monitor;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,12 +19,25 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    public async Task<PlanarIdResponse> Update(UpdateJobRequest request)
+    public async Task<PlanarIdResponse> UpdateRoute(HttpContext httpContext)
     {
-        var dynamicRequest = await GetDynamicRequest(request);
-        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
-        var response = await Update(dynamicRequest, request.Options);
-        return response;
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>();
+            ArgumentNullException.ThrowIfNull(entity);
+            var validator = Resolve<IValidator<UpdateJobRequest>>();
+            await validator.ValidateAndThrowAsync(entity);
+            return await Update(entity);
+        }
+        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(httpContext.Request.Body);
+            var yml = await reader.ReadToEndAsync();
+            return await Update(yml);
+        }
+
+        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
     }
 
     private static T? Clone<T>(T obj)
@@ -142,6 +158,12 @@ public partial class JobDomain
         await Resolve<IJobData>().UpdateJobProperty(property);
     }
 
+    private async Task<PlanarIdResponse> Update(string yml)
+    {
+        var dynamicRequest = await GetDynamicRequest(yml);
+        return await Update(dynamicRequest, UpdateJobOptions.Default);
+    }
+
     private async Task<PlanarIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
     {
         var metadata = new JobUpdateMetadata();
@@ -155,6 +177,14 @@ public partial class JobDomain
             await RollBack(metadata);
             throw;
         }
+    }
+
+    private async Task<PlanarIdResponse> Update(UpdateJobRequest request)
+    {
+        var dynamicRequest = await GetDynamicRequest(request);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
+        var response = await Update(dynamicRequest, request.Options);
+        return response;
     }
 
     private async Task<PlanarIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)

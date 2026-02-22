@@ -154,15 +154,15 @@ public static class ServiceUtil
         return result;
     }
 
-    public static bool IsJobFileExists(string? folder, string filename)
+    public static bool IsFileExists(string? folder, string filename)
     {
-        if (string.IsNullOrWhiteSpace(folder)) { return IsJobFileExists(filename); }
+        if (string.IsNullOrWhiteSpace(folder)) { return IsFileExists(filename); }
         var fullname = GetJobFilename(folder, filename);
         var result = File.Exists(fullname);
         return result;
     }
 
-    private static bool IsJobFileExists(string filename)
+    private static bool IsFileExists(string filename)
     {
         var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
         var fullname = Path.Combine(jobsPath, filename);
@@ -181,7 +181,7 @@ public static class ServiceUtil
 
     public static void ValidateJobFileExists(string? folder, string filename)
     {
-        if (!IsJobFileExists(folder, filename))
+        if (!IsFileExists(folder, filename))
         {
             var path = GetJobFolder(folder);
             throw new PlanarException($"folder '{path}' does not have '{filename}' filename. (node {Environment.MachineName})");
@@ -190,7 +190,7 @@ public static class ServiceUtil
 
     public static void ValidateJobFileExists(string filename)
     {
-        if (!IsJobFileExists(filename))
+        if (!IsFileExists(filename))
         {
             throw new PlanarException($"filename '{filename}' does not exists in jobs folder on server. (node {Environment.MachineName})");
         }
