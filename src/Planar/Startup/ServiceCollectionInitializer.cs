@@ -48,11 +48,16 @@ public static class ServiceCollectionInitializer
                 o.JsonSerializerOptions.Converters.Add(new SystemTextNullableTimeSpanConverter());
             });
 
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer<CleanupODataMediaTypesTransformer>();
+        });
+
         ODataInitializer.RegisterOData(mvcBuilder);
 
         if (AppSettings.General.SwaggerUI)
         {
-            services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
+            ////services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
         }
 
         if (AppSettings.General.UseHttpsRedirect)

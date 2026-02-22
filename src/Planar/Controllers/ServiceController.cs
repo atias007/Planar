@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -18,7 +20,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 {
     [HttpGet("version")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_service_version", Description = "Get service version", Summary = "Get Version")]
+    [EndpointName("get_service_version")]
+    [EndpointDescription("Get service version")]
+    [EndpointSummary("Get Version")]
     [OkTextResponse]
     public ActionResult<string> GetServiceVersion()
     {
@@ -28,7 +32,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpGet]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_service", Description = "Get service information", Summary = "Get Information")]
+    [EndpointName("get_service")]
+    [EndpointDescription("Get service information")]
+    [EndpointSummary("Get Information")]
     [OkJsonResponse(typeof(AppSettingsInfo))]
     public async Task<ActionResult<AppSettingsInfo>> GetServiceInfo()
     {
@@ -38,7 +44,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpGet("health-check")]
     [AllowAnonymous]
-    [SwaggerOperation(OperationId = "get_service_health_check", Description = "Service health check", Summary = "Health Check")]
+    [EndpointName("get_service_health_check")]
+    [EndpointDescription("Service health check")]
+    [EndpointSummary("Health Check")]
     [OkTextResponse]
     [ServiceUnavailableResponse]
     public async Task<ActionResult<string>> HealthCheck()
@@ -49,7 +57,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpGet("calendars")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_service_calendars", Description = "Get calendars list", Summary = "Get Calendars")]
+    [EndpointName("get_service_calendars")]
+    [EndpointDescription("Get calendars list")]
+    [EndpointSummary("Get Calendars")]
     [OkJsonResponse(typeof(List<string>))]
     public async Task<ActionResult<List<string>>> GetCalendars()
     {
@@ -59,7 +69,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpPost("halt")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "post_service_halt", Description = "Halt (stop) service", Summary = "Halt (Stop) Service")]
+    [EndpointName("post_service_halt")]
+    [EndpointDescription("Halt (stop) service")]
+    [EndpointSummary("Halt (Stop) Service")]
     [OkJsonResponse]
     public async Task<ActionResult> HaltScheduler()
     {
@@ -69,7 +81,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpPost("start")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "post_service_start", Description = "Start service", Summary = "Start Service")]
+    [EndpointName("post_service_start")]
+    [EndpointDescription("Start service")]
+    [EndpointSummary("Start Service")]
     [OkJsonResponse]
     public async Task<ActionResult> StartScheduler()
     {
@@ -79,7 +93,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpPost("login")]
     [AllowAnonymous]
-    [SwaggerOperation(OperationId = "post_service_login", Description = "Login service", Summary = "Login Service")]
+    [EndpointName("post_service_login")]
+    [EndpointDescription("Login service")]
+    [EndpointSummary("Login Service")]
     [JsonConsumes]
     [OkJsonResponse(typeof(LoginResponse))]
     [ConflictResponse]
@@ -91,7 +107,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpGet("security-audits")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "get_service_security_audits", Description = "Get all security audits", Summary = "Get All Security Audits")]
+    [EndpointName("get_service_security_audits")]
+    [EndpointDescription("Get all security audits")]
+    [EndpointSummary("Get All Security Audits")]
     [OkJsonResponse(typeof(PagingResponse<SecurityAuditModel>))]
     [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<SecurityAuditModel>>> GetSecurityAudits([FromQuery] SecurityAuditsFilter request)
@@ -102,7 +120,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpGet("working-hours/{calendar}")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "get_service_working_hours_calendar", Description = "Get working hours for calendar", Summary = "Get Working Hours For Calendar")]
+    [EndpointName("get_service_working_hours_calendar")]
+    [EndpointDescription("Get working hours for calendar")]
+    [EndpointSummary("Get Working Hours For Calendar")]
     [OkJsonResponse(typeof(WorkingHoursModel))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -115,7 +135,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpGet("working-hours")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "get_service_working_hours", Description = "Get default working hours", Summary = "Get Default Working")]
+    [EndpointName("get_service_working_hours")]
+    [EndpointDescription("Get default working hours")]
+    [EndpointSummary("Get Default Working")]
     [OkJsonResponse(typeof(IEnumerable<WorkingHoursModel>))]
     [NotFoundResponse]
     public ActionResult<IEnumerable<WorkingHoursModel>> GetDefaultWorkingHours()

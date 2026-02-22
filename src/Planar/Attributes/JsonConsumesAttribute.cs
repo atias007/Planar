@@ -7,7 +7,7 @@ namespace Planar.Attributes;
 [AttributeUsage(AttributeTargets.Method)]
 public class JsonConsumesAttribute : ConsumesAttribute
 {
-    public JsonConsumesAttribute() : base(MediaTypeNames.Application.Json)
+    public JsonConsumesAttribute() : base(MediaTypeNames.Application.Json, MediaTypeNames.Application.Json)
     {
     }
 }

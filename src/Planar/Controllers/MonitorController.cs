@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -18,7 +19,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 {
     [HttpGet]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]
+    [EndpointName("get_monitor")]
+    [EndpointDescription("Get all monitors")]
+    [EndpointSummary("Get All Monitors")]
     [OkJsonResponse(typeof(PagingResponse<MonitorItem>))]
     public async Task<ActionResult<PagingResponse<MonitorItem>>> GetAll([FromQuery] PagingRequest request)
     {
@@ -28,7 +31,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("by-Job/{jobId}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_by_job_id", Description = "Get monitor by job key or id", Summary = "Get Monitor By Job")]
+    [EndpointName("get_monitor_by_job_id")]
+    [EndpointDescription("Get monitor by job key or id")]
+    [EndpointSummary("Get Monitor By Job")]
     [OkJsonResponse(typeof(List<MonitorItem>))]
     [BadRequestResponse]
     public async Task<ActionResult<List<MonitorItem>>> GetByJob([FromRoute][Required] string jobId)
@@ -39,7 +44,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("by-group/{group}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_by_group_group", Description = "Get monitor by job group", Summary = "Get Monitor By Group")]
+    [EndpointName("get_monitor_by_group_group")]
+    [EndpointDescription("Get monitor by job group")]
+    [EndpointSummary("Get Monitor By Group")]
     [OkJsonResponse(typeof(List<MonitorItem>))]
     [BadRequestResponse]
     public async Task<ActionResult<List<MonitorItem>>> GetByGroup([FromRoute][Required] string group)
@@ -51,7 +58,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("{id}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_id", Description = "Get monitor by id", Summary = "Get Monitor")]
+    [EndpointName("get_monitor_id")]
+    [EndpointDescription("Get monitor by id")]
+    [EndpointSummary("Get Monitor")]
     [OkJsonResponse(typeof(MonitorItem))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -63,7 +72,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("alert/{id}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_alert_id", Description = "Get monitor alert by id", Summary = "Get Monitor Alert")]
+    [EndpointName("get_monitor_alert_id")]
+    [EndpointDescription("Get monitor alert by id")]
+    [EndpointSummary("Get Monitor Alert")]
     [OkJsonResponse(typeof(MonitorAlertModel))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -75,7 +86,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("alerts")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_alerts", Description = "Get monitor alerts by filter", Summary = "Get Monitor Alerts")]
+    [EndpointName("get_monitor_alerts")]
+    [EndpointDescription("Get monitor alerts by filter")]
+    [EndpointSummary("Get Monitor Alerts")]
     [OkJsonResponse(typeof(PagingResponse<MonitorAlertRowModel>))]
     [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<MonitorAlertRowModel>>> GetMonitorAlerts([FromQuery] GetMonitorsAlertsRequest request)
@@ -86,7 +99,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("events")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_events", Description = "Get all monitor events type", Summary = "Get All Monitor Events")]
+    [EndpointName("get_monitor_events")]
+    [EndpointDescription("Get all monitor events type")]
+    [EndpointSummary("Get All Monitor Events")]
     [OkJsonResponse(typeof(List<MonitorEventModel>))]
     public ActionResult<List<MonitorEventModel>> GetEvents()
     {
@@ -96,7 +111,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpPost]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_monitor", Description = "Add monitor", Summary = "Add Monitor")]
+    [EndpointName("post_monitor")]
+    [EndpointDescription("Add monitor")]
+    [EndpointSummary("Add Monitor")]
     [JsonConsumes]
     [CreatedResponse(typeof(EntityIdResponse))]
     [BadRequestResponse]
@@ -109,7 +126,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpPut]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "put_monitor", Description = "Update monitor", Summary = "Update Monitor")]
+    [EndpointName("put_monitor")]
+    [EndpointDescription("Update monitor")]
+    [EndpointSummary("Update Monitor")]
     [JsonConsumes]
     [NoContentResponse]
     [BadRequestResponse]
@@ -123,7 +142,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpDelete("{id}")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "delete_monitor_id", Description = "Delete monitor", Summary = "Delete Monitor")]
+    [EndpointName("delete_monitor_id")]
+    [EndpointDescription("Delete monitor")]
+    [EndpointSummary("Delete Monitor")]
     [BadRequestResponse]
     [NoContentResponse]
     [NotFoundResponse]
@@ -135,7 +156,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpPatch]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "patch_monitor", Description = "Update monitor single property", Summary = "Partial Update Monitor")]
+    [EndpointName("patch_monitor")]
+    [EndpointDescription("Update monitor single property")]
+    [EndpointSummary("Partial Update Monitor")]
     [JsonConsumes]
     [BadRequestResponse]
     [NoContentResponse]
@@ -149,7 +172,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpPatch("add-distribution-group")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "patch_monitor_add_distribution_group", Description = "Add distribution group to monitor", Summary = "Add Distribution Group To Monitor")]
+    [EndpointName("patch_monitor_add_distribution_group")]
+    [EndpointDescription("Add distribution group to monitor")]
+    [EndpointSummary("Add Distribution Group To Monitor")]
     [JsonConsumes]
     [BadRequestResponse]
     [NoContentResponse]
@@ -163,7 +188,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpPatch("remove-distribution-group")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "patch_monitor_remove_distribution_group", Description = "Remove distribution group from monitor", Summary = "Remove Distribution Group From Monitor")]
+    [EndpointName("patch_monitor_remove_distribution_group")]
+    [EndpointDescription("Remove distribution group from monitor")]
+    [EndpointSummary("Remove Distribution Group From Monitor")]
     [JsonConsumes]
     [BadRequestResponse]
     [NoContentResponse]
@@ -177,7 +204,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("hooks")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_hooks", Description = "Get all monitor hooks", Summary = "Get Monitor Hooks")]
+    [EndpointName("get_monitor_hooks")]
+    [EndpointDescription("Get all monitor hooks")]
+    [EndpointSummary("Get Monitor Hooks")]
     [OkJsonResponse(typeof(IEnumerable<HookInfo>))]
     public ActionResult<IEnumerable<HookInfo>> GetHooks()
     {
@@ -197,7 +226,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpDelete("hook/{name}")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "delete_monitor_hook_name", Description = "Delete monitor hook", Summary = "Delete Monitor Hook")]
+    [EndpointName("delete_monitor_hook_name")]
+    [EndpointDescription("Delete monitor hook")]
+    [EndpointSummary("Delete Monitor Hook")]
     [BadRequestResponse]
     [NoContentResponse]
     [NotFoundResponse]
@@ -210,7 +241,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpPost("hook")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "add_monitor_hook", Description = "Add monitor hook", Summary = "Add Monitor Hook")]
+    [EndpointName("add_monitor_hook")]
+    [EndpointDescription("Add monitor hook")]
+    [EndpointSummary("Add Monitor Hook")]
     [JsonConsumes]
     [BadRequestResponse]
     [CreatedResponse(typeof(MonitorHookDetails))]
@@ -223,7 +256,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
     [HttpPost("try")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "post_monitor_try", Description = "Try monitor", Summary = "Try Monitor")]
+    [EndpointName("post_monitor_try")]
+    [EndpointDescription("Try monitor")]
+    [EndpointSummary("Try Monitor")]
     [NoContentResponse]
     [BadRequestResponse]
     public async Task<ActionResult> Try(MonitorTestRequest request)
@@ -235,7 +270,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
     [HttpPatch("mute")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "patch_monitor_mute", Description = "Mute monitor", Summary = "Mute Monitor")]
+    [EndpointName("patch_monitor_mute")]
+    [EndpointDescription("Mute monitor")]
+    [EndpointSummary("Mute Monitor")]
     [NoContentResponse]
     [BadRequestResponse]
     public async Task<IActionResult> Mute(MonitorMuteRequest request)
@@ -247,7 +284,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
     [HttpPatch("unmute")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "patch_monitor_unmute", Description = "Unmute monitor", Summary = "Unmute Monitor")]
+    [EndpointName("patch_monitor_unmute")]
+    [EndpointDescription("Unmute monitor")]
+    [EndpointSummary("Unmute Monitor")]
     [NoContentResponse]
     [BadRequestResponse]
     public async Task<IActionResult> Unmute(MonitorUnmuteRequest request)
@@ -258,7 +297,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
 
     [HttpGet("mutes")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_monitor_mutes", Description = "Get all monitor mutes", Summary = "Get All Monitor Mutes")]
+    [EndpointName("get_monitor_mutes")]
+    [EndpointDescription("Get all monitor mutes")]
+    [EndpointSummary("Get All Monitor Mutes")]
     [OkJsonResponse(typeof(IEnumerable<MuteItem>))]
     public async Task<ActionResult<IEnumerable<MuteItem>>> Mutes()
     {

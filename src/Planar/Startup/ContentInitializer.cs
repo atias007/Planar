@@ -17,7 +17,7 @@ public static class ContentInitializer
         {
             var htmlReplace = new Dictionary<string, object>
             {
-                { "@@OpenApiVersion@@", SwaggerInitializer.SwaggerVersion }
+                { "@@OpenApiVersion@@", OpenApiInitializer.Version }
             };
 
             OpenApiHtml = new Lazy<IResult>(() => Results.Content(GetContent("planar_openapi.html", htmlReplace), "text/html"));

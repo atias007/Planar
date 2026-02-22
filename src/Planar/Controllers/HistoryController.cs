@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
-using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Net.Mime;
@@ -19,7 +21,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 {
     [HttpGet]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history", Description = "Get history data by filter", Summary = "Get History")]
+    [EndpointName("get_history")]
+    [EndpointDescription("Get history data by filter")]
+    [EndpointSummary("Get History")]
     [OkJsonResponse(typeof(PagingResponse<JobInstanceLogRow>))]
     [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<JobInstanceLogRow>>> GetHistory([FromQuery] GetHistoryRequest request)
@@ -30,7 +34,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("{id}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_id", Description = "Get history by id", Summary = "Get History By Id")]
+    [EndpointName("get_history_id")]
+    [EndpointDescription("Get history by id")]
+    [EndpointSummary("Get History By Id")]
     [OkJsonResponse(typeof(JobInstanceLog))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -42,7 +48,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("by-instanceid/{instanceid}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_by_instanceid_instanceid", Description = "Get history by instance id", Summary = "Get History By Instance Id")]
+    [EndpointName("get_history_by_instanceid_instanceid")]
+    [EndpointDescription("Get history by instance id")]
+    [EndpointSummary("Get History By Instance Id")]
     [OkJsonResponse(typeof(JobInstanceLog))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -55,7 +63,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("{id}/data")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_id_data", Description = "Get only variables data from specific history item", Summary = "Get History Data By Id")]
+    [EndpointName("get_history_id_data")]
+    [EndpointDescription("Get only variables data from specific history item")]
+    [EndpointSummary("Get History Data By Id")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -70,7 +80,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("by-instanceid/{instanceid}/data")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_by-instanceid_instanceid_data", Description = "Get only variables data from specific history item", Summary = "Get History Data By Instance Id")]
+    [EndpointName("get_history_by-instanceid_instanceid_data")]
+    [EndpointDescription("Get only variables data from specific history item")]
+    [EndpointSummary("Get History Data By Instance Id")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -85,7 +97,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("{id}/log")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_id_log", Description = "Get only log text from specific history item", Summary = "Get History Log By Id")]
+    [EndpointName("get_history_id_log")]
+    [EndpointDescription("Get only log text from specific history item")]
+    [EndpointSummary("Get History Log By Id")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -100,7 +114,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("by-instanceid/{instanceid}/log")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_by-instanceid_instanceid_log", Description = "Get only log text from specific history item", Summary = "Get History Log By Instance Id")]
+    [EndpointName("get_history_by-instanceid_instanceid_log")]
+    [EndpointDescription("Get only log text from specific history item")]
+    [EndpointSummary("Get History Log By Instance Id")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -115,7 +131,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("{id}/exception")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_id_exception", Description = "Get only exceptions text from specific history item", Summary = "Get History Exceptions By Id")]
+    [EndpointName("get_history_id_exception")]
+    [EndpointDescription("Get only exceptions text from specific history item")]
+    [EndpointSummary("Get History Exceptions By Id")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -130,7 +148,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("by-instanceid/{instanceid}/exception")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_by-instanceid_instanceid_exception", Description = "Get only exceptions text from specific history item", Summary = "Get History Exceptions By Instance Id")]
+    [EndpointName("get_history_by-instanceid_instanceid_exception")]
+    [EndpointDescription("Get only exceptions text from specific history item")]
+    [EndpointSummary("Get History Exceptions By Instance Id")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -145,7 +165,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("last")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_last", Description = "Get last running of each job", Summary = "Get Last Running Of Each Job")]
+    [EndpointName("get_history_last")]
+    [EndpointDescription("Get last running of each job")]
+    [EndpointSummary("Get Last Running Of Each Job")]
     [OkJsonResponse(typeof(PagingResponse<JobHistory>))]
     [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<JobLastRun>>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
@@ -156,7 +178,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("summary")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_summary", Description = "Get summary of last running jobs", Summary = "Get Summary Of Last Running Jobs")]
+    [EndpointName("get_history_summary")]
+    [EndpointDescription("Get summary of last running jobs")]
+    [EndpointSummary("Get Summary Of Last Running Jobs")]
     [OkJsonResponse(typeof(PagingResponse<HistorySummary>))]
     [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<HistorySummary>>> GetHistorySummary([FromQuery] GetSummaryRequest request)
@@ -167,7 +191,9 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
 
     [HttpGet("count")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_history_count", Description = "Get history count by status", Summary = "Get History Count")]
+    [EndpointName("get_history_count")]
+    [EndpointDescription("Get history count by status")]
+    [EndpointSummary("Get History Count")]
     [OkJsonResponse(typeof(CounterResponse))]
     [BadRequestResponse]
     public async Task<ActionResult<CounterResponse>> GetHistoryCounter([FromQuery] CounterRequest request)

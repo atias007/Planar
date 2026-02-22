@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -16,7 +18,9 @@ public class MetricsController(MetricsDomain businesLayer) : BaseController<Metr
 {
     [HttpPost("rebuild")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_metrics_rebuild", Description = "Rebuild statistics data", Summary = "Rebuild Statistics Data")]
+    [EndpointName("post_metrics_rebuild")]
+    [EndpointDescription("Rebuild statistics data")]
+    [EndpointSummary("Rebuild Statistics Data")]
     [NoContentResponse]
     public async Task<ActionResult> RebuildJobStatistics()
     {
@@ -26,7 +30,9 @@ public class MetricsController(MetricsDomain businesLayer) : BaseController<Metr
 
     [HttpGet("job/{id}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_metrics_job_id", Description = "Get job metrics", Summary = "Get Job Metrics")]
+    [EndpointName("get_metrics_job_id")]
+    [EndpointDescription("Get job metrics")]
+    [EndpointSummary("Get Job Metrics")]
     [OkJsonResponse(typeof(JobMetrics))]
     [BadRequestResponse]
     public async Task<ActionResult<JobMetrics>> GetJobMetrics([FromRoute][Required] string id)
@@ -37,7 +43,9 @@ public class MetricsController(MetricsDomain businesLayer) : BaseController<Metr
 
     [HttpGet("concurrent")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_metrics_concurrent", Description = "Get concurrent execution", Summary = "Get Concurrent Execution")]
+    [EndpointName("get_metrics_concurrent")]
+    [EndpointDescription("Get concurrent execution")]
+    [EndpointSummary("Get Concurrent Execution")]
     [OkJsonResponse(typeof(IEnumerable<ConcurrentExecutionModel>))]
     [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<ConcurrentExecutionModel>>> GetConcurrentExecution([FromQuery] ConcurrentExecutionRequest request)
@@ -48,7 +56,9 @@ public class MetricsController(MetricsDomain businesLayer) : BaseController<Metr
 
     [HttpGet("max-concurrent")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_metrics_max_concurrent", Description = "Get max of concurrent execution", Summary = "Get Max Of Concurrent Execution")]
+    [EndpointName("get_metrics_max_concurrent")]
+    [EndpointDescription("Get max of concurrent execution")]
+    [EndpointSummary("Get Max Of Concurrent Execution")]
     [OkJsonResponse(typeof(MaxConcurrentExecution))]
     [BadRequestResponse]
     public async Task<ActionResult<MaxConcurrentExecution>> GetMaxConcurrentExecution([FromQuery] MaxConcurrentExecutionRequest request)
@@ -59,7 +69,9 @@ public class MetricsController(MetricsDomain businesLayer) : BaseController<Metr
 
     [HttpGet("job-counters")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_metrics_job_counters", Description = "Get all jobs counters", Summary = "Get All Jobs Counters")]
+    [EndpointName("get_metrics_job_counters")]
+    [EndpointDescription("Get all jobs counters")]
+    [EndpointSummary("Get All Jobs Counters")]
     [OkJsonResponse(typeof(JobCounters))]
     [BadRequestResponse]
     public async Task<ActionResult<JobCounters>> GetAllJobsCounters([FromQuery] AllJobsCountersRequest request)
