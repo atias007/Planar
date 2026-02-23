@@ -765,7 +765,8 @@ public partial class JobDomain
         // Validation
         ValidateRequestNoNull(request);
         await ValidateRequestProperties(request);
-        var jobKey = ValidateJobMetadata(request, Scheduler);
+        var scheduler = await GetScheduler();
+        var jobKey = ValidateJobMetadata(request, scheduler);
         await ValidateJobNotExists(jobKey);
 
         // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
@@ -794,7 +795,7 @@ public partial class JobDomain
         try
         {
             // Schedule Job
-            await Scheduler.ScheduleJob(job, triggers, true);
+            await scheduler.ScheduleJob(job, triggers, true);
         }
         catch (Exception ex)
         {
@@ -850,7 +851,8 @@ public partial class JobDomain
 
     private async Task ValidateJobNotExists(JobKey jobKey)
     {
-        var exists = await Scheduler.GetJobDetail(jobKey);
+        var scheduler = await GetScheduler();
+        var exists = await scheduler.GetJobDetail(jobKey);
 
         if (exists != null)
         {

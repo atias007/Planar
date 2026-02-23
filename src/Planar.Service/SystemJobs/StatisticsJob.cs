@@ -28,8 +28,9 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
         await SafeDoWork(context);
     }
 
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "System job for saving statistics data to database";
         var cronexpr = "0 5 0 ? * *";
         await ScheduleLowPriority<StatisticsJob>(scheduler, description, cronexpr, stoppingToken);

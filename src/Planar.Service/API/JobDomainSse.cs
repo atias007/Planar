@@ -146,7 +146,8 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
             throw new RestNotFoundException();
         }
 
-        var localRunnings = await Scheduler.GetCurrentlyExecutingJobs();
+        var scheduler = await GetScheduler();
+        var localRunnings = await scheduler.GetCurrentlyExecutingJobs();
         _ = localRunnings.FirstOrDefault(x => x.FireInstanceId == instanceId)
             ?? throw new RestNotFoundException();
     }

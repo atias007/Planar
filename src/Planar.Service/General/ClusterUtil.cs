@@ -223,7 +223,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
             currentNode.ClusterPort = AppSettings.Cluster.Port;
             currentNode.JoinDate = DateTime.Now;
             currentNode.HealthCheckDate = DateTime.Now;
-            currentNode.InstanceId = _schedulerUtil.SchedulerInstanceId;
+            currentNode.InstanceId = await _schedulerUtil.SchedulerInstanceId();
             currentNode.MaxConcurrency = AppSettings.General.MaxConcurrency;
             await dal.AddClusterNode(currentNode);
         }
@@ -231,7 +231,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         {
             item.JoinDate = DateTime.Now;
             item.HealthCheckDate = DateTime.Now;
-            item.InstanceId = _schedulerUtil.SchedulerInstanceId;
+            item.InstanceId = await _schedulerUtil.SchedulerInstanceId();
             item.MaxConcurrency = AppSettings.General.MaxConcurrency;
             await dal.UpdateClusterNode(item);
         }
@@ -780,7 +780,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
                 Port = AppSettings.General.ApiPort,
                 ClusterPort = AppSettings.Cluster.Port,
                 JoinDate = DateTime.Now,
-                InstanceId = _schedulerUtil.SchedulerInstanceId,
+                InstanceId = await _schedulerUtil.SchedulerInstanceId(),
                 HealthCheckDate = DateTime.Now,
             };
 
@@ -792,9 +792,10 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
 
     private async Task VerifyCurrentNode(ClusterNode node)
     {
-        if (node.InstanceId != _schedulerUtil.SchedulerInstanceId)
+        var instanceId = await _schedulerUtil.SchedulerInstanceId();
+        if (node.InstanceId != instanceId)
         {
-            node.InstanceId = _schedulerUtil.SchedulerInstanceId;
+            node.InstanceId = instanceId;
             node.JoinDate = DateTime.Now;
         }
 

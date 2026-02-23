@@ -26,7 +26,7 @@ public static class DatabaseMigrationInitializer
             var ids = await dal.GetUnknownJobProperties();
             if (!ids.Any()) { return; }
 
-            var scheduler = provider.GetRequiredService<IScheduler>();
+            var scheduler = await provider.GetRequiredService<ISchedulerFactory>().GetScheduler();
             var helper = provider.GetRequiredService<JobKeyHelper>();
             foreach (var id in ids)
             {

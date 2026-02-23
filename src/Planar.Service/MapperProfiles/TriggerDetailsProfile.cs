@@ -9,13 +9,13 @@ using System;
 
 namespace Planar.Service.MapperProfiles;
 
-internal class TriggerDetailsProfile : Profile
+public class TriggerDetailsProfile : Profile
 {
     public TriggerDetailsProfile()
     {
     }
 
-    public TriggerDetailsProfile(IScheduler scheduler, JobKeyHelper jobKeyHelper)
+    public TriggerDetailsProfile(ISchedulerFactory schedulerFactory, JobKeyHelper jobKeyHelper)
     {
         CreateMap<ITrigger, PausedTriggerDetails>()
             .Include<ITrigger, TriggerDetails>()
@@ -39,9 +39,7 @@ internal class TriggerDetailsProfile : Profile
             .ForMember(t => t.MayFireAgain, map => map.MapFrom(s => s.GetMayFireAgain()))
             .ForMember(t => t.NextFireTime, map => map.MapFrom(s => GetDateTime(s.GetNextFireTimeUtc())))
             .ForMember(t => t.PreviousFireTime, map => map.MapFrom(s => GetDateTime(s.GetPreviousFireTimeUtc())))
-            .ForMember(t => t.DataMap, map => map.MapFrom(s => Global.ConvertDataMapToDictionary(s.JobDataMap)))
-            .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)))
-            .ForMember(t => t.Active, map => map.MapFrom(s => GetTriggerActive(s.Key, scheduler)));
+            .ForMember(t => t.DataMap, map => map.MapFrom(s => Global.ConvertDataMapToDictionary(s.JobDataMap)));
 
         CreateMap<ISimpleTrigger, SimpleTriggerDetails>()
             .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)))
@@ -62,19 +60,6 @@ internal class TriggerDetailsProfile : Profile
     private static DateTime? GetDateTime(DateTimeOffset? dateTimeOffset)
     {
         return dateTimeOffset?.LocalDateTime;
-    }
-
-    private static bool GetTriggerActive(TriggerKey key, IScheduler scheduler)
-    {
-        var state = scheduler.GetTriggerState(key).Result;
-        var result = TriggerHelper.IsActiveState(state);
-        return result;
-    }
-
-    private static string? GetTriggerState(TriggerKey key, IScheduler scheduler)
-    {
-        var result = scheduler.GetTriggerState(key).Result;
-        return Convert.ToString(result);
     }
 
     private static string GetTriggerId(ITrigger trigger)

@@ -14,7 +14,7 @@ internal static class SmtpUtil
     {
         var smtp = AppSettings.Smtp;
 
-        if (message.From.Count == 0)
+        if (message.From.Count == 0 && smtp.FromAddress != null)
         {
             message.From.Add(new MailboxAddress(smtp.FromName, smtp.FromAddress));
         }

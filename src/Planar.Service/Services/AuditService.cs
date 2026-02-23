@@ -8,6 +8,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
+using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Quartz;
 using System;
@@ -25,7 +26,7 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
     private readonly Channel<AuditMessage> _channel = serviceProvider.GetRequiredService<Channel<AuditMessage>>();
     private readonly ILogger<AuditService> _logger = serviceProvider.GetRequiredService<ILogger<AuditService>>();
     private readonly JobKeyHelper _jobKeyHelper = serviceProvider.GetRequiredService<JobKeyHelper>();
-    private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
+    private readonly ISchedulerFactory _schedulerFactory = serviceProvider.GetRequiredService<ISchedulerFactory>();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -72,7 +73,8 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
 
         if (message.TriggerKey != null)
         {
-            trigger = await _scheduler.GetTrigger(message.TriggerKey);
+            var scheduler = await _schedulerFactory.GetScheduler();
+            trigger = await scheduler.GetTrigger(message.TriggerKey);
             triggerId = TriggerHelper.GetTriggerId(trigger);
             message.Description = message.Description.Replace("{{TriggerId}}", $"trigger id: {triggerId}");
 
@@ -115,21 +117,22 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
         await data.AddJobAudit(audit);
     }
 
-    private TriggerDetails? GetTriggerDetails(ITrigger? trigger)
+    private async Task<TriggerDetails?> GetTriggerDetails(ITrigger? trigger)
     {
         if (trigger == null) { return null; }
 
         using var scope = serviceScopeFactory.CreateScope();
         var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
+        var scheduler = await _schedulerFactory.GetScheduler();
 
         if (trigger is ISimpleTrigger t1)
         {
-            return mapper.Map<SimpleTriggerDetails>(t1);
+            return await mapper.MapSimpleTriggerDetails(t1, scheduler);
         }
 
         if (trigger is ICronTrigger t2)
         {
-            return mapper.Map<CronTriggerDetails>(t2);
+            return await mapper.MapCronTriggerDetails(t2, scheduler);
         }
 
         return null;

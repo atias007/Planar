@@ -16,7 +16,8 @@ public class MetricsDomain(IServiceProvider serviceProvider) : BaseJobBL<Metrics
     {
         var key = $"{Consts.PlanarSystemGroup}.{typeof(StatisticsJob).Name}";
         var jobKey = await JobKeyHelper.GetJobKey(key);
-        await Scheduler.TriggerJob(jobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.TriggerJob(jobKey);
     }
 
     public async Task<JobMetrics> GetJobMetrics(string jobId)

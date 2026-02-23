@@ -12,7 +12,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Listeners;
 
-internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogger<SchedulerListener> logger) : BaseListener<SchedulerListener>(serviceScopeFactory, logger), ISchedulerListener
+internal class SchedulerListener(
+    IServiceScopeFactory serviceScopeFactory,
+    JobDetailsResolver resolver,
+    ILogger<SchedulerListener> logger)
+    : BaseListener<SchedulerListener>(serviceScopeFactory, logger), ISchedulerListener
 {
     private const string _cacheKey = "{0}_{1}";
 
@@ -20,11 +24,12 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJob(jobDetail)) { return; }
             var id = JobKeyHelper.GetJobId(jobDetail);
             if (IsLocked(nameof(JobAdded), id)) { return; }
+            var fillTask = resolver.FillCache();
 
             var info = new MonitorSystemInfo
             (
@@ -38,17 +43,20 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
             info.AddMachineName();
 
             SafeSystemScan(MonitorEvents.JobAdded, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 
     public Task JobDeleted(JobKey jobKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobDeleted), jobKey.ToString())) { return; }
+            var fillTask = resolver.FillCache();
             var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
             SafeSystemScan(MonitorEvents.JobDeleted, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 
@@ -65,23 +73,27 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobPaused(JobKey jobKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobPaused), jobKey.ToString())) { return; }
+            var fillTask = resolver.FillCache();
             var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
             SafeSystemScan(MonitorEvents.JobPaused, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 
     public Task JobResumed(JobKey jobKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobResumed), jobKey.ToString())) { return; }
+            var fillTask = resolver.FillCache();
             var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
             SafeSystemScan(MonitorEvents.JobResumed, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 
@@ -103,8 +115,9 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
+        return resolver.FillCache();
+
         ////if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
-        return Task.CompletedTask;
     }
 
     public Task SchedulerError(string msg, SchedulerException cause, CancellationToken cancellationToken = default)
@@ -149,12 +162,15 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task SchedulerStarted(CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsLocked(nameof(SchedulerStarted), null)) { return; }
+            var fillTask = resolver.FillCache();
+
             _logger.LogInformation("scheduler started");
             var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
             SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 
@@ -175,23 +191,27 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             if (IsLocked(nameof(TriggerPaused), triggerKey.ToString())) { return; }
+            var fillTask = resolver.FillCache();
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
             SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 
     public Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             if (IsLocked(nameof(TriggerResumed), triggerKey.ToString())) { return; }
+            var fillTask = resolver.FillCache();
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
             SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
+            await fillTask;
         }, cancellationToken);
     }
 

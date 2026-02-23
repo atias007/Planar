@@ -52,13 +52,14 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         // fill author
         if (items.Count == 0) { return result; }
 
-        var jobs = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+        var scheduler = await GetScheduler();
+        var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
         foreach (var item in items)
         {
             if (!string.IsNullOrWhiteSpace(item.Author)) { continue; }
             var key = jobs.FirstOrDefault(j => j.Name == item.JobName && j.Group == item.JobGroup);
             if (key == null) { continue; }
-            var job = await Scheduler.GetJobDetail(key);
+            var job = await scheduler.GetJobDetail(key);
             if (job == null) { continue; }
             item.Author = JobHelper.GetJobAuthor(job) ?? string.Empty;
         }

@@ -186,7 +186,9 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
     protected async Task ValidateTriggerPausedOrNormal(ITrigger trigger)
     {
-        var state = await Scheduler.GetTriggerState(trigger.Key);
+        var scheduler = await GetScheduler();
+
+        var state = await scheduler.GetTriggerState(trigger.Key);
         if (state != TriggerState.Paused && state != TriggerState.Normal)
         {
             var sb = new StringBuilder();
@@ -210,9 +212,11 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
     protected async Task<List<TriggerKey>> GetPausedTriggers(JobKey jobKey)
     {
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var scheduler = await GetScheduler();
+
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
         var paused = triggers
-            .Where(t => Scheduler.GetTriggerState(t.Key).Result == TriggerState.Paused)
+            .Where(t => scheduler.GetTriggerState(t.Key).Result == TriggerState.Paused)
             .Select(t => t.Key)
             .ToList();
 
@@ -221,16 +225,17 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
     protected async Task ValidateJobPaused(JobKey jobKey)
     {
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var scheduler = await GetScheduler();
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
         var notPaused = triggers
-            .Where(t => Scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
+            .Where(t => scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
             .Select(TriggerHelper.GetKeyTitle)
             .ToList();
 
         if (notPaused.Count != 0)
         {
             // build CLI message
-            var details = await Scheduler.GetJobDetail(jobKey);
+            var details = await scheduler.GetJobDetail(jobKey);
             var id = JobHelper.GetJobId(details);
             var sb = new StringBuilder();
             sb.AppendLine($"fail to execute operation");
@@ -308,14 +313,16 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
     protected async Task PauseTriggers(JobKey jobKey, IEnumerable<TriggerKey> triggers)
     {
+        var scheduler = await GetScheduler();
+
         if (jobKey == null) { return; }
-        var all_triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var all_triggers = await scheduler.GetTriggersOfJob(jobKey);
         var todoTriggers = all_triggers.Where(t => triggers.Any(pt => pt.Equals(t.Key)));
 
         // Resume paused triggers if any
         foreach (var t in todoTriggers)
         {
-            await Scheduler.PauseTrigger(t.Key);
+            await scheduler.PauseTrigger(t.Key);
         }
     }
 

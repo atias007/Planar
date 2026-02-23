@@ -18,7 +18,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     private const int _bytesInMegaByte = 1024 * 1024;
     private int _memoryHighCount;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
+    private readonly ISchedulerFactory _schedulerFactory = serviceProvider.GetRequiredService<ISchedulerFactory>();
     private readonly ILogger<RestartService> _logger = serviceProvider.GetRequiredService<ILogger<RestartService>>();
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private DateTimeOffset? _lastMemoryLog;
@@ -93,7 +93,8 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         if (_invokeRegularRestart)
         {
-            var current = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
+            var scheduler = await _schedulerFactory.GetScheduler();
+            var current = (await scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
             if (current == 0)
             {
                 await GracefulRestart(cancellationToken);
@@ -268,7 +269,8 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         try
         {
-            var count = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
+            var scheduler = await _schedulerFactory.GetScheduler();
+            var count = (await scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
             if (count > 0 && withLog)
             {
                 _logger.LogCritical("shut down scheduler (with wait until complete {Count} current tasks)", count);
@@ -286,7 +288,8 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-            await _scheduler.Shutdown(true, linked.Token);
+            var scheduler = await _schedulerFactory.GetScheduler();
+            await scheduler.Shutdown(true, linked.Token);
         }
         catch (Exception ex)
         {
@@ -298,7 +301,8 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         try
         {
-            await _scheduler.Standby(cancellationToken);
+            var scheduler = await _schedulerFactory.GetScheduler();
+            await scheduler.Standby(cancellationToken);
         }
         catch
         {

@@ -14,8 +14,9 @@ internal class ConfigReloadJob(IServiceScopeFactory scopeFactory, ILogger<Config
         await SafeDoWork(context);
     }
 
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "system job for reload all config with source url";
         await ScheduleLowPriority<ConfigReloadJob>(scheduler, description, "0 0/20 * * * ?", stoppingToken: stoppingToken);
     }

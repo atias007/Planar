@@ -114,7 +114,8 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
     public async Task<List<string>> GetCalendars()
     {
-        var list = (await Scheduler.GetCalendarNames()).ToList();
+        var scheduler = await GetScheduler();
+        var list = (await scheduler.GetCalendarNames()).ToList();
         return list;
     }
 

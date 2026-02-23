@@ -22,8 +22,9 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         await SafeDoWork(context);
     }
 
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "System job for clearing history records from database";
         var cronexpr = "0 30 0 ? * *";
         await ScheduleLowPriority<ClearHistoryJob>(scheduler, description, cronexpr, stoppingToken);
@@ -70,7 +71,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
+            var scheduler = await scope.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler();
             var job = await scheduler.GetJobDetail(new JobKey(nameof(StatisticsJob), Consts.PlanarSystemGroup));
             if (job == null || job.JobDataMap == null)
             {
@@ -134,7 +135,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
+            var scheduler = await scope.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler();
             var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             var data = scope.ServiceProvider.GetRequiredService<IHistoryData>();
 
@@ -190,7 +191,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
     private async Task<IEnumerable<string>> GetExistsJobIds()
     {
         using var scope = serviceScopeFactory.CreateScope();
-        var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
+        var scheduler = await scope.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler();
         var existsKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
         var filterKeys = existsKeys.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
         var jobDetails = filterKeys.Select(k => scheduler.GetJobDetail(k).Result);

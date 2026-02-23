@@ -9,5 +9,6 @@ Serilog:
       Microsoft.AspNetCore: Warning
       Microsoft.EntityFrameworkCore.Database.Command: Warning
       Microsoft.EntityFrameworkCore.Infrastructure: Warning
+      SharpGrip.FluentValidation.AutoValidation.Mvc.Filters.FluentValidationAutoValidationActionFilter: Warning
   WriteTo:
   - Name: Console

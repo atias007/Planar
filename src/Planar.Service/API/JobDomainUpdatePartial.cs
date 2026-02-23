@@ -133,12 +133,13 @@ public partial class JobDomain
 
     private async Task FillRollbackData(JobUpdateMetadata metadata)
     {
+        var scheduler = await GetScheduler();
         metadata.OldJobDetails =
-            await Scheduler.GetJobDetail(metadata.JobKey)
+            await scheduler.GetJobDetail(metadata.JobKey)
             ?? throw new RestGeneralException($"job with key '{KeyHelper.GetKeyTitle(metadata.JobKey)}' could not be found");
 
-        metadata.OldTriggers = await Scheduler.GetTriggersOfJob(metadata.JobKey);
-        await Scheduler.DeleteJob(metadata.JobKey);
+        metadata.OldTriggers = await scheduler.GetTriggersOfJob(metadata.JobKey);
+        await scheduler.DeleteJob(metadata.JobKey);
         metadata.EnableRollback();
         metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
         metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
@@ -153,8 +154,9 @@ public partial class JobDomain
 
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.OldJobDetails);
         var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties, JobType = jobType };
-        await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
-        await Scheduler.PauseJob(metadata.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
+        await scheduler.PauseJob(metadata.JobKey);
         await Resolve<IJobData>().UpdateJobProperty(property);
     }
 
@@ -196,7 +198,8 @@ public partial class JobDomain
         metadata.PausedTriggers = await GetPausedTriggers(metadata.JobKey);
 
         // pause the job to avoid trigger firing during update
-        await Scheduler.PauseJob(metadata.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(metadata.JobKey);
 
         // Lock monitor events
         MonitorUtil.Lock(metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
@@ -222,7 +225,7 @@ public partial class JobDomain
         // ScheduleJob
         try
         {
-            await Scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
+            await scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
         }
         catch (Exception ex)
         {
@@ -252,7 +255,8 @@ public partial class JobDomain
 
     private async Task UpdateJobDetails(SetJobDynamicRequest request, JobUpdateMetadata metadata)
     {
-        await Scheduler.DeleteJob(metadata.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.DeleteJob(metadata.JobKey);
         metadata.JobDetails = BuildJobDetails(request, metadata.JobKey);
     }
 
@@ -274,9 +278,10 @@ public partial class JobDomain
 
     private async Task UpdateTriggers(SetJobRequest request, JobUpdateMetadata metadata)
     {
+        var scheduler = await GetScheduler();
         foreach (var item in metadata.OldTriggers)
         {
-            await Scheduler.UnscheduleJob(item.Key);
+            await scheduler.UnscheduleJob(item.Key);
         }
 
         SyncTriggersData(request, metadata);
@@ -288,7 +293,8 @@ public partial class JobDomain
         ValidateRequestNoNull(request);
         ValidateUpdateJobOptions(options);
         await ValidateRequestProperties(request);
-        metadata.JobKey = ValidateJobMetadata(request, Scheduler);
+        var scheduler = await GetScheduler();
+        metadata.JobKey = ValidateJobMetadata(request, scheduler);
         ValidateSystemJob(metadata.JobKey);
         await JobKeyHelper.ValidateJobExists(metadata.JobKey);
         metadata.JobId =

@@ -45,6 +45,7 @@ namespace Planar.Service
             services.AddSingleton<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
             services.AddSingleton<JobMonitorUtil>();
             services.AddSingleton<SchedulerHealthCheckUtil>();
+            services.AddSingleton<JobDetailsResolver>();
 
             // AutoMapper
             services.AddAutoMapper(c => c.LicenseKey = null, Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
@@ -56,7 +57,6 @@ namespace Planar.Service
             services.AddSingleton<MonitorDurationCache>();
 
             // Scheduler
-            services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
             services.AddSingleton<SchedulerUtil>();
             services.AddSingleton<JobKeyHelper>();
 
@@ -101,21 +101,5 @@ namespace Planar.Service
             services.AddTransient(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
             return services;
         }
-
-        ////internal static IServiceCollection AddPlanarMonitorServices(this IServiceCollection services)
-        ////{
-        ////    services.AddPlanarDbContext();
-        ////    services.AddPlanarMonitorDataLayers();
-
-        ////    // Scheduler
-        ////    services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
-        ////    services.AddSingleton<SchedulerUtil>();
-        ////    services.AddSingleton<JobKeyHelper>();
-
-        ////    // Utils
-        ////    services.AddScoped<ClusterUtil>();
-        ////    services.AddScoped<MonitorUtil>();
-        ////    return services;
-        ////}
     }
 }

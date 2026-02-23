@@ -1,17 +1,17 @@
 ﻿using System;
+using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
-namespace Planar.API.Common.Entities
+namespace Planar.API.Common.Entities;
+
+public class SimpleTriggerDetails : TriggerDetails
 {
-    public class SimpleTriggerDetails : TriggerDetails
-    {
-        [YamlMember(Order = 40)]
-        public int? RepeatCount { get; set; }
+    [YamlMember(Order = 40)]
+    public int? RepeatCount { get; set; }
 
-        [YamlMember(Order = 41)]
-        public TimeSpan RepeatInterval { get; set; }
+    [YamlMember(Order = 41)]
+    public TimeSpan RepeatInterval { get; set; }
 
-        [YamlMember(Order = 42)]
-        public int TimesTriggered { get; set; }
-    }
+    [YamlMember(Order = 42)]
+    public int TimesTriggered { get; set; }
 }

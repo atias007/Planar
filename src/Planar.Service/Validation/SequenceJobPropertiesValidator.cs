@@ -14,7 +14,7 @@ namespace Planar.Service.Validation;
 
 public class SequenceJobPropertiesValidator : AbstractValidator<SequenceJobProperties>
 {
-    public SequenceJobPropertiesValidator(IScheduler scheduler)
+    public SequenceJobPropertiesValidator(ISchedulerFactory schedulerFactory)
     {
         RuleFor(e => e.Steps).NotEmpty();
         RuleFor(e => e.Steps)
@@ -22,17 +22,17 @@ public class SequenceJobPropertiesValidator : AbstractValidator<SequenceJobPrope
             .WithMessage("no more than total 100 steps are allowed");
 
         RuleForEach(e => e.Steps)
-            .SetValidator(new SequenceJobStepValidator(scheduler))
+            .SetValidator(new SequenceJobStepValidator(schedulerFactory))
             .WithMessage("fail to validate sequence steps");
     }
 }
 
 public class SequenceJobStepValidator : AbstractValidator<SequenceJobStep>
 {
-    public SequenceJobStepValidator(IScheduler scheduler)
+    public SequenceJobStepValidator(ISchedulerFactory schedulerFactory)
     {
         RuleFor(e => e.Key)
-            .MustAsync((key, ct) => IsJobExistsAsync(scheduler, key, ct))
+            .MustAsync((key, ct) => IsJobExistsAsync(schedulerFactory, key, ct))
             .WithMessage("job with key '{PropertyValue}' does not exist");
         RuleFor(e => e.Key).NotEmpty().MinimumLength(7).MaximumLength(101);
 
@@ -40,10 +40,10 @@ public class SequenceJobStepValidator : AbstractValidator<SequenceJobStep>
         RuleFor(e => e.Data).Must(ValidateDataAsync);
     }
 
-    public static async Task<bool> IsJobExistsAsync(IScheduler scheduler, string? jobKey, CancellationToken cancellationToken)
+    public static async Task<bool> IsJobExistsAsync(ISchedulerFactory schedulerFactory, string? jobKey, CancellationToken cancellationToken)
     {
         if (jobKey == null) { return true; }
-        var helper = new JobKeyHelper(scheduler);
+        var helper = new JobKeyHelper(schedulerFactory);
         try
         {
             await helper.GetJobKey(jobKey);
