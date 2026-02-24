@@ -88,8 +88,31 @@ internal class JobDetailsResolver
         }
     }
 
-    public async Task<bool> FillCache()
+    public async Task RemoveJob(JobKey key)
     {
+        await _locker.WaitAsync(_timeout).ConfigureAwait(false);
+
+        try
+        {
+            _cache.RemoveWhere(c => c.Key.Equals(key));
+        }
+        finally
+        {
+            _locker.Release();
+        }
+    }
+
+    public async Task<bool> FillCache(int? delaySeconds = null)
+    {
+#if DEBUG
+        Console.WriteLine("[FC]");
+#endif
+
+        if (delaySeconds.HasValue && delaySeconds.Value > 0)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delaySeconds.Value)).ConfigureAwait(false);
+        }
+
         HashSet<IJobDetail> data;
         try
         {

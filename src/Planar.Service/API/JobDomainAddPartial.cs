@@ -807,6 +807,7 @@ public partial class JobDomain
         }
 
         AuditJobSafe(jobKey, "job added", request);
+        SafeRefreshJobDetailsCache();
 
         // Return Id
         return new PlanarIdResponse { Id = id };

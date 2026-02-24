@@ -51,7 +51,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
 
     private async Task SafeCheckForRestart(CancellationToken stoppingToken)
     {
-        if (_startup.Subtract(DateTimeOffset.UtcNow).TotalMinutes < 5)
+        if (DateTimeOffset.UtcNow.Subtract(_startup).TotalMinutes < 5)
         {
             // Skip the first 5 minute after startup to avoid false positives
             return;

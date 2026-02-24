@@ -56,13 +56,14 @@ public class SchedulerUtil(ISchedulerFactory schedulerFactory, SchedulerHealthCh
     {
         try
         {
-            // Check if the scheduler is started and running
+            // Check if the scheduler is not started and running
             if (!await IsSchedulerRunning()) { return false; }
 
             // Check if the last run was within a reasonable time frame (e.g., 5 minutes)
             var timeSinceLastRun = DateTimeOffset.UtcNow - schedulerHealthCheckUtil.LastRun;
             if (timeSinceLastRun.TotalMinutes < 5) { return true; }
 
+            // health check job not running for long time & there is enough avaliable threads to run job
             var running = await CountRunningJobs();
             var maxConcurrency = AppSettings.General.MaxConcurrency;
             if (running < maxConcurrency) { return false; }

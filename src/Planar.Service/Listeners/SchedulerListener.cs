@@ -29,7 +29,6 @@ internal class SchedulerListener(
             if (IsSystemJob(jobDetail)) { return; }
             var id = JobKeyHelper.GetJobId(jobDetail);
             if (IsLocked(nameof(JobAdded), id)) { return; }
-            var fillTask = resolver.FillCache();
 
             var info = new MonitorSystemInfo
             (
@@ -43,7 +42,6 @@ internal class SchedulerListener(
             info.AddMachineName();
 
             SafeSystemScan(MonitorEvents.JobAdded, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 
@@ -53,10 +51,8 @@ internal class SchedulerListener(
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobDeleted), jobKey.ToString())) { return; }
-            var fillTask = resolver.FillCache();
             var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
             SafeSystemScan(MonitorEvents.JobDeleted, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 
@@ -77,10 +73,8 @@ internal class SchedulerListener(
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobPaused), jobKey.ToString())) { return; }
-            var fillTask = resolver.FillCache();
             var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
             SafeSystemScan(MonitorEvents.JobPaused, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 
@@ -90,10 +84,8 @@ internal class SchedulerListener(
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobResumed), jobKey.ToString())) { return; }
-            var fillTask = resolver.FillCache();
             var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
             SafeSystemScan(MonitorEvents.JobResumed, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 
@@ -115,7 +107,7 @@ internal class SchedulerListener(
 
     public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        return resolver.FillCache();
+        return Task.CompletedTask;
 
         ////if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
     }
@@ -165,12 +157,11 @@ internal class SchedulerListener(
         return Task.Run(async () =>
         {
             if (IsLocked(nameof(SchedulerStarted), null)) { return; }
-            var fillTask = resolver.FillCache();
+            _ = resolver.FillCache();
 
             _logger.LogInformation("scheduler started");
             var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
             SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 
@@ -195,10 +186,8 @@ internal class SchedulerListener(
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             if (IsLocked(nameof(TriggerPaused), triggerKey.ToString())) { return; }
-            var fillTask = resolver.FillCache();
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
             SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 
@@ -208,10 +197,8 @@ internal class SchedulerListener(
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             if (IsLocked(nameof(TriggerResumed), triggerKey.ToString())) { return; }
-            var fillTask = resolver.FillCache();
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
             SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
-            await fillTask;
         }, cancellationToken);
     }
 

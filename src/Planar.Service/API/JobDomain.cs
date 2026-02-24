@@ -3,7 +3,6 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -19,7 +18,6 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -359,12 +357,12 @@ public partial class JobDomain(
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
     {
         var resolver = Resolve<JobDetailsResolver>();
-        IEnumerable<IJobDetail> jobs = request.JobCategory switch
+        List<IJobDetail> jobs = (request.JobCategory switch
         {
             AllJobsMembers.AllUserJobs => await resolver.GetUserJobDetailsAsync(request.Group),
             AllJobsMembers.AllSystemJobs => await resolver.GetSystemJobDetailsAsync(),
             _ => await resolver.GetAllJobDetailsAsync(request.Group),
-        };
+        }).ToList();
 
         // filter by job type
         if (!string.IsNullOrEmpty(request.JobType))
@@ -839,6 +837,7 @@ public partial class JobDomain(
         var scheduler = await GetScheduler();
         await CancelQueuedResumeJob(jobKey);
         await scheduler.PauseJob(jobKey);
+        SafeRefreshJobDetailsCache();
 
         if (request.AutoResumeDate == null)
         {
@@ -884,6 +883,8 @@ public partial class JobDomain(
             throw new RestNotFoundException($"group '{request.Name}' was not found");
         }
         await scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        SafeRefreshJobDetailsCache();
+
         foreach (var key in keys)
         {
             try
@@ -998,6 +999,7 @@ public partial class JobDomain(
         var scheduler = await GetScheduler();
         await scheduler.DeleteJob(jobKey);
         AuditJobSafe(jobKey, "job deleted");
+        SafeRemoveJobDetailsCache(jobKey);
         _ = ClearJobInfo(jobId, jobKey, id);
     }
 
@@ -1083,6 +1085,8 @@ public partial class JobDomain(
             await AutoResumeJobUtil.QueueResumeJob(scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
             AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
         }
+
+        SafeRefreshJobDetailsCache();
     }
 
     public async Task ResumeGroup(PauseResumeGroupRequest request)
@@ -1096,6 +1100,7 @@ public partial class JobDomain(
         }
 
         await scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        SafeRefreshJobDetailsCache();
 
         foreach (var key in keys)
         {
@@ -1148,6 +1153,7 @@ public partial class JobDomain(
         }
 
         AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
+        SafeRefreshJobDetailsCache();
     }
 
     public async Task SetAutoResume(PauseResumeJobRequest request)

@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.Common;
-using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
-using Polly;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -17,7 +15,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
-using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API;
 
@@ -56,6 +53,32 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         };
 
         AuditInnerSafe(audit);
+    }
+
+    protected void SafeRefreshJobDetailsCache()
+    {
+        try
+        {
+            var resolver = Resolve<JobDetailsResolver>();
+            _ = resolver.FillCache(1);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to refresh job details cache");
+        }
+    }
+
+    protected void SafeRemoveJobDetailsCache(JobKey jobKey)
+    {
+        try
+        {
+            var resolver = Resolve<JobDetailsResolver>();
+            _ = resolver.RemoveJob(jobKey);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to refresh job details cache");
+        }
     }
 
     protected void AuditTriggerSafe(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)

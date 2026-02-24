@@ -240,6 +240,7 @@ public partial class JobDomain
 
         // Audit
         AuditJobSafe(metadata.JobKey, "job updated", new { request = cloneRequest, options });
+        SafeRefreshJobDetailsCache();
 
         // Monitoring
         var info = new MonitorSystemInfo("Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) was updated");
