@@ -1,5 +1,4 @@
-﻿using Common;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
 
@@ -11,7 +10,6 @@ internal static class RedisFactory
     private static IConnectionMultiplexer _connection = null!;
     private static readonly ConcurrentDictionary<int, IDatabase> _databases = new();
 
-    internal static int Database { get; private set; }
     internal static bool Ssl { get; private set; }
     internal static string? User { get; private set; }
     internal static string? Password { get; private set; }
@@ -21,7 +19,6 @@ internal static class RedisFactory
     public static void Initialize(IConfiguration configuration)
     {
         var section = configuration.GetRequiredSection("server");
-        Database = section.GetValue<int?>("database") ?? 0;
         Ssl = section.GetValue<bool>("ssl");
         User = section.GetValue<string?>("user");
         Password = section.GetValue<string?>("password");
@@ -74,7 +71,8 @@ internal static class RedisFactory
 
     public static async Task<long> GetLength(IRedisKey redisKey)
     {
-        var keyType = await Connection.GetDatabase().KeyTypeAsync(redisKey.Key);
+        var database = GetDatabase(redisKey);
+        var keyType = await database.KeyTypeAsync(redisKey.Key);
         return keyType switch
         {
             RedisType.String => await GetDatabase(redisKey).StringLengthAsync(redisKey.Key),
@@ -117,11 +115,10 @@ internal static class RedisFactory
 #pragma warning restore CA1508 // Avoid dead conditional code
                 var options = new ConfigurationOptions
                 {
-                    ClientName = "Planar.Redis.StreamCheck",
+                    ClientName = "Planar.Redis.Monitor",
                     ConfigCheckSeconds = 60,
                     ConnectRetry = 3,
                     ConnectTimeout = 10000,
-                    DefaultDatabase = Database,
                     Ssl = Ssl
                 };
 

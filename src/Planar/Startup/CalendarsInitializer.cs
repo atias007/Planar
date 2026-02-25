@@ -12,11 +12,11 @@ public static class CalendarsInitializer
     public static async Task Initialize(IServiceProvider serviceProvider)
     {
         var scheduler = await serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler();
-        var calendars = scheduler.GetCalendarNames().Result;
+        var calendars = await scheduler.GetCalendarNames();
         var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BaseCalendar>>();
         foreach (var name in calendars)
         {
-            var cal = scheduler.GetCalendar(name).Result;
+            var cal = await scheduler.GetCalendar(name);
             if (cal is ICalendarWithLogger logCal)
             {
                 logCal.Logger = logger;

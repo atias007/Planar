@@ -7,7 +7,6 @@ defaults:                                       # default values for all keys. e
   retry count: 3                                # the number of retry attemp in case of failure
   retry interval: 00:00:03                      # the interval between retry attemps
   allowed fail span: null                       # the time span which violation of the folder will be considered ok
-  database: 0                                   # defualt redis database number to be used
 
 # server:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
 #   endpoints: 
@@ -26,6 +25,7 @@ health check:
 
 keys:
   - key: foo                                    # the key to be used in redis
+    database: 0                                 # redis database number to be used. 1-16, the default is 0
     memory usage: 10mb                          # the maximum memory usage for the key
     length: 5                                   # the maximum length of the key
     exists: true                                # the job will fail if the key does not exist
