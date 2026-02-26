@@ -33,11 +33,20 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             info.JobDetails.JobDataMap.Remove(key);
         }
 
-        var triggers = await BuildTriggers(info.Trigger);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(info.JobKey);
 
-        AuditTriggerSafe(info.TriggerKey, $"clear trigger data. {keyCount} key(s)");
+        try
+        {
+            var triggers = await BuildTriggers(info.Trigger);
+            await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            AuditTriggerSafe(info.TriggerKey, $"clear trigger data. {keyCount} key(s)");
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
@@ -73,9 +82,19 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
         }
 
-        var triggers = await BuildTriggers(info.Trigger);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(info.JobKey);
+
+        try
+        {
+            var triggers = await BuildTriggers(info.Trigger);
+            await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     public async Task RemoveData(string id, string key)
@@ -84,13 +103,24 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         if (info.Trigger == null || info.JobDetails == null) { return; }
 
         ValidateDataKeyExists(info.Trigger, key, id);
+
         var auditValue = PlanarConvert.ToString(info.Trigger.JobDataMap[key]);
         info.Trigger.JobDataMap.Remove(key);
-        var triggers = await BuildTriggers(info.Trigger);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
 
-        AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(info.JobKey);
+
+        try
+        {
+            var triggers = await BuildTriggers(info.Trigger);
+            await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     private static string GetTriggerAuditDescription(string operation, string key)
@@ -115,7 +145,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     private async Task<List<ITrigger>> BuildTriggers(ITrigger trigger)
     {
-        var triggers = (await Scheduler.GetTriggersOfJob(trigger.JobKey)).ToList();
+        var scheduler = await GetScheduler();
+        var triggers = (await scheduler.GetTriggersOfJob(trigger.JobKey)).ToList();
         triggers.RemoveAll(t => TriggerHelper.Equals(t.Key, trigger.Key));
         triggers.Add(trigger);
         return triggers;
@@ -132,7 +163,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
         // Get Job
         result.JobKey = result.Trigger.JobKey;
-        result.JobDetails = await Scheduler.GetJobDetail(result.JobKey);
+        var scheduler = await GetScheduler();
+        result.JobDetails = await scheduler.GetJobDetail(result.JobKey);
         if (result.JobDetails == null) { return result; }
 
         // Validation
@@ -145,7 +177,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         {
             ValidateSystemTrigger(trigger);
             ValidateSystemJob(result.JobKey);
-            await ValidateJobPaused(result.JobKey);
         }
 
         await ValidateTriggerNotRunning(trigger.Key);
@@ -179,9 +210,10 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         var trigger = await GetTriggerById(triggerId);
         ValidateSystemTrigger(trigger);
-        await Scheduler.PauseTrigger(trigger.Key);
-        var details = GetTriggerDetails(trigger);
-        var success = await Scheduler.UnscheduleJob(trigger.Key);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseTrigger(trigger.Key);
+        var details = await GetTriggerDetails(trigger);
+        var success = await scheduler.UnscheduleJob(trigger.Key);
         if (!success)
         {
             throw new PlanarException($"fail to remove trigger {triggerId}");
@@ -195,7 +227,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     public async Task<TriggerRowDetails> Get(string triggerId)
     {
         var trigger = await GetTriggerById(triggerId);
-        var result = GetTriggerDetails(trigger);
+        var result = await GetTriggerDetails(trigger);
         return result;
     }
 
@@ -208,8 +240,9 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     public async Task<IEnumerable<string>> GetAllIds()
     {
-        var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        var ids = keys.Select(async k => await Scheduler.GetTrigger(k));
+        var scheduler = await GetScheduler();
+        var keys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+        var ids = keys.Select(async k => await scheduler.GetTrigger(k));
         await Task.WhenAll(ids);
         var triggers = ids.Select(t => t.Result).Where(t => t != null);
         var triggersIds = triggers
@@ -220,13 +253,14 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     public async Task<IEnumerable<PausedTriggerDetails>> GetPausedTriggers()
     {
-        var triggers = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && Scheduler.GetTriggerState(t).Result == TriggerState.Paused);
+        var scheduler = await GetScheduler();
+        var triggers = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+        var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && scheduler.GetTriggerState(t).Result == TriggerState.Paused);
         var tasks = new List<Task<ITrigger?>>();
         foreach (var k in pausedKeys)
         {
             if (TriggerHelper.IsSystemTriggerKey(k)) { continue; }
-            tasks.Add(Scheduler.GetTrigger(k));
+            tasks.Add(scheduler.GetTrigger(k));
         }
 
         await Task.WhenAll(tasks);
@@ -238,7 +272,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     public async Task Pause(JobOrTriggerKey request)
     {
         var trigger = await GetTriggerById(request.Id);
-        await Scheduler.PauseTrigger(trigger.Key);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseTrigger(trigger.Key);
 
         // audit
         AuditJobSafe(trigger.JobKey, $"trigger '{trigger.Key.Name}' paused");
@@ -247,15 +282,16 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     public async Task Resume(JobOrTriggerKey request)
     {
         var trigger = await GetTriggerById(request.Id);
-        await Scheduler.ResumeTrigger(trigger.Key);
+        var scheduler = await GetScheduler();
+        await scheduler.ResumeTrigger(trigger.Key);
 
         // audit
         AuditJobSafe(trigger.JobKey, $"trigger '{trigger.Key.Name}' resume");
 
         // cancel auto resume when trigger is resumed and job is fully active
-        var resume = await AutoResumeJobUtil.GetAutoResumeDate(Scheduler, trigger.JobKey);
+        var resume = await AutoResumeJobUtil.GetAutoResumeDate(scheduler, trigger.JobKey);
         if (resume == null) { return; }
-        var mode = await JobHelper.GetJobActiveMode(Scheduler, trigger.JobKey);
+        var mode = await JobHelper.GetJobActiveMode(scheduler, trigger.JobKey);
         if (mode == JobActiveMembers.Active)
         {
             await CancelQueuedResumeJob(trigger.JobKey);
@@ -274,7 +310,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
         try
         {
-            await Scheduler.RescheduleJob(trigger.Key, cronTrigger);
+            var scheduler = await GetScheduler();
+            await scheduler.RescheduleJob(trigger.Key, cronTrigger);
         }
         catch (Exception ex)
         {
@@ -300,7 +337,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
         try
         {
-            await Scheduler.RescheduleJob(trigger.Key, simpleTrigger);
+            var scheduler = await GetScheduler();
+            await scheduler.RescheduleJob(trigger.Key, simpleTrigger);
         }
         catch (Exception ex)
         {
@@ -317,21 +355,30 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         // Get Trigger & Job
         var trigger = await GetTriggerById(request.Id);
-        var jobDetails = await Scheduler.GetJobDetail(trigger.JobKey);
+        var scheduler = await GetScheduler();
+        var jobDetails = await scheduler.GetJobDetail(trigger.JobKey);
 
         // Validations
         if (jobDetails == null) { return; }
         ValidateSystemTrigger(trigger);
-        await ValidateJobPaused(trigger.JobKey);
         await ValidateJobNotRunning(trigger.JobKey);
 
         var timeout = TriggerHelper.GetTimeout(trigger);
         if (timeout == request.Timeout) { return; }
         TriggerHelper.SetTimeout(trigger, request.Timeout);
 
-        var triggers = await BuildTriggers(trigger);
-        await Scheduler.ScheduleJob(jobDetails, triggers, true);
-        await Scheduler.PauseJob(trigger.JobKey);
+        var pausedTriggers = await GetPausedTriggers(jobDetails.Key);
+        await scheduler.PauseJob(jobDetails.Key);
+
+        try
+        {
+            var triggers = await BuildTriggers(trigger);
+            await scheduler.ScheduleJob(jobDetails, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(jobDetails.Key, pausedTriggers);
+        }
 
         // audit
         var obj = new { from = FormatTimeSpan(timeout), to = FormatTimeSpan(request.Timeout) };
@@ -394,7 +441,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     private async Task<bool> CancelQueuedResumeJob(JobKey jobKey)
     {
-        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
+        var scheduler = await GetScheduler();
+        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(scheduler, jobKey);
         if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
         return cancelAutoResume;
     }
@@ -407,10 +455,11 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             throw new RestValidationException("triggerId", "triggerId is required");
         }
 
-        var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+        var scheduler = await GetScheduler();
+        var keys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
         foreach (var k in keys)
         {
-            var triggerDetails = await Scheduler.GetTrigger(k);
+            var triggerDetails = await scheduler.GetTrigger(k);
             var id = GetTriggerId(triggerDetails);
             if (id == triggerId)
             {
@@ -424,25 +473,26 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
         }
 
-        var result = await Scheduler.GetTrigger(key);
+        var result = await scheduler.GetTrigger(key);
 
         return result ?? throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
     }
 
-    private TriggerRowDetails GetTriggerDetails(ITrigger trigger)
+    private async Task<TriggerRowDetails> GetTriggerDetails(ITrigger trigger)
     {
         var result = new TriggerRowDetails();
+        var scheduler = await GetScheduler();
 
         if (trigger is ISimpleTrigger t1)
         {
-            var simpleTrigger = Mapper.Map<SimpleTriggerDetails>(t1);
+            var simpleTrigger = await Mapper.MapSimpleTriggerDetails(t1, scheduler);
             result.SimpleTriggers.Add(simpleTrigger);
         }
         else
         {
             if (trigger is ICronTrigger t2)
             {
-                var cronTrigger = Mapper.Map<CronTriggerDetails>(t2);
+                var cronTrigger = await Mapper.MapCronTriggerDetails(t2, scheduler);
                 result.CronTriggers.Add(cronTrigger);
             }
         }
@@ -454,20 +504,21 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         await JobKeyHelper.ValidateJobExists(jobKey);
         var result = new TriggerRowDetails();
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var scheduler = await GetScheduler();
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
 
         foreach (var t in triggers)
         {
             if (t is ISimpleTrigger t1)
             {
-                var simpleTrigger = Mapper.Map<SimpleTriggerDetails>(t1);
+                var simpleTrigger = await Mapper.MapSimpleTriggerDetails(t1, scheduler);
                 result.SimpleTriggers.Add(simpleTrigger);
             }
             else
             {
                 if (t is ICronTrigger t2)
                 {
-                    var cronTrigger = Mapper.Map<CronTriggerDetails>(t2);
+                    var cronTrigger = await Mapper.MapCronTriggerDetails(t2, scheduler);
                     result.CronTriggers.Add(cronTrigger);
                 }
             }

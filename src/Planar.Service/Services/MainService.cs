@@ -163,20 +163,20 @@ public class MainService : BackgroundService
         try
         {
             _logger.LogInformation("Initialize: {Operation}", nameof(ScheduleSystemJobs));
-            await PersistDataJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await ClusterHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await ClearHistoryJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await StatisticsJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await MonitorJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await CircuitBreakerJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await SchedulerHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-            await ConfigReloadJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+            await PersistDataJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await ClusterHealthCheckJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await ClearHistoryJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await StatisticsJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await MonitorJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await CircuitBreakerJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await SchedulerHealthCheckJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
+            await ConfigReloadJob.Schedule(_schedulerUtil.SchedulerFactory, stoppingToken);
 
-            await SummaryReportJob.Schedule(_schedulerUtil.Scheduler, SummaryReportJob.ReportName, stoppingToken);
-            await PausedReportJob.Schedule(_schedulerUtil.Scheduler, PausedReportJob.ReportName, stoppingToken);
-            await AlertsReportJob.Schedule(_schedulerUtil.Scheduler, AlertsReportJob.ReportName, stoppingToken);
-            await AuditsReportJob.Schedule(_schedulerUtil.Scheduler, AuditsReportJob.ReportName, stoppingToken);
-            await TraceReportJob.Schedule(_schedulerUtil.Scheduler, TraceReportJob.ReportName, stoppingToken);
+            await SummaryReportJob.Schedule(_schedulerUtil.SchedulerFactory, SummaryReportJob.ReportName, stoppingToken);
+            await PausedReportJob.Schedule(_schedulerUtil.SchedulerFactory, PausedReportJob.ReportName, stoppingToken);
+            await AlertsReportJob.Schedule(_schedulerUtil.SchedulerFactory, AlertsReportJob.ReportName, stoppingToken);
+            await AuditsReportJob.Schedule(_schedulerUtil.SchedulerFactory, AuditsReportJob.ReportName, stoppingToken);
+            await TraceReportJob.Schedule(_schedulerUtil.SchedulerFactory, TraceReportJob.ReportName, stoppingToken);
         }
         catch (Exception ex)
         {
@@ -223,12 +223,12 @@ public class MainService : BackgroundService
             if (await util.HealthCheck(liveNodes))
             {
                 await util.Join();
-                LogClustering();
+                await LogClustering();
 
                 // Monitoring
                 var info = new MonitorSystemInfo("Cluster node join to {{MachineName}}");
                 info.MessagesParameters.Add("Port", AppSettings.General.ApiPort.ToString());
-                info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
+                info.MessagesParameters.Add("InstanceId", await _schedulerUtil.SchedulerInstanceId());
                 info.AddMachineName();
                 SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
             }
@@ -277,11 +277,11 @@ public class MainService : BackgroundService
         }
     }
 
-    private void LogClustering()
+    private async Task LogClustering()
     {
         if (AppSettings.Cluster.Clustering)
         {
-            _logger.LogInformation("join to cluster [instance id: {Id}]", _schedulerUtil.SchedulerInstanceId);
+            _logger.LogInformation("join to cluster [instance id: {Id}]", await _schedulerUtil.SchedulerInstanceId());
         }
         else
         {
@@ -304,7 +304,7 @@ public class MainService : BackgroundService
         {
             Server = Environment.MachineName,
             Port = AppSettings.General.ApiPort,
-            InstanceId = _schedulerUtil.SchedulerInstanceId
+            InstanceId = await _schedulerUtil.SchedulerInstanceId()
         };
 
         var services = new ServiceCollection();
@@ -319,7 +319,7 @@ public class MainService : BackgroundService
         // Monotoring
         var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
         info.MessagesParameters.Add("Port", AppSettings.General.ApiPort.ToString());
-        info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
+        info.MessagesParameters.Add("InstanceId", await _schedulerUtil.SchedulerInstanceId());
         info.AddMachineName();
         SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);
     }

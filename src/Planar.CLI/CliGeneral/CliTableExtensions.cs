@@ -561,7 +561,7 @@ internal static class CliTableExtensions
         {
             var text = CliTableFormat.FormatDateTime(response.AutoResume.Value);
             var colorText = $"[{CliFormat.OkColor}]{text}[/]";
-            table.Table.AddRow(nameof(response.AutoResume), colorText);
+            table.Table.AddRow(nameof(response.AutoResume).SplitWords(), colorText);
         }
 
         var dataMap = SerializeJobDetailsData(response);

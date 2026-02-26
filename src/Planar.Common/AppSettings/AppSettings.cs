@@ -66,7 +66,6 @@ public static class AppSettings
         General.InstanceId = GetSettings(configuration, EC.InstanceIdVariableKey, "general", "instance id", "AUTO");
         General.ServiceName = GetSettings(configuration, EC.ServiceNameVariableKey, "general", "service name", "PlanarService");
         General.JobAutoStopSpan = GetSettings(configuration, EC.JobAutoStopSpanVariableKey, "general", "job auto stop span", TimeSpan.FromHours(2));
-        General.SwaggerUI = GetSettings(configuration, EC.SwaggerUIVariableKey, "general", "swagger ui", true);
         General.OpenApiUI = GetSettings(configuration, EC.OpenApiUIVariableKey, "general", "open api ui", true);
         General.DeveloperExceptionPage = GetSettings(configuration, EC.DeveloperExceptionPageVariableKey, "general", "developer exception page", true);
         General.SchedulerStartupDelay = GetSettings(configuration, EC.SchedulerStartupDelayVariableKey, "general", "scheduler startup delay", TimeSpan.FromSeconds(30));

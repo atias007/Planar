@@ -1,5 +1,4 @@
 ﻿using CommonJob;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -17,36 +16,38 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.General;
 
-public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedulerHealthCheckUtil, JobKeyHelper jobKeyHelper)
+public class SchedulerUtil(ISchedulerFactory schedulerFactory, SchedulerHealthCheckUtil schedulerHealthCheckUtil, JobKeyHelper jobKeyHelper)
 {
-    public IScheduler Scheduler => scheduler;
+    public ISchedulerFactory SchedulerFactory => schedulerFactory;
 
-    internal string SchedulerInstanceId
+    internal async Task<string> SchedulerInstanceId()
     {
-        get
-        {
-            return scheduler.SchedulerInstanceId;
-        }
+        var scheduler = await schedulerFactory.GetScheduler();
+        return scheduler.SchedulerInstanceId;
     }
 
     public async Task Start(CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         await scheduler.Start(cancellationToken);
     }
 
     public async Task Shutdown(CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         await scheduler.Shutdown(true, cancellationToken);
     }
 
     public async Task Stop(CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         await scheduler.Standby(cancellationToken);
     }
 
     public async Task<ITrigger?> GetCircuitBreakerTrigger(JobKey jobKey)
     {
         var triggerKey = AutoResumeJobUtil.GetResumeTriggerKey(jobKey);
+        var scheduler = await schedulerFactory.GetScheduler();
         var trigger = await scheduler.GetTrigger(triggerKey);
         return trigger;
     }
@@ -55,13 +56,14 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
     {
         try
         {
-            // Check if the scheduler is started and running
-            if (!IsSchedulerRunning) { return false; }
+            // Check if the scheduler is not started and running
+            if (!await IsSchedulerRunning()) { return false; }
 
             // Check if the last run was within a reasonable time frame (e.g., 5 minutes)
             var timeSinceLastRun = DateTimeOffset.UtcNow - schedulerHealthCheckUtil.LastRun;
             if (timeSinceLastRun.TotalMinutes < 5) { return true; }
 
+            // health check job not running for long time & there is enough avaliable threads to run job
             var running = await CountRunningJobs();
             var maxConcurrency = AppSettings.General.MaxConcurrency;
             if (running < maxConcurrency) { return false; }
@@ -78,6 +80,8 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
     {
         if (!await IsHealthyAsync())
         {
+            var scheduler = await schedulerFactory.GetScheduler();
+
             logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
                 scheduler.IsShutdown, scheduler.InStandbyMode, scheduler.IsStarted);
 
@@ -85,16 +89,15 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
         }
     }
 
-    public bool IsSchedulerRunning
+    public async Task<bool> IsSchedulerRunning()
     {
-        get
-        {
-            return !scheduler.IsShutdown && !scheduler.InStandbyMode && scheduler.IsStarted;
-        }
+        var scheduler = await schedulerFactory.GetScheduler();
+        return !scheduler.IsShutdown && !scheduler.InStandbyMode && scheduler.IsStarted;
     }
 
     public async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var allRunning = await scheduler.GetCurrentlyExecutingJobs(cancellationToken);
         var result = allRunning.AsQueryable().Any(c => KeyHelper.Equals(c.JobDetail.Key, jobKey));
         return result;
@@ -102,6 +105,7 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
 
     public async Task<bool> IsTriggerRunning(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var allRunning = await scheduler.GetCurrentlyExecutingJobs(cancellationToken);
         var result = allRunning.AsQueryable().Any(c => c.Trigger.Key.Equals(triggerKey));
         return result;
@@ -109,12 +113,14 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
 
     public async Task<int> CountRunningJobs(CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var jobs = await scheduler.GetCurrentlyExecutingJobs(cancellationToken);
         return jobs.Count;
     }
 
     public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var jobs = await scheduler.GetCurrentlyExecutingJobs(cancellationToken);
         var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
         if (context == null) { return null; }
@@ -127,6 +133,7 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
     public async Task<List<RunningJobDetails>> GetRunningJobs(CancellationToken cancellationToken = default)
     {
         var result = new List<RunningJobDetails>();
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var jobs = await scheduler.GetCurrentlyExecutingJobs(cancellationToken);
 
         foreach (var context in jobs)
@@ -143,6 +150,7 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
 
     public async Task<RunningJobData?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var context = (await scheduler.GetCurrentlyExecutingJobs(cancellationToken))
             .FirstOrDefault(j => j.FireInstanceId == instanceId);
 
@@ -176,6 +184,7 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
             return false;
         }
 
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         foreach (var context in await scheduler.GetCurrentlyExecutingJobs(cancellationToken))
         {
             if (instanceId == context.FireInstanceId)
@@ -192,11 +201,13 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
         try
         {
             var jobKey = await jobKeyHelper.GetJobKey(instanceId);
+            var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
             var resultJob = await scheduler.Interrupt(jobKey, cancellationToken);
             return resultJob;
         }
         catch (RestNotFoundException)
         {
+            var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
             var result = await scheduler.Interrupt(instanceId, cancellationToken);
             return result;
         }
@@ -205,6 +216,7 @@ public class SchedulerUtil(IScheduler scheduler, SchedulerHealthCheckUtil schedu
     public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
     {
         var result = new List<PersistanceRunningJobsInfo>();
+        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var runningJobs = await scheduler.GetCurrentlyExecutingJobs(cancellationToken);
         foreach (var context in runningJobs)
         {

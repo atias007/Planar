@@ -1,7 +1,6 @@
-﻿namespace CommonJob
+﻿namespace CommonJob;
+
+public interface IPathJobProperties
 {
-    public interface IPathJobProperties
-    {
-        public string Path { get; }
-    }
+    public string Path { get; }
 }

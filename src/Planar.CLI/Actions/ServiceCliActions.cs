@@ -382,22 +382,51 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
         if (string.IsNullOrEmpty(request.Host))
         {
-            request.Host = CollectCliValue("host", true, 1, 50, defaultValue: ConnectUtil.DefaultHost) ?? string.Empty;
+            request.Host = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "host",
+                Required = true,
+                MinLength = 1,
+                MaxLength = 50,
+                DefaultValue = ConnectUtil.DefaultHost
+            }) ?? string.Empty;
         }
 
         if (request.Port == 0)
         {
-            request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", ConnectUtil.GetDefaultPort().ToString()) ?? ConnectUtil.GetDefaultPort().ToString());
+            request.Port = int.Parse(CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "port",
+                Required = true,
+                MinLength = 1,
+                MaxLength = 5,
+                Regex = regexTepmplate,
+                RegexErrorMessage = "invalid port",
+                DefaultValue = ConnectUtil.GetDefaultPort().ToString()
+            }) ?? ConnectUtil.GetDefaultPort().ToString());
         }
 
         if (string.IsNullOrEmpty(request.Username))
         {
-            request.Username = CollectCliValue("username", required: false, 2, 50);
+            request.Username = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "username",
+                Required = false,
+                MinLength = 2,
+                MaxLength = 50
+            });
         }
 
         if (string.IsNullOrEmpty(request.Password))
         {
-            request.Password = CollectCliValue("password", required: false, 2, 50, secret: true);
+            request.Password = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "password",
+                Required = false,
+                MinLength = 2,
+                MaxLength = 50,
+                Secret = true
+            });
         }
 
         var savedItem = ConnectUtil.GetSavedLogin(request.Key);

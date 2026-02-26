@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Common.Helpers;
 using Planar.Service.Exceptions;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -9,10 +10,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers;
 
-public class JobKeyHelper(IScheduler scheduler)
+public class JobKeyHelper(ISchedulerFactory schedulerFactory)
 {
-    private readonly IScheduler _scheduler = scheduler;
-
     public static string? GetJobId(IJobDetail? job)
     {
         return JobHelper.GetJobId(job);
@@ -27,9 +26,19 @@ public class JobKeyHelper(IScheduler scheduler)
                         new JobKey(metadata.Name, metadata.Group);
     }
 
+    internal static JobKey? GetJobKey(SetJobDynamicRequest request)
+    {
+        if (request.Name == null) { return null; }
+
+        return string.IsNullOrEmpty(request.Group) ?
+                        new JobKey(request.Name) :
+                        new JobKey(request.Name, request.Group);
+    }
+
     public async Task<string?> SafeGetJobId(JobKey jobKey)
     {
-        var details = await _scheduler.GetJobDetail(jobKey);
+        var scheduler = await schedulerFactory.GetScheduler();
+        var details = await scheduler.GetJobDetail(jobKey);
         if (details == null) { return null; }
         return GetJobId(details);
     }
@@ -75,10 +84,11 @@ public class JobKeyHelper(IScheduler scheduler)
     public async Task<JobKey?> GetJobKeyById(string jobId)
     {
         JobKey? result = null;
-        var keys = await _scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+        var scheduler = await schedulerFactory.GetScheduler();
+        var keys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
         foreach (var k in keys)
         {
-            var jobDetails = await _scheduler.GetJobDetail(k);
+            var jobDetails = await scheduler.GetJobDetail(k);
             if (jobDetails != null)
             {
                 var id = GetJobId(jobDetails);
@@ -95,14 +105,16 @@ public class JobKeyHelper(IScheduler scheduler)
 
     public async Task<bool> IsJobGroupExists(string group)
     {
-        var all = await _scheduler.GetJobGroupNames();
+        var scheduler = await schedulerFactory.GetScheduler();
+        var all = await scheduler.GetJobGroupNames();
         return all.Contains(group);
     }
 
     public async Task<IJobDetail> ValidateJobExists(JobKey? jobKey)
     {
         if (jobKey == null) { throw new RestNotFoundException($"job does not exist"); }
-        var exists = await _scheduler.GetJobDetail(jobKey);
+        var scheduler = await schedulerFactory.GetScheduler();
+        var exists = await scheduler.GetJobDetail(jobKey);
         return exists ?? throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
     }
 

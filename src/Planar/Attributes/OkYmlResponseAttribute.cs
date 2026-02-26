@@ -1,14 +1,12 @@
-﻿using Swashbuckle.AspNetCore.Annotations;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 
 namespace Planar.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class OkYmlResponseAttribute : SwaggerResponseAttribute
+public class OkYmlResponseAttribute : ProducesResponseTypeAttribute
 {
-    public OkYmlResponseAttribute() : base(200)
+    public OkYmlResponseAttribute() : base(typeof(string), 200, "text/yaml")
     {
-        Type = typeof(string);
-        ContentTypes = ["text/yaml"];
     }
 }

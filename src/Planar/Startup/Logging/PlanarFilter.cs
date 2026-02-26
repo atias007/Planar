@@ -28,7 +28,6 @@ public class PlanarFilter : ILogEventFilter
     ////    "/job/running-instance/",
     ////};
 
-    private const string SwaggerRequestPath = "swagger";
     private const string ContentRequestPath = "/content";
 
     public bool IsEnabled(LogEvent logEvent)
@@ -54,11 +53,6 @@ public class PlanarFilter : ILogEventFilter
             ////{
             ////    return false;
             ////}
-
-            if (stringValue.Contains(SwaggerRequestPath))
-            {
-                return false;
-            }
 
             if (stringValue.StartsWith(ContentRequestPath))
             {

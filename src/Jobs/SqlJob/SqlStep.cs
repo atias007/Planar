@@ -19,7 +19,7 @@ public sealed class SqlStep
     public TimeSpan? Timeout { get; set; }
 
     [YamlMember(Alias = "effected rows source")]
-    public string? EffectedRowsSource { get; set; }
+    public string? EffectedRowsSource { get; set; } = nameof(EffectedRowsSourceMembers.Default);
 
     [YamlMember(Alias = "log result set")]
     public bool LogResultSet { get; set; } = false;

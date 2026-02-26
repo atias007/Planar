@@ -4,9 +4,7 @@ using System;
 namespace Planar.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class AcceptedContentResponseAttribute : ProducesResponseTypeAttribute
+public class AcceptedContentResponseAttribute()
+    : ProducesResponseTypeAttribute(202)
 {
-    public AcceptedContentResponseAttribute() : base(202)
-    {
-    }
 }

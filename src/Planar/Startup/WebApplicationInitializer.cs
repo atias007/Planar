@@ -8,6 +8,7 @@ using Planar.Common;
 using Serilog;
 using System;
 using Prometheus;
+using Scalar.AspNetCore;
 
 namespace Planar.Startup
 {
@@ -83,15 +84,7 @@ namespace Planar.Startup
                 app.UseDeveloperExceptionPage();
             }
 
-            if (AppSettings.General.SwaggerUI && !app.Environment.IsProduction())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint($"/swagger/{SwaggerInitializer.SwaggerVersion}/swagger.json", "Planar");
-                    c.InjectStylesheet("/Content/theme-flattop.css");
-                });
-            }
+            OpenApiInitializer.SetOpenApi(app);
 
             if (AppSettings.General.UseHttpsRedirect)
             {

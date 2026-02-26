@@ -20,8 +20,9 @@ public sealed class PersistDataJob(IServiceScopeFactory scopeFactory, ILogger<Pe
         await SafeDoWork(context);
     }
 
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "system job for persist log & exception from running jobs";
         var cronexpr = AppSettings.General.PersistRunningJobsSpan.ToCronExpression();
         await ScheduleHighPriority<PersistDataJob>(scheduler, description, cronexpr, stoppingToken: stoppingToken);

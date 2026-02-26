@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -18,7 +20,9 @@ public class ReportController(ReportDomain businesLayer) : BaseController<Report
     [HttpPatch("{name}")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "patch_report_name", Description = "Update report definition", Summary = "Update Report Definition")]
+    [EndpointName("patch_report_name")]
+    [EndpointDescription("Update report definition")]
+    [EndpointSummary("Update Report Definition")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -31,7 +35,9 @@ public class ReportController(ReportDomain businesLayer) : BaseController<Report
 
     [HttpGet("{name}")]
     [TesterAuthorize]
-    [SwaggerOperation(OperationId = "get_report_name", Description = "Get report schedule details", Summary = "Get Report Schedule Details")]
+    [EndpointName("get_report_name")]
+    [EndpointDescription("Get report schedule details")]
+    [EndpointSummary("Get Report Schedule Details")]
     [BadRequestResponse]
     [NotFoundResponse]
     [OkJsonResponse(typeof(IEnumerable<ReportsStatus>))]
@@ -45,7 +51,9 @@ public class ReportController(ReportDomain businesLayer) : BaseController<Report
     [HttpPost("{name}/run")]
     [TesterAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "post_report_name_run", Description = "Run and deliver report", Summary = "Run And Deliver Report")]
+    [EndpointName("post_report_name_run")]
+    [EndpointDescription("Run and deliver report")]
+    [EndpointSummary("Run And Deliver Report")]
     [BadRequestResponse]
     [NotFoundResponse]
     [AcceptedContentResponse]
@@ -58,7 +66,9 @@ public class ReportController(ReportDomain businesLayer) : BaseController<Report
 
     [HttpGet]
     [TesterAuthorize]
-    [SwaggerOperation(OperationId = "get_report", Description = "Get list of reports", Summary = "Get List Of Reports")]
+    [EndpointName("get_report")]
+    [EndpointDescription("Get list of reports")]
+    [EndpointSummary("Get List Of Reports")]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetAll()
     {
@@ -68,7 +78,9 @@ public class ReportController(ReportDomain businesLayer) : BaseController<Report
 
     [HttpGet("periods")]
     [TesterAuthorize]
-    [SwaggerOperation(OperationId = "get_report_periods", Description = "Get list of report periods", Summary = "Get List Of Reports Periods")]
+    [EndpointName("get_report_periods")]
+    [EndpointDescription("Get list of report periods")]
+    [EndpointSummary("Get List Of Reports Periods")]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetAllPeriods()
     {

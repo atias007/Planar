@@ -51,8 +51,9 @@ public sealed class ClusterHealthCheckJob : SystemJob, IJob
         }
     }
 
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "System job for check health of cluster nodes";
         var cronexpr = AppSettings.Cluster.HealthCheckInterval.ToCronExpression();
         var jobKey = await ScheduleHighPriority<ClusterHealthCheckJob>(scheduler, description, cronexpr, stoppingToken: stoppingToken);

@@ -85,7 +85,7 @@ namespace Planar.Service.Reports
 
             var encodeValue =
                 encode ?
-                HtmlUtils.HtmlEncode(value) :
+                HtmlUtils.HtmlEncode(value ?? string.Empty) :
                 value;
 
             return template.Replace(find, encodeValue);

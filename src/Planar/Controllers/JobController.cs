@@ -1,17 +1,20 @@
 ﻿using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,36 +33,56 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return NoContent();
     }
 
+    [HttpPost("apply")]
+    [EditorAuthorize]
+    [EndpointName("post_job_apply")]
+    [EndpointDescription("Add/Update job by yml file")]
+    [EndpointSummary("Add/Update Job By Yml File")]
+    [JsonAndYamlConsumes]
+    [CreatedResponse(typeof(PlanarIdResponse))]
+    [BadRequestResponse]
+    public async Task<ActionResult<PlanarIdResponse>> Apply()
+    {
+        var result = await BusinesLayer.ApplyRoute(HttpContext);
+        return CreatedAtAction(nameof(Get), result, result);
+    }
+
     [HttpPost]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job", Description = "Add job by yml file", Summary = "Add Job By Yml File")]
-    [JsonConsumes]
+    [EndpointName("post_job")]
+    [EndpointDescription("Add job by yml file")]
+    [EndpointSummary("Add Job By Yml File")]
+    [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     [ConflictResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Add([FromBody] SetJobPathRequest request)
+    public async Task<ActionResult<PlanarIdResponse>> Add()
     {
-        var result = await BusinesLayer.Add(request);
+        var result = await BusinesLayer.AddRoute(HttpContext);
         return CreatedAtAction(nameof(Get), result, result);
     }
 
     [HttpPut]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "put_job_id", Description = "Update job", Summary = "Update Job")]
-    [JsonConsumes]
+    [EndpointName("put_job_id")]
+    [EndpointDescription("Update job")]
+    [EndpointSummary("Update Job")]
+    [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Update(UpdateJobRequest request)
+    public async Task<ActionResult<PlanarIdResponse>> Update()
     {
-        var result = await BusinesLayer.Update(request);
+        var result = await BusinesLayer.UpdateRoute(HttpContext);
         return CreatedAtAction(nameof(Get), result, result);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet("available-jobs")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_job_available_jobs_mode", Description = "", Summary = "")]
+    [EndpointName("get_job_available_jobs_mode")]
+    [EndpointDescription("")]
+    [EndpointSummary("")]
     [OkJsonResponse(typeof(List<AvailableJob>))]
     public async Task<ActionResult<List<AvailableJob>>> GetAvailableJobs([FromQuery] bool update)
     {
@@ -70,7 +93,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [HttpGet]
     [ViewerAuthorize]
     [BadRequestResponse]
-    [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
+    [EndpointName("get_job")]
+    [EndpointDescription("Get all jobs")]
+    [EndpointSummary("Get All Jobs")]
     [OkJsonResponse(typeof(PagingResponse<JobBasicDetails>))]
     public async Task<ActionResult<PagingResponse<JobBasicDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
     {
@@ -80,7 +105,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("ids")]
     [AllowAnonymous]
-    [SwaggerOperation(OperationId = "get_job_ids", Description = "Get all jobs ids", Summary = "Get All Jobs Ids")]
+    [EndpointName("get_job_ids")]
+    [EndpointDescription("Get all jobs ids")]
+    [EndpointSummary("Get All Jobs Ids")]
     [ApiExplorerSettings(IgnoreApi = true)]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public async Task<ActionResult<IEnumerable<string>>> GetAllIds()
@@ -94,7 +121,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [ViewerAuthorize]
     [BadRequestResponse]
     [NotFoundResponse]
-    [SwaggerOperation(OperationId = "get_job_file_id", Description = "Get JobFile.yml filename", Summary = "Get JobFile.yml Filename")]
+    [EndpointName("get_job_file_id")]
+    [EndpointDescription("Get JobFile.yml filename")]
+    [EndpointSummary("Get JobFile.yml Filename")]
     [OkTextResponse]
     public async Task<ActionResult<string>> GetJobFilename([FromRoute][Required] string id)
     {
@@ -104,7 +133,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("groups")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_groups", Description = "Get job groups", Summary = "Get Job Groups")]
+    [EndpointName("get_groups")]
+    [EndpointDescription("Get job groups")]
+    [EndpointSummary("Get Job Groups")]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public async Task<ActionResult<IEnumerable<string>>> GetGroupNames()
     {
@@ -114,7 +145,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpDelete("{id}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_job_id", Description = "Delete job", Summary = "Delete Job")]
+    [EndpointName("delete_job_id")]
+    [EndpointDescription("Delete job")]
+    [EndpointSummary("Delete Job")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -126,7 +159,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("{id}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_id", Description = "Get job details by id", Summary = "Get Job By Id")]
+    [EndpointName("get_job_id")]
+    [EndpointDescription("Get job details by id")]
+    [EndpointSummary("Get Job By Id")]
     [OkJsonResponse(typeof(JobDetails))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -138,7 +173,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("{id}/info")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_info_id", Description = "Get job info by id", Summary = "Get Job Info By Id")]
+    [EndpointName("get_job_info_id")]
+    [EndpointDescription("Get job info by id")]
+    [EndpointSummary("Get Job Info By Id")]
     [OkJsonResponse(typeof(JobDescription))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -150,7 +187,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("{id}/next-running")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_next_running_id", Description = "Get the next running date & time of job", Summary = "Get Next Running Date")]
+    [EndpointName("get_job_next_running_id")]
+    [EndpointDescription("Get the next running date & time of job")]
+    [EndpointSummary("Get Next Running Date")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -162,7 +201,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("{id}/prev-running")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_prev_running_id", Description = "Get the previous running date & time of job", Summary = "Get Previous Running Date")]
+    [EndpointName("get_job_prev_running_id")]
+    [EndpointDescription("Get the previous running date & time of job")]
+    [EndpointSummary("Get Previous Running Date")]
     [OkTextResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -174,7 +215,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("data")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_data", Description = "Add job data", Summary = "Add Job Data")]
+    [EndpointName("post_job_data")]
+    [EndpointDescription("Add job data")]
+    [EndpointSummary("Add Job Data")]
     [JsonConsumes]
     [CreatedResponse]
     [BadRequestResponse]
@@ -187,7 +230,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPut("data")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "put_job_data", Description = "Update job data", Summary = "Update Job Data")]
+    [EndpointName("put_job_data")]
+    [EndpointDescription("Update job data")]
+    [EndpointSummary("Update Job Data")]
     [JsonConsumes]
     [CreatedResponse]
     [BadRequestResponse]
@@ -200,7 +245,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpDelete("{id}/data/{key}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_job_id_data_key", Description = "Delete job data", Summary = "Delete Job Data")]
+    [EndpointName("delete_job_id_data_key")]
+    [EndpointDescription("Delete job data")]
+    [EndpointSummary("Delete Job Data")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -213,7 +260,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpDelete("{id}/data")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_job_id_data", Description = "Delete all job data", Summary = "Delete All Job Data")]
+    [EndpointName("delete_job_id_data")]
+    [EndpointDescription("Delete all job data")]
+    [EndpointSummary("Delete All Job Data")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -225,7 +274,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("invoke")]
     [TesterAuthorize]
-    [SwaggerOperation(OperationId = "post_job_invoke", Description = "Invoke job", Summary = "Invoke Job")]
+    [EndpointName("post_job_invoke")]
+    [EndpointDescription("Invoke job")]
+    [EndpointSummary("Invoke Job")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -238,7 +289,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("queue-invoke")]
     [TesterAuthorize]
-    [SwaggerOperation(OperationId = "post_job_queue_invoke", Description = "Queue invokation of job", Summary = "Queue Invokation Of Job")]
+    [EndpointName("post_job_queue_invoke")]
+    [EndpointDescription("Queue invokation of job")]
+    [EndpointSummary("Queue Invokation Of Job")]
     [JsonConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
@@ -251,7 +304,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("pause")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_pause", Description = "Pause job", Summary = "Pause Job")]
+    [EndpointName("post_job_pause")]
+    [EndpointDescription("Pause job")]
+    [EndpointSummary("Pause Job")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -264,7 +319,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("pause-group")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_pause_group", Description = "Pause job group", Summary = "Pause Job Group")]
+    [EndpointName("post_job_pause_group")]
+    [EndpointDescription("Pause job group")]
+    [EndpointSummary("Pause Job Group")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -277,7 +334,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("resume")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_resume", Description = "Resume job", Summary = "Resume Job")]
+    [EndpointName("post_job_resume")]
+    [EndpointDescription("Resume job")]
+    [EndpointSummary("Resume Job")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -290,7 +349,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("auto-resume")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_auto_resume", Description = "Set job auto resume", Summary = "Set Job Auto Resume")]
+    [EndpointName("post_job_auto_resume")]
+    [EndpointDescription("Set job auto resume")]
+    [EndpointSummary("Set Job Auto Resume")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -303,7 +364,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpDelete("{id}/auto-resume")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_job_auto_resume", Description = "Delete job auto resume", Summary = "Delete Job Auto Resume")]
+    [EndpointName("delete_job_auto_resume")]
+    [EndpointDescription("Delete job auto resume")]
+    [EndpointSummary("Delete Job Auto Resume")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -316,7 +379,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("resume-group")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_resume_group", Description = "Resume job group", Summary = "Resume Job Group")]
+    [EndpointName("post_job_resume_group")]
+    [EndpointDescription("Resume job group")]
+    [EndpointSummary("Resume Job Group")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -329,7 +394,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPost("cancel")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_cancel", Description = "Cancel running job", Summary = "Cancel Job")]
+    [EndpointName("post_job_cancel")]
+    [EndpointDescription("Cancel running job")]
+    [EndpointSummary("Cancel Job")]
     [JsonConsumes]
     [AcceptedContentResponse]
     [BadRequestResponse]
@@ -342,7 +409,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("{id}/settings")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "gat_job_id_settings", Description = "Get job settings", Summary = "Get Job Settings")]
+    [EndpointName("gat_job_id_settings")]
+    [EndpointDescription("Get job settings")]
+    [EndpointSummary("Get Job Settings")]
     [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
     [BadRequestResponse]
     public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetSettings([FromRoute][Required] string id)
@@ -353,7 +422,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("running-instance/{instanceId}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_running_instanceid", Description = "Get runnng job info", Summary = "Get Runnng Job Info")]
+    [EndpointName("get_job_running_instanceid")]
+    [EndpointDescription("Get runnng job info")]
+    [EndpointSummary("Get Runnng Job Info")]
     [OkJsonResponse(typeof(RunningJobDetails))]
     [NotFoundResponse]
     [BadRequestResponse]
@@ -366,7 +437,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("running-instance/{instanceId}/long-polling")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_running_instanceid_long_polling", Description = "Get runnng job info (Long polling)", Summary = "Get Runnng Job Info (Long Polling)")]
+    [EndpointName("get_job_running_instanceid_long_polling")]
+    [EndpointDescription("Get runnng job info (Long polling)")]
+    [EndpointSummary("Get Runnng Job Info (Long Polling)")]
     [BadRequestResponse]
     [RequestTimeoutResponse]
     public async Task<ActionResult<RunningJobDetails>> GetRunningInstanceLongPollingV2(
@@ -395,7 +468,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("running")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_running", Description = "Gat all running jobs", Summary = "Gat All Running Jobs")]
+    [EndpointName("get_job_running")]
+    [EndpointDescription("Gat all running jobs")]
+    [EndpointSummary("Gat All Running Jobs")]
     [OkJsonResponse(typeof(List<RunningJobDetails>))]
     public async Task<ActionResult<List<RunningJobDetails>>> GetAllRunning()
     {
@@ -405,7 +480,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("running-data/{instanceId}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_running_data_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
+    [EndpointName("get_job_running_data_instanceid")]
+    [EndpointDescription("Get running job log & exception")]
+    [EndpointSummary("Get Running Job Data")]
     [OkJsonResponse(typeof(RunningJobData))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -419,7 +496,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet("running-log/{instanceId}/sse")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_running_log_instanceid_sse", Description = "Get running job log", Summary = "Get running job log")]
+    [EndpointName("get_job_running_log_instanceid_sse")]
+    [EndpointDescription("Get running job log")]
+    [EndpointSummary("Get running job log")]
     [BadRequestResponse]
     [NotFoundResponse]
     public async Task GetRunningLog([FromRoute][Required] string instanceId, CancellationToken cancellationToken)
@@ -432,7 +511,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("jobfile/{name}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_job_jobfile_name", Description = "Get JobFile.yml template", Summary = "Get JobFile.yml Template")]
+    [EndpointName("get_job_jobfile_name")]
+    [EndpointDescription("Get JobFile.yml template")]
+    [EndpointSummary("Get JobFile.yml Template")]
     [OkYmlResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -445,7 +526,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("types")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_types", Description = "Get all job types", Summary = "Get All Job Types")]
+    [EndpointName("get_job_types")]
+    [EndpointDescription("Get all job types")]
+    [EndpointSummary("Get All Job Types")]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetJobTypes()
     {
@@ -470,7 +553,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("{id}/audit")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "get_job_id_audit", Description = "Get audits for job", Summary = "Get Audits For Job")]
+    [EndpointName("get_job_id_audit")]
+    [EndpointDescription("Get audits for job")]
+    [EndpointSummary("Get Audits For Job")]
     [OkJsonResponse(typeof(PagingResponse<JobAuditDto>))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -482,7 +567,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("audit/{auditId}")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "get_job_audit_audit_id", Description = "Get audit by id", Summary = "Get Audit By Id")]
+    [EndpointName("get_job_audit_audit_id")]
+    [EndpointDescription("Get audit by id")]
+    [EndpointSummary("Get Audit By Id")]
     [OkJsonResponse(typeof(JobAuditWithInfoDto))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -494,7 +581,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("audits")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "get_job_audits", Description = "Get all audits", Summary = "Get All Audits")]
+    [EndpointName("get_job_audits")]
+    [EndpointDescription("Get all audits")]
+    [EndpointSummary("Get All Audits")]
     [BadRequestResponse]
     [OkJsonResponse(typeof(PagingResponse<JobAuditDto>))]
     public async Task<ActionResult<PagingResponse<JobAuditDto>>> GetJobAudits([FromQuery] PagingRequest request)
@@ -505,7 +594,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("wait")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_wait", Description = "Wait to finish running", Summary = "Wait To Finish Running")]
+    [EndpointName("get_job_wait")]
+    [EndpointDescription("Wait to finish running")]
+    [EndpointSummary("Wait To Finish Running")]
     [OkTextResponse]
     [BadRequestResponse]
     public async Task Wait([FromQuery] JobWaitRequest request, CancellationToken cancellationToken)
@@ -515,7 +606,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpPatch("author")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "patch_job_author", Description = "Set the author of job", Summary = "Set The Author Of Job")]
+    [EndpointName("patch_job_author")]
+    [EndpointDescription("Set the author of job")]
+    [EndpointSummary("Set The Author Of Job")]
     [JsonConsumes]
     [BadRequestResponse]
     [NoContentResponse]

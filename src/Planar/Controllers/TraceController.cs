@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers;
@@ -15,7 +17,9 @@ namespace Planar.Controllers;
 public class TraceController(TraceDomain bl) : BaseController<TraceDomain>(bl)
 {
     [HttpGet]
-    [SwaggerOperation(OperationId = "get_trace", Description = "Get trace records", Summary = "Get Trace Records")]
+    [EndpointName("get_trace")]
+    [EndpointDescription("Get trace records")]
+    [EndpointSummary("Get Trace Records")]
     [OkJsonResponse(typeof(PagingResponse<LogDetails>))]
     public async Task<ActionResult<PagingResponse<LogDetails>>> Get([FromQuery] GetTraceRequest request)
     {
@@ -24,7 +28,9 @@ public class TraceController(TraceDomain bl) : BaseController<TraceDomain>(bl)
     }
 
     [HttpGet("{id}/exception")]
-    [SwaggerOperation(OperationId = "get_trace_id_exception", Description = "Get trace excption for record", Summary = "Get Trace Exception")]
+    [EndpointName("get_trace_id_exception")]
+    [EndpointDescription("Get trace excption for record")]
+    [EndpointSummary("Get Trace Exception")]
     [OkJsonResponse(typeof(string))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -35,7 +41,9 @@ public class TraceController(TraceDomain bl) : BaseController<TraceDomain>(bl)
     }
 
     [HttpGet("{id}/properties")]
-    [SwaggerOperation(OperationId = "get_trace_id_properties", Description = "Get trace properties for record", Summary = "Get Trace Properties")]
+    [EndpointName("get_trace_id_properties")]
+    [EndpointDescription("Get trace properties for record")]
+    [EndpointSummary("Get Trace Properties")]
     [OkJsonResponse(typeof(string))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -46,7 +54,9 @@ public class TraceController(TraceDomain bl) : BaseController<TraceDomain>(bl)
     }
 
     [HttpGet("count")]
-    [SwaggerOperation(OperationId = "get_trace_count", Description = "Get trace count by level", Summary = "Get Trace Count")]
+    [EndpointName("get_trace_count")]
+    [EndpointDescription("Get trace count by level")]
+    [EndpointSummary("Get Trace Count")]
     [OkJsonResponse(typeof(CounterResponse))]
     [BadRequestResponse]
     public async Task<ActionResult<CounterResponse>> GetTraceCounter([FromQuery] CounterRequest request)

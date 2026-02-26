@@ -182,11 +182,45 @@ public class UserCliActions : BaseCliAction<UserCliActions>
 
         var result = new CliAddUserRequest
         {
-            Username = CollectCliValue("username", true, 2, 50) ?? string.Empty,
-            FirstName = CollectCliValue("first name", true, 2, 50) ?? string.Empty,
-            LastName = CollectCliValue("last name", false, 2, 50),
-            EmailAddress1 = CollectCliValue("email address", false, 5, 250, email_pattern, "is not valid email"),
-            PhoneNumber1 = CollectCliValue("phone number", false, 9, 50, phone_pattern, "is not valid phone number (only digits start with 0)")
+            Username = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "username",
+                Required = true,
+                MinLength = 2,
+                MaxLength = 50
+            }) ?? string.Empty,
+            FirstName = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "first name",
+                Required = true,
+                MinLength = 2,
+                MaxLength = 50
+            }) ?? string.Empty,
+            LastName = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "last name",
+                Required = false,
+                MinLength = 2,
+                MaxLength = 50
+            }),
+            EmailAddress1 = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "email address",
+                Required = false,
+                MinLength = 5,
+                MaxLength = 250,
+                Regex = email_pattern,
+                RegexErrorMessage = "is not valid email"
+            }),
+            PhoneNumber1 = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "phone number",
+                Required = false,
+                MinLength = 9,
+                MaxLength = 50,
+                Regex = phone_pattern,
+                RegexErrorMessage = "is not valid phone number (only digits start with 0)"
+            })
         };
 
         return result;

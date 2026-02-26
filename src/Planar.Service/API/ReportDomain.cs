@@ -42,7 +42,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
         // get trigger
         var requestPeriod = Enum.Parse<ReportPeriods>(request.Period, true);
         var triggerKey = new TriggerKey(requestPeriod.ToString(), reportName.ToString());
-        var scheduler = Resolve<IScheduler>();
+        var scheduler = await Resolve<ISchedulerFactory>().GetScheduler();
         var trigger = await scheduler.GetTrigger(triggerKey);
         var triggerId = TriggerHelper.GetTriggerId(trigger);
 
@@ -115,7 +115,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
         var reportName = ValidateReportName(name);
 
         var jobKey = new JobKey($"{reportName}ReportJob", Consts.PlanarSystemGroup);
-        var scheduler = Resolve<IScheduler>();
+        var scheduler = await Resolve<ISchedulerFactory>().GetScheduler();
         var triggers = await scheduler.GetTriggersOfJob(jobKey);
 
         if (triggers == null || triggers.Count == 0)
@@ -156,7 +156,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
 
         if (string.IsNullOrWhiteSpace(request.Group))
         {
-            var scheduler = Resolve<IScheduler>();
+            var scheduler = await Resolve<ISchedulerFactory>().GetScheduler();
             var triggerKey = new TriggerKey(ReportPeriods.Daily.ToString(), reportName.ToString());
             var trigger = await scheduler.GetTrigger(triggerKey);
             request.Group = trigger?.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey);

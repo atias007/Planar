@@ -16,7 +16,6 @@ public class GeneralSettingsInfo
     public bool UseHttpsRedirect { get; set; }
     public bool UseHttps { get; set; }
     public string Environment { get; set; } = string.Empty;
-    public bool SwaggerUI { get; set; }
     public bool OpenApiUI { get; set; }
     public bool DeveloperExceptionPage { get; set; }
     public TimeSpan SchedulerStartupDelay { get; set; }

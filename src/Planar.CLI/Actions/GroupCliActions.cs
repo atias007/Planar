@@ -168,7 +168,13 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            request.Name = CollectCliValue("name", true, 2, 50) ?? string.Empty;
+            request.Name = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "name",
+                Required = true,
+                MinLength = 2,
+                MaxLength = 50
+            }) ?? string.Empty;
         }
 
         if (request.Role == null)

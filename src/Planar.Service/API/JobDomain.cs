@@ -1,4 +1,5 @@
 ﻿using CloudNative.CloudEvents;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -26,7 +28,9 @@ using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
-public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory)
+public partial class JobDomain(
+    IServiceProvider serviceProvider,
+    IServiceScopeFactory scopeFactory)
     : BaseJobBL<JobDomain, IJobData>(serviceProvider), IJobActions
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
@@ -45,12 +49,23 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             info.JobDetails.JobDataMap.Remove(key);
         }
 
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+        var scheduler = await GetScheduler();
 
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
+        await scheduler.PauseJob(info.JobKey);
+
+        try
+        {
+            var triggers = await scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
 
         AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
     }
@@ -88,14 +103,22 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             AuditJobSafe(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
         }
 
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(info.JobKey);
 
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        try
+        {
+            var triggers = await scheduler.GetTriggersOfJob(info.JobKey);
 
-        // Pause job
-        await Scheduler.PauseJob(info.JobKey);
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     public async Task RemoveData(string id, string key)
@@ -106,14 +129,25 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         ValidateDataKeyExists(info.JobDetails, key, id);
         var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
         info.JobDetails.JobDataMap.Remove(key);
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
+        var pausedTriggers = await GetPausedTriggers(info.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(info.JobKey);
 
-        AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
+        try
+        {
+            var triggers = await scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+
+            AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
+        }
+        finally
+        {
+            await PauseTriggers(info.JobKey, pausedTriggers);
+        }
     }
 
     private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string? key = null)
@@ -131,7 +165,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         {
             ValidateSystemDataKey(key);
         }
-        await ValidateJobPaused(jobKey);
+
         await ValidateJobNotRunning(jobKey);
         return result;
     }
@@ -142,6 +176,81 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
     {
         Add,
         Update
+    }
+
+    public async Task<PlanarIdResponse> ApplyRoute(HttpContext httpContext)
+    {
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>();
+            ArgumentNullException.ThrowIfNull(entity);
+            var validator = Resolve<IValidator<UpdateJobRequest>>();
+            await validator.ValidateAndThrowAsync(entity);
+            return await Apply(entity);
+        }
+        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(httpContext.Request.Body);
+            var yml = await reader.ReadToEndAsync();
+            return await Apply(yml);
+        }
+
+        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
+    }
+
+    public async Task<PlanarIdResponse> Apply(UpdateJobRequest request)
+    {
+        var dynamicRequest = await GetDynamicRequest(request);
+        var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
+
+        try
+        {
+            await JobKeyHelper.ValidateJobExists(jobKey);
+            return await Update(dynamicRequest, request.Options);
+        }
+        catch (RestNotFoundException)
+        {
+            return await Add(dynamicRequest);
+        }
+    }
+
+    public async Task<PlanarIdResponse> Apply(string yml)
+    {
+        var dynamicRequest = await GetDynamicRequest(yml);
+        var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
+
+        try
+        {
+            await JobKeyHelper.ValidateJobExists(jobKey);
+            return await Update(dynamicRequest, UpdateJobOptions.Default);
+        }
+        catch (RestNotFoundException)
+        {
+            return await Add(dynamicRequest);
+        }
+    }
+
+    private async Task<SetJobDynamicRequest> GetDynamicRequest(IJobFileRequest request)
+    {
+        await ValidateJobFileExists(request);
+        var yml = await GetJobFileContent(request);
+        var dynamicRequest = GetJobDynamicRequest(yml);
+        return dynamicRequest;
+    }
+
+    private static async Task<SetJobDynamicRequest> GetDynamicRequest(string yml)
+    {
+        var dynamicRequest = GetJobDynamicRequest(yml);
+        return dynamicRequest;
+    }
+
+    private static void SetDynamicRequestPath(SetJobDynamicRequest dynamicRequest, string jobPath)
+    {
+        dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
+        var path = ConvertRelativeJobFileToRelativeJobPath(jobPath);
+        properties["path"] = path;
     }
 
     public void FailOverPublish(CloudEvent request)
@@ -216,9 +325,11 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     public async Task<JobDetails> Get(string id)
     {
+        var scheduler = await GetScheduler();
+
         var jobKey = await JobKeyHelper.GetJobKey(id);
         var info =
-            await Scheduler.GetJobDetail(jobKey) ??
+            await scheduler.GetJobDetail(jobKey) ??
             throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
 
         var result = await MapJobDetails(info);
@@ -245,15 +356,13 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
     {
-        var jobs = new List<IJobDetail>();
-
-        // get all jobs
-        foreach (var jobKey in await GetJobKeys(request))
+        var resolver = Resolve<JobDetailsResolver>();
+        List<IJobDetail> jobs = (request.JobCategory switch
         {
-            var info = await Scheduler.GetJobDetail(jobKey);
-            if (info == null) { continue; }
-            jobs.Add(info);
-        }
+            AllJobsMembers.AllUserJobs => await resolver.GetUserJobDetailsAsync(request.Group),
+            AllJobsMembers.AllSystemJobs => await resolver.GetSystemJobDetailsAsync(),
+            _ => await resolver.GetAllJobDetailsAsync(request.Group),
+        }).ToList();
 
         // filter by job type
         if (!string.IsNullOrEmpty(request.JobType))
@@ -436,7 +545,8 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     public async Task<IEnumerable<string>> GetJobGroupNames()
     {
-        var result = (await Scheduler.GetJobGroupNames())
+        var scheduler = await GetScheduler();
+        var result = (await scheduler.GetJobGroupNames())
             .Where(g => !string.Equals(g, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase));
         return result;
     }
@@ -474,12 +584,13 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     public async Task<DateTime?> GetNextRunning(string id)
     {
+        var scheduler = await GetScheduler();
         var jobKey = await JobKeyHelper.GetJobKey(id);
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
         DateTime? result = null;
         foreach (var t in triggers)
         {
-            var state = await Scheduler.GetTriggerState(t.Key);
+            var state = await scheduler.GetTriggerState(t.Key);
             if (state == TriggerState.Paused) { continue; }
             var next = t.GetNextFireTimeUtc();
             if (next == null) { continue; }
@@ -495,8 +606,9 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     public async Task<DateTime?> GetPreviousRunning(string id)
     {
+        var scheduler = await GetScheduler();
         var jobKey = await JobKeyHelper.GetJobKey(id);
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
         DateTime? result = null;
         foreach (var t in triggers)
         {
@@ -703,14 +815,15 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
             request.Data.Add(Consts.TriggerTimeout, timeoutValue);
         }
 
+        var scheduler = await GetScheduler();
         if (request.Data.Count != 0)
         {
             var data = new JobDataMap(request.Data);
-            await Scheduler.TriggerJob(jobKey, data);
+            await scheduler.TriggerJob(jobKey, data);
         }
         else
         {
-            await Scheduler.TriggerJob(jobKey);
+            await scheduler.TriggerJob(jobKey);
         }
 
         AuditJobSafe(jobKey, "job manually invoked", request);
@@ -721,8 +834,10 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
 
+        var scheduler = await GetScheduler();
         await CancelQueuedResumeJob(jobKey);
-        await Scheduler.PauseJob(jobKey);
+        await scheduler.PauseJob(jobKey);
+        SafeRefreshJobDetailsCache();
 
         if (request.AutoResumeDate == null)
         {
@@ -731,14 +846,14 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
 
         // Handle auto resume
-        var job = await Scheduler.GetJobDetail(jobKey);
+        var job = await scheduler.GetJobDetail(jobKey);
         if (job == null)
         {
             Audit(false, null);
             return;
         }
 
-        await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        await AutoResumeJobUtil.QueueResumeJob(scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
         Audit(true, request.AutoResumeDate.Value);
 
         // ----------------------- Audit Function ----------------------- //
@@ -761,12 +876,15 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
     public async Task PauseGroup(PauseResumeGroupRequest request)
     {
         ValidateSystemGroup(request.Name);
-        var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        var scheduler = await GetScheduler();
+        var keys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
         if (keys.Count == 0)
         {
             throw new RestNotFoundException($"group '{request.Name}' was not found");
         }
-        await Scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        await scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        SafeRefreshJobDetailsCache();
+
         foreach (var key in keys)
         {
             try
@@ -791,13 +909,14 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
     public async Task<PlanarIdResponse> InternalJobQueueInvoke(QueueInvokeJobRequest request, JobKey jobKey)
     {
-        var job = await Scheduler.GetJobDetail(jobKey);
+        var scheduler = await GetScheduler();
+        var job = await scheduler.GetJobDetail(jobKey);
         if (job == null) { return new PlanarIdResponse(); }
 
         // build new trigger
         var triggerId = ServiceUtil.GenerateId();
         var triggerKey = new TriggerKey($"DueTo.{request.DueDate:yyyyMMdd.HHmmss}", Consts.QueueInvokeTriggerGroup);
-        var exists = await Scheduler.GetTrigger(triggerKey);
+        var exists = await scheduler.GetTrigger(triggerKey);
         if (exists != null)
         {
             throw new RestValidationException("due date", $"job already has queue invoke trigger with date {request.DueDate:yyyy-MM-dd HH:mm:ss}");
@@ -851,7 +970,7 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         try
         {
             // Schedule Job
-            await Scheduler.ScheduleJob(newTrigger.Build());
+            await scheduler.ScheduleJob(newTrigger.Build());
         }
         catch (Exception ex)
         {
@@ -877,8 +996,10 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         ValidateSystemJob(jobKey);
         await ValidateSequenceStepJob(jobKey);
 
-        await Scheduler.DeleteJob(jobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.DeleteJob(jobKey);
         AuditJobSafe(jobKey, "job deleted");
+        SafeRemoveJobDetailsCache(jobKey);
         _ = ClearJobInfo(jobId, jobKey, id);
     }
 
@@ -952,29 +1073,34 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
 
         await CancelQueuedResumeJob(jobKey);
 
+        var scheduler = await GetScheduler();
         if (request.AutoResumeDate == null)
         {
-            await Scheduler.ResumeJob(jobKey);
+            await scheduler.ResumeJob(jobKey);
             AuditJobSafe(jobKey, "job resumed");
             await CancelQueuedResumeJob(jobKey);
         }
         else
         {
-            await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+            await AutoResumeJobUtil.QueueResumeJob(scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
             AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
         }
+
+        SafeRefreshJobDetailsCache();
     }
 
     public async Task ResumeGroup(PauseResumeGroupRequest request)
     {
         ValidateSystemGroup(request.Name);
-        var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        var scheduler = await GetScheduler();
+        var keys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
         if (keys.Count == 0)
         {
             throw new RestNotFoundException($"group '{request.Name}' was not found");
         }
 
-        await Scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        await scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        SafeRefreshJobDetailsCache();
 
         foreach (var key in keys)
         {
@@ -994,34 +1120,40 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
-        await ValidateJobPaused(jobKey);
         await ValidateJobNotRunning(jobKey);
 
-        var info = await Scheduler.GetJobDetail(jobKey);
+        var scheduler = await GetScheduler();
+        var info = await scheduler.GetJobDetail(jobKey);
         if (info == null) { return; }
+
         var oldAuthor = JobHelper.GetJobAuthor(info);
         request.Author = request.Author?.Trim() ?? string.Empty;
         info.JobDataMap.Put(Consts.Author, request.Author);
 
         // Reschedule job
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
         MonitorUtil.Lock(jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+
+        var pausedTriggers = await GetPausedTriggers(info.Key);
+        await scheduler.PauseJob(info.Key);
 
         try
         {
             // Schedule Job
-            await Scheduler.ScheduleJob(info, triggers, true);
+            await scheduler.ScheduleJob(info, triggers, true);
         }
         catch (Exception ex)
         {
             ValidateTriggerNeverFire(ex);
             throw;
         }
+        finally
+        {
+            await PauseTriggers(info.Key, pausedTriggers);
+        }
 
         AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
-
-        // Pause job
-        await Scheduler.PauseJob(jobKey);
+        SafeRefreshJobDetailsCache();
     }
 
     public async Task SetAutoResume(PauseResumeJobRequest request)
@@ -1046,7 +1178,8 @@ public partial class JobDomain(IServiceProvider serviceProvider, IServiceScopeFa
         }
 
         await CancelQueuedResumeJob(jobKey);
-        await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        var scheduler = await GetScheduler();
+        await AutoResumeJobUtil.QueueResumeJob(scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
         AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
     }
 

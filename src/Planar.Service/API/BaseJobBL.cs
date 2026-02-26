@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.Common;
-using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
-using Polly;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -17,7 +15,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
-using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API;
 
@@ -56,6 +53,32 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         };
 
         AuditInnerSafe(audit);
+    }
+
+    protected void SafeRefreshJobDetailsCache()
+    {
+        try
+        {
+            var resolver = Resolve<JobDetailsResolver>();
+            _ = resolver.FillCache(1);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to refresh job details cache");
+        }
+    }
+
+    protected void SafeRemoveJobDetailsCache(JobKey jobKey)
+    {
+        try
+        {
+            var resolver = Resolve<JobDetailsResolver>();
+            _ = resolver.RemoveJob(jobKey);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to refresh job details cache");
+        }
     }
 
     protected void AuditTriggerSafe(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
@@ -186,7 +209,9 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
     protected async Task ValidateTriggerPausedOrNormal(ITrigger trigger)
     {
-        var state = await Scheduler.GetTriggerState(trigger.Key);
+        var scheduler = await GetScheduler();
+
+        var state = await scheduler.GetTriggerState(trigger.Key);
         if (state != TriggerState.Paused && state != TriggerState.Normal)
         {
             var sb = new StringBuilder();
@@ -208,18 +233,32 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
+    protected async Task<List<TriggerKey>> GetPausedTriggers(JobKey jobKey)
+    {
+        var scheduler = await GetScheduler();
+
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
+        var paused = triggers
+            .Where(t => scheduler.GetTriggerState(t.Key).Result == TriggerState.Paused)
+            .Select(t => t.Key)
+            .ToList();
+
+        return paused;
+    }
+
     protected async Task ValidateJobPaused(JobKey jobKey)
     {
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var scheduler = await GetScheduler();
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
         var notPaused = triggers
-            .Where(t => Scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
+            .Where(t => scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
             .Select(TriggerHelper.GetKeyTitle)
             .ToList();
 
         if (notPaused.Count != 0)
         {
             // build CLI message
-            var details = await Scheduler.GetJobDetail(jobKey);
+            var details = await scheduler.GetJobDetail(jobKey);
             var id = JobHelper.GetJobId(details);
             var sb = new StringBuilder();
             sb.AppendLine($"fail to execute operation");
@@ -292,6 +331,21 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             {
                 throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
             }
+        }
+    }
+
+    protected async Task PauseTriggers(JobKey jobKey, IEnumerable<TriggerKey> triggers)
+    {
+        var scheduler = await GetScheduler();
+
+        if (jobKey == null) { return; }
+        var all_triggers = await scheduler.GetTriggersOfJob(jobKey);
+        var todoTriggers = all_triggers.Where(t => triggers.Any(pt => pt.Equals(t.Key)));
+
+        // Resume paused triggers if any
+        foreach (var t in todoTriggers)
+        {
+            await scheduler.PauseTrigger(t.Key);
         }
     }
 

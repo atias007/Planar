@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -18,7 +20,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 {
     [HttpGet("{triggerId}")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_trigger_triggerid", Description = "Get trigger by id", Summary = "Get Trigger")]
+    [EndpointName("get_trigger_triggerid")]
+    [EndpointDescription("Get trigger by id")]
+    [EndpointSummary("Get Trigger")]
     [BadRequestResponse]
     [OkJsonResponse(typeof(TriggerRowDetails))]
     public async Task<ActionResult<TriggerRowDetails>> Get([FromRoute][Required] string triggerId)
@@ -29,7 +33,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpGet("{jobId}/by-job")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_trigger_jobid_by_job", Description = "Find triggers by job ", Summary = "Find Triggers By Job")]
+    [EndpointName("get_trigger_jobid_by_job")]
+    [EndpointDescription("Find triggers by job ")]
+    [EndpointSummary("Find Triggers By Job")]
     [NotFoundResponse]
     [BadRequestResponse]
     [OkJsonResponse(typeof(TriggerRowDetails))]
@@ -41,7 +47,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpGet("ids")]
     [AllowAnonymous]
-    [SwaggerOperation(OperationId = "get_trigger_ids", Description = "Get all trigger ids", Summary = "Get All Trigger Ids")]
+    [EndpointName("get_trigger_ids")]
+    [EndpointDescription("Get all trigger ids")]
+    [EndpointSummary("Get All Trigger Ids")]
     [ApiExplorerSettings(IgnoreApi = true)]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public async Task<ActionResult<IEnumerable<string>>> GetAllIds()
@@ -52,7 +60,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpDelete("{triggerId}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_trigger_triggerId", Description = "Delete trigger", Summary = "Delete Trigger")]
+    [EndpointName("delete_trigger_triggerId")]
+    [EndpointDescription("Delete trigger")]
+    [EndpointSummary("Delete Trigger")]
     [NotFoundResponse]
     [BadRequestResponse]
     [NoContentResponse]
@@ -65,7 +75,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPatch("cron-expression")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "update_trigger_cron_expression", Description = "Update cron trigger expression", Summary = "Update Cron Trigger Expression")]
+    [EndpointName("update_trigger_cron_expression")]
+    [EndpointDescription("Update cron trigger expression")]
+    [EndpointSummary("Update Cron Trigger Expression")]
     [NotFoundResponse]
     [BadRequestResponse]
     [NoContentResponse]
@@ -78,7 +90,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPatch("interval")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "update_trigger_interval", Description = "Update simple trigger interval", Summary = "Update Simple Trigger Interval")]
+    [EndpointName("update_trigger_interval")]
+    [EndpointDescription("Update simple trigger interval")]
+    [EndpointSummary("Update Simple Trigger Interval")]
     [NotFoundResponse]
     [BadRequestResponse]
     [NoContentResponse]
@@ -91,7 +105,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPatch("timeout")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "update_trigger_timeout", Description = "Update trigger timeout", Summary = "Update Trigger Timeout")]
+    [EndpointName("update_trigger_timeout")]
+    [EndpointDescription("Update trigger timeout")]
+    [EndpointSummary("Update Trigger Timeout")]
     [NotFoundResponse]
     [BadRequestResponse]
     [NoContentResponse]
@@ -104,7 +120,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPost("pause")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "post_trigger_pause", Description = "Pause trigger", Summary = "Pause Trigger")]
+    [EndpointName("post_trigger_pause")]
+    [EndpointDescription("Pause trigger")]
+    [EndpointSummary("Pause Trigger")]
     [NotFoundResponse]
     [BadRequestResponse]
     [NoContentResponse]
@@ -117,7 +135,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPost("resume")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "post_trigger_resume", Description = "Resume trigger", Summary = "Resume Trigger")]
+    [EndpointName("post_trigger_resume")]
+    [EndpointDescription("Resume trigger")]
+    [EndpointSummary("Resume Trigger")]
     [NotFoundResponse]
     [BadRequestResponse]
     [NoContentResponse]
@@ -130,7 +150,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPost("data")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "post_trigger_data", Description = "Add trigger data", Summary = "Add Trigger Data")]
+    [EndpointName("post_trigger_data")]
+    [EndpointDescription("Add trigger data")]
+    [EndpointSummary("Add Trigger Data")]
     [CreatedResponse]
     [NotFoundResponse]
     [BadRequestResponse]
@@ -143,7 +165,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
     [HttpPut("data")]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "put_trigger_data", Description = "Update trigger data", Summary = "Update Trigger Data")]
+    [EndpointName("put_trigger_data")]
+    [EndpointDescription("Update trigger data")]
+    [EndpointSummary("Update Trigger Data")]
     [CreatedResponse]
     [NotFoundResponse]
     [BadRequestResponse]
@@ -155,7 +179,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpDelete("{id}/data/{key}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_trigger_id_data_key", Description = "Delete trigger data", Summary = "Delete Trigger Data")]
+    [EndpointName("delete_trigger_id_data_key")]
+    [EndpointDescription("Delete trigger data")]
+    [EndpointSummary("Delete Trigger Data")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -168,7 +194,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpDelete("{id}/data")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_trigger_id_data", Description = "Delete all trigger data", Summary = "Delete All Trigger Data")]
+    [EndpointName("delete_trigger_id_data")]
+    [EndpointDescription("Delete all trigger data")]
+    [EndpointSummary("Delete All Trigger Data")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -180,7 +208,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpGet("cron")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_trigger_cron_expression", Description = "Get description of cron expression", Summary = "Get Cron Description")]
+    [EndpointName("get_trigger_cron_expression")]
+    [EndpointDescription("Get description of cron expression")]
+    [EndpointSummary("Get Cron Description")]
     [OkTextResponse]
     [BadRequestResponse]
     public ActionResult<string> GetCronDescription([FromQuery][Required] string expression)
@@ -191,7 +221,9 @@ public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>
 
     [HttpGet("paused")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_trigger_paused", Description = "Get all paused triggers", Summary = "Get Paused Triggers")]
+    [EndpointName("get_trigger_paused")]
+    [EndpointDescription("Get all paused triggers")]
+    [EndpointSummary("Get Paused Triggers")]
     [OkJsonResponse(typeof(IEnumerable<PausedTriggerDetails>))]
     public async Task<ActionResult<IEnumerable<PausedTriggerDetails>>> GetPausedTriggers()
     {

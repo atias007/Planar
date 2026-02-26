@@ -14,7 +14,6 @@ general:
   certificate password: null                         # certificate password. set this value in production environment
   use https redirect: false                          # set this value to true in production environment
   log level: Debug                                   # options: Trace | Debug | Information | Warning | Error | Critical | None
-  swagger ui: true                                   # set this value to false in production environment
   open api ui: true                                  # set this value to false in production environment
   developer exception page: true                     # this value is automatically set to false in production environment
   concurrency rate limiting: 10                      # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1

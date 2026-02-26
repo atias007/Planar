@@ -1,15 +1,11 @@
-﻿using Planar.Filters;
-using Swashbuckle.AspNetCore.Annotations;
+﻿using Microsoft.AspNetCore.Mvc;
+using Planar.Filters;
 using System;
 
 namespace Planar.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class BadRequestResponseAttribute : SwaggerResponseAttribute
+public class BadRequestResponseAttribute() :
+    ProducesResponseTypeAttribute(typeof(RestBadRequestResult), 400)
 {
-    public BadRequestResponseAttribute() : base(400)
-    {
-        Type = typeof(RestBadRequestResult);
-        ContentTypes = ["application/json"];
-    }
 }

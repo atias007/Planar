@@ -1,4 +1,6 @@
-﻿using Planar.API.Common.Entities;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
@@ -9,6 +11,7 @@ using Planar.Service.Monitor;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,16 +19,25 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    public async Task<PlanarIdResponse> Update(UpdateJobRequest request)
+    public async Task<PlanarIdResponse> UpdateRoute(HttpContext httpContext)
     {
-        await ValidateAddPath(request);
-        var yml = await GetJobFileContent(request);
-        var dynamicRequest = GetJobDynamicRequest(yml);
-        dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-        var path = ConvertRelativeJobFileToRelativeJobPath(request);
-        properties["path"] = path;
-        var response = await Update(dynamicRequest, request.Options);
-        return response;
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>();
+            ArgumentNullException.ThrowIfNull(entity);
+            var validator = Resolve<IValidator<UpdateJobRequest>>();
+            await validator.ValidateAndThrowAsync(entity);
+            return await Update(entity);
+        }
+        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(httpContext.Request.Body);
+            var yml = await reader.ReadToEndAsync();
+            return await Update(yml);
+        }
+
+        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
     }
 
     private static T? Clone<T>(T obj)
@@ -121,12 +133,13 @@ public partial class JobDomain
 
     private async Task FillRollbackData(JobUpdateMetadata metadata)
     {
+        var scheduler = await GetScheduler();
         metadata.OldJobDetails =
-            await Scheduler.GetJobDetail(metadata.JobKey)
+            await scheduler.GetJobDetail(metadata.JobKey)
             ?? throw new RestGeneralException($"job with key '{KeyHelper.GetKeyTitle(metadata.JobKey)}' could not be found");
 
-        metadata.OldTriggers = await Scheduler.GetTriggersOfJob(metadata.JobKey);
-        await Scheduler.DeleteJob(metadata.JobKey);
+        metadata.OldTriggers = await scheduler.GetTriggersOfJob(metadata.JobKey);
+        await scheduler.DeleteJob(metadata.JobKey);
         metadata.EnableRollback();
         metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
         metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
@@ -141,9 +154,16 @@ public partial class JobDomain
 
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.OldJobDetails);
         var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties, JobType = jobType };
-        await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
-        await Scheduler.PauseJob(metadata.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
+        await scheduler.PauseJob(metadata.JobKey);
         await Resolve<IJobData>().UpdateJobProperty(property);
+    }
+
+    private async Task<PlanarIdResponse> Update(string yml)
+    {
+        var dynamicRequest = await GetDynamicRequest(yml);
+        return await Update(dynamicRequest, UpdateJobOptions.Default);
     }
 
     private async Task<PlanarIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
@@ -161,10 +181,25 @@ public partial class JobDomain
         }
     }
 
+    private async Task<PlanarIdResponse> Update(UpdateJobRequest request)
+    {
+        var dynamicRequest = await GetDynamicRequest(request);
+        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
+        var response = await Update(dynamicRequest, request.Options);
+        return response;
+    }
+
     private async Task<PlanarIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
     {
         // Validation
         await ValidateUpdateJob(request, options, metadata);
+
+        // save paused triggers before pause job
+        metadata.PausedTriggers = await GetPausedTriggers(metadata.JobKey);
+
+        // pause the job to avoid trigger firing during update
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(metadata.JobKey);
 
         // Lock monitor events
         MonitorUtil.Lock(metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
@@ -190,7 +225,7 @@ public partial class JobDomain
         // ScheduleJob
         try
         {
-            await Scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
+            await scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
         }
         catch (Exception ex)
         {
@@ -198,13 +233,14 @@ public partial class JobDomain
             throw;
         }
 
-        await Scheduler.PauseJob(metadata.JobKey);
+        await PauseTriggers(metadata.JobKey, metadata.PausedTriggers);
 
         // Update Properties
         await UpdateJobProperties(request, metadata);
 
         // Audit
         AuditJobSafe(metadata.JobKey, "job updated", new { request = cloneRequest, options });
+        SafeRefreshJobDetailsCache();
 
         // Monitoring
         var info = new MonitorSystemInfo("Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) was updated");
@@ -220,7 +256,8 @@ public partial class JobDomain
 
     private async Task UpdateJobDetails(SetJobDynamicRequest request, JobUpdateMetadata metadata)
     {
-        await Scheduler.DeleteJob(metadata.JobKey);
+        var scheduler = await GetScheduler();
+        await scheduler.DeleteJob(metadata.JobKey);
         metadata.JobDetails = BuildJobDetails(request, metadata.JobKey);
     }
 
@@ -242,9 +279,10 @@ public partial class JobDomain
 
     private async Task UpdateTriggers(SetJobRequest request, JobUpdateMetadata metadata)
     {
+        var scheduler = await GetScheduler();
         foreach (var item in metadata.OldTriggers)
         {
-            await Scheduler.UnscheduleJob(item.Key);
+            await scheduler.UnscheduleJob(item.Key);
         }
 
         SyncTriggersData(request, metadata);
@@ -256,14 +294,13 @@ public partial class JobDomain
         ValidateRequestNoNull(request);
         ValidateUpdateJobOptions(options);
         await ValidateRequestProperties(request);
-        metadata.JobKey = ValidateJobMetadata(request, Scheduler);
+        var scheduler = await GetScheduler();
+        metadata.JobKey = ValidateJobMetadata(request, scheduler);
         ValidateSystemJob(metadata.JobKey);
         await JobKeyHelper.ValidateJobExists(metadata.JobKey);
-        ValidateSystemJob(metadata.JobKey);
         metadata.JobId =
             await JobKeyHelper.GetJobId(metadata.JobKey) ??
             throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
-        await ValidateJobPaused(metadata.JobKey);
         await ValidateJobNotRunning(metadata.JobKey);
     }
 }

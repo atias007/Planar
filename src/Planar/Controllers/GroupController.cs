@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -18,7 +20,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 {
     [HttpPost]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_group", Description = "Add new group", Summary = "Add Group")]
+    [EndpointName("post_group")]
+    [EndpointDescription("Add new group")]
+    [EndpointSummary("Add Group")]
     [CreatedResponse]
     [JsonConsumes]
     [ConflictResponse]
@@ -31,7 +35,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpGet("{name}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_group_name", Description = "Get group by name", Summary = "Get Group")]
+    [EndpointName("get_group_name")]
+    [EndpointDescription("Get group by name")]
+    [EndpointSummary("Get Group")]
     [OkJsonResponse(typeof(GroupDetails))]
     [NotFoundResponse]
     public async Task<ActionResult<GroupDetails>> GetGroup([FromRoute][Name] string name)
@@ -43,7 +49,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpGet]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_group", Description = "Get all groups", Summary = "Get All Groups")]
+    [EndpointName("get_group")]
+    [EndpointDescription("Get all groups")]
+    [EndpointSummary("Get All Groups")]
     [OkJsonResponse(typeof(PagingResponse<GroupInfo>))]
     public async Task<ActionResult<PagingResponse<GroupInfo>>> GetAllGroups([FromQuery] PagingRequest request)
     {
@@ -53,7 +61,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpGet("roles")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_group_roles", Description = "Get all group roles", Summary = "Get All Group Roles")]
+    [EndpointName("get_group_roles")]
+    [EndpointDescription("Get all group roles")]
+    [EndpointSummary("Get All Group Roles")]
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public async Task<ActionResult<IEnumerable<string>>> GetAllGroupsRoles()
     {
@@ -63,7 +73,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpDelete("{name}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_group_name", Description = "Delete group", Summary = "Delete Group")]
+    [EndpointName("delete_group_name")]
+    [EndpointDescription("Delete group")]
+    [EndpointSummary("Delete Group")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -76,7 +88,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpPatch]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "patch_group", Description = "Update group single property", Summary = "Partial Update Group")]
+    [EndpointName("patch_group")]
+    [EndpointDescription("Update group single property")]
+    [EndpointSummary("Partial Update Group")]
     [JsonConsumes]
     [NoContentResponse]
     [BadRequestResponse]
@@ -91,7 +105,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
     [HttpPut]
     [EditorAuthorize]
     [JsonConsumes]
-    [SwaggerOperation(OperationId = "put_group", Description = "Update group", Summary = "Update Group")]
+    [EndpointName("put_group")]
+    [EndpointDescription("Update group")]
+    [EndpointSummary("Update Group")]
     [NoContentResponse]
     [BadRequestResponse]
     [ConflictResponse]
@@ -104,7 +120,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpPatch("{name}/user/{username}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_group_name_user_userId", Description = "Join user to group", Summary = "Join User To Group")]
+    [EndpointName("post_group_name_user_userId")]
+    [EndpointDescription("Join user to group")]
+    [EndpointSummary("Join User To Group")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -118,7 +136,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpPatch("{name}/role/{role}")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "patch_group_name_role_role", Description = "Set role to group", Summary = "Set Role To Group")]
+    [EndpointName("patch_group_name_role_role")]
+    [EndpointDescription("Set role to group")]
+    [EndpointSummary("Set Role To Group")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -132,7 +152,9 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 
     [HttpDelete("{name}/user/{username}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "delete_group_id_user", Description = "Remove user from group", Summary = "Remove User From Group")]
+    [EndpointName("delete_group_id_user")]
+    [EndpointDescription("Remove user from group")]
+    [EndpointSummary("Remove User From Group")]
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]

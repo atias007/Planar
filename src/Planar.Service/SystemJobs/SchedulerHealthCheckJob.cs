@@ -15,8 +15,9 @@ internal sealed class SchedulerHealthCheckJob(SchedulerHealthCheckUtil util) : S
         return Task.CompletedTask;
     }
 
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "System job for check health of current node scheduler";
         var cronexpr = TimeSpan.FromMinutes(1).ToCronExpression(); // Default health check interval for the current node scheduler
         await ScheduleHighPriority<SchedulerHealthCheckJob>(scheduler, description, cronexpr, stoppingToken: stoppingToken);

@@ -43,7 +43,8 @@ internal static class AutoResumeJobUtil
         var triggerKey = GetResumeTriggerKey(jobKey);
         var trigger = await scheduler.GetTrigger(triggerKey);
         if (trigger == null) { return null; }
-        return trigger.GetNextFireTimeUtc()?.LocalDateTime;
+        var nextFireTime = trigger.GetNextFireTimeUtc();
+        return nextFireTime.HasValue ? nextFireTime.Value.DateTime : null;
     }
 
     public static async Task QueueResumeJob(IScheduler scheduler, IJobDetail jobDetails, DateTime resumeDate, AutoResumeTypes resumeType)

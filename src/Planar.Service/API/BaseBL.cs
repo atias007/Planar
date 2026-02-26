@@ -80,7 +80,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         }
     }
 
-    protected IScheduler Scheduler => _schedulerUtil.Scheduler;
+    protected async Task<IScheduler> GetScheduler() => await _schedulerUtil.SchedulerFactory.GetScheduler();
 
     protected SchedulerUtil SchedulerUtil => _schedulerUtil;
 
@@ -128,7 +128,8 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
 
     protected async Task<ITrigger> ValidateExistingTrigger(TriggerKey entity, string triggerId)
     {
-        return await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
+        var scheduler = await GetScheduler();
+        return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 
     protected void AuditSecuritySafe(string title, bool isWarning = false)

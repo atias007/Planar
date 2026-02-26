@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
-using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -17,6 +16,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Planar.Service.MapperProfiles;
 
 namespace Planar.Service.API;
 
@@ -90,7 +90,8 @@ public partial class JobDomain
             var key = JobKeyHelper.GetJobKey(request);
             if (key == null) { return null; }
 
-            var details = await Scheduler.GetJobDetail(key);
+            var scheduler = await GetScheduler();
+            var details = await scheduler.GetJobDetail(key);
             if (details == null && update) { return null; }
             if (details != null && !update) { return null; }
 
@@ -124,39 +125,42 @@ public partial class JobDomain
             GroupMatcher<JobKey>.AnyGroup() :
             GroupMatcher<JobKey>.GroupEquals(request.Group);
 
+        var scheduler = await GetScheduler();
+
         switch (request.JobCategory)
         {
             case AllJobsMembers.AllUserJobs:
-                var result = await Scheduler.GetJobKeys(matcher);
+                var result = await scheduler.GetJobKeys(matcher);
                 var list = result.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
                 return new ReadOnlyCollection<JobKey>(list);
 
             case AllJobsMembers.AllSystemJobs:
-                return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(Consts.PlanarSystemGroup));
+                return await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(Consts.PlanarSystemGroup));
 
             default:
             case AllJobsMembers.All:
-                return await Scheduler.GetJobKeys(matcher);
+                return await scheduler.GetJobKeys(matcher);
         }
     }
 
     private async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
     {
+        var scheduler = await GetScheduler();
         var result = new TriggerRowDetails();
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
 
         foreach (var t in triggers)
         {
             if (t is ISimpleTrigger t1)
             {
-                var simpleTrigger = Mapper.Map<SimpleTriggerDetails>(t1);
+                var simpleTrigger = await Mapper.MapSimpleTriggerDetails(t1, scheduler);
                 result.SimpleTriggers.Add(simpleTrigger);
             }
             else
             {
                 if (t is ICronTrigger t2)
                 {
-                    var cronTrigger = Mapper.Map<CronTriggerDetails>(t2);
+                    var cronTrigger = await Mapper.MapCronTriggerDetails(t2, scheduler);
                     result.CronTriggers.Add(cronTrigger);
                 }
             }
@@ -167,12 +171,14 @@ public partial class JobDomain
 
     private async Task<JobActiveMembers> GetJobActiveMode(JobKey jobKey)
     {
-        return await JobHelper.GetJobActiveMode(Scheduler, jobKey);
+        var scheduler = await GetScheduler();
+        return await JobHelper.GetJobActiveMode(scheduler, jobKey);
     }
 
     private async Task<bool> JobGroupExists(string jobGroup)
     {
-        var allGroups = await Scheduler.GetJobGroupNames();
+        var scheduler = await GetScheduler();
+        var allGroups = await scheduler.GetJobGroupNames();
         return allGroups.Contains(jobGroup);
     }
 
@@ -181,7 +187,8 @@ public partial class JobDomain
         var target = new JobBasicDetails();
         SchedulerUtil.MapJobRowDetails(source, target);
         target.Active = await GetJobActiveMode(source.Key);
-        target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(Scheduler, source.Key);
+        var scheduler = await GetScheduler();
+        target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(scheduler, source.Key);
         return target;
     }
 
@@ -190,7 +197,8 @@ public partial class JobDomain
         var target = new JobDetails();
         SchedulerUtil.MapJobRowDetails(source, target);
         target.Active = await GetJobActiveMode(source.Key);
-        target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(Scheduler, source.Key);
+        var scheduler = await GetScheduler();
+        target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(scheduler, source.Key);
 
         dataMap ??= source.JobDataMap;
         target.Concurrent = !source.ConcurrentExecutionDisallowed;
@@ -222,7 +230,8 @@ public partial class JobDomain
 
     private async Task<bool> CancelQueuedResumeJob(JobKey jobKey)
     {
-        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
+        var scheduler = await GetScheduler();
+        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(scheduler, jobKey);
         if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
         return cancelAutoResume;
     }

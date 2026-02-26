@@ -256,8 +256,10 @@ public abstract class BaseReportJob(IServiceScopeFactory serviceScope, ILogger l
 public abstract class BaseReportJob<TJob>(IServiceScopeFactory serviceScope, ILogger logger) : BaseReportJob(serviceScope, logger)
     where TJob : IJob
 {
-    public static async Task Schedule(IScheduler scheduler, ReportNames reportName, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, ReportNames reportName, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
+
         var description = $"System job for generating and send {reportName} report";
 
         var jobKey = CreateJobKey<TJob>();

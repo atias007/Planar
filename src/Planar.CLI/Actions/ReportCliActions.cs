@@ -212,15 +212,17 @@ namespace Planar.CLI.Actions
             request.Period = p2;
 
             // hour
-            var p3 = CollectCliValue(
-                field: "hour of report",
-                required: true,
-                minLength: 1,
-                maxLength: 2,
-                regex: @"^\d+$",
-                regexErrorMessage: "value must be a number between 0 to 23",
-                defaultValue: "7",
-                secret: false);
+            var p3 = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "hour of report",
+                Required = true,
+                MinLength = 1,
+                MaxLength = 2,
+                Regex = @"^\d+$",
+                RegexErrorMessage = "value must be a number between 0 to 23",
+                DefaultValue = "7",
+                Secret = false
+            });
 
             if (string.IsNullOrWhiteSpace(p3))
             {

@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -17,7 +19,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 {
     [HttpGet]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_config", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
+    [EndpointName("get_config")]
+    [EndpointDescription("Get all global configuration")]
+    [EndpointSummary("Get All Global Configurations")]
     [OkJsonResponse(typeof(IEnumerable<GlobalConfigModel>))]
     public async Task<ActionResult<IEnumerable<GlobalConfigModel>>> GetAll()
     {
@@ -27,7 +31,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 
     [HttpGet("flat")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_config_flat", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
+    [EndpointName("get_config_flat")]
+    [EndpointDescription("Get all global configuration")]
+    [EndpointSummary("Get All Global Configurations")]
     [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
     public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetAllFlat()
     {
@@ -37,7 +43,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 
     [HttpGet("{key}")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_config_key", Description = "Get global configuration by key", Summary = "Get Global Configuration")]
+    [EndpointName("get_config_key")]
+    [EndpointDescription("Get global configuration by key")]
+    [EndpointSummary("Get Global Configuration")]
     [OkJsonResponse(typeof(GlobalConfigModel))]
     [BadRequestResponse]
     [NotFoundResponse]
@@ -50,7 +58,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 
     [HttpPost]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_config", Description = "Add new global configuration", Summary = "Add Global Configuration")]
+    [EndpointName("post_config")]
+    [EndpointDescription("Add new global configuration")]
+    [EndpointSummary("Add Global Configuration")]
     [JsonConsumes]
     [CreatedResponse]
     [BadRequestResponse]
@@ -63,7 +73,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 
     [HttpPut]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "put_config", Description = "Update existing global configuration", Summary = "Update Global Configuration")]
+    [EndpointName("put_config")]
+    [EndpointDescription("Update existing global configuration")]
+    [EndpointSummary("Update Global Configuration")]
     [JsonConsumes]
     [NoContentResponse]
     [BadRequestResponse]
@@ -76,7 +88,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 
     [HttpDelete("{key}")]
     [AdministratorAuthorize]
-    [SwaggerOperation(OperationId = "delete_config_key", Description = "Delete existing global configuration", Summary = "Delete Global Configuration")]
+    [EndpointName("delete_config_key")]
+    [EndpointDescription("Delete existing global configuration")]
+    [EndpointSummary("Delete Global Configuration")]
     [NoContentResponse]
     [NotFoundResponse]
     public async Task<ActionResult> Delete([FromRoute] string key)
@@ -88,7 +102,9 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
 
     [HttpPost("flush")]
     [TesterAuthorize]
-    [SwaggerOperation(OperationId = "post_config_flush", Description = "Flush and reload global configuration from cache", Summary = "Flush All Global Configuration")]
+    [EndpointName("post_config_flush")]
+    [EndpointDescription("Flush and reload global configuration from cache")]
+    [EndpointSummary("Flush All Global Configuration")]
     [NoContentResponse]
     public async Task<ActionResult> Flush()
     {

@@ -4,9 +4,9 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class SqlJobProperties : IPathJobProperties
+public class SqlJobProperties : IPathJobProperties, IJobPropertiesWithFiles
 {
-    public string Path { get; set; } = null!;
+    public string Path { get; set; } = string.Empty;
 
     [YamlMember(Alias = "default connection name")]
     public string? DefaultConnectionName { get; set; }
@@ -23,4 +23,23 @@ public class SqlJobProperties : IPathJobProperties
 
     [YamlIgnore]
     internal string? DefaultConnectionString { get; set; }
+
+    public IEnumerable<string> Files
+    {
+        get
+        {
+            if (Steps == null) { return []; }
+            var files = Steps
+                .Where(s => !string.IsNullOrWhiteSpace(s.Filename))
+                .Select(s => s.Filename ?? string.Empty);
+
+            if (!files.Any()) { return []; }
+            var result =
+                string.IsNullOrWhiteSpace(Path) ?
+                files :
+                files.Select(f => System.IO.Path.Combine(Path, f));
+
+            return result;
+        }
+    }
 }

@@ -14,12 +14,13 @@ namespace Planar.Service.SystemJobs;
 
 internal class CircuitBreakerJob(
     ILogger<CircuitBreakerJob> logger,
-    IScheduler scheduler,
+    ISchedulerFactory schedulerFactory,
     AuditProducer auditProducer,
     MonitorUtil monitorUtil) : SystemJob, IJob
 {
-    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    public static async Task Schedule(ISchedulerFactory schedulerFactory, CancellationToken stoppingToken = default)
     {
+        var scheduler = await schedulerFactory.GetScheduler(stoppingToken);
         const string description = "system job for resume job running after circuit breaker/auto resume";
         await Schedule<CircuitBreakerJob>(scheduler, description, stoppingToken: stoppingToken);
     }
@@ -67,6 +68,7 @@ internal class CircuitBreakerJob(
         if (string.IsNullOrWhiteSpace(jobKeyName)) { return; }
         if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return; }
         var jobKey = new JobKey(jobKeyName, jobKeyGroup);
+        var scheduler = await schedulerFactory.GetScheduler();
 
         // Resume job (in case of auto resume)
         if (resumeType == AutoResumeTypes.AutoResume)

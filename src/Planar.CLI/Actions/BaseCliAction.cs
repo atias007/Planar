@@ -19,6 +19,19 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
+    public class CollectCliValueParameters
+    {
+        public required string Field { get; init; }
+        public bool Required { get; init; }
+        public int MinLength { get; init; }
+        public int? MaxLength { get; init; }
+        public string? Regex { get; init; }
+        public string? RegexErrorMessage { get; init; }
+        public string? DefaultValue { get; init; }
+        public bool Secret { get; init; }
+        public Func<string, ValidationResult>? Validation { get; init; }
+    }
+
     public abstract class BaseCliAction
     {
         protected const string JobFileName = "JobFile.yml";
@@ -57,22 +70,26 @@ namespace Planar.CLI.Actions
 
             if (string.IsNullOrWhiteSpace(request.DataKey))
             {
-                request.DataKey = CollectCliValue(
-                    field: "key",
-                    required: true,
-                    minLength: 1,
-                    maxLength: 100) ?? string.Empty;
+                request.DataKey = CollectCliValue(new CollectCliValueParameters
+                {
+                    Field = "key",
+                    Required = true,
+                    MinLength = 1,
+                    MaxLength = 100
+                }) ?? string.Empty;
             }
 
             if (request.Action == DataActions.Remove) { return; }
 
             if (string.IsNullOrWhiteSpace(request.DataValue) && request.Action == DataActions.Put)
             {
-                request.DataValue = CollectCliValue(
-                    field: "value",
-                    required: false,
-                    minLength: 0,
-                    maxLength: 1000);
+                request.DataValue = CollectCliValue(new CollectCliValueParameters
+                {
+                    Field = "value",
+                    Required = false,
+                    MinLength = 0,
+                    MaxLength = 1000
+                });
             }
         }
 
@@ -173,14 +190,16 @@ namespace Planar.CLI.Actions
 
             if (string.IsNullOrWhiteSpace(value))
             {
-                value = CollectCliValue(
-                     field: displayName.ToLower(),
-                     required: required,
-                     minLength: minLength,
-                     maxLength: int.MaxValue,
-                     defaultValue: defaultValue,
-                     secret: secret,
-                     validation: validation) ?? string.Empty;
+                value = CollectCliValue(new CollectCliValueParameters
+                {
+                    Field = displayName.ToLower(),
+                    Required = required,
+                    MinLength = minLength,
+                    MaxLength = int.MaxValue,
+                    DefaultValue = defaultValue,
+                    Secret = secret,
+                    Validation = validation
+                }) ?? string.Empty;
 
                 return (true, value, info);
             }
@@ -246,33 +265,33 @@ namespace Planar.CLI.Actions
             return int.Parse(result);
         }
 
-        protected static string? CollectCliValue(string field, bool required, int minLength, int? maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false, Func<string, ValidationResult>? validation = null)
+        protected static string? CollectCliValue(CollectCliValueParameters parameters)
         {
-            var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}:[/]")
+            var prompt = new TextPrompt<string>($"[turquoise2]  > {parameters.Field.EscapeMarkup()?.Trim()}:[/]")
                 .Validate(value =>
                 {
-                    if (required && string.IsNullOrWhiteSpace(value)) { return GetValidationResultError($"{field} is required field"); }
+                    if (parameters.Required && string.IsNullOrWhiteSpace(value)) { return GetValidationResultError($"{parameters.Field} is required field"); }
                     value = value.Trim();
 
-                    if (string.IsNullOrEmpty(value) && !required)
+                    if (string.IsNullOrEmpty(value) && !parameters.Required)
                     {
                         return ValidationResult.Success();
                     }
 
-                    if (maxLength.HasValue && value.Length > maxLength) { return GetValidationResultError($"{field} limited to {maxLength} chars maximum"); }
-                    if (value.Length < minLength) { return GetValidationResultError($"{field} must have at least {minLength} chars"); }
-                    if (!string.IsNullOrEmpty(regex))
+                    if (parameters.MaxLength.HasValue && value.Length > parameters.MaxLength) { return GetValidationResultError($"{parameters.Field} limited to {parameters.MaxLength} chars maximum"); }
+                    if (value.Length < parameters.MinLength) { return GetValidationResultError($"{parameters.Field} must have at least {parameters.MinLength} chars"); }
+                    if (!string.IsNullOrEmpty(parameters.Regex))
                     {
-                        var rx = new Regex(regex, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+                        var rx = new Regex(parameters.Regex, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
                         if (!rx.IsMatch(value))
                         {
-                            return GetValidationResultError($"{field} {regexErrorMessage}");
+                            return GetValidationResultError($"{parameters.Field} {parameters.RegexErrorMessage}");
                         }
                     }
 
-                    if (validation != null)
+                    if (parameters.Validation != null)
                     {
-                        var customValidation = validation.Invoke(value);
+                        var customValidation = parameters.Validation.Invoke(value);
                         if (!customValidation.Successful)
                         {
                             return customValidation;
@@ -282,11 +301,11 @@ namespace Planar.CLI.Actions
                     return ValidationResult.Success();
                 });
 
-            if (!required) { prompt.AllowEmpty(); }
-            if (secret) { prompt.Secret(); }
-            if (!string.IsNullOrEmpty(defaultValue))
+            if (!parameters.Required) { prompt.AllowEmpty(); }
+            if (parameters.Secret) { prompt.Secret(); }
+            if (!string.IsNullOrEmpty(parameters.DefaultValue))
             {
-                prompt.DefaultValue(defaultValue);
+                prompt.DefaultValue(parameters.DefaultValue);
             }
 
             var result = AnsiConsole.Prompt(prompt);
@@ -419,13 +438,11 @@ namespace Planar.CLI.Actions
         {
             if (!response.IsSuccessful) { return; }
             Util.SetLastJobOrTriggerId(response);
-            AssertUpdated(response.Data?.Id, "job");
         }
 
         protected static void AssertJobDataUpdated(RestResponse response, string id)
         {
             if (!response.IsSuccessful) { return; }
-            AssertUpdated(id, "job");
         }
 
         protected static void AssertTriggerUpdated(RestResponse response, string id)

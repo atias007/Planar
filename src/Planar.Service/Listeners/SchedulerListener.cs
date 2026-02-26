@@ -12,7 +12,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Listeners;
 
-internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogger<SchedulerListener> logger) : BaseListener<SchedulerListener>(serviceScopeFactory, logger), ISchedulerListener
+internal class SchedulerListener(
+    IServiceScopeFactory serviceScopeFactory,
+    JobDetailsResolver resolver,
+    ILogger<SchedulerListener> logger)
+    : BaseListener<SchedulerListener>(serviceScopeFactory, logger), ISchedulerListener
 {
     private const string _cacheKey = "{0}_{1}";
 
@@ -20,7 +24,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJob(jobDetail)) { return; }
             var id = JobKeyHelper.GetJobId(jobDetail);
@@ -43,7 +47,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobDeleted(JobKey jobKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobDeleted), jobKey.ToString())) { return; }
@@ -65,7 +69,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobPaused(JobKey jobKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobPaused), jobKey.ToString())) { return; }
@@ -76,7 +80,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobResumed(JobKey jobKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsSystemJobKey(jobKey)) { return; }
             if (IsLocked(nameof(JobResumed), jobKey.ToString())) { return; }
@@ -103,8 +107,9 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        ////if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
         return Task.CompletedTask;
+
+        ////if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
     }
 
     public Task SchedulerError(string msg, SchedulerException cause, CancellationToken cancellationToken = default)
@@ -149,9 +154,11 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task SchedulerStarted(CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (IsLocked(nameof(SchedulerStarted), null)) { return; }
+            _ = resolver.FillCache();
+
             _logger.LogInformation("scheduler started");
             var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
             SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
@@ -175,7 +182,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             if (IsLocked(nameof(TriggerPaused), triggerKey.ToString())) { return; }
@@ -186,7 +193,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             if (IsLocked(nameof(TriggerResumed), triggerKey.ToString())) { return; }
