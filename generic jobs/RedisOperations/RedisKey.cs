@@ -16,4 +16,6 @@ internal class RedisKey(IConfigurationSection section, BaseDefault defaults) :
     public bool IsValid => !string.IsNullOrWhiteSpace(ExpireCron) || !string.IsNullOrWhiteSpace(DefaultCommand);
     public CronExpression? CronExpression { get; set; }
     public DateTime? NextExpireCronDate { get; set; }
+
+    public int DatabaseNumber => Database.GetValueOrDefault();
 }

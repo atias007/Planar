@@ -28,7 +28,7 @@ internal static class RedisFactory
 
     public async static Task<TimeSpan> Ping()
     {
-        return await Connection.GetDatabase().PingAsync();
+        return await GetDatabase(0).PingAsync();
     }
 
     public static async Task<long> GetMemoryUsage(IRedisKey redisKey)
@@ -64,7 +64,7 @@ internal static class RedisFactory
 
     public static async Task<IEnumerable<string>> Info(string section)
     {
-        var db = Connection.GetDatabase();
+        var db = GetDatabase(0);
         var value = await db.ExecuteAsync("INFO", section);
         return value.ToString().Split('\n').Select(l => l?.Trim() ?? string.Empty);
     }

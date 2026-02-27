@@ -21,6 +21,8 @@ internal class RedisKey(IConfigurationSection section, Defaults defaults) : Base
 
     public RedisKeyResult Result { get; } = new();
 
+    public int DatabaseNumber => Database.GetValueOrDefault();
+
     private static int? GetSize(string? source, string fieldName)
     {
         var factor = 0;
