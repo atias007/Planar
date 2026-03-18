@@ -47,7 +47,7 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="WebMarkupMin.Core" Version="2.20.1" />
+		<PackageReference Include="WebMarkupMin.Core" Version="2.21.0" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
