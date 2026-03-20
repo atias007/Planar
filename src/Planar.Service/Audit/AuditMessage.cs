@@ -14,6 +14,7 @@ public class AuditMessage
     public bool AddTriggerInfo { get; set; }
     public string? CliUserName { get; set; }
     public string? CliUserDomainName { get; set; }
+    public string? JobId { get; set; }
 
     public string? CliIdentity
     {

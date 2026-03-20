@@ -162,7 +162,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (user == null)
         {
             AuditSecuritySafe($"login fail with not exists username '{request.Username}'", isWarning: true);
-            throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
+            throw new RestValidationException("username", $"user with username '{request.Username}' not exists", ErrorCodes.User.UsernameNotExists);
         }
 
         var role = (await userData.GetUserRole(user.Id)) ?? RoleHelper.DefaultRole;
@@ -172,7 +172,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (!verify)
         {
             AuditSecuritySafe($"user '{user.Fullname}' try to login with username '{request.Username}' and with wrong password", isWarning: true);
-            throw new RestValidationException("password", "wrong password", 101);
+            throw new RestValidationException("password", "wrong password", ErrorCodes.User.WrongPassword);
         }
 
         AuditSecuritySafe($"user '{user.Fullname}' with username '{request.Username}' and role '{role}' successfully login");

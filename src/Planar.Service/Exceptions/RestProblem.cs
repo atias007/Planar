@@ -20,7 +20,7 @@ namespace Planar.Service.Exceptions
             Detail.Add(detail);
         }
 
-        public RestProblem(string field, string detail, int errorCode)
+        public RestProblem(string field, string detail, string errorCode)
             : this(field, detail)
         {
             ErrorCode = errorCode;
@@ -30,7 +30,7 @@ namespace Planar.Service.Exceptions
 
         public List<string> Detail { get; set; } = new();
 
-        public int ErrorCode { get; set; }
+        public string? ErrorCode { get; set; }
 
         public bool Equals(RestProblem? other)
         {

@@ -16,12 +16,12 @@ namespace Planar.Service.Exceptions
             Errors.Add(new RestProblem(fieldName, errorDetails));
         }
 
-        public RestValidationException(string fieldName, string errorDetails, int errorCode) : base(errorDetails)
+        public RestValidationException(string fieldName, string errorDetails, string errorCode) : base(errorDetails)
         {
             Errors.Add(new RestProblem(fieldName, errorDetails, errorCode));
         }
 
-        public RestValidationException(string fieldName, string errorDetails, string clientMessage, string? suggestion = null) : base(errorDetails)
+        public RestValidationException(string fieldName, string errorDetails, string clientMessage, string? suggestion) : base(errorDetails)
 
         {
             Errors.Add(new RestProblem(fieldName, errorDetails));

@@ -43,12 +43,13 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         AuditInnerSafe(audit);
     }
 
-    protected void AuditJobSafe(JobKey jobKey, string description, object? additionalInfo = null)
+    protected void AuditJobSafe(JobKey jobKey, string description, object? additionalInfo = null, string? jobId = null)
     {
         var audit = new AuditMessage
         {
             JobKey = jobKey,
             Description = description,
+            JobId = jobId,
             AdditionalInfo = additionalInfo
         };
 
