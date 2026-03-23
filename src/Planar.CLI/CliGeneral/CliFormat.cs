@@ -32,7 +32,7 @@ namespace Planar.CLI.CliGeneral
             var panel = new Panel(markup)
             {
                 Border = BoxBorder.Rounded,
-                Header = new PanelHeader(" :check_box_with_check: suggestion "),
+                Header = new PanelHeader(" :dim_button: suggestion "),
                 BorderStyle = new Style(foreground: Color.DeepSkyBlue2)
             };
 
