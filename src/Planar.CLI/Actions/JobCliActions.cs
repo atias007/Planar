@@ -39,26 +39,69 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             request = wrapper.Request;
         }
 
-        RestResponse<PlanarIdResponse> result;
-        if (File.Exists(request.Filename))
+        var pathInfo = PathAnalyzer.AnalyzePath(request.Filename);
+
+        if (pathInfo.IsLocal && pathInfo.IsFolder)
         {
-            AnsiConsole.MarkupLine($"[grey]  > found local file: {request.Filename}[/]");
-            request.Filename = Path.GetFullPath(request.Filename);
-            var yml = await File.ReadAllTextAsync(request.Filename, cancellationToken);
-            var restRequest = new RestRequest("job", Method.Post)
-                .AddStringBody(yml, CliConsts.YamlContentType);
-            result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+            return await AddLocalFolder(pathInfo, cancellationToken);
+        }
+        else if (pathInfo.IsLocal && !pathInfo.IsFolder)
+        {
+            return await AddLocalFilename(pathInfo, cancellationToken);
         }
         else
         {
-            var body = new SetJobPathRequest { JobFilePath = request.Filename };
-            var restRequest = new RestRequest("job", Method.Post)
-                .AddBody(body);
-            result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+            return await AddRemoteFilename(request, cancellationToken);
         }
+    }
 
+    private static async Task<CliActionResponse> AddRemoteFilename(CliAddJobRequest request, CancellationToken cancellationToken)
+    {
+        var body = new SetJobPathRequest { JobFilePath = request.Filename };
+        var restRequest = new RestRequest("job", Method.Post)
+            .AddBody(body);
+        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
         AssertCreated(result);
         return new CliActionResponse(result);
+    }
+
+    private static async Task<CliActionResponse> AddLocalFilename(PathAnalyzer.PathInfo pathInfo, CancellationToken cancellationToken)
+    {
+        var filename = Path.GetFullPath(pathInfo.Path);
+        var yml = await File.ReadAllTextAsync(filename, cancellationToken);
+        var restRequest = new RestRequest("job", Method.Post)
+            .AddStringBody(yml, CliConsts.YamlContentType);
+        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+        AssertCreated(result);
+        return new CliActionResponse(result);
+    }
+
+    private static async Task<CliActionResponse> AddLocalFolder(PathAnalyzer.PathInfo pathInfo, CancellationToken cancellationToken)
+    {
+        AnsiConsole.MarkupLine($"[grey]  > found directory: {pathInfo.Path}[/]");
+        var files = Directory.EnumerateFiles(pathInfo.Path!, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
+            .Where(f => f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var item in files)
+        {
+            var fi = new FileInfo(item);
+            AnsiConsole.MarkupLine($"[grey]     - found local file: {fi.Name}[/]");
+            var yml = await File.ReadAllTextAsync(item, cancellationToken);
+            var restRequest = new RestRequest("job", Method.Post)
+                .AddStringBody(yml, CliConsts.YamlContentType);
+            var res = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+            if (res.IsSuccessStatusCode)
+            {
+                AnsiConsole.MarkupLine($"[grey]       {res.Data?.Id}[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]       Fail[/]");
+            }
+        }
+
+        return CliActionResponse.Empty;
     }
 
     [Action("cancel")]
