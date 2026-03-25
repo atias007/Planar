@@ -396,9 +396,12 @@ V 1.8.1
 -------
 - add retry parameters to job queue/invoke api/cli/client library
 - add multiple groups to monitor item
+- central config option
+- cli auto complete
 
 V 1.8.2
 -------
+- migrate to .NET10
 - add apply command to cli to apply job from file (add or update)
 - allow add/update job with yaml content type
 - job add with filename - will work with local file system (not only remote server file)

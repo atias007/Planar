@@ -757,13 +757,6 @@ public partial class JobDomain
         return await Add(dynamicRequest);
     }
 
-    private async Task<PlanarIdResponse> Add(SetJobPathRequest request)
-    {
-        var dynamicRequest = await GetDynamicRequest(request);
-        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
-        return await Add(dynamicRequest);
-    }
-
     private async Task<PlanarIdResponse> Add(string yml)
     {
         var dynamicRequest = await GetDynamicRequest(yml);
