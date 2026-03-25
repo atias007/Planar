@@ -43,6 +43,10 @@ namespace Planar.Client.Api
 
         Task Unmute(string jobId, int monitorId, CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<MuteDetails>> ListMutes(CancellationToken cancellationToken = default);
+        Task<IEnumerable<MuteDetails>> ListMutesAsync(CancellationToken cancellationToken = default);
+
+        Task AddDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default);
+
+        Task RemoveDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default);
     }
 }

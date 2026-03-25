@@ -163,6 +163,14 @@ namespace Planar.Client
 #endif
 
         /// <summary>
+        /// Add new Job with yml definition
+        /// </summary>
+        /// <param name="definition">YML definition of the job</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Job Id</returns>
+        Task<string> AddAsync(string definition, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Invoke Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
@@ -309,7 +317,7 @@ namespace Planar.Client
 #endif
 
         /// <summary>
-        /// Set auto resume date for job
+        /// Resume paused Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="autoResumeDate"></param>
@@ -327,22 +335,45 @@ namespace Planar.Client
         Task PutDataAsync(string id, string key, string value, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Update Job
+        /// Update Job by job id or job key (Group.Name). This method can be used to update job settings and triggers data.
+        /// If updateJobData is true, job data will be updated too.
+        /// If updateTriggersData is true, triggers data will be updated too.
+        /// This method is useful when you want to update a job with a new definition.
+        /// Attention: the job definition must be at job folder in yml file: JobFile.yml
         /// </summary>
-        /// <returns>string</returns>
-        Task<string> UpdateAsync(
+        /// <param name="id">The unique identifier of the entity to update. Cannot be null or empty.</param>
+        /// <param name="updateJobData">true to update the job data associated with the entity; otherwise, false.</param>
+        /// <param name="updateTriggersData">true to update the trigger data associated with the entity; otherwise, false.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the ID of the updated entity.</returns>
+        Task<string> UpdateByIdAsync(
             string id,
             bool updateJobData = false,
             bool updateTriggersData = false,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        ///
+        ///  Updates job by specified yml definition and optionally updates associated job and trigger data.
+        /// </summary>
+        /// <param name="definition">The yml definition to update. Cannot be null or empty.</param>
+        /// <param name="updateJobData">true to update the job data associated with the definition; otherwise, false.</param>
+        /// <param name="updateTriggersData">true to update the triggers data associated with the definition; otherwise, false.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous update operation. The task result contains the identifier of the
+        /// updated definition.</returns>
+        Task<string> UpdateAsync(
+            string definition,
+            bool updateJobData = false,
+            bool updateTriggersData = false,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Set job author. Author is the user who created or last updated the job. This information is used in audit logs and can be useful for tracking changes and identifying responsible users.
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="author">Author name</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Task</returns>
         Task SetAuthor(string id, string author, CancellationToken cancellationToken = default);
     }
 }

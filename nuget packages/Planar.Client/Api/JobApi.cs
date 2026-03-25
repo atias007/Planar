@@ -16,6 +16,17 @@ namespace Planar.Client
         {
         }
 
+        public async Task<string> AddAsync(string definition, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(definition, nameof(definition));
+
+            var restRequest = new RestRequest("job/folder", HttpMethod.Post)
+                .AddStringBody(definition);
+
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
+            return result.Id;
+        }
+
 #if NETSTANDARD2_0
 
         public async Task<string> AddAsync(string folder, string jobFileName, CancellationToken cancellationToken = default)
@@ -471,7 +482,7 @@ namespace Planar.Client
             await CheckLog(callback, logId, cancellationToken);
         }
 
-        public async Task<string> UpdateAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateByIdAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var body = new
@@ -486,6 +497,17 @@ namespace Planar.Client
 
             var restRequest = new RestRequest("job", HttpMethod.Put)
                 .AddBody(body);
+
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
+            return result.Id;
+        }
+
+        public async Task<string> UpdateAsync(string definition, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(definition, nameof(definition));
+
+            var restRequest = new RestRequest("job", HttpMethod.Put)
+                .AddStringBody(definition);
 
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;

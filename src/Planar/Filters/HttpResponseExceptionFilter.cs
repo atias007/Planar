@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Mime;
 using System.Text;
 
 namespace Planar.Filters
@@ -129,6 +130,7 @@ namespace Planar.Filters
             if (context.Exception is RestNotFoundException notFoundException)
             {
                 context.Result = new NotFoundObjectResult(notFoundException.Value);
+                context.HttpContext.Response.ContentType = MediaTypeNames.Text.Plain;
                 context.ExceptionHandled = true;
                 return;
             }
@@ -150,6 +152,7 @@ namespace Planar.Filters
             if (context.Exception is RestConflictException conflictException)
             {
                 context.Result = new ConflictObjectResult(conflictException.Value);
+                context.HttpContext.Response.ContentType = MediaTypeNames.Text.Plain;
                 context.ExceptionHandled = true;
                 return;
             }
@@ -196,6 +199,7 @@ namespace Planar.Filters
             };
 
             context.ExceptionHandled = generalException.StatusCode < 500 || generalException.StatusCode >= 600;
+            context.HttpContext.Response.ContentType = MediaTypeNames.Text.Plain;
         }
 
         private static void HandleAggregateException(ActionExecutedContext context, AggregateException aggregateException)
