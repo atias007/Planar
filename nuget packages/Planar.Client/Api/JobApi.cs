@@ -513,6 +513,37 @@ namespace Planar.Client
             return result.Id;
         }
 
+        public async Task<string> ApplyByIdAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            var body = new
+            {
+                id,
+                options = new
+                {
+                    updateJobData,
+                    updateTriggersData
+                }
+            };
+
+            var restRequest = new RestRequest("job/apply", HttpMethod.Post)
+                .AddBody(body);
+
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
+            return result.Id;
+        }
+
+        public async Task<string> ApplyAsync(string definition, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(definition, nameof(definition));
+
+            var restRequest = new RestRequest("job/apply", HttpMethod.Post)
+                .AddStringBody(definition);
+
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
+            return result.Id;
+        }
+
 #if NETSTANDARD2_0
 
         private static DateTime? GetEstimatedEndTime(RunningJobDetails data)

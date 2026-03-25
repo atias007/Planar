@@ -368,6 +368,39 @@ namespace Planar.Client
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Add or update job by job id or job key (Group.Name)
+        /// If updateJobData is true, job data will be updated too.
+        /// If updateTriggersData is true, triggers data will be updated too.
+        /// This method is useful when you want to update a job with a new definition.
+        /// Attention: the job definition must be at job folder in yml file: JobFile.yml
+        /// </summary>
+        /// <param name="id">The unique identifier of the entity to update. Cannot be null or empty.</param>
+        /// <param name="updateJobData">true to update the job data associated with the entity; otherwise, false.</param>
+        /// <param name="updateTriggersData">true to update the trigger data associated with the entity; otherwise, false.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the ID of the updated entity.</returns>
+        Task<string> ApplyByIdAsync(
+            string id,
+            bool updateJobData = false,
+            bool updateTriggersData = false,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Add or update job by specified yml definition and optionally updates associated job and trigger data.
+        /// </summary>
+        /// <param name="definition">The yml definition to update. Cannot be null or empty.</param>
+        /// <param name="updateJobData">true to update the job data associated with the definition; otherwise, false.</param>
+        /// <param name="updateTriggersData">true to update the triggers data associated with the definition; otherwise, false.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous update operation. The task result contains the identifier of the
+        /// updated definition.</returns>
+        Task<string> ApplyAsync(
+            string definition,
+            bool updateJobData = false,
+            bool updateTriggersData = false,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Set job author. Author is the user who created or last updated the job. This information is used in audit logs and can be useful for tracking changes and identifying responsible users.
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>

@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 
 namespace Planar.Filters;
+#nullable enable
 
 // https://www.rfc-editor.org/rfc/rfc9457.html
 internal class RestBadRequestResult
@@ -13,7 +14,7 @@ internal class RestBadRequestResult
     //     the problem type (e.g., using HTML [W3C.REC-html5-20141028]). When this member
     //     is not present, its value is assumed to be "about:blank".
     [JsonPropertyName("type")]
-    public string Type { get; set; }
+    public string Type { get; set; } = null!;
 
     //
     // Summary:
@@ -21,7 +22,7 @@ internal class RestBadRequestResult
     //     occurrence to occurrence of the problem, except for purposes of localization(e.g.,
     //     using proactive content negotiation; see[RFC7231], Section 3.4).
     [JsonPropertyName("title")]
-    public string Title { get; set; }
+    public string Title { get; set; } = null!;
 
     //
     // Summary:

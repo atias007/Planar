@@ -1,16 +1,10 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
-- job apply with client library
-- job add/update with filename on client library
-
-- client library: add error code (string) to bad request
 - add stream max length to settings of hooks
-- 
 - add the ability to add/remove hooks to monitor
 
 - add mcp command to cli
-
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
@@ -411,3 +405,5 @@ V 1.8.2
 - job apply with cli + filename
 - job apply with cli + folder
 - add/remove group to monitor ==> client library
+- job apply with client library
+- client library: add error code (string) to bad request
