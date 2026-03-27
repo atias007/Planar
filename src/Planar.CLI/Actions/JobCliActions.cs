@@ -84,29 +84,34 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         foreach (var item in files)
         {
-            var fi = new FileInfo(item);
-            AnsiConsole.Markup($"[grey]     - found local file: {fi.Name}[/]");
-            var yml = await File.ReadAllTextAsync(item, cancellationToken);
-            var localRequest = new RestRequest(restRequest.Resource, restRequest.Method)
-                .AddStringBody(yml, CliConsts.YamlContentType);
-            var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
-            if (res.IsSuccessStatusCode)
-            {
-                AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
-            }
-            else
-            {
-                var hasText = string.Equals(res.ContentType, MediaTypeNames.Text.Plain, StringComparison.OrdinalIgnoreCase);
-                var error = hasText ? res.Content.EscapeMarkup() : null;
-                if (res.StatusCode == HttpStatusCode.BadRequest) { error = "validation error(s)"; }
-                if (res.StatusCode == HttpStatusCode.Unauthorized) { error = "unauthorized"; }
-                if (res.StatusCode == HttpStatusCode.Forbidden) { error = "forbidden"; }
-                AnsiConsole.MarkupLine($"[red]   Fail! {error}[/]");
-            }
+            await AddUpdateApplyLocalFolderInner(restRequest, item, cancellationToken);
         }
 
         AnsiConsole.MarkupLine($"[grey]  > {files.Count().ToString("N0")} file(s)[/]");
         return CliActionResponse.Empty;
+    }
+
+    private static async Task AddUpdateApplyLocalFolderInner(RestRequest restRequest, string item, CancellationToken cancellationToken)
+    {
+        var fi = new FileInfo(item);
+        AnsiConsole.Markup($"[grey]     - found local file: {fi.Name}[/]");
+        var yml = await File.ReadAllTextAsync(item, cancellationToken);
+        var localRequest = new RestRequest(restRequest.Resource, restRequest.Method)
+            .AddStringBody(yml, CliConsts.YamlContentType);
+        var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
+        if (res.IsSuccessStatusCode)
+        {
+            AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
+        }
+        else
+        {
+            var hasText = string.Equals(res.ContentType, MediaTypeNames.Text.Plain, StringComparison.OrdinalIgnoreCase);
+            var error = hasText ? res.Content.EscapeMarkup() : null;
+            if (res.StatusCode == HttpStatusCode.BadRequest) { error = "validation error(s)"; }
+            if (res.StatusCode == HttpStatusCode.Unauthorized) { error = "unauthorized"; }
+            if (res.StatusCode == HttpStatusCode.Forbidden) { error = "forbidden"; }
+            AnsiConsole.MarkupLine($"[red]   Fail! {error}[/]");
+        }
     }
 
     [Action("update")]

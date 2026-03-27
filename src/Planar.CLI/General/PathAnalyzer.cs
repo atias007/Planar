@@ -22,7 +22,7 @@ internal static class PathAnalyzer
         if (!string.IsNullOrEmpty(fileName) && (fileName.Contains('*') || fileName.Contains('?')))
         {
             pattern = fileName;
-            var path = Path.GetDirectoryName(input);
+            var path = Path.GetDirectoryName(input) ?? string.Empty;
             return new PathInfo(IsFolder: true, Pattern: pattern, IsAbsolute: isAbsolute, Path: path);
         }
 
