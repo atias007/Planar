@@ -27,3 +27,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Major Code Smell", "S3925:\"ISerializable\" should be implemented correctly", Justification = "ISerializable", Scope = "type", Target = "~T:Planar.Service.Calendars.IsraelCalendar")]
 [assembly: SuppressMessage("Major Code Smell", "S3925:\"ISerializable\" should be implemented correctly", Justification = "ISerializable", Scope = "type", Target = "~T:Planar.Service.Calendars.GlobalCalendar")]
 [assembly: SuppressMessage("Major Code Smell", "S3925:\"ISerializable\" should be implemented correctly", Justification = "ISerializable", Scope = "type", Target = "~T:Planar.Service.Calendars.DefaultCalendar")]
+[assembly: SuppressMessage("Major Vulnerability", "S2068:Credentials should not be hard-coded", Justification = "NAMECONV", Scope = "member", Target = "~F:Planar.Service.ErrorCodes.User.WrongPassword")]

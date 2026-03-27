@@ -93,8 +93,6 @@ internal partial class Job : BaseCheckJob
     private static void ValidateRedis()
     {
         ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
-        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
-        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
     }
 
     private IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
@@ -138,7 +136,8 @@ internal partial class Job : BaseCheckJob
 
                 done = true;
                 await IncreaseEffectedRowsAsync();
-                Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
+                Logger.LogInformation("execute default command '{Command}' for key '{Key}' at database {Database}. result: {Result}",
+                    key.DefaultCommand, key.Key, key.DatabaseNumber, result);
                 exists = await RedisFactory.Exists(key);
             }
         }
@@ -147,10 +146,10 @@ internal partial class Job : BaseCheckJob
         {
             if (key.Mandatory)
             {
-                throw new CheckException($"key '{key.Key}' is mandatory and it is not exists");
+                throw new CheckException($"key '{key.Key}' at database {key.DatabaseNumber} is mandatory and it is not exists");
             }
 
-            if (!done) { Logger.LogInformation("no action for key '{Key}'", key.Key); }
+            if (!done) { Logger.LogInformation("no action for key '{Key}' at database {Database}", key.Key, key.DatabaseNumber); }
             return;
         }
 
@@ -161,11 +160,11 @@ internal partial class Job : BaseCheckJob
             {
                 done = true;
                 await IncreaseEffectedRowsAsync();
-                Logger.LogInformation("set expire date {Date} for key '{Key}'", key.NextExpireCronDate, key.Key);
+                Logger.LogInformation("set expire date {Date} for key '{Key}' at database {Database}", key.NextExpireCronDate, key.Key, key.DatabaseNumber);
             }
         }
 
-        if (!done) { Logger.LogInformation("no action for key '{Key}'", key.Key); }
+        if (!done) { Logger.LogInformation("no action for key '{Key}' at database {Database}", key.Key, key.DatabaseNumber); }
     }
 
     private static void ValidateRedisKey(RedisKey redisKey)

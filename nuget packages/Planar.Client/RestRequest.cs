@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Planar.Client
 {
@@ -27,6 +28,13 @@ namespace Planar.Client
 #endif
 
 #if NETSTANDARD2_0
+        public string StringBody { get; private set; }
+#else
+        public string? StringBody { get; private set; }
+
+#endif
+
+#if NETSTANDARD2_0
         public TimeSpan Timeout { get; private set; }
 #else
         public TimeSpan? Timeout { get; private set; }
@@ -36,6 +44,12 @@ namespace Planar.Client
         public RestRequest AddBody(object body)
         {
             Body = body;
+            return this;
+        }
+
+        public RestRequest AddStringBody(string body)
+        {
+            StringBody = body;
             return this;
         }
 
@@ -106,17 +120,26 @@ namespace Planar.Client
 
         public HttpRequestMessage GetRequest()
         {
-            const string contentType = "application/json";
             var url = GetUrl();
             var request = new HttpRequestMessage(Method, url);
-            if (Body != null)
+
+            if (!string.IsNullOrWhiteSpace(StringBody))
             {
-                var jsonBody = CoreSerializer.Serialize(Body) ?? string.Empty;
-                var content = new StringContent(jsonBody, Encoding.UTF8, contentType);
+                var content = new StringContent(StringBody, Encoding.UTF8, Consts.YamlContentType);
                 request.Content = content;
                 if (request.Content.Headers.ContentType != null)
                 {
-                    request.Content.Headers.ContentType.MediaType = contentType;
+                    request.Content.Headers.ContentType.MediaType = Consts.YamlContentType;
+                }
+            }
+            else if (Body != null)
+            {
+                var jsonBody = CoreSerializer.Serialize(Body) ?? string.Empty;
+                var content = new StringContent(jsonBody, Encoding.UTF8, Consts.JsonContentType);
+                request.Content = content;
+                if (request.Content.Headers.ContentType != null)
+                {
+                    request.Content.Headers.ContentType.MediaType = Consts.JsonContentType;
                 }
             }
 

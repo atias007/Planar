@@ -5,5 +5,6 @@
         public const string Anonymous = "anonymous";
         public const string Title = "Planar: Command Line Interface";
         public const string GroupDisplayFormat = "[gray23]";
+        public const string YamlContentType = "application/yaml";
     }
 }

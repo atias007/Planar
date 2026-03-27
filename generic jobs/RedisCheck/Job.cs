@@ -83,8 +83,6 @@ internal partial class Job : BaseCheckJob
     protected static void ValidateRedis()
     {
         ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
-        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
-        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
     }
 
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
@@ -142,16 +140,12 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private static void Validate(IRedisDefaults redisKey, string section)
-    {
-        ValidateGreaterThenOrEquals(redisKey.Database, 0, "database", section);
-        ValidateLessThenOrEquals(redisKey.Database, 16, "database", section);
-    }
-
     private static void ValidateKey(RedisKey redisKey)
     {
         ValidateRequired(redisKey.Key, "key", "keys");
         ValidateMaxLength(redisKey.Key, 1024, "key", "keys");
+        ValidateGreaterThenOrEquals(redisKey.Database, 0, "database", "server");
+        ValidateLessThenOrEquals(redisKey.Database, 16, "database", "server");
     }
 
     private static void ValidateNoArguments(RedisKey redisKey)
@@ -171,7 +165,6 @@ internal partial class Job : BaseCheckJob
         }
 
         var result = new Defaults(section);
-        Validate(result, "defaults");
         ValidateBase(result, "defaults");
         return result;
     }
@@ -261,6 +254,7 @@ internal partial class Job : BaseCheckJob
     {
         var exists = await RedisFactory.Exists(key);
         key.Result.Exists = exists;
+
         if (key.Exists.GetValueOrDefault() && !exists)
         {
             throw new CheckException($"key '{key.Key}' is not exists");
@@ -268,35 +262,36 @@ internal partial class Job : BaseCheckJob
 
         long length = 0;
         long size = 0;
+
         if (key.Length > 0)
         {
             length = await RedisFactory.GetLength(key);
             key.Result.Length = length;
-            key.ResultMessage = $"key '{key.Key}' length is {length:N0}";
-            Logger.LogInformation("key '{Key}' length is {Length:N0}", key.Key, length);
+            key.ResultMessage = $"key '{key.Key}' length is {length:N0} (database {key.DatabaseNumber})";
+            Logger.LogInformation("key '{Key}' length is {Length:N0} (database {Database})", key.Key, length, key.DatabaseNumber);
         }
 
         if (key.MemoryUsageNumber > 0)
         {
             size = await RedisFactory.GetMemoryUsage(key);
             key.Result.MemoryUsage = size;
-            key.ResultMessage += $"\r\nkey '{key.Key}' size is {size:N0} byte(s)".Trim();
-            Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s)", key.Key, size);
+            key.ResultMessage += $"\r\nkey '{key.Key}' size is {size:N0} byte(s) (database {key.DatabaseNumber})".Trim();
+            Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s) (database {Database})", key.Key, size, key.DatabaseNumber);
         }
 
         if (key.Length > 0 && length > key.Length)
         {
-            key.ResultMessage = $"key '{key.Key}' length is greater then {key.Length:N0}";
-            throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}");
+            key.ResultMessage = $"key '{key.Key}' length {length:N0} is greater then {key.Length:N0} (database {key.DatabaseNumber})";
+            throw new CheckException($"key '{key.Key}' length {length:N0} is greater then {key.Length:N0} (database {key.DatabaseNumber})");
         }
 
         if (key.MemoryUsageNumber > 0 && size > key.MemoryUsageNumber)
         {
-            key.ResultMessage = $"key '{key.Key}' size is greater then {key.MemoryUsage:N0}";
-            throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}");
+            key.ResultMessage = $"key '{key.Key}' size {size:N0} is greater then {key.MemoryUsage:N0} (database {key.DatabaseNumber})";
+            throw new CheckException($"key '{key.Key}' size {size:N0} is greater then {key.MemoryUsage:N0} (database {key.DatabaseNumber})");
         }
 
-        Logger.LogInformation("redis check success for key '{Key}'", key.Key);
+        Logger.LogInformation("redis check success for key '{Key}' (database {Database})", key.Key, key.DatabaseNumber);
         await IncreaseEffectedRowsAsync();
     }
 
@@ -309,7 +304,6 @@ internal partial class Job : BaseCheckJob
     private static void ValidateRedisKey(RedisKey redisKey)
     {
         ValidateBase(redisKey, $"key ({redisKey.Key})");
-        Validate(redisKey, $"key ({redisKey.Key})");
         ValidateKey(redisKey);
         ValidateGreaterThen(redisKey.MemoryUsageNumber, 0, "max memory usage", "keys");
         ValidateGreaterThen(redisKey.Length, 0, "max length", "keys");

@@ -56,7 +56,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
             var stream = GetParameter("redis-stream-name", group);
             if (string.IsNullOrWhiteSpace(stream))
             {
-                stream = AppSettings.Hooks.Redis.PubSubChannel;
+                stream = AppSettings.Hooks.Redis.StreamName;
             }
 
             if (!string.IsNullOrWhiteSpace(stream)) { streams.Add(stream); }

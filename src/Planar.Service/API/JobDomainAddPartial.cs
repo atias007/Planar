@@ -49,12 +49,12 @@ public partial class JobDomain
         var dataCount = CountUserJobDataItems(data);
         if (dataCount > Consts.MaximumJobDataItems)
         {
-            throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})".Trim());
+            throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})".Trim(), ErrorCodes.Job.MaxJobDataItems);
         }
 
         if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
         {
-            throw new RestValidationException("key", $"{title} data key must have value".Trim());
+            throw new RestValidationException("key", $"{title} data key must have value".Trim(), ErrorCodes.Job.JobDataKeyEmpty);
         }
 
         foreach (var item in data)
@@ -71,7 +71,7 @@ public partial class JobDomain
         if (invalidKeys.Count > 0)
         {
             var keys = string.Join(',', invalidKeys);
-            throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
+            throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid", ErrorCodes.Job.JobDataKeyInvalid);
         }
     }
 
@@ -93,7 +93,7 @@ public partial class JobDomain
             return await Add(yml);
         }
 
-        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
+        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}", ErrorCodes.General.ContentTypeNotSupported);
     }
 
     private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
@@ -356,7 +356,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("path", $"fail to read yml job file definition. error: {ex.Message}");
+            throw new RestValidationException("path", $"fail to read yml job file definition. error: {ex.Message}", ErrorCodes.Job.YamlFileInvalid);
         }
 
         return dynamicRequest;
@@ -379,9 +379,9 @@ public partial class JobDomain
             if (job.JobType == null) { return typeof(object); }
             assembly = Assembly.Load(job.JobType);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            throw new RestValidationException("jobType", $"fail to load assemly {job.JobType} ({ex.Message})");
+            throw new RestValidationException("jobType", $"type {job.JobType} is not supported", ErrorCodes.Job.JobTypeNotSupported);
         }
 
         if (job.Concurrent)
@@ -396,11 +396,11 @@ public partial class JobDomain
         try
         {
             var type = assembly.GetType(typeName);
-            return type ?? throw new RestValidationException("jobType", $"type {typeName} is not supported");
+            return type ?? throw new RestValidationException("jobType", $"type {job.JobType} is not supported", ErrorCodes.Job.JobTypeNotSupported);
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("jobType", $"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
+            throw new RestGeneralException($"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
         }
     }
 
@@ -630,7 +630,10 @@ public partial class JobDomain
     {
         container.SimpleTriggers?.ForEach(t =>
         {
-            if (t.RepeatCount >= 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
+            if ((t.RepeatCount is null || t.RepeatCount >= 0) && t.Interval.TotalSeconds < 60)
+            {
+                throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute", ErrorCodes.Trigger.InvalidInterval);
+            }
         });
     }
 

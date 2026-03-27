@@ -13,10 +13,7 @@ internal class Defaults : BaseDefault, IRedisDefaults
     {
         RetryCount = 1;
         RetryInterval = TimeSpan.FromSeconds(1);
-        Database = 0;
     }
-
-    public int? Database { get; }
 
     //// --------------------------------------- ////
 

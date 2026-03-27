@@ -17,10 +17,10 @@
 	  <Compile Remove="JobTests.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="NUnit" Version="4.5.0" />
+		<PackageReference Include="NUnit" Version="4.5.1" />
 		<PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.19.0.132793">
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.21.0.135717">
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		  <PrivateAssets>all</PrivateAssets>
 		</PackageReference>

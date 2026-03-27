@@ -24,6 +24,25 @@ namespace Planar.Client.Api
             return result?.Id ?? 0;
         }
 
+        public Task AddDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(groupName, nameof(groupName));
+            ValidateMandatory(monitorId, nameof(monitorId));
+            var restRequestAdd = new RestRequest("add-distribution-group", HttpPatchMethod)
+                .AddBody(new { monitorId, groupName });
+            return _proxy.InvokeAsync(restRequestAdd, cancellationToken);
+        }
+
+        public Task RemoveDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(groupName, nameof(groupName));
+            ValidateMandatory(monitorId, nameof(monitorId));
+            var restRequestAdd = new RestRequest("remove-distribution-group", HttpPatchMethod)
+                .AddBody(new { monitorId, groupName });
+
+            return _proxy.InvokeAsync(restRequestAdd, cancellationToken);
+        }
+
         public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
@@ -117,7 +136,7 @@ namespace Planar.Client.Api
             return result;
         }
 
-        public async Task<IEnumerable<MuteDetails>> ListMutes(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<MuteDetails>> ListMutesAsync(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/mutes", HttpMethod.Get);
             var result = await _proxy.InvokeAsync<List<MuteDetails>>(restRequest, cancellationToken);

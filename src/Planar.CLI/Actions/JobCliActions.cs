@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mime;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -39,13 +40,100 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             request = wrapper.Request;
         }
 
-        var body = new SetJobPathRequest { JobFilePath = request.Filename };
-        var restRequest = new RestRequest("job", Method.Post)
-            .AddBody(body);
-        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+        var pathInfo = PathAnalyzer.AnalyzePath(request.Filename);
+        var restRequest = new RestRequest("job", Method.Post);
 
+        if (pathInfo.IsLocal && pathInfo.IsFolder)
+        {
+            return await AddUpdateApplyLocalFolder(pathInfo, restRequest, cancellationToken);
+        }
+        else if (pathInfo.IsLocal && !pathInfo.IsFolder)
+        {
+            return await AddUpdateApplyLocalFilename(pathInfo, restRequest, cancellationToken);
+        }
+        else
+        {
+            return await AddUpdateApplyRemoteFilename(pathInfo, restRequest, cancellationToken);
+        }
+    }
+
+    private static async Task<CliActionResponse> AddUpdateApplyRemoteFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
+    {
+        var body = new SetJobPathRequest { JobFilePath = pathInfo.Path };
+        restRequest.AddBody(body);
+        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
         AssertCreated(result);
         return new CliActionResponse(result);
+    }
+
+    private static async Task<CliActionResponse> AddUpdateApplyLocalFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
+    {
+        var filename = Path.GetFullPath(pathInfo.Path);
+        var yml = await File.ReadAllTextAsync(filename, cancellationToken);
+        restRequest.AddStringBody(yml, CliConsts.YamlContentType);
+        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+        AssertCreated(result);
+        return new CliActionResponse(result);
+    }
+
+    private static async Task<CliActionResponse> AddUpdateApplyLocalFolder(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
+    {
+        AnsiConsole.MarkupLine($"[grey]  > found directory: {pathInfo.Path}[/]");
+        var files = Directory.EnumerateFiles(pathInfo.Path!, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
+            .Where(f => f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
+
+        foreach (var item in files)
+        {
+            await AddUpdateApplyLocalFolderInner(restRequest, item, cancellationToken);
+        }
+
+        AnsiConsole.MarkupLine($"[grey]  > {files.Count().ToString("N0")} file(s)[/]");
+        return CliActionResponse.Empty;
+    }
+
+    private static async Task AddUpdateApplyLocalFolderInner(RestRequest restRequest, string item, CancellationToken cancellationToken)
+    {
+        var fi = new FileInfo(item);
+        AnsiConsole.Markup($"[grey]     - found local file: {fi.Name}[/]");
+        var yml = await File.ReadAllTextAsync(item, cancellationToken);
+        var localRequest = new RestRequest(restRequest.Resource, restRequest.Method)
+            .AddStringBody(yml, CliConsts.YamlContentType);
+        var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
+        if (res.IsSuccessStatusCode)
+        {
+            AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
+        }
+        else
+        {
+            var hasText = string.Equals(res.ContentType, MediaTypeNames.Text.Plain, StringComparison.OrdinalIgnoreCase);
+            var error = hasText ? res.Content.EscapeMarkup() : null;
+            if (res.StatusCode == HttpStatusCode.BadRequest) { error = "validation error(s)"; }
+            if (res.StatusCode == HttpStatusCode.Unauthorized) { error = "unauthorized"; }
+            if (res.StatusCode == HttpStatusCode.Forbidden) { error = "forbidden"; }
+            AnsiConsole.MarkupLine($"[red]   Fail! {error}[/]");
+        }
+    }
+
+    [Action("update")]
+    [NullRequest]
+    public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
+    {
+        var uoa = await FillUpdateJobRequest(request, cancellationToken);
+        if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
+        ArgumentNullException.ThrowIfNull(uoa.Body);
+        var result = await UpdateOrApply(uoa.Body, apply: false, cancellationToken);
+        return result;
+    }
+
+    [Action("apply")]
+    [NullRequest]
+    public static async Task<CliActionResponse> ApplyJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
+    {
+        var uoa = await FillUpdateJobRequest(request, cancellationToken);
+        if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
+        ArgumentNullException.ThrowIfNull(uoa.Body);
+        var result = await UpdateOrApply(uoa.Body, apply: true, cancellationToken);
+        return result;
     }
 
     [Action("cancel")]
@@ -679,60 +767,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return CliActionResponse.Empty;
     }
 
-    [Action("update")]
-    [NullRequest]
-    public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
-    {
-        request ??= new CliUpdateJobRequest();
-        var body = new UpdateJobRequest { JobFilePath = request.Filename };
-
-        if (Util.IsJobId(request.Filename))
-        {
-            var filenameRequest = new RestRequest("job/jobfilename/{id}", Method.Get)
-                .AddParameter("id", request.Filename, ParameterType.UrlSegment);
-            var filenameResult = await RestProxy.Invoke<string>(filenameRequest, cancellationToken);
-
-            if (filenameResult.IsSuccessful && filenameResult.Data != null)
-            {
-                body.JobFilePath = filenameResult.Data;
-            }
-            else
-            {
-                return new CliActionResponse(filenameResult);
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Filename))
-        {
-            var jobsRequest = new RestRequest("job/available-jobs", Method.Get)
-                .AddQueryParameter("update", "true");
-            var jobsResult = await RestProxy.Invoke<List<AvailableJob>>(jobsRequest, cancellationToken);
-            if (!jobsResult.IsSuccessful)
-            {
-                return new CliActionResponse(jobsResult);
-            }
-
-            var filename = SelectJobFilename(jobsResult.Data);
-            body.JobFilePath = filename;
-        }
-
-        if (request.Options == null)
-        {
-            body.Options = MapUpdateJobOptions();
-        }
-        else
-        {
-            body.Options = MapUpdateJobOptions(request.Options.Value);
-        }
-
-        var restRequest = new RestRequest("job", Method.Put)
-            .AddBody(body);
-
-        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
-        AssertJobUpdated(result);
-        return new CliActionResponse(result);
-    }
-
     [Action("wait")]
     public static async Task<CliActionResponse> Wait(CliJobWaitRequest request, CancellationToken cancellationToken = default)
     {
@@ -818,6 +852,72 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
 
         return (resultData, restResponse);
+    }
+
+    private static async Task<(UpdateJobRequest? Body, CliActionResponse? CliActionResponse)> FillUpdateJobRequest(CliUpdateJobRequest request, CancellationToken cancellationToken)
+    {
+        request ??= new CliUpdateJobRequest();
+        var body = new UpdateJobRequest { JobFilePath = request.Filename };
+
+        if (Util.IsJobId(request.Filename))
+        {
+            var filenameRequest = new RestRequest("job/jobfilename/{id}", Method.Get)
+                .AddParameter("id", request.Filename, ParameterType.UrlSegment);
+            var filenameResult = await RestProxy.Invoke<string>(filenameRequest, cancellationToken);
+
+            if (filenameResult.IsSuccessful && filenameResult.Data != null)
+            {
+                body.JobFilePath = filenameResult.Data;
+            }
+            else
+            {
+                return (null, new CliActionResponse(filenameResult));
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Filename))
+        {
+            var jobsRequest = new RestRequest("job/available-jobs", Method.Get)
+                .AddQueryParameter("update", "true");
+            var jobsResult = await RestProxy.Invoke<List<AvailableJob>>(jobsRequest, cancellationToken);
+            if (!jobsResult.IsSuccessful)
+            {
+                return (null, new CliActionResponse(jobsResult));
+            }
+
+            var filename = SelectJobFilename(jobsResult.Data);
+            body.JobFilePath = filename;
+        }
+
+        if (request.Options == null)
+        {
+            body.Options = MapUpdateJobOptions();
+        }
+        else
+        {
+            body.Options = MapUpdateJobOptions(request.Options.Value);
+        }
+
+        return (body, null);
+    }
+
+    private static async Task<CliActionResponse> UpdateOrApply(UpdateJobRequest request, bool apply, CancellationToken cancellationToken)
+    {
+        var restRequest = apply ? new RestRequest("job/apply", Method.Post) : new RestRequest("job", Method.Put);
+
+        var pathInfo = PathAnalyzer.AnalyzePath(request.JobFilePath);
+        if (pathInfo.IsLocal && pathInfo.IsFolder)
+        {
+            return await AddUpdateApplyLocalFolder(pathInfo, restRequest, cancellationToken);
+        }
+        else if (pathInfo.IsLocal && !pathInfo.IsFolder)
+        {
+            return await AddUpdateApplyLocalFilename(pathInfo, restRequest, cancellationToken);
+        }
+        else
+        {
+            return await AddUpdateApplyRemoteFilename(pathInfo, restRequest, cancellationToken);
+        }
     }
 
     private static async Task<RestResponse> CheckAlreadyRunningJob(CliInvokeJobRequest request, CancellationToken cancellationToken)

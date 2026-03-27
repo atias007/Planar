@@ -58,56 +58,65 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
         }
     }
 
-    private async Task SaveAudit(AuditMessage message)
+    private static string GetTitle(AuditMessage message)
     {
-        var usernameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
         var surnameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
         var givenNameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
         var title = $"{givenNameClaim} {surnameClaim}".Trim();
-
-        usernameClaim ??= message.CliIdentity;
         if (string.IsNullOrWhiteSpace(title)) { title = message.CliIdentity; }
+        if (string.IsNullOrWhiteSpace(title)) { title = RoleHelper.DefaultRole; }
+        return title;
+    }
 
-        string? triggerId;
-        ITrigger? trigger;
+    private static string GetUsername(AuditMessage message)
+    {
+        var usernameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+        return usernameClaim ?? message.CliIdentity ?? RoleHelper.DefaultRole;
+    }
 
-        if (message.TriggerKey != null)
-        {
-            var scheduler = await _schedulerFactory.GetScheduler();
-            trigger = await scheduler.GetTrigger(message.TriggerKey);
-            triggerId = TriggerHelper.GetTriggerId(trigger);
-            message.Description = message.Description.Replace("{{TriggerId}}", $"trigger id: {triggerId}");
+    private async Task<string?> GetJobId(AuditMessage message)
+    {
+        if (!string.IsNullOrWhiteSpace(message.JobId)) { return message.JobId; }
+        if (message.JobKey == null) { return string.Empty; }
+        
+        var result = await _jobKeyHelper.SafeGetJobId(message.JobKey);
+        return result ?? string.Empty;
+    }
 
-            if (message.JobKey == null && trigger != null)
-            {
-                message.JobKey = trigger.JobKey;
-            }
+    private static string GetJobKeyString(JobKey? jobKey)
+    {
+        if (jobKey == null) { return string.Empty; }
+        return $"{jobKey.Group}.{jobKey.Name}";
+    }
 
-            if (message.AddTriggerInfo)
-            {
-                var info = new List<object>();
-                if (message.AdditionalInfo != null) { info.Add(message.AdditionalInfo); }
+    private static string? GetAdditionalInfoString(object? additionalInfo)
+    {
+        if (additionalInfo == null) { return null; }
+        return YmlUtil.Serialize(additionalInfo)?.Trim();
+    }
 
-                var details = GetTriggerDetails(trigger);
-                if (details != null) { info.Add(new { trigger = details }); }
+    private async Task SaveAudit(AuditMessage message)
+    {
+        await FillTriggerId(message);
 
-                message.AdditionalInfo = info;
-            }
-        }
-
-        var jobId = message.JobKey == null ? string.Empty : await _jobKeyHelper.SafeGetJobId(message.JobKey);
+        var jobId = await GetJobId(message);
+        var usernameClaim = GetUsername(message);
+        var title = GetTitle(message);
+        var jobKeyString = GetJobKeyString(message.JobKey);
+        var additionalInfoString = GetAdditionalInfoString(message.AdditionalInfo);
+        var description = message.Description?.Trim() ?? string.Empty;
 
         using var scope = serviceScopeFactory.CreateScope();
         var data = scope.ServiceProvider.GetRequiredService<IJobData>();
         var audit = new JobAudit
         {
             DateCreated = DateTime.Now,
-            Description = message.Description.Trim(),
-            AdditionalInfo = message.AdditionalInfo == null ? null : YmlUtil.Serialize(message.AdditionalInfo),
+            Description = description,
+            AdditionalInfo = additionalInfoString,
             JobId = jobId ?? string.Empty,
-            Username = usernameClaim ?? RoleHelper.DefaultRole,
-            UserTitle = string.IsNullOrWhiteSpace(title) ? RoleHelper.DefaultRole : title,
-            JobKey = message.JobKey == null ? string.Empty : $"{message.JobKey.Group}.{message.JobKey.Name}"
+            Username = usernameClaim,
+            UserTitle = title,
+            JobKey = jobKeyString
         };
 
         audit.AdditionalInfo = audit.AdditionalInfo?.Trim();
@@ -116,6 +125,33 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
 
         await data.AddJobAudit(audit);
     }
+
+    private async Task FillTriggerId(AuditMessage message)
+    {
+        if (message.TriggerKey == null) { return; }
+
+        var scheduler = await _schedulerFactory.GetScheduler();
+        var trigger = await scheduler.GetTrigger(message.TriggerKey);
+        var triggerId = TriggerHelper.GetTriggerId(trigger);
+        message.Description = message.Description.Replace("{{TriggerId}}", $"trigger id: {triggerId}");
+
+        if (message.JobKey == null && trigger != null)
+        {
+            message.JobKey = trigger.JobKey;
+        }
+
+        if (message.AddTriggerInfo)
+        {
+            var info = new List<object>();
+            if (message.AdditionalInfo != null) { info.Add(message.AdditionalInfo); }
+
+            var details = GetTriggerDetails(trigger);
+            if (details != null) { info.Add(new { trigger = details }); }
+
+            message.AdditionalInfo = info;
+        }
+    }
+
 
     private async Task<TriggerDetails?> GetTriggerDetails(ITrigger? trigger)
     {

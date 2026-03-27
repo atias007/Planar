@@ -998,7 +998,7 @@ public partial class JobDomain(
 
         var scheduler = await GetScheduler();
         await scheduler.DeleteJob(jobKey);
-        AuditJobSafe(jobKey, "job deleted");
+        AuditJobSafe(jobKey, "job deleted", null, jobId);
         SafeRemoveJobDetailsCache(jobKey);
         _ = ClearJobInfo(jobId, jobKey, id);
     }

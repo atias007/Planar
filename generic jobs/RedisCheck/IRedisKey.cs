@@ -4,4 +4,5 @@ internal interface IRedisKey
 {
     int? Database { get; }
     string Key { get; }
+    int DatabaseNumber { get; }
 }
