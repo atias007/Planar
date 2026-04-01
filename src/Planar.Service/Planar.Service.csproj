@@ -82,7 +82,7 @@
 		<PackageReference Include="AutoMapper" Version="16.1.1" />
 		<PackageReference Include="CronExpressionDescriptor" Version="2.45.0" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
-		<PackageReference Include="Google.Protobuf" Version="3.34.0" />
+		<PackageReference Include="Google.Protobuf" Version="3.34.1" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.76.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.78.0">
 			<PrivateAssets>all</PrivateAssets>
