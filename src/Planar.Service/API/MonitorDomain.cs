@@ -379,12 +379,13 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException(field, $"{field} was not found");
         }
 
+        var hook = new MonitorActionsHook { Hook = request.Hook };
         var action = new MonitorAction
         {
             Active = true,
             EventArgument = null,
             EventId = (int)monitorEvent,
-            Hook = request.Hook,
+            MonitorActionsHooks = [hook],
             JobGroup = "TestJobGroup",
             JobName = "TestJobName",
             Title = "Test Monitor"

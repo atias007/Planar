@@ -208,6 +208,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         MonitorDetails? details = null;
         if (action == null) { return; }
         if (context == null) { return; }
+        Exception? monitorException = null;
 
         try
         {
@@ -215,53 +216,68 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             var toBeContinue = await Analyze(@event, action, context);
             if (!toBeContinue) { return; }
 
-            // Get hook
-            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(action.Hook);
-            if (hookInstance == null)
+            // Get hooks
+            var hookInstances = await GetHookInstances(action);
+            if (hookInstances.Count == 0) { return; }
+
+            // Create the monitor details
+            details = GetMonitorDetails(action, context, exception);
+
+            // Check for mute
+            if (await CheckForMutedMonitor(details, action.Id))
             {
-                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist in service", action.Hook, action.Id, action.Title);
+                _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
                 return;
+            }
+
+            // Log the start of the monitor
+            var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
+            var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
+            if (@event == MonitorEvents.ExecutionProgressChanged)
+            {
+                _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
             }
             else
             {
-                // Create the monitor details
-                details = GetMonitorDetails(action, context, exception);
-
-                // Check for mute
-                if (await CheckForMutedMonitor(details, action.Id))
-                {
-                    _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
-                    return;
-                }
-
-                // Log the start of the monitor
-                var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
-                if (@event == MonitorEvents.ExecutionProgressChanged)
-                {
-                    _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, @event, action.Hook, groupNames);
-                }
-                else
-                {
-                    _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, @event, action.Hook, groupNames);
-                }
-
-                // Handle the monitor
-                await hookInstance.Handle(details, cancellationToken);
-
-                // Save the monitor alert
-                await SafeSaveMonitorAlert(action, details, context);
-
-                // Save the monitor counter
-                await SaveMonitorCounter(action, details);
-
-                return;
+                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
             }
+
+            // Handle the monitor
+            await Parallel.ForEachAsync(hookInstances, cancellationToken, async (hookInstance, ct) =>
+            {
+                try
+                {
+                    await hookInstance.Handle(details, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, hookInstance.Name, groupNames);
+                }
+            });
         }
         catch (Exception ex)
         {
-            var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, action.Hook, groupNames);
-            await SafeSaveMonitorAlert(action, details, context, ex);
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title}", action.Id, action.Title);
+            monitorException = ex;
+        }
+        try
+        {
+            // Save the monitor alert
+            await SafeSaveMonitorAlert(action, details, context, monitorException);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail save monitor alert. monitor item id: {Id}, title: {Title}", action.Id, action.Title);
+        }
+
+        try
+        {
+            // Save the monitor counter
+            await SaveMonitorCounter(action, details);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail save monitor counter. monitor item id: {Id}, title: {Title}", action.Id, action.Title);
         }
     }
 
@@ -297,6 +313,23 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook}", action.Id, action.Title, action.Hook);
             await SafeSaveMonitorAlert(action, details, ex);
         }
+    }
+
+    private async Task<List<HookWrapper>> GetHookInstances(MonitorAction monitorAction)
+    {
+        var result = new List<HookWrapper>();
+        foreach (var hook in monitorAction.MonitorActionsHooks)
+        {
+            if (string.IsNullOrWhiteSpace(hook.Hook)) { continue; }
+            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(hook.Hook);
+            if (hookInstance == null)
+            {
+                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist", hook.Hook, monitorAction.Id, monitorAction.Title);
+                continue;
+            }
+            result.Add(hookInstance);
+        }
+        return result;
     }
 
     private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)

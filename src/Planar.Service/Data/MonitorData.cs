@@ -540,7 +540,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<List<string>> GetMonitorUsedHooks()
     {
-        return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
+        return await _context.MonitorActionsHooks.Select(m => m.Hook).Distinct().ToListAsync();
     }
 
     public async Task IncreaseMonitorCounter(string jobId, int monitorId)
@@ -568,8 +568,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorActions.AnyAsync(m =>
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
-            m.JobGroup == monitor.JobGroup &&
-            m.Hook == monitor.Hook);
+            m.JobGroup == monitor.JobGroup);
     }
 
     public async Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId)
@@ -578,8 +577,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             m.Id != currentUpdateId &&
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
-            m.JobGroup == monitor.JobGroup &&
-            m.Hook == monitor.Hook);
+            m.JobGroup == monitor.JobGroup);
     }
 
     public async Task<bool> IsMonitorExists(int id)
