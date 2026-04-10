@@ -9,6 +9,7 @@ using Serilog;
 using System;
 using Prometheus;
 using Scalar.AspNetCore;
+using Quartz;
 
 namespace Planar.Startup
 {
@@ -105,6 +106,11 @@ namespace Planar.Startup
             //Rate limitter middleware
             app.UseRateLimiter();
 
+            // ****************************************************************
+            // MOVE UseRouting HERE - BEFORE any endpoint mapping
+            // ****************************************************************
+            app.UseRouting();
+
             if (AppSettings.Cluster.Clustering)
             {
                 app.MapGrpcService<ClusterService>();
@@ -116,6 +122,11 @@ namespace Planar.Startup
 
             app.UseRouting();
             app.MapMetrics();
+            app.UseAntiforgery();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapQuartzDashboard();
+            });
 
             // Authorization
             // ATTENTION: Always UseAuthentication should be before UseAuthorization

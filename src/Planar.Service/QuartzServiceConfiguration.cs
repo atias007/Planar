@@ -94,6 +94,14 @@ public static class QuartzServiceConfiguration
             options.StartDelay = delaySeconds;
         });
 
+        services.AddQuartzDashboard();
+
+        services.Configure<QuartzOptions>(options =>
+        {
+            options["quartz.plugin.jobHistory.type"] = "Quartz.Plugin.History.LoggingJobHistoryPlugin, Quartz.Plugins";
+            options["quartz.plugin.triggerHistory.type"] = "Quartz.Plugin.History.LoggingTriggerHistoryPlugin, Quartz.Plugins";
+        });
+
         return services;
     }
 }
