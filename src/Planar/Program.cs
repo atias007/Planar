@@ -20,7 +20,7 @@ namespace Planar
             AppSettingsInitializer.TestDatabasePermission();
             var app = WebApplicationInitializer.Initialize(args);
             await DatabaseMigrationInitializer.FixJobProperties(app.Services);
-            CalendarsInitializer.Initialize(app.Services);
+            await CalendarsInitializer.Initialize(app.Services);
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);
             SerilogInitializer.ConfigureSelfLog();

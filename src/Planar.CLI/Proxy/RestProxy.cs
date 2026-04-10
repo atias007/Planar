@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Planar.CLI.DataProtect;
 using RestSharp;
 using RestSharp.Serializers.NewtonsoftJson;
-using Spectre.Console.Extensions;
+using Spectre.Console;
 using System;
 using System.Net;
 using System.Threading;
