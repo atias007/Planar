@@ -95,10 +95,10 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.17.1" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.17.1" />
-		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.17.1" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.17.1" />
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.18.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.18.0" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.18.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.18.0" />
 		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
 		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
 		<PackageReference Include="Riok.Mapperly" Version="4.3.1" />
