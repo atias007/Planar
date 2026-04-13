@@ -19,7 +19,7 @@ namespace Planar.Client.Entities
         public string? EventArgument { get; set; }
 #endif
 
-        public string Hook { get; set; } = string.Empty;
+        public IEnumerable<string> Hooks { get; set; } = new List<string>();
         public bool Active { get; set; }
         public IEnumerable<string> DistributionGroups { get; set; } = new List<string>();
     }

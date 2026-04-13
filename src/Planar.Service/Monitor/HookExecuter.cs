@@ -315,7 +315,9 @@ internal sealed class HookExecuter : IDisposable
     {
         try
         {
-            text = text.Replace(Consts.HookNewLineLogText, "\r\n");
+            text = text.Replace(Consts.HookNewLineLogText1, "\r\n");
+            text = text.Replace(Consts.HookNewLineLogText2, "\r\n");
+
             var doc = XDocument.Parse(text);
             var message = doc.Root?.Value;
             return message ?? string.Empty;

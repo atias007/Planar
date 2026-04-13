@@ -45,6 +45,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
                 .ThenBy(e => e.ToString())
             .Select(e => new MonitorEventModel
             {
+                EventId = (int)e,
                 EventName = e.ToString(),
                 EventTitle = e.GetEnumDescription(),
                 EventType = GetEventTypeTitle(e)
@@ -178,6 +179,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return result;
     }
 
+    /// <summary>
+    /// **************** FOR INTERNAL USE ONLY - DO NOT EXPOSE TO THE OUTSIDE WORLD ****************
+    /// </summary>
+    /// <returns></returns>
     internal async Task<IEnumerable<MonitorAction>> GetMonitorActions()
     {
         var data = await DataLayer.GetMonitorActions();
@@ -320,7 +325,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         TrimPropertyName(request);
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
         var monitor = ValidateExistingEntity(dbMonitor, "monitor");
-        ForbbidenPartialUpdateProperties(request, "EventId", "Groups");
+        ForbbidenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
         var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
         var validator = Resolve<IValidator<UpdateMonitorRequest>>();
         await SetEntityProperties(updateMonitor, request, validator);

@@ -193,6 +193,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
         if (monitor == null) { return 0; }
         monitor.Groups.Clear();
+        monitor.MonitorActionsHooks.Clear();
         _context.MonitorActions.Remove(monitor);
         await _context.SaveChangesAsync();
         return 1;
@@ -359,6 +360,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return _context.MonitorActions
             .AsNoTracking()
             .Include(i => i.Groups)
+            .Include(i => i.MonitorActionsHooks)
             .OrderByDescending(d => d.Active)
             .ThenBy(d => d.JobGroup)
             .ThenBy(d => d.JobName)
@@ -389,16 +391,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         if (!string.IsNullOrWhiteSpace(request.EventTitle))
         {
             query = query.Where(l => l.EventTitle != null && l.EventTitle == request.EventTitle);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.GroupName))
-        {
-            query = query.Where(l => l.GroupName == request.GroupName);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Hook))
-        {
-            query = query.Where(l => l.Hook == request.Hook);
         }
 
         if (request.MonitorId.HasValue)

@@ -14,14 +14,8 @@ namespace Planar.CLI.Entities
         [ActionProperty("j", "job")]
         public string? JobId { get; set; }
 
-        [ActionProperty("g", "group")]
-        public string? GroupName { get; set; }
-
         [ActionProperty("jg", "job-group")]
         public string? JobGroup { get; set; }
-
-        [ActionProperty("h", "hook")]
-        public string? Hook { get; set; }
 
         [ActionProperty("e", "errors")]
         public bool? HasError { get; set; }

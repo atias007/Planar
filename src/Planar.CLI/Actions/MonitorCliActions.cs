@@ -509,7 +509,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             GroupName = groupName,
             Hook = hookName,
             JobName = job.JobName,
-            EventName = eventName,
+            Event = eventName,
             Title = title
         };
 

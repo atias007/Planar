@@ -80,7 +80,8 @@ namespace Planar
         public const string ProductionEnvironment = "Production";
         public const string RecoveringJobsGroup = "RECOVERING_JOBS";
 
-        public const string HookNewLineLogText = "~~~<newline>~~~";
+        public const string HookNewLineLogText1 = "~~~<newline>~~~";
+        public const string HookNewLineLogText2 = "~~~&lt;newline&gt;~~~";
 
         public const string CliMessageHeaderName = "planar-cli-message";
         public const string CliSuggestionHeaderName = "planar-cli-suggestion";
