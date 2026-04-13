@@ -16,7 +16,7 @@ namespace Planar.Service.Data;
 
 public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
-    Task AddMonitor(MonitorAction request, int groupId);
+    Task AddMonitor(MonitorAction request, int groupId, string hook);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
@@ -119,7 +119,7 @@ public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context),
 
 public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
-    public async Task AddMonitor(MonitorAction request, int groupId)
+    public async Task AddMonitor(MonitorAction request, int groupId, string hook)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -127,9 +127,12 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
-
+            var conn = _context.Database.GetDbConnection();
             var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
-            await _context.Database.GetDbConnection().InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+            await conn.InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+
+            var monitorHook = new MonitorActionsHook { Hook = hook, MonitorId = request.Id };
+            await conn.InsertAsync(monitorHook, transaction: tran.GetDbTransaction());
 
             await tran.CommitAsync();
         });

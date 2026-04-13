@@ -67,12 +67,12 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
         monitor.Active = true;
 
-        if (await DataLayer.IsMonitorExists(monitor, groupId))
+        if (await DataLayer.IsMonitorExists(monitor))
         {
             throw new RestConflictException("monitor with same properties already exists");
         }
 
-        await DataLayer.AddMonitor(monitor, groupId);
+        await DataLayer.AddMonitor(monitor, groupId, request.Hook);
 
         _ = Resolve<MonitorDurationCache>().Flush();
         _ = SetMonitorActionsCache(clusterReload: true);

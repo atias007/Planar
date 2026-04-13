@@ -15,6 +15,7 @@ using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Validation;
 using PlanarJob;
+using Polly;
 using Quartz;
 using Quartz.Util;
 using System;
@@ -260,6 +261,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title}", action.Id, action.Title);
             monitorException = ex;
         }
+
         try
         {
             // Save the monitor alert
@@ -286,32 +288,48 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         MonitorSystemDetails? details = null;
         if (action == null) { return; }
         if (info == null) { return; }
+        Exception? monitorException = null;
 
         try
         {
             var toBeContinue = await Analyze(@event, action, null);
             if (!toBeContinue) { return; }
 
-            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(action.Hook);
-            if (hookInstance == null)
+            var hookInstances = await GetHookInstances(action);
+            if (hookInstances.Count == 0) { return; }
+
+            var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
+            var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
+
+            details = GetMonitorDetails(action, info, exception);
+            _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
+
+            await Parallel.ForEachAsync(hookInstances, cancellationToken, async (hookInstance, ct) =>
             {
-                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist in service", action.Hook, action.Id, action.Title);
-                return;
-            }
-            else
-            {
-                var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
-                details = GetMonitorDetails(action, info, exception);
-                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, @event, action.Hook, groupNames);
-                await hookInstance.HandleSystem(details, cancellationToken);
-                await SafeSaveMonitorAlert(action, details);
-                return;
-            }
+                try
+                {
+                    await hookInstance.HandleSystem(details, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, hookInstance.Name, groupNames);
+                }
+            });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook}", action.Id, action.Title, action.Hook);
-            await SafeSaveMonitorAlert(action, details, ex);
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title}", action.Id, action.Title);
+            monitorException = ex;
+        }
+
+        try
+        {
+            // Save the monitor alert
+            await SafeSaveMonitorAlert(action, details, monitorException);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail save monitor alert. monitor item id: {Id}, title: {Title}", action.Id, action.Title);
         }
     }
 
@@ -603,9 +621,16 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             alert.LogInstanceId = context.FireInstanceId;
 
             var items = new List<MonitorAlert>();
-            foreach (var group in action.Groups)
+            var cartesian =
+                from @group in action.Groups
+                from hook in action.MonitorActionsHooks
+                select (@group, hook);
+
+            foreach (var (group, hook) in cartesian)
             {
                 if (group == null) { continue; }
+                if (hook == null) { continue; }
+
                 group.Users ??= [];
 
                 var i = CloneMonitorAlert(alert);
@@ -613,6 +638,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                 i.GroupId = group.Id;
                 i.GroupName = group.Name;
                 i.UsersCount = group.Users.Count;
+                i.Hook = hook.Hook;
                 items.Add(i);
             }
 
@@ -642,9 +668,16 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             MapExceptionMonitorAlert(exception, alert);
 
             var items = new List<MonitorAlert>();
-            foreach (var group in action.Groups)
+            var cartesian =
+                from @group in action.Groups
+                from hook in action.MonitorActionsHooks
+                select (@group, hook);
+
+            foreach (var (group, hook) in cartesian)
             {
                 if (group == null) { continue; }
+                if (hook == null) { continue; }
+
                 if (group.Users == null || group.Users.Count == 0) { continue; }
 
                 var i = CloneMonitorAlert(alert);
@@ -652,6 +685,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                 i.GroupId = group.Id;
                 i.GroupName = group.Name;
                 i.UsersCount = group.Users.Count;
+                i.Hook = hook.Hook;
                 items.Add(i);
             }
 
@@ -708,7 +742,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
     {
         alert.MonitorId = action.Id;
-        alert.Hook = action.Hook;
         alert.EventArgument = action.EventArgument;
         alert.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
     }
