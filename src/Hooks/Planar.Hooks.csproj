@@ -34,7 +34,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
-    <PackageReference Include="Twilio" Version="7.14.3" />
+    <PackageReference Include="Twilio" Version="7.14.7" />
   </ItemGroup>
 
   <ItemGroup>
