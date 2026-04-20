@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.3.32901.215
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11620.152 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankOfIsraelCurrency", "BankOfIsraelCurrency\BankOfIsraelCurrency.csproj", "{5525A3F5-86C3-465C-8296-EC1A0848C2DF}"
 EndProject
@@ -42,6 +42,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestInvokeJobApi", "TestInvokeJobApi\TestInvokeJobApi.csproj", "{ABE8525A-FDC9-472E-9161-1E43C89B142A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestInvokeJobApi2", "TestInvokeJobApi2\TestInvokeJobApi2.csproj", "{87A4DD88-1DA1-4FC3-8891-3B850913B440}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hooks", "Hooks", "{5BE60344-B453-4860-9316-1A9E1D4CC1F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoHook", "DemoHook\DemoHook.csproj", "{3B40E135-B283-4F88-B272-6AEB109F0BDC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -125,6 +129,10 @@ Global
 		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87A4DD88-1DA1-4FC3-8891-3B850913B440}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B40E135-B283-4F88-B272-6AEB109F0BDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B40E135-B283-4F88-B272-6AEB109F0BDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B40E135-B283-4F88-B272-6AEB109F0BDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B40E135-B283-4F88-B272-6AEB109F0BDC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -132,6 +140,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F78E009C-B37B-4FB0-AC8D-6CA7065A8195} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
 		{AF080F39-A0B0-434D-85E4-66915110CB9E} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
+		{3B40E135-B283-4F88-B272-6AEB109F0BDC} = {5BE60344-B453-4860-9316-1A9E1D4CC1F4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F30257B7-435D-473B-9997-2AA3DF5E7D03}

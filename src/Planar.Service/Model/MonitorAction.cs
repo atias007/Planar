@@ -28,11 +28,10 @@ public partial class MonitorAction
     [Unicode(false)]
     public string? JobGroup { get; set; }
 
-    [StringLength(50)]
-    [Unicode(false)]
-    public string Hook { get; set; } = null!;
-
     public bool Active { get; set; }
+
+    [InverseProperty("Monitor")]
+    public virtual ICollection<MonitorActionsHook> MonitorActionsHooks { get; set; } = new List<MonitorActionsHook>();
 
     [ForeignKey("MonitorId")]
     [InverseProperty("Monitors")]

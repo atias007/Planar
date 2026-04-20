@@ -21,8 +21,9 @@ public class MonitorProfile : Profile
             .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
         CreateMap<MonitorAction, MonitorItem>()
-         .ForMember(t => t.Event, map => map.MapFrom(s => MonitorUtil.GetMonitorEventTitle(s.EventId, s.EventArgument)))
-         .ForMember(t => t.DistributionGroups, map => map.MapFrom(s => s.Groups.Select(s => s.Name)));
+            .ForMember(t => t.Event, map => map.MapFrom(s => MonitorUtil.GetMonitorEventTitle(s.EventId, s.EventArgument)))
+            .ForMember(t => t.DistributionGroups, map => map.MapFrom(s => s.Groups.Select(s => s.Name)))
+            .ForMember(t => t.Hooks, map => map.MapFrom(s => s.MonitorActionsHooks.Select(s => s.Hook)));
 
         CreateMap<UpdateMonitorRequest, MonitorAction>()
             .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.Event ?? string.Empty)))

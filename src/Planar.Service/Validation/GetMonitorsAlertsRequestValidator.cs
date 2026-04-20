@@ -19,8 +19,6 @@ public class GetMonitorsAlertsRequestValidator : AbstractValidator<GetMonitorsAl
 
         RuleFor(e => e.JobId).MaximumLength(101);
         RuleFor(r => r.JobGroup).MaximumLength(50);
-        RuleFor(r => r.GroupName).MaximumLength(50);
-        RuleFor(r => r.Hook).MaximumLength(50);
 
         RuleFor(r => r.JobId).Null()
             .When((req, r) => !string.IsNullOrEmpty(req.JobGroup))

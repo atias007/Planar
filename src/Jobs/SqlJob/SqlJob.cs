@@ -164,9 +164,9 @@ public abstract class SqlJob(
 
             var strRows = rows == null ? "no" : rows.GetValueOrDefault().ToString(CultureInfo.CurrentCulture);
             MessageBroker.AppendLog(LogLevel.Information, $"step name '{step.Name}' executed with {strRows} effected row(s). Elapsed: {elapsedTitle}");
-            if (rows.GetValueOrDefault() > 0)
+            if (rows.HasValue)
             {
-                MessageBroker.IncreaseEffectedRows(rows.GetValueOrDefault());
+                MessageBroker.IncreaseEffectedRows(rows.Value);
             }
         }
         catch (Exception ex)

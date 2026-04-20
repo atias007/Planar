@@ -7,9 +7,9 @@ namespace Planar.Hook.Internals
         public static string CleanText(string text)
         {
             var result = text
-                .Replace("\r\n", Consts.HookNewLineLogText)
-                .Replace("\r", Consts.HookNewLineLogText)
-                .Replace("\n", Consts.HookNewLineLogText);
+                .Replace("\r\n", Consts.HookNewLineLogText1)
+                .Replace("\r", Consts.HookNewLineLogText1)
+                .Replace("\n", Consts.HookNewLineLogText1);
 
             return new XElement("t", result).LastNode.ToString();
         }

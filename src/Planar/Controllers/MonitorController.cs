@@ -170,6 +170,38 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
         return NoContent();
     }
 
+    [HttpPatch("add-monitor-hook")]
+    [EditorAuthorize]
+    [EndpointName("patch_monitor_add_monitor_hook")]
+    [EndpointDescription("Add hook to monitor")]
+    [EndpointSummary("Add Hook To Monitor")]
+    [JsonConsumes]
+    [BadRequestResponse]
+    [NoContentResponse]
+    [ConflictResponse]
+    [NotFoundResponse]
+    public async Task<ActionResult> AddMoniorHook([FromBody] MonitorHookRequest request)
+    {
+        await BusinesLayer.AddMonitorHook(request);
+        return NoContent();
+    }
+
+    [HttpPatch("remove-monitor-hook")]
+    [EditorAuthorize]
+    [EndpointName("patch_monitor_remove_monitor_hook")]
+    [EndpointDescription("Remove hook from monitor")]
+    [EndpointSummary("Remove Hook From Monitor")]
+    [JsonConsumes]
+    [BadRequestResponse]
+    [NoContentResponse]
+    [ConflictResponse]
+    [NotFoundResponse]
+    public async Task<ActionResult> RemoveMonitorHook([FromBody] MonitorHookRequest request)
+    {
+        await BusinesLayer.RemoveMonitorHook(request);
+        return NoContent();
+    }
+
     [HttpPatch("add-distribution-group")]
     [EditorAuthorize]
     [EndpointName("patch_monitor_add_distribution_group")]

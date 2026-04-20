@@ -2,6 +2,7 @@
 {
     public class MonitorEvent
     {
+        public int EventId { get; set; }
 #if NETSTANDARD2_0
         public string EventName { get; set; }
         public string EventTitle { get; set; }
