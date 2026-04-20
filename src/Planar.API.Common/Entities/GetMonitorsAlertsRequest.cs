@@ -12,5 +12,7 @@ namespace Planar.API.Common.Entities
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public bool? Ascending { get; set; }
+        public string? GroupName { get; set; }
+        public string? Hook { get; set; }
     }
 }

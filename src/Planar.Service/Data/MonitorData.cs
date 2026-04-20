@@ -106,7 +106,11 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup);
 
+    Task AddMonitorHook(MonitorActionsHook monitorActionsHook);
+
     Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup);
+
+    Task RemoveMonitorHook(MonitorActionsHook monitorActionsHook);
 }
 
 public class MonitorDataSqlite(PlanarContext context) : MonitorData(context), IMonitorData
@@ -286,6 +290,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorActions
             .AsNoTracking()
             .Include(m => m.Groups)
+            .Include(m => m.MonitorActionsHooks)
             .Where(m => m.Id == id)
             .FirstOrDefaultAsync();
     }
@@ -295,11 +300,23 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.Database.GetDbConnection().InsertAsync(monitorActionGroup);
     }
 
+    public async Task AddMonitorHook(MonitorActionsHook monitorActionsHook)
+    {
+        _context.MonitorActionsHooks.Add(monitorActionsHook);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup)
     {
         await _context.Database.GetDbConnection().DeleteAsync<MonitorActionGroup>(ag =>
             ag.GroupId == monitorActionGroup.GroupId &&
             ag.MonitorId == monitorActionGroup.MonitorId);
+    }
+
+    public async Task RemoveMonitorHook(MonitorActionsHook monitorActionsHook)
+    {
+        _context.MonitorActionsHooks.Remove(monitorActionsHook);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<int>> GetMonitorActionIds()
@@ -401,6 +418,16 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         if (request.HasError.HasValue)
         {
             query = query.Where(l => l.HasError == request.HasError);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.GroupName))
+        {
+            query = query.Where(l => l.GroupName == request.GroupName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Hook))
+        {
+            query = query.Where(l => l.Hook == request.Hook);
         }
 
         if (!string.IsNullOrEmpty(request.JobId))

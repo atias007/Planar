@@ -604,7 +604,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(paging: response, entityName: "monitor");
 
-        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hook", "Active");
+        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hooks", "Active");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(

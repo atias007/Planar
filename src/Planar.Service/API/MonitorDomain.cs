@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -264,6 +265,46 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
 
         return result;
+    }
+
+    public async Task AddMonitorHook(MonitorHookRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        if (monitor.MonitorActionsHooks.Any(h => h.Hook == request.Hook))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} already have hook '{request.Hook}'");
+        }
+
+        if (monitor.MonitorActionsHooks.Count >= 5)
+        {
+            throw new RestValidationException("Hook", $"could not add the hook '{request.Hook}' because monitor have the maximum allowed of 5 hooks");
+        }
+
+        var entity = new MonitorActionsHook { Hook = request.Hook, MonitorId = request.MonitorId };
+        await DataLayer.AddMonitorHook(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
+    }
+
+    public async Task RemoveMonitorGroup(MonitorHookRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        if (!monitor.MonitorActionsHooks.Any(g => string.Equals(g.Hook, request.Hook, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} does not have hook '{request.Hook}'");
+        }
+
+        if (monitor.MonitorActionsHooks.Count == 1)
+        {
+            throw new RestValidationException("Hook", $"could not remove the hook '{request.Hook}' because monitor must have at least one hook");
+        }
+
+        var entity = new MonitorActionsHook { Hook = request.Hook, MonitorId = request.MonitorId };
+        await DataLayer.RemoveMonitorHook(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
     }
 
     public async Task AddDistributionGroup(MonitorGroupRequest request)
