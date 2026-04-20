@@ -16,11 +16,11 @@ namespace Planar.Service.Data;
 
 public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
-    Task AddMonitor(MonitorAction request, int groupId, string hook);
+    Task AddMonitor(MonitorAction request, int groupId);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
-    Task AddMonitorHook(MonitorHook monitorHook);
+    Task AddHook(MonitorHook monitorHook);
 
     Task AddMonitorMute(MonitorMute request);
 
@@ -123,7 +123,7 @@ public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context),
 
 public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
-    public async Task AddMonitor(MonitorAction request, int groupId, string hook)
+    public async Task AddMonitor(MonitorAction request, int groupId)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -135,8 +135,8 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
             await conn.InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
 
-            var monitorHook = new MonitorActionsHook { Hook = hook, MonitorId = request.Id };
-            await conn.InsertAsync(monitorHook, transaction: tran.GetDbTransaction());
+            ////var monitorHook = new MonitorActionsHook { Hook = hook, MonitorId = request.Id };
+            ////await conn.InsertAsync(monitorHook, transaction: tran.GetDbTransaction());
 
             await tran.CommitAsync();
         });
@@ -148,7 +148,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.SaveChangesAsync();
     }
 
-    public async Task AddMonitorHook(MonitorHook monitorHook)
+    public async Task AddHook(MonitorHook monitorHook)
     {
         _context.MonitorHooks.Add(monitorHook);
         await _context.SaveChangesAsync();
@@ -193,6 +193,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         var monitor = await _context.MonitorActions
             .Include(l => l.Groups)
+            .Include(l => l.MonitorActionsHooks)
             .FirstOrDefaultAsync(m => m.Id == request.Id);
 
         if (monitor == null) { return 0; }
@@ -334,6 +335,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorActions
             .AsSplitQuery()
             .Where(m => m.Active)
+            .Include(m => m.MonitorActionsHooks)
             .Include(m => m.Groups)
             .ThenInclude(g => g.Users)
             .AsNoTracking()

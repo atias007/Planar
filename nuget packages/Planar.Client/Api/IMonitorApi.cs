@@ -48,5 +48,9 @@ namespace Planar.Client.Api
         Task AddDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default);
 
         Task RemoveDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default);
+
+        Task AddMonitorHookAsync(int monitorId, string hook, CancellationToken cancellationToken = default);
+
+        Task RemoveMonitorHookAsync(int monitorId, string hook, CancellationToken cancellationToken = default);
     }
 }

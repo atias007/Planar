@@ -74,7 +74,9 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestConflictException("monitor with same properties already exists");
         }
 
-        await DataLayer.AddMonitor(monitor, groupId, request.Hook);
+        monitor.MonitorActionsHooks.Add(new MonitorActionsHook { Hook = request.Hook });
+
+        await DataLayer.AddMonitor(monitor, groupId);
 
         _ = Resolve<MonitorDurationCache>().Flush();
         _ = SetMonitorActionsCache(clusterReload: true);
@@ -107,7 +109,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         await ValidateHookDetails(details);
         details.Path = path;
         var entity = Mapper.Map<MonitorHook>(details);
-        await DataLayer.AddMonitorHook(entity);
+        await DataLayer.AddHook(entity);
 
         await Task.Delay(500);
         await ReloadHooks(clusterReload: true);
@@ -287,7 +289,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 
-    public async Task RemoveMonitorGroup(MonitorHookRequest request)
+    public async Task RemoveMonitorHook(MonitorHookRequest request)
     {
         var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
         var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
