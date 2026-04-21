@@ -683,17 +683,27 @@ internal static class Program
 
     private static bool HandleHttpConflictResponse(RestResponse response)
     {
-        if (response.StatusCode == HttpStatusCode.Conflict)
-        {
-            var message = string.IsNullOrEmpty(response.Content) ?
-                "server return conflict status" :
-                JsonConvert.DeserializeObject<string>(response.Content);
-
-            MarkupCliLine(CliFormat.GetConflictErrorMarkup(message));
+        const string defaultMessage = "server return conflict status";
+        if (response.StatusCode != HttpStatusCode.Conflict) { return false; }
+        if(string.IsNullOrWhiteSpace(response.Content)) 
+        { 
+            MarkupCliLine(CliFormat.GetConflictErrorMarkup(defaultMessage));
             return true;
         }
 
-        return false;
+        string? message;
+        try
+        {
+            message = JsonConvert.DeserializeObject<string>(response.Content);
+        }
+        catch
+        {
+            message = response.Content;
+        }
+
+        if (string.IsNullOrWhiteSpace(message)) { message = defaultMessage; }
+        MarkupCliLine(CliFormat.GetConflictErrorMarkup(message));
+        return true;
     }
 
     private static void HandleHttpFailResponse(RestResponse response)

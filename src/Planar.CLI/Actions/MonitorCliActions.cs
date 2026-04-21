@@ -11,6 +11,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -309,7 +310,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("add-monitor-hook")]
     public static async Task<CliActionResponse> AddMonitorHook(CliMonitorHookRequest request, CancellationToken cancellationToken)
     {
-        var wrapper = await CollectMonitorHookRequestData(request, cancellationToken);
+        var wrapper = await CollectMonitorHookRequestData(request, true, cancellationToken);
         if (!wrapper.IsSuccessful || wrapper.Request == null)
         {
             return new CliActionResponse(wrapper.FailResponse);
@@ -325,7 +326,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("remove-monitor-hook")]
     public static async Task<CliActionResponse> RemoveMonitorHook(CliMonitorHookRequest request, CancellationToken cancellationToken)
     {
-        var wrapper = await CollectMonitorHookRequestData(request, cancellationToken);
+        var wrapper = await CollectMonitorHookRequestData(request, false, cancellationToken);
         if (!wrapper.IsSuccessful || wrapper.Request == null)
         {
             return new CliActionResponse(wrapper.FailResponse);
@@ -447,7 +448,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
     }
 
-    private static async Task<RequestBuilderWrapper<CliMonitorHookRequest>> CollectMonitorHookRequestData(CliMonitorHookRequest request, CancellationToken cancellationToken)
+    private static async Task<RequestBuilderWrapper<CliMonitorHookRequest>> CollectMonitorHookRequestData(
+        CliMonitorHookRequest request,
+        bool add,
+        CancellationToken cancellationToken)
     {
         request ??= new CliMonitorHookRequest();
         if (request.MonitorId == 0)
@@ -463,12 +467,38 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         if (string.IsNullOrWhiteSpace(request.Hook))
         {
-            var p1 = await CliPromptUtil.Hooks(cancellationToken);
-            if (!p1.IsSuccessful) { return RequestBuilderWrapper<CliMonitorHookRequest>.Fail(p1.FailResponse); }
-            request.Hook = p1.Value ?? string.Empty;
+            var hooks = await SafeGetMonitorHooks(request.MonitorId, cancellationToken);
+            if (add)
+            {
+                var p1 = await CliPromptUtil.Hooks(cancellationToken);
+                if (!p1.IsSuccessful) { return RequestBuilderWrapper<CliMonitorHookRequest>.Fail(p1.FailResponse); }
+                request.Hook = p1.Value ?? string.Empty;
+            }
+            else
+            {
+                request.Hook = CliPromptUtil.PromptSelection(hooks, "hook") ?? string.Empty;
+            }
         }
 
         return new RequestBuilderWrapper<CliMonitorHookRequest> { Request = request };
+    }
+
+    private static async Task<IEnumerable<string>> SafeGetMonitorHooks(int monitorId, CancellationToken cancellationToken)
+    {
+        if (monitorId <= 0) { return []; }
+
+        try
+        {
+            var restRequest = new RestRequest("monitor/{id}", Method.Get)
+                .AddParameter("id", monitorId, ParameterType.UrlSegment);
+            var monitorDetails = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
+            if (!monitorDetails.IsSuccessful || monitorDetails.Data == null) { return []; }
+            return monitorDetails.Data.Hooks?.Select(h => h) ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)
