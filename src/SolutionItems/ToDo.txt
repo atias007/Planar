@@ -2,7 +2,6 @@
 PLAN FOR V 1.8.*
 ----------------
 - add stream max length to settings of hooks
-- add the ability to add/remove hooks to monitor
 
 - add mcp command to cli
 - validate on startup that instance id not exists in nodes table
@@ -410,3 +409,4 @@ V 1.8.2
 - add/remove group to monitor ==> client library
 - job apply with client library
 - client library: add error code (string) to bad request
+- add the ability to add/remove hooks to monitor
