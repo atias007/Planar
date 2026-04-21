@@ -309,7 +309,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("add-monitor-group")]
     public static async Task<CliActionResponse> AddMonitorGroup(CliMonitorGroupRequest request, CancellationToken cancellationToken)
     {
-        var wrapper = await CollectMonitorGroupRequestData(request, cancellationToken);
+        var wrapper = await CollectMonitorGroupRequestData(request, true, cancellationToken);
         if (!wrapper.IsSuccessful || wrapper.Request == null)
         {
             return new CliActionResponse(wrapper.FailResponse);
@@ -325,7 +325,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("remove-monitor-group")]
     public static async Task<CliActionResponse> RemoveMonitorGroup(CliMonitorGroupRequest request, CancellationToken cancellationToken)
     {
-        var wrapper = await CollectMonitorGroupRequestData(request, cancellationToken);
+        var wrapper = await CollectMonitorGroupRequestData(request, false, cancellationToken);
         if (!wrapper.IsSuccessful || wrapper.Request == null)
         {
             return new CliActionResponse(wrapper.FailResponse);
@@ -362,7 +362,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return CliPromptWrapper.Success;
     }
 
-    private static async Task<RequestBuilderWrapper<CliMonitorGroupRequest>> CollectMonitorGroupRequestData(CliMonitorGroupRequest request, CancellationToken cancellationToken)
+    private static async Task<RequestBuilderWrapper<CliMonitorGroupRequest>> CollectMonitorGroupRequestData(
+        CliMonitorGroupRequest request,
+        bool add,
+        CancellationToken cancellationToken)
     {
         request ??= new CliMonitorGroupRequest();
         if (request.MonitorId == 0)
@@ -378,12 +381,62 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         if (string.IsNullOrWhiteSpace(request.GroupName))
         {
-            var p1 = await CliPromptUtil.Groups(cancellationToken);
-            if (!p1.IsSuccessful) { return RequestBuilderWrapper<CliMonitorGroupRequest>.Fail(p1.FailResponse); }
-            request.GroupName = p1.Value ?? string.Empty;
+            var groups = await SafeGetMonitorGroupIds(request.MonitorId, cancellationToken);
+            if (add)
+            {
+                var p1 = await CliPromptUtil.Groups(cancellationToken);
+                if (!p1.IsSuccessful) { return RequestBuilderWrapper<CliMonitorGroupRequest>.Fail(p1.FailResponse); }
+                request.GroupName = p1.Value ?? string.Empty;
+            }
+            else
+            {
+                request.GroupName = CliPromptUtil.PromptSelection(groups, "group") ?? string.Empty;
+            }
         }
 
         return new RequestBuilderWrapper<CliMonitorGroupRequest> { Request = request };
+    }
+
+    private static async Task<IEnumerable<string>> SafeGetMonitorGroupIds(int monitorId, CancellationToken cancellationToken)
+    {
+        if (monitorId <= 0) { return []; }
+
+        try
+        {
+            var restRequest = new RestRequest("monitor/{id}", Method.Get)
+                .AddParameter("id", monitorId, ParameterType.UrlSegment);
+            var monitorDetails = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
+            if (!monitorDetails.IsSuccessful || monitorDetails.Data == null) { return []; }
+            return monitorDetails.Data.DistributionGroups?.Select(g => g) ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static async Task<RequestBuilderWrapper<CliMonitorHookRequest>> CollectMonitorHookRequestData(CliMonitorHookRequest request, CancellationToken cancellationToken)
+    {
+        request ??= new CliMonitorHookRequest();
+        if (request.MonitorId == 0)
+        {
+            var monitorWrapper = await CliPromptUtil.Monitors(writeSelection: true, cancellationToken);
+            if (!monitorWrapper.IsSuccessful || monitorWrapper.Value == null)
+            {
+                return RequestBuilderWrapper<CliMonitorHookRequest>.Fail(monitorWrapper.FailResponse);
+            }
+
+            request.MonitorId = monitorWrapper.Value.Id;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Hook))
+        {
+            var p1 = await CliPromptUtil.Hooks(cancellationToken);
+            if (!p1.IsSuccessful) { return RequestBuilderWrapper<CliMonitorHookRequest>.Fail(p1.FailResponse); }
+            request.Hook = p1.Value ?? string.Empty;
+        }
+
+        return new RequestBuilderWrapper<CliMonitorHookRequest> { Request = request };
     }
 
     private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)

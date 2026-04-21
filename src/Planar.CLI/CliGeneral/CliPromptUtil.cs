@@ -15,6 +15,10 @@ namespace Planar.CLI.CliGeneral;
 
 internal static class CliPromptUtil
 {
+    private const string group = "group";
+    private const string noAvaliableUsers = "no available users to perform the opertaion";
+    private const string noAvaliableGroups = "no available groups to perform the opertaion";
+
     internal static string? PromptSelection(IEnumerable<string>? items, string title, bool writeSelection = true)
     {
         if (items == null) { return null; }
@@ -98,7 +102,7 @@ internal static class CliPromptUtil
 
     internal static async Task<CliPromptWrapper<string>> Groups(CancellationToken cancellationToken)
     {
-        var restRequest = new RestRequest("group", Method.Get)
+        var restRequest = new RestRequest(group, Method.Get)
             .AddQueryPagingParameter(1000);
 
         var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
@@ -110,11 +114,11 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available groups to perform the opertaion");
+            throw new CliWarningException(noAvaliableGroups);
         }
 
         var items = data.Select(g => g.Name ?? string.Empty);
-        var select = PromptSelection(items, "group");
+        var select = PromptSelection(items, group);
         return new CliPromptWrapper<string>(select);
     }
 
@@ -131,16 +135,16 @@ internal static class CliPromptUtil
         var items = userResult.Data?.Groups;
         if (items == null || items.Count == 0)
         {
-            throw new CliWarningException("no available groups to perform the opertaion");
+            throw new CliWarningException(noAvaliableGroups);
         }
 
-        var select = PromptSelection(items, "group");
+        var select = PromptSelection(items, group);
         return new CliPromptWrapper<string>(select);
     }
 
     internal static async Task<CliPromptWrapper<string>> GroupsWithoutUser(string username, CancellationToken cancellationToken)
     {
-        var restRequest = new RestRequest("group", Method.Get)
+        var restRequest = new RestRequest(group, Method.Get)
             .AddQueryPagingParameter(1000);
 
         var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
@@ -152,7 +156,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available groups to perform the opertaion");
+            throw new CliWarningException(noAvaliableGroups);
         }
 
         restRequest = new RestRequest("user/{username}", Method.Get)
@@ -171,10 +175,10 @@ internal static class CliPromptUtil
 
         if (!items.Any())
         {
-            throw new CliWarningException("no available groups to perform the opertaion");
+            throw new CliWarningException(noAvaliableGroups);
         }
 
-        var select = PromptSelection(items, "group");
+        var select = PromptSelection(items, group);
         return new CliPromptWrapper<string>(select);
     }
 
@@ -191,7 +195,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available users to perform the opertaion");
+            throw new CliWarningException(noAvaliableUsers);
         }
 
         var items = data.Select(g => new CliSelectItem<UserRowModel> { DisplayName = g.ToString(), Value = g });
@@ -213,7 +217,7 @@ internal static class CliPromptUtil
         var items = result.Data?.Users.Select(u => u.Username);
         if (items == null || !items.Any())
         {
-            throw new CliWarningException("no available users to perform the opertaion");
+            throw new CliWarningException(noAvaliableUsers);
         }
 
         var select = PromptSelection(items, "user");
@@ -233,7 +237,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available users to perform the opertaion");
+            throw new CliWarningException(noAvaliableUsers);
         }
 
         restRequest = new RestRequest("group/{name}", Method.Get)
@@ -253,7 +257,7 @@ internal static class CliPromptUtil
 
         if (!items.Any())
         {
-            throw new CliWarningException("no available users to perform the opertaion");
+            throw new CliWarningException(noAvaliableUsers);
         }
 
         var select = PromptSelection(items, "user");
