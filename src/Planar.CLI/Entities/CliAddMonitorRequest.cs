@@ -16,7 +16,7 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("e", "event")]
         [Required("event argument is required")]
-        public string EventName { get; set; } = null!;
+        public string Event { get; set; } = null!;
 
         [ActionProperty("a", "arguments")]
         public string? EventArgument { get; set; }
@@ -27,6 +27,6 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("h", "hook")]
         [Required("hook argument is required")]
-        public string Hook { get; set; } = string.Empty;
+        public string Hook { get; set; } = null!;
     }
 }

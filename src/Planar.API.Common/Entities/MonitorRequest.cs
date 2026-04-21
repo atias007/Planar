@@ -11,6 +11,4 @@ public abstract class MonitorRequest
     public string Event { get; set; } = null!;
 
     public string? EventArgument { get; set; }
-
-    public string Hook { get; set; } = null!;
 }

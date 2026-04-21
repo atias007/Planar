@@ -29,13 +29,6 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
             .When(r => MonitorEventsExtensions.IsSystemMonitorEvent(r.Event))
             .WithMessage(r => $"{{PropertyName}} must be null when Event Name is {r.Event?.SplitWords()}");
 
-        RuleFor(r => r.Hook).NotEmpty();
-
-        RuleFor(r => r.Hook)
-            .Must(ValidationUtil.IsHookExists)
-            .When(r => !string.IsNullOrWhiteSpace(r.Hook))
-            .WithMessage("{PropertyName} '{PropertyValue}' does not exist");
-
         RuleFor(r => r.EventArgument).NotEmpty()
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
             .WithMessage(r => $"{{PropertyName}} must have value when Event Id is {r.Event?.SplitWords()}");

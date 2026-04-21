@@ -38,6 +38,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<MonitorAction> MonitorActions { get; set; }
 
+    public virtual DbSet<MonitorActionsHook> MonitorActionsHooks { get; set; }
+
     public virtual DbSet<MonitorAlert> MonitorAlerts { get; set; }
 
     public virtual DbSet<MonitorCounter> MonitorCounters { get; set; }
@@ -68,7 +70,7 @@ public partial class PlanarContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK_Monitor");
 
-            entity.Property(e => e.Active).HasDefaultValue(true);
+            entity.Property(e => e.Active).HasDefaultValue(true, "DF_Monitor_Active");
 
             entity.HasMany(d => d.Groups).WithMany(p => p.Monitors)
                 .UsingEntity<Dictionary<string, object>>(
@@ -86,6 +88,13 @@ public partial class PlanarContext : DbContext
                         j.HasKey("MonitorId", "GroupId");
                         j.ToTable("MonitorActionsGroups");
                     });
+        });
+
+        modelBuilder.Entity<MonitorActionsHook>(entity =>
+        {
+            entity.HasOne(d => d.Monitor).WithMany(p => p.MonitorActionsHooks)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MonitorActionsHooks_MonitorActions");
         });
 
         modelBuilder.Entity<MonitorCounter>(entity =>

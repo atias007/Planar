@@ -10,7 +10,7 @@ public class MonitorItem
     public string? JobName { get; set; }
     public string? JobGroup { get; set; }
     public string? EventArgument { get; set; }
-    public string Hook { get; set; } = string.Empty;
+    public IEnumerable<string> Hooks { get; set; } = [];
     public bool Active { get; set; }
 
     [DisplayFormat(Hide = true)]

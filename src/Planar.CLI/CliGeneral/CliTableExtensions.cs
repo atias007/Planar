@@ -273,10 +273,10 @@ internal static class CliTableExtensions
     public static CliTable GetTable(List<MonitorEventModel>? response)
     {
         var table = new CliTable(showCount: true, entityName: "event");
-        table.Table.AddColumns("Event Title", "Event Type");
+        table.Table.AddColumns("Id", "Title", "Type");
 
         if (response == null) { return table; }
-        response.ForEach(r => table.Table.AddRow(r.EventTitle, r.EventType));
+        response.ForEach(r => table.Table.AddRow($"{r.EventId}", r.EventTitle, r.EventType));
         return table;
     }
 
@@ -604,7 +604,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(paging: response, entityName: "monitor");
 
-        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hook", "Active");
+        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hooks", "Active");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -614,8 +614,8 @@ internal static class CliTableExtensions
             r.JobGroup.EscapeMarkup(),
             r.JobName.EscapeMarkup(),
             r.EventArgument.EscapeMarkup(),
-            string.Join(',', r.DistributionGroups),
-            r.Hook.EscapeMarkup(),
+            string.Join(", ", r.DistributionGroups).EscapeMarkup(),
+            string.Join(", ", r.Hooks).EscapeMarkup(),
             CliTableFormat.GetBooleanMarkup(r.Active)));
 
         return table;

@@ -260,11 +260,23 @@ CREATE TABLE [MonitorActions](
 	[EventArgument] [varchar](50) NULL,
 	[JobName] [varchar](50) NULL,
 	[JobGroup] [varchar](50) NULL,
-	[GroupId] [int] NOT NULL,
-	[Hook] [varchar](50) NOT NULL,
-	[Active] [bit] NOT NULL DEFAULT 1,
-    FOREIGN KEY(GroupId) REFERENCES Groups(Id)
+	[Active] [bit] NOT NULL DEFAULT 1
 	);
+
+CREATE TABLE MonitorActionsGroups (
+    MonitorId INTEGER NOT NULL,
+    GroupId   INTEGER NOT NULL,
+    PRIMARY KEY (MonitorId, GroupId),
+	FOREIGN KEY(GroupId) REFERENCES Groups(Id),
+	FOREIGN KEY(MonitorId) REFERENCES MonitorActions(Id)
+);
+
+CREATE TABLE MonitorActionsHooks (
+    MonitorId INTEGER NOT NULL,
+    Hook [varchar](50) NOT NULL,
+    PRIMARY KEY (MonitorId, Hook),
+	FOREIGN KEY(MonitorId) REFERENCES MonitorActions(Id)
+);
 
 CREATE TABLE [MonitorAlerts](
 	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,

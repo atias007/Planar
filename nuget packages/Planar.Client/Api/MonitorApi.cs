@@ -1,5 +1,4 @@
 ﻿using Planar.Client.Entities;
-
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -22,6 +21,25 @@ namespace Planar.Client.Api
                 .AddBody(request);
             var result = await _proxy.InvokeAsync<PlanarIntIdResponse>(restRequestAdd, cancellationToken);
             return result?.Id ?? 0;
+        }
+
+        public Task AddMonitorHookAsync(int monitorId, string hook, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(hook, nameof(hook));
+            ValidateMandatory(monitorId, nameof(monitorId));
+            var restRequestAdd = new RestRequest("add-monitor-hook", HttpPatchMethod)
+                .AddBody(new { monitorId, hook });
+            return _proxy.InvokeAsync(restRequestAdd, cancellationToken);
+        }
+
+        public Task RemoveMonitorHookAsync(int monitorId, string hook, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(hook, nameof(hook));
+            ValidateMandatory(monitorId, nameof(monitorId));
+            var restRequestAdd = new RestRequest("remove-monitor-hook", HttpPatchMethod)
+                .AddBody(new { monitorId, hook });
+
+            return _proxy.InvokeAsync(restRequestAdd, cancellationToken);
         }
 
         public Task AddDistributionGroupAsync(int monitorId, string groupName, CancellationToken cancellationToken = default)

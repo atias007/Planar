@@ -20,7 +20,7 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task AddMonitorCounter(MonitorCounter counter);
 
-    Task AddMonitorHook(MonitorHook monitorHook);
+    Task AddHook(MonitorHook monitorHook);
 
     Task AddMonitorMute(MonitorMute request);
 
@@ -106,7 +106,11 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup);
 
+    Task AddMonitorHook(MonitorActionsHook monitorActionsHook);
+
     Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup);
+
+    Task RemoveMonitorHook(MonitorActionsHook monitorActionsHook);
 }
 
 public class MonitorDataSqlite(PlanarContext context) : MonitorData(context), IMonitorData
@@ -127,9 +131,12 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
-
+            var conn = _context.Database.GetDbConnection();
             var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
-            await _context.Database.GetDbConnection().InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+            await conn.InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+
+            ////var monitorHook = new MonitorActionsHook { Hook = hook, MonitorId = request.Id };
+            ////await conn.InsertAsync(monitorHook, transaction: tran.GetDbTransaction());
 
             await tran.CommitAsync();
         });
@@ -141,7 +148,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.SaveChangesAsync();
     }
 
-    public async Task AddMonitorHook(MonitorHook monitorHook)
+    public async Task AddHook(MonitorHook monitorHook)
     {
         _context.MonitorHooks.Add(monitorHook);
         await _context.SaveChangesAsync();
@@ -186,10 +193,12 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         var monitor = await _context.MonitorActions
             .Include(l => l.Groups)
+            .Include(l => l.MonitorActionsHooks)
             .FirstOrDefaultAsync(m => m.Id == request.Id);
 
         if (monitor == null) { return 0; }
         monitor.Groups.Clear();
+        monitor.MonitorActionsHooks.Clear();
         _context.MonitorActions.Remove(monitor);
         await _context.SaveChangesAsync();
         return 1;
@@ -282,6 +291,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorActions
             .AsNoTracking()
             .Include(m => m.Groups)
+            .Include(m => m.MonitorActionsHooks)
             .Where(m => m.Id == id)
             .FirstOrDefaultAsync();
     }
@@ -291,11 +301,23 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.Database.GetDbConnection().InsertAsync(monitorActionGroup);
     }
 
+    public async Task AddMonitorHook(MonitorActionsHook monitorActionsHook)
+    {
+        _context.MonitorActionsHooks.Add(monitorActionsHook);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup)
     {
         await _context.Database.GetDbConnection().DeleteAsync<MonitorActionGroup>(ag =>
             ag.GroupId == monitorActionGroup.GroupId &&
             ag.MonitorId == monitorActionGroup.MonitorId);
+    }
+
+    public async Task RemoveMonitorHook(MonitorActionsHook monitorActionsHook)
+    {
+        _context.MonitorActionsHooks.Remove(monitorActionsHook);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<int>> GetMonitorActionIds()
@@ -313,6 +335,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorActions
             .AsSplitQuery()
             .Where(m => m.Active)
+            .Include(m => m.MonitorActionsHooks)
             .Include(m => m.Groups)
             .ThenInclude(g => g.Users)
             .AsNoTracking()
@@ -356,6 +379,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return _context.MonitorActions
             .AsNoTracking()
             .Include(i => i.Groups)
+            .Include(i => i.MonitorActionsHooks)
             .OrderByDescending(d => d.Active)
             .ThenBy(d => d.JobGroup)
             .ThenBy(d => d.JobName)
@@ -388,16 +412,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             query = query.Where(l => l.EventTitle != null && l.EventTitle == request.EventTitle);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.GroupName))
-        {
-            query = query.Where(l => l.GroupName == request.GroupName);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Hook))
-        {
-            query = query.Where(l => l.Hook == request.Hook);
-        }
-
         if (request.MonitorId.HasValue)
         {
             query = query.Where(l => l.MonitorId == request.MonitorId);
@@ -406,6 +420,16 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         if (request.HasError.HasValue)
         {
             query = query.Where(l => l.HasError == request.HasError);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.GroupName))
+        {
+            query = query.Where(l => l.GroupName == request.GroupName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Hook))
+        {
+            query = query.Where(l => l.Hook == request.Hook);
         }
 
         if (!string.IsNullOrEmpty(request.JobId))
@@ -540,7 +564,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<List<string>> GetMonitorUsedHooks()
     {
-        return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
+        return await _context.MonitorActionsHooks.Select(m => m.Hook).Distinct().ToListAsync();
     }
 
     public async Task IncreaseMonitorCounter(string jobId, int monitorId)
@@ -568,8 +592,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return await _context.MonitorActions.AnyAsync(m =>
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
-            m.JobGroup == monitor.JobGroup &&
-            m.Hook == monitor.Hook);
+            m.JobGroup == monitor.JobGroup);
     }
 
     public async Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId)
@@ -578,8 +601,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             m.Id != currentUpdateId &&
             m.EventId == monitor.EventId &&
             m.JobName == monitor.JobName &&
-            m.JobGroup == monitor.JobGroup &&
-            m.Hook == monitor.Hook);
+            m.JobGroup == monitor.JobGroup);
     }
 
     public async Task<bool> IsMonitorExists(int id)

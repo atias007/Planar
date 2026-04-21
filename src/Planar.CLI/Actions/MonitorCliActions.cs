@@ -306,6 +306,38 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return new CliActionResponse(result);
     }
 
+    [Action("add-monitor-hook")]
+    public static async Task<CliActionResponse> AddMonitorHook(CliMonitorHookRequest request, CancellationToken cancellationToken)
+    {
+        var wrapper = await CollectMonitorHookRequestData(request, cancellationToken);
+        if (!wrapper.IsSuccessful || wrapper.Request == null)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var restRequest = new RestRequest("monitor/add-monitor-hook", Method.Patch)
+            .AddBody(wrapper.Request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("remove-monitor-hook")]
+    public static async Task<CliActionResponse> RemoveMonitorHook(CliMonitorHookRequest request, CancellationToken cancellationToken)
+    {
+        var wrapper = await CollectMonitorHookRequestData(request, cancellationToken);
+        if (!wrapper.IsSuccessful || wrapper.Request == null)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var restRequest = new RestRequest("monitor/remove-monitor-hook", Method.Patch)
+            .AddBody(wrapper.Request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
     [Action("add-monitor-group")]
     public static async Task<CliActionResponse> AddMonitorGroup(CliMonitorGroupRequest request, CancellationToken cancellationToken)
     {
@@ -562,7 +594,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             GroupName = groupName,
             Hook = hookName,
             JobName = job.JobName,
-            EventName = eventName,
+            Event = eventName,
             Title = title
         };
 

@@ -84,6 +84,7 @@
     <None Remove="Scripts\Planar_0069 - monitor_action_groups.sql" />
     <None Remove="Scripts\Planar_0070 - add_configsource.sql" />
     <None Remove="Scripts\Planar_0071 - quartz_ver_migration.sql" />
+    <None Remove="Scripts\Planar_0072 - monitor_action_hooks.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -157,6 +158,7 @@
     <EmbeddedResource Include="Scripts\Planar_0069 - monitor_action_groups.sql" />
     <EmbeddedResource Include="Scripts\Planar_0070 - add_configsource.sql" />
     <EmbeddedResource Include="Scripts\Planar_0071 - quartz_ver_migration.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0072 - monitor_action_hooks.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

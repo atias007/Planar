@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -45,6 +46,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
                 .ThenBy(e => e.ToString())
             .Select(e => new MonitorEventModel
             {
+                EventId = (int)e,
                 EventName = e.ToString(),
                 EventTitle = e.GetEnumDescription(),
                 EventType = GetEventTypeTitle(e)
@@ -67,10 +69,12 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
         monitor.Active = true;
 
-        if (await DataLayer.IsMonitorExists(monitor, groupId))
+        if (await DataLayer.IsMonitorExists(monitor))
         {
             throw new RestConflictException("monitor with same properties already exists");
         }
+
+        monitor.MonitorActionsHooks.Add(new MonitorActionsHook { Hook = request.Hook });
 
         await DataLayer.AddMonitor(monitor, groupId);
 
@@ -105,7 +109,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         await ValidateHookDetails(details);
         details.Path = path;
         var entity = Mapper.Map<MonitorHook>(details);
-        await DataLayer.AddMonitorHook(entity);
+        await DataLayer.AddHook(entity);
 
         await Task.Delay(500);
         await ReloadHooks(clusterReload: true);
@@ -178,6 +182,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return result;
     }
 
+    /// <summary>
+    /// **************** FOR INTERNAL USE ONLY - DO NOT EXPOSE TO THE OUTSIDE WORLD ****************
+    /// </summary>
+    /// <returns></returns>
     internal async Task<IEnumerable<MonitorAction>> GetMonitorActions()
     {
         var data = await DataLayer.GetMonitorActions();
@@ -261,6 +269,46 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return result;
     }
 
+    public async Task AddMonitorHook(MonitorHookRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        if (monitor.MonitorActionsHooks.Any(h => h.Hook == request.Hook))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} already have hook '{request.Hook}'");
+        }
+
+        if (monitor.MonitorActionsHooks.Count >= 5)
+        {
+            throw new RestValidationException("Hook", $"could not add the hook '{request.Hook}' because monitor have the maximum allowed of 5 hooks");
+        }
+
+        var entity = new MonitorActionsHook { Hook = request.Hook, MonitorId = request.MonitorId };
+        await DataLayer.AddMonitorHook(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
+    }
+
+    public async Task RemoveMonitorHook(MonitorHookRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        if (!monitor.MonitorActionsHooks.Any(g => string.Equals(g.Hook, request.Hook, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} does not have hook '{request.Hook}'");
+        }
+
+        if (monitor.MonitorActionsHooks.Count == 1)
+        {
+            throw new RestValidationException("Hook", $"could not remove the hook '{request.Hook}' because monitor must have at least one hook");
+        }
+
+        var entity = new MonitorActionsHook { Hook = request.Hook, MonitorId = request.MonitorId };
+        await DataLayer.RemoveMonitorHook(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
+    }
+
     public async Task AddDistributionGroup(MonitorGroupRequest request)
     {
         var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
@@ -320,7 +368,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         TrimPropertyName(request);
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
         var monitor = ValidateExistingEntity(dbMonitor, "monitor");
-        ForbbidenPartialUpdateProperties(request, "EventId", "Groups");
+        ForbbidenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
         var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
         var validator = Resolve<IValidator<UpdateMonitorRequest>>();
         await SetEntityProperties(updateMonitor, request, validator);
@@ -379,12 +427,13 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException(field, $"{field} was not found");
         }
 
+        var hook = new MonitorActionsHook { Hook = request.Hook };
         var action = new MonitorAction
         {
             Active = true,
             EventArgument = null,
             EventId = (int)monitorEvent,
-            Hook = request.Hook,
+            MonitorActionsHooks = [hook],
             JobGroup = "TestJobGroup",
             JobName = "TestJobName",
             Title = "Test Monitor"

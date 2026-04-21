@@ -100,6 +100,27 @@ internal static class CliPromptUtil
         return new CliPromptWrapper<string>(select);
     }
 
+    internal static async Task<CliPromptWrapper<string>> Hooks(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("monitor/hooks", Method.Get);
+        var result = await RestProxy.Invoke<IEnumerable<HookInfo>>(restRequest, cancellationToken);
+        if (!result.IsSuccessful)
+        {
+            return new CliPromptWrapper<string>(result);
+        }
+
+        var data = result.Data;
+        if (data == null || !data.Any())
+        {
+            throw new CliWarningException("no available new hooks to perform the opertaion");
+        }
+
+        var items = data.Select(g => g.Name ?? string.Empty);
+
+        var select = PromptSelection(items, "hook");
+        return new CliPromptWrapper<string>(select);
+    }
+
     internal static async Task<CliPromptWrapper<string>> Groups(CancellationToken cancellationToken)
     {
         var restRequest = new RestRequest(group, Method.Get)
