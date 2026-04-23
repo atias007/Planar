@@ -42,7 +42,7 @@
 	<ItemGroup>
 		<PackageReference Include="AsciiChart.Sharp" Version="1.0.3" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.5" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
 		<PackageReference Include="ReadLine" Version="2.0.1" />
 		<PackageReference Include="RestSharp" Version="114.0.0" />
 		<PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="114.0.0" />
@@ -51,7 +51,7 @@
 		  <PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="Spectre.Console" Version="0.55.2" />
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.6" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
 	</ItemGroup>
 
 	<ItemGroup>
