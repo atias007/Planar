@@ -14,7 +14,7 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
-    public static class PlanarJob
+    public static partial class PlanarJob
     {
 #if NETSTANDARD2_0
         internal static string Environment { get; private set; }
@@ -29,18 +29,6 @@ namespace Planar.Job
         internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
 
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
-
-        public static void Start<TJob>()
-            where TJob : BaseJob, new()
-        {
-            Start<TJob>(PlanarJobStartProperties.Default);
-        }
-
-        public static void Start<TJob>(PlanarJobStartProperties properties)
-            where TJob : BaseJob, new()
-        {
-            StartAsync<TJob>(properties).Wait();
-        }
 
         public static Task StartAsync<TJob>()
                     where TJob : BaseJob, new()
