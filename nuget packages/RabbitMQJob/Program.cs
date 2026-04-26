@@ -1,4 +1,13 @@
 ﻿using Planar.Job;
+using Planar.Job.RabbitMQ;
 using RabbitMQJob;
 
-await PlanarJob.StartAsync<Job>();
+try
+{
+    var connectionInfo = new RabbitMQConnectionInfo { Hostname = "localhost" };
+    await PlanarJob.StartAsync<Job>(connectionInfo);
+}
+catch (Exception)
+{
+    throw;
+}

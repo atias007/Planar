@@ -83,6 +83,7 @@
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.7" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
 		<PackageReference Include="YamlDotNet" Version="17.0.1" />
