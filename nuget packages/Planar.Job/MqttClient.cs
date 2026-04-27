@@ -5,6 +5,7 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Protocol;
+using MQTTnet.Server;
 using Newtonsoft.Json;
 using Planar.Job;
 using System;
@@ -56,13 +57,22 @@ namespace Planar
             Formatting = Formatting.None,
         };
 
+        public static bool IsConnected => _mqttClient?.IsConnected ?? false;
+
         public static async Task PingAsync()
         {
             // mqtt
             if (_mqttClient != null)
             {
-                await _mqttClient.PingAsync();
-                return;
+                try
+                {
+                    await _mqttClient.PingAsync();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    // DO NOTHING, just try to ping failover proxy if mqtt ping failed
+                }
             }
 
             // failover

@@ -52,13 +52,14 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHost
 
     private static void Publish(CloudEventArgs args)
     {
-        if (_events.TryGetValue(args.ClientId, out var handler))
+        if (!_events.TryGetValue(args.ClientId, out var handler)) { return; }
+        try
         {
             handler.Handler.Invoke(args);
         }
-        else
+        catch (Exception ex)
         {
-            throw new PlanarJobException($"Fail to find service instance id {args.ClientId} on registered mqtt broker service");
+            Console.Out.WriteLineAsync(ex.ToString());
         }
     }
 

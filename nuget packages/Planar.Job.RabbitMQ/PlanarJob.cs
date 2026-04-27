@@ -1,186 +1,85 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Planar.Job.RabbitMQ;
-using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
     public static partial class PlanarJob
     {
-        private static readonly SemaphoreSlim _reconnectSemaphore = new SemaphoreSlim(1, 1);
-        private static volatile bool _isConsuming;
-
 #if NETSTANDARD2_0
-        private static IChannel _channel;
-        private static IConnection _connection;
         internal static string Environment { get; private set; }
+        private static Type _jobType;
 #else
-        private static IConnection? _connection;
-        private static IChannel? _channel;
         internal static string Environment { get; private set; } = null!;
+        private static Type? _jobType;
 #endif
-        internal static RunningMode Mode { get; set; } = RunningMode.Debug;
-        internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
-        internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
+
+        internal static RunningMode Mode { get; set; } = RunningMode.Release;
+        internal static PlanarJobStartProperties Properties { get; set; } = PlanarJobStartProperties.Default;
+        internal static Stopwatch Stopwatch { get; set; } = new Stopwatch();
 
         public async static Task StartAsync<TJob>(RabbitMQConnectionInfo connectionInfo)
                     where TJob : BaseJob, new()
         {
+            await StartAsync<TJob>(connectionInfo, PlanarJobStartProperties.Default);
+        }
+
+        public async static Task StartAsync<TJob>(RabbitMQConnectionInfo connectionInfo, PlanarJobStartProperties properties)
+                    where TJob : BaseJob, new()
+        {
+            _jobType = typeof(TJob);
+
+            try
+            {
+                await SafeStartAsync<TJob>(connectionInfo, properties);
+            }
+            catch (Exception ex)
+            {
+                await Console.Out.WriteLineAsync("----------------");
+                await Console.Out.WriteLineAsync(" Fail to start");
+                await Console.Out.WriteLineAsync("----------------");
+                await Console.Out.WriteLineAsync(ex.ToString());
+            }
+        }
+
+        private async static Task SafeStartAsync<TJob>(RabbitMQConnectionInfo connectionInfo, PlanarJobStartProperties properties)
+                    where TJob : BaseJob, new()
+        {
+            Properties = properties;
+
             var factory = connectionInfo.GetConnectionFactory();
-            factory.AutomaticRecoveryEnabled = true;
-            factory.NetworkRecoveryInterval = TimeSpan.FromSeconds(10);
-            factory.RequestedHeartbeat = TimeSpan.FromSeconds(60);
-            factory.RequestedConnectionTimeout = TimeSpan.FromSeconds(30);
+            var cancellationToken = GetMainCancellationToken();
 
-            var queueName = "Postal";
-
-            var host = Host.CreateDefaultBuilder(System.Environment.GetCommandLineArgs()).Build();
-            var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
-            var cancellationToken = lifetime.ApplicationStopping;
-
-            await EnsureDefinition(
+            // set rabbitmq definition (exchange, queue, binding)
+            await RabbitMQFactory.EnsureDefinition(
                 connectionFactory: factory,
-                queueName,
                 connectionInfo,
                 cancellationToken: cancellationToken);
 
             // Start consuming messages
-            await StartConsumeAsync(
+            await RabbitMQFactory.StartConsumeAsync(
                 connectionFactory: factory,
-                queueName,
                 connectionInfo,
                 messageHandler: ProcessMessageAsync,
                 cancellationToken: cancellationToken
             );
         }
 
-        /// <summary>
-        /// Closes the channel and connection gracefully
-        /// </summary>
-        private static async Task CloseConnectionAsync()
+        private static CancellationToken GetMainCancellationToken()
         {
-            try
-            {
-                if (_channel != null)
-                {
-                    await _channel.CloseAsync();
-                    _channel.Dispose();
-                    _channel = null;
-                }
-            }
-            catch { }
-
-            try
-            {
-                if (_connection != null)
-                {
-                    await _connection.CloseAsync();
-                    _connection.Dispose();
-                    _connection = null;
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Ensures connection and channel are established and healthy (Singleton pattern)
-        /// </summary>
-        private static async Task EnsureConnectionAsync(
-            IConnectionFactory connectionFactory,
-            string queueName,
-            RabbitMQConnectionInfo connectionInfo,
-            CancellationToken cancellationToken)
-        {
-            await _reconnectSemaphore.WaitAsync(cancellationToken);
-
-            try
-            {
-                // Ensure connection is open
-                if (_connection == null || !_connection.IsOpen)
-                {
-                    if (_connection != null)
-                    {
-                        await _connection.CloseAsync();
-                        _connection = null;
-                    }
-
-                    var connectionName = $"{nameof(Planar)}:{nameof(Job)}:{queueName}";
-
-                    if (connectionInfo.Endpoints.Count > 0)
-                    {
-                        _connection = await connectionFactory.CreateConnectionAsync(connectionInfo.Endpoints, connectionName, cancellationToken);
-                    }
-                    else
-                    {
-                        _connection = await connectionFactory.CreateConnectionAsync(connectionName, cancellationToken);
-                    }
-                }
-
-                // Ensure channel is open
-                if (_channel == null || !_channel.IsOpen)
-                {
-                    if (_channel != null)
-                    {
-                        await _channel.CloseAsync();
-                        _channel = null;
-                    }
-
-                    _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
-
-                    // Set Quality of Service (prefetch)
-                    await _channel.BasicQosAsync(0, prefetchCount: 1, false, cancellationToken);
-
-                    // Declare queue with durability for resilience
-                    await _channel.QueueDeclareAsync(
-                        queue: queueName,
-                        durable: true,
-                        exclusive: false,
-                        autoDelete: false,
-                        arguments: null,
-                        cancellationToken: cancellationToken);
-                }
-            }
-            finally
-            {
-                _reconnectSemaphore.Release();
-            }
-        }
-
-        private static async Task EnsureDefinition(
-                    IConnectionFactory connectionFactory,
-                    string queueName,
-                    RabbitMQConnectionInfo connectionInfo,
-                    CancellationToken cancellationToken)
-        {
-            await EnsureConnectionAsync(connectionFactory, queueName, connectionInfo, cancellationToken);
-            if (_channel == null) { return; }
-
-            await _channel.ExchangeDeclareAsync(
-                exchange: "Planar",
-                type: ExchangeType.Direct,
-                durable: true,
-                autoDelete: false,
-                arguments: null);
-
-            await _channel.QueueDeclareAsync(
-                queue: "Planar.task1",
-                durable: true,        // quorum queues must be durable
-                exclusive: false,     // quorum queues cannot be exclusive
-                autoDelete: false);    // quorum queues cannot be auto-delete
-
-            await _channel.QueueBindAsync(
-                queue: "Planar.task1",
-                exchange: "Planar",
-                routingKey: "task1",
-                arguments: null);
-
-            await Console.Out.WriteLineAsync("Exchange, queue, and binding created successfully.");
+            var host = Host.CreateDefaultBuilder(System.Environment.GetCommandLineArgs()).Build();
+            var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
+            var cancellationToken = lifetime.ApplicationStopping;
+            return cancellationToken;
         }
 
         /// <summary>
@@ -189,76 +88,73 @@ namespace Planar.Job
         /// <param name="messageBody">The message body as a string</param>
         /// <param name="eventArgs">Event arguments containing message metadata</param>
         /// <returns>True if message processed successfully, False to requeue</returns>
-        private static async Task ProcessMessageAsync(string messageBody, BasicDeliverEventArgs eventArgs)
+        private static async Task ProcessMessageAsync(BasicDeliverEventArgs eventArgs)
         {
+            await Console.Out.WriteLineAsync(">> Received message");
+
             try
             {
-                Console.WriteLine($"Received message: {messageBody}");
-                Console.WriteLine($"Delivery Tag: {eventArgs.DeliveryTag}");
-                Console.WriteLine($"Routing Key: {eventArgs.RoutingKey}");
-
-                // Simulate processing
-                await Task.Delay(100);
-
-                // Your business logic here
-                // ...
+                await Execute(eventArgs);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing message: {ex.Message}");
+                var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {_jobType?.Name}" };
+                await Console.Error.WriteLineAsync(log.ToString());
+                log.Message = ex.ToString();
+                await Console.Error.WriteLineAsync(log.ToString());
             }
         }
 
-        /// <summary>
-        /// Starts consuming messages from RabbitMQ queue with automatic reconnection and resilience
-        /// </summary>
-        /// <param name="connectionFactory">RabbitMQ connection factory with configured settings</param>
-        /// <param name="queueName">Name of the queue to consume from</param>
-        /// <param name="messageHandler">Handler function to process received messages. Returns true if successful, false to requeue.</param>
-        /// <param name="cancellationToken">Cancellation token to stop consuming</param>
-        /// <returns>Task representing the consumer operation</returns>
-        private static async Task StartConsumeAsync(
-            IConnectionFactory connectionFactory,
-            string queueName,
-            RabbitMQConnectionInfo connectionInfo,
-            Func<string, BasicDeliverEventArgs, Task> messageHandler,
-            CancellationToken cancellationToken)
+        private static async Task Execute(BasicDeliverEventArgs eventArgs)
         {
-            _isConsuming = true;
-
-            while (_isConsuming && !cancellationToken.IsCancellationRequested)
+            string json;
+            if (Mode == RunningMode.Debug)
             {
-                try
-                {
-                    await EnsureConnectionAsync(connectionFactory, queueName, connectionInfo, cancellationToken);
-                    if (_channel == null) { continue; }
-                    var consumer = new AsyncEventingBasicConsumer(_channel);
-
-                    consumer.ReceivedAsync += async (sender, eventArgs) =>
-                    {
-                        var messageBody = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
-                        await messageHandler(messageBody, eventArgs);
-                    };
-
-                    await _channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer: consumer);
-                    await Task.Delay(Timeout.Infinite, cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    _isConsuming = false;
-                    break;
-                }
-                catch (Exception)
-                {
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        // Wait before attempting to reconnect
-                        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-                    }
-                }
+                json = string.Empty;
+                // TODO: json = ShowDebugMenu<TJob>();
+            }
+            else
+            {
+                json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
             }
 
-            await CloseConnectionAsync();
+            if (Mode == RunningMode.Debug)
+            {
+                await Console.Out.WriteLineAsync("---------------------------------------");
+                await Console.Out.WriteAsync(">> Environment: ");
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                await Console.Out.WriteLineAsync(Environment);
+                Console.ResetColor();
+                await Console.Out.WriteLineAsync("---------------------------------------");
+            }
+
+            var instance = Activator.CreateInstance(_jobType) as BaseJob ??
+                throw new InvalidOperationException($"Failed to create an instance of {_jobType?.Name}");
+
+            var success = await instance.Execute(json);
+
+            if (Mode == RunningMode.Debug)
+            {
+                await instance.PrintDebugSummary(success);
+                await Console.Out.WriteLineAsync("---------------------------------------");
+                await Console.Out.WriteLineAsync(">> Press any key to exit");
+                await Console.Out.WriteLineAsync("---------------------------------------");
+                using (var timer = new Timer(60_000))
+                {
+                    timer.Elapsed += TimerElapsed;
+                    timer.Start();
+                    Console.ReadKey(true);
+                    timer.Stop();
+                }
+            }
+        }
+
+        private static void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Console.BackgroundColor = ConsoleColor.Red;
+            Console.WriteLine("User input timeout. Terminate application");
+            Console.ResetColor();
+            System.Environment.Exit(-1);
         }
     }
 }

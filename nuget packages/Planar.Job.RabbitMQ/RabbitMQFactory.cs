@@ -1,0 +1,193 @@
+﻿using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Planar.Job.RabbitMQ
+{
+    internal sealed class RabbitMQFactory
+    {
+        private static readonly SemaphoreSlim _reconnectSemaphore = new SemaphoreSlim(1, 1);
+        private static volatile bool _isConsuming;
+
+#if NETSTANDARD2_0
+        private static IChannel _channel;
+        private static IConnection _connection;
+#else
+        private static IConnection? _connection;
+        private static IChannel? _channel;
+#endif
+
+        /// <summary>
+        /// Closes the channel and connection gracefully
+        /// </summary>
+        private static async Task CloseConnectionAsync()
+        {
+            try
+            {
+                if (_channel != null)
+                {
+                    await _channel.CloseAsync();
+                    _channel.Dispose();
+                    _channel = null;
+                }
+            }
+            catch { }
+
+            try
+            {
+                if (_connection != null)
+                {
+                    await _connection.CloseAsync();
+                    _connection.Dispose();
+                    _connection = null;
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Ensures connection and channel are established and healthy (Singleton pattern)
+        /// </summary>
+        private static async Task EnsureConnectionAsync(
+            IConnectionFactory connectionFactory,
+            RabbitMQConnectionInfo connectionInfo,
+            CancellationToken cancellationToken)
+        {
+            await _reconnectSemaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                // Ensure connection is open
+                if (_connection == null || !_connection.IsOpen)
+                {
+                    if (_connection != null)
+                    {
+                        await _connection.CloseAsync();
+                        _connection = null;
+                    }
+
+                    var connectionName = $"{nameof(Planar)}:{nameof(Job)}:{connectionInfo.QueueName}";
+
+                    if (connectionInfo.Endpoints.Count > 0)
+                    {
+                        _connection = await connectionFactory.CreateConnectionAsync(connectionInfo.Endpoints, connectionName, cancellationToken);
+                    }
+                    else
+                    {
+                        _connection = await connectionFactory.CreateConnectionAsync(connectionName, cancellationToken);
+                    }
+                }
+
+                // Ensure channel is open
+                if (_channel == null || !_channel.IsOpen)
+                {
+                    if (_channel != null)
+                    {
+                        await _channel.CloseAsync();
+                        _channel = null;
+                    }
+
+                    _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+                    // Set Quality of Service (prefetch)
+                    await _channel.BasicQosAsync(0, prefetchCount: 1, false, cancellationToken);
+                    await Console.Out.WriteLineAsync($"Connected to RabbitMQ");
+                }
+            }
+            finally
+            {
+                _reconnectSemaphore.Release();
+            }
+        }
+
+        public static async Task EnsureDefinition(
+                    IConnectionFactory connectionFactory,
+                    RabbitMQConnectionInfo connectionInfo,
+                    CancellationToken cancellationToken)
+        {
+            const string exchangeName = "Planar";
+
+            await EnsureConnectionAsync(connectionFactory, connectionInfo, cancellationToken);
+            if (_channel == null) { return; }
+
+            await _channel.ExchangeDeclareAsync(
+                exchange: exchangeName,
+                type: ExchangeType.Direct,
+                durable: true,
+                autoDelete: false,
+                arguments: null);
+
+            await _channel.QueueDeclareAsync(
+                queue: connectionInfo.QueueName,
+                durable: true,        // quorum queues must be durable
+                exclusive: false,     // quorum queues cannot be exclusive
+                autoDelete: false);   // quorum queues cannot be auto-delete
+
+            await _channel.QueueBindAsync(
+                queue: connectionInfo.QueueName,
+                exchange: exchangeName,
+                routingKey: connectionInfo.QueueName,
+                arguments: null);
+
+            await Console.Out.WriteLineAsync($"exchange '{exchangeName}' and queue '{connectionInfo.QueueName}' created successfully");
+        }
+
+        /// <summary>
+        /// Starts consuming messages from RabbitMQ queue with automatic reconnection and resilience
+        /// </summary>
+        /// <param name="connectionFactory">RabbitMQ connection factory with configured settings</param>
+        /// <param name="queueName">Name of the queue to consume from</param>
+        /// <param name="messageHandler">Handler function to process received messages. Returns true if successful, false to requeue.</param>
+        /// <param name="cancellationToken">Cancellation token to stop consuming</param>
+        /// <returns>Task representing the consumer operation</returns>
+        public static async Task StartConsumeAsync(
+            IConnectionFactory connectionFactory,
+            RabbitMQConnectionInfo connectionInfo,
+            Func<BasicDeliverEventArgs, Task> messageHandler,
+            CancellationToken cancellationToken)
+        {
+            _isConsuming = true;
+
+            while (_isConsuming && !cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await EnsureConnectionAsync(connectionFactory, connectionInfo, cancellationToken);
+                    if (_channel == null) { continue; }
+                    var consumer = new AsyncEventingBasicConsumer(_channel);
+
+                    consumer.ReceivedAsync += async (sender, eventArgs) =>
+                    {
+                        await messageHandler(eventArgs);
+                    };
+
+                    await _channel.BasicConsumeAsync(
+                        queue: connectionInfo.QueueName,
+                        autoAck: true,
+                        consumer: consumer);
+
+                    await Console.Out.WriteLineAsync($"Started consuming from queue '{connectionInfo.QueueName}'");
+
+                    await Task.Delay(Timeout.Infinite, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    _isConsuming = false;
+                    break;
+                }
+                catch (Exception)
+                {
+                    if (!cancellationToken.IsCancellationRequested)
+                    {
+                        // Wait before attempting to reconnect
+                        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                    }
+                }
+            }
+
+            await CloseConnectionAsync();
+        }
+    }
+}

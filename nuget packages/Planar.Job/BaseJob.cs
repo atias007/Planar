@@ -5,13 +5,10 @@ using Planar.Common;
 using Planar.Job.Logger;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using YamlDotNet.Core.Tokens;
 using Timer = System.Timers.Timer;
 
 namespace Planar.Job
@@ -206,24 +203,24 @@ namespace Planar.Job
 
         private async Task OpenMqttConnection()
         {
-            if (PlanarJob.Mode == RunningMode.Release)
+            if (PlanarJob.Mode != RunningMode.Release) { return; }
+            if (MqttClient.IsConnected) { return; }
+
+            var connectTimeout = TimeSpan.FromSeconds(6);
+            MqttClient.Connected += MqttClient_Connected;
+
+            for (int i = 0; i < 3; i++)
             {
-                var connectTimeout = TimeSpan.FromSeconds(6);
-                MqttClient.Connected += MqttClient_Connected;
-
-                for (int i = 0; i < 3; i++)
-                {
-                    if (await SafeStartMqttClient(connectTimeout)) { return; }
-                }
-
-                // mqtt failover by http to planar service
-                for (int i = 0; i < 3; i++)
-                {
-                    if (await SafeStartFailOverProxy()) { return; }
-                }
-
-                throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
+                if (await SafeStartMqttClient(connectTimeout)) { return; }
             }
+
+            // mqtt failover by http to planar service
+            for (int i = 0; i < 3; i++)
+            {
+                if (await SafeStartFailOverProxy()) { return; }
+            }
+
+            throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
         }
 
         private async Task<bool> SafeStartFailOverProxy()

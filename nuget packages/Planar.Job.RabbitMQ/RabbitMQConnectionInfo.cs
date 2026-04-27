@@ -1,40 +1,83 @@
 ﻿using RabbitMQ.Client;
+using System;
 using System.Collections.Generic;
 
 namespace Planar.Job.RabbitMQ
 {
     public class RabbitMQConnectionInfo
     {
-#if NETSTANDARD2_0
-        public string Hostname { get; set; }
-        public string VirtualHost { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public SslOption Ssl { get; set; }
-#else
-        public string? Hostname { get; set; }
-        public string? VirtualHost { get; set; }
-        public string? Username { get; set; } = string.Empty;
-        public string? Password { get; set; } = string.Empty;
-        public SslOption? Ssl { get; set; }
-#endif
+        private readonly ConnectionFactory _factory = new ConnectionFactory();
 
-        public int? Port { get; set; }
+        private string _queueName = AppDomain.CurrentDomain.FriendlyName;
+
+        public string QueueName
+        {
+            get { return _queueName; }
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value)) { return; }
+                _queueName = value;
+            }
+        }
+
+        public string Hostname
+        {
+            get { return _factory.HostName; }
+            set { _factory.HostName = value; }
+        }
+
+        public string UserName
+        {
+            get { return _factory.UserName; }
+            set { _factory.UserName = value; }
+        }
+
+        public string Password
+        {
+            get { return _factory.Password; }
+            set { _factory.Password = value; }
+        }
+
+        public string VirtualHost
+        {
+            get { return _factory.VirtualHost; }
+            set { _factory.VirtualHost = value; }
+        }
+
+        public SslOption Ssl
+        {
+            get { return _factory.Ssl; }
+            set { _factory.Ssl = value; }
+        }
+
+        public uint MaxInboundMessageBodySize
+        {
+            get { return _factory.MaxInboundMessageBodySize; }
+            set { _factory.MaxInboundMessageBodySize = value; }
+        }
+
+        public int Port
+        {
+            get { return _factory.Port; }
+            set { _factory.Port = value; }
+        }
+
+        public AmqpTcpEndpoint Endpoint
+        {
+            get { return _factory.Endpoint; }
+            set { _factory.Endpoint = value; }
+        }
 
         public List<AmqpTcpEndpoint> Endpoints { get; set; } = new List<AmqpTcpEndpoint>();
-        public uint? MaxInboundMessageBodySize { get; set; }
 
         internal ConnectionFactory GetConnectionFactory()
         {
-            var factory = new ConnectionFactory();
-            if (!string.IsNullOrWhiteSpace(Hostname)) { factory.HostName = Hostname; }
-            if (Port.HasValue) { factory.Port = Port.Value; }
-            if (!string.IsNullOrWhiteSpace(Username)) { factory.UserName = Username; }
-            if (!string.IsNullOrWhiteSpace(Password)) { factory.Password = Password; }
-            if (!string.IsNullOrWhiteSpace(VirtualHost)) { factory.VirtualHost = VirtualHost; }
-            if (Ssl != null) { factory.Ssl = Ssl; }
-            if (MaxInboundMessageBodySize != null) { factory.MaxInboundMessageBodySize = MaxInboundMessageBodySize.Value; }
-            return factory;
+            _factory.AutomaticRecoveryEnabled = true;
+            _factory.NetworkRecoveryInterval = TimeSpan.FromSeconds(10);
+            _factory.RequestedHeartbeat = TimeSpan.FromSeconds(60);
+            _factory.RequestedConnectionTimeout = TimeSpan.FromSeconds(30);
+
+            return _factory;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
+- BUG: load jobfile with simple trigger without interval
+- BUG: cli manual run job when service is halted
 - add stream max length to settings of hooks
 
 - add mcp command to cli
