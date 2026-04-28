@@ -23,6 +23,7 @@ namespace Planar.Job
         private Timer _timer;
         private Version _version;
         private AutoResetEvent _executeResetEvent;
+        private string _planarHost;
 #else
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
@@ -31,22 +32,11 @@ namespace Planar.Job
         private Timer? _timer;
         private Version? _version;
         private AutoResetEvent? _executeResetEvent;
+        private string? _planarHost;
 #endif
 
         private JobExecutionContext _context = new JobExecutionContext();
         private bool _inConfiguration;
-
-        protected IConfiguration Configuration
-        {
-            get
-            {
-                return _configuration;
-            }
-            private set
-            {
-                _configuration = value;
-            }
-        }
 
         public int? EffectedRows => _baseJobFactory.EffectedRows;
 
@@ -67,6 +57,7 @@ namespace Planar.Job
         }
 
         protected IServiceProvider ServiceProvider => _provider;
+        protected IConfiguration Configuration => _configuration;
 
 #if NETSTANDARD2_0
 
@@ -95,8 +86,14 @@ namespace Planar.Job
 
         public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        internal async Task<bool> Execute(string json)
+#if NETSTANDARD2_0
+
+        internal async Task<bool> Execute(string json, string planarHost = null)
+#else
+        internal async Task<bool> Execute(string json, string? planarHost = null)
+#endif
         {
+            _planarHost = planarHost;
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
@@ -114,7 +111,7 @@ namespace Planar.Job
 
             try
             {
-                await OpenMqttConnection();
+                await OpenMqttConnection(_planarHost);
 
                 Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -131,9 +128,22 @@ namespace Planar.Job
                 _timer.Elapsed += async (s, e) => await TimerElapsed();
                 _timer.Start();
 
+                Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                    _context.FireInstanceId,
+                    _context.JobDetails.Key,
+                    _context.TriggerDetails.Key.Name,
+                    timeout);
+
                 var task = ExecuteJob(_context);
                 await Task.WhenAll(task);
                 _timer?.Stop();
+
+                Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                    _context.FireInstanceId,
+                    _context.JobDetails.Key,
+                    _context.TriggerDetails.Key.Name,
+                    timeout);
+
                 return true;
             }
             catch (Exception ex)
@@ -201,17 +211,22 @@ namespace Planar.Job
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
-        private async Task OpenMqttConnection()
+#if NETSTANDARD2_0
+
+        private async Task OpenMqttConnection(string brokerHost)
+#else
+        private async Task OpenMqttConnection(string? brokerHost)
+#endif
         {
             if (PlanarJob.Mode != RunningMode.Release) { return; }
             if (MqttClient.IsConnected) { return; }
 
-            var connectTimeout = TimeSpan.FromSeconds(6);
+            var connectTimeout = TimeSpan.FromSeconds(4);
             MqttClient.Connected += MqttClient_Connected;
 
             for (int i = 0; i < 3; i++)
             {
-                if (await SafeStartMqttClient(connectTimeout)) { return; }
+                if (await SafeStartMqttClient(brokerHost, connectTimeout)) { return; }
             }
 
             // mqtt failover by http to planar service
@@ -239,13 +254,18 @@ namespace Planar.Job
             }
         }
 
-        private async Task<bool> SafeStartMqttClient(TimeSpan connectTimeout)
+#if NETSTANDARD2_0
+
+        private async Task<bool> SafeStartMqttClient(string brokerHost, TimeSpan connectTimeout)
+#else
+        private async Task<bool> SafeStartMqttClient(string? brokerHost, TimeSpan connectTimeout)
+#endif
         {
             try
             {
                 _executeResetEvent = new AutoResetEvent(false);
-                await MqttClient.StartAsync(_context.FireInstanceId, _context.JobPort);
-                _executeResetEvent.WaitOne(connectTimeout);
+                await MqttClient.StartAsync(_context.FireInstanceId, brokerHost, _context.JobPort);
+                if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("Mqtt connection timeout"); }
                 await MqttClient.PingAsync();
 
                 for (int i = 0; i < 3; i++)
@@ -619,7 +639,7 @@ namespace Planar.Job
             finally
             {
                 _inConfiguration = false;
-                Configuration = builder.Build();
+                _configuration = builder.Build();
             }
         }
 

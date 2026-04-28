@@ -21,17 +21,17 @@ namespace Planar
 
         private const int _autoReconnectDelay = 1;
 
-        private const string _host = "127.0.0.1";
-
         private const int _keepAlivePeriod = 1;
 
         private const int _defaultMqttPort = 206;
         private const int _defaultHttpPort = 2306;
+        private const string _defaultHost = "127.0.0.1";
 
         private const int _timeout = 12;
 
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter(JsonSerializer.Create(_jsonSerializerSettings));
         private static string _id = "none";
+        private static string _host = _defaultHost;
         private static int _mqttPort;
 
 #if NETSTANDARD2_0
@@ -69,7 +69,7 @@ namespace Planar
                     await _mqttClient.PingAsync();
                     return;
                 }
-                catch (Exception ex)
+                catch
                 {
                     // DO NOTHING, just try to ping failover proxy if mqtt ping failed
                 }
@@ -114,10 +114,16 @@ namespace Planar
             await PublishInnerAsync(cloudEvent);
         }
 
-        public static async Task StartAsync(string id, int port)
+#if NETSTANDARD2_0
+
+        public static async Task StartAsync(string id, string host, int port)
+#else
+        public static async Task StartAsync(string id, string? host, int port)
+#endif
         {
             _id = id;
-            _mqttPort = port == 0 ? _defaultMqttPort : port;
+            _mqttPort = port <= 0 ? _defaultMqttPort : port;
+            if (!string.IsNullOrWhiteSpace(host)) { _host = host; }
             await RestartAsync();
         }
 
@@ -235,7 +241,7 @@ namespace Planar
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to mqtt broker! (port {_defaultMqttPort})" };
+            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to mqtt broker! (port={_mqttPort} host={_host})" };
             await Console.Error.WriteLineAsync(log.ToString());
 
             log = new LogEntity { Level = LogLevel.Critical, Message = arg.Exception.ToString() };

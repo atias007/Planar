@@ -1,11 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Job.RabbitMQ;
 using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -18,57 +23,53 @@ namespace Planar.Job
 #if NETSTANDARD2_0
         internal static string Environment { get; private set; }
         private static Type _jobType;
+        internal static RabbitMQJobStartProperties Properties { get; set; }
 #else
         internal static string Environment { get; private set; } = null!;
+        internal static RabbitMQJobStartProperties Properties { get; set; } = null!;
         private static Type? _jobType;
 #endif
-
+        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
+        private static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
-        internal static PlanarJobStartProperties Properties { get; set; } = PlanarJobStartProperties.Default;
         internal static Stopwatch Stopwatch { get; set; } = new Stopwatch();
 
-        public async static Task StartAsync<TJob>(RabbitMQConnectionInfo connectionInfo)
-                    where TJob : BaseJob, new()
-        {
-            await StartAsync<TJob>(connectionInfo, PlanarJobStartProperties.Default);
-        }
-
-        public async static Task StartAsync<TJob>(RabbitMQConnectionInfo connectionInfo, PlanarJobStartProperties properties)
+        public async static Task StartAsync<TJob>(RabbitMQJobStartProperties properties)
                     where TJob : BaseJob, new()
         {
             _jobType = typeof(TJob);
 
             try
             {
-                await SafeStartAsync<TJob>(connectionInfo, properties);
+                await SafeStartAsync<TJob>(properties);
             }
             catch (Exception ex)
             {
-                await Console.Out.WriteLineAsync("----------------");
-                await Console.Out.WriteLineAsync(" Fail to start");
-                await Console.Out.WriteLineAsync("----------------");
-                await Console.Out.WriteLineAsync(ex.ToString());
+                await ConsoleLogger.Log(LogLevel.Critical, "----------------");
+                await ConsoleLogger.Log(LogLevel.Critical, " Fail to start");
+                await ConsoleLogger.Log(LogLevel.Critical, "----------------");
+                await ConsoleLogger.Log(LogLevel.Critical, ex.ToString());
             }
         }
 
-        private async static Task SafeStartAsync<TJob>(RabbitMQConnectionInfo connectionInfo, PlanarJobStartProperties properties)
+        private async static Task SafeStartAsync<TJob>(RabbitMQJobStartProperties properties)
                     where TJob : BaseJob, new()
         {
             Properties = properties;
 
-            var factory = connectionInfo.GetConnectionFactory();
+            var factory = properties.GetConnectionFactory();
             var cancellationToken = GetMainCancellationToken();
 
             // set rabbitmq definition (exchange, queue, binding)
             await RabbitMQFactory.EnsureDefinition(
                 connectionFactory: factory,
-                connectionInfo,
+                properties,
                 cancellationToken: cancellationToken);
 
             // Start consuming messages
             await RabbitMQFactory.StartConsumeAsync(
                 connectionFactory: factory,
-                connectionInfo,
+                properties,
                 messageHandler: ProcessMessageAsync,
                 cancellationToken: cancellationToken
             );
@@ -90,7 +91,7 @@ namespace Planar.Job
         /// <returns>True if message processed successfully, False to requeue</returns>
         private static async Task ProcessMessageAsync(BasicDeliverEventArgs eventArgs)
         {
-            await Console.Out.WriteLineAsync(">> Received message");
+            await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
 
             try
             {
@@ -110,8 +111,8 @@ namespace Planar.Job
             string json;
             if (Mode == RunningMode.Debug)
             {
-                json = string.Empty;
-                // TODO: json = ShowDebugMenu<TJob>();
+                if (_jobType == null) { return; }
+                json = ShowDebugMenu(_jobType);
             }
             else
             {
@@ -131,7 +132,7 @@ namespace Planar.Job
             var instance = Activator.CreateInstance(_jobType) as BaseJob ??
                 throw new InvalidOperationException($"Failed to create an instance of {_jobType?.Name}");
 
-            var success = await instance.Execute(json);
+            var success = await instance.Execute(json, Properties.PlanarHostName);
 
             if (Mode == RunningMode.Debug)
             {
@@ -147,6 +148,179 @@ namespace Planar.Job
                     timer.Stop();
                 }
             }
+        }
+
+        private static void FillProperties()
+        {
+            FillArguments();
+            if (HasArgument("--debug"))
+            {
+                Mode = RunningMode.Debug;
+            }
+            else
+            {
+                Mode = RunningMode.Release;
+            }
+
+            Environment = GetArgument("--environment")?.Value ?? "Development";
+        }
+
+#if NETSTANDARD2_0
+
+        private static Argument GetArgument(string key)
+#else
+        private static Argument? GetArgument(string key)
+#endif
+        {
+            return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsKeyArgument(Argument arg)
+        {
+            if (string.IsNullOrEmpty(arg.Key)) { return false; }
+            const string template = "^--[a-z,A-Z]";
+            return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+        }
+
+        private static void FillArguments()
+        {
+            var source = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < source.Length; i++)
+            {
+                Arguments.Add(new Argument { Key = source[i] });
+            }
+
+            for (int i = 1; i < Arguments.Count; i++)
+            {
+                var item1 = Arguments[i - 1];
+                var item2 = Arguments[i];
+
+                if (IsKeyArgument(item1) && !IsKeyArgument(item2))
+                {
+                    item1.Value = item2.Key;
+                    item2.Key = null;
+                    i++;
+                }
+            }
+        }
+
+        private static bool HasArgument(string key)
+        {
+            return Arguments.Exists(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
+        }
+
+        ////private static string ShowDebugMenu<TJob>()
+        ////     where TJob : BaseJob, new()
+        ////{
+        ////    return ShowDebugMenu(typeof(TJob));
+        ////}
+
+        private static string ShowDebugMenu(Type type)
+        {
+            int? selectedIndex;
+
+            var typeName = type.Name;
+            var hasProfiles = Debugger.Profiles.Any();
+            if (hasProfiles)
+            {
+                Console.Write("type the profile code ");
+                Console.Write("to start executing the ");
+            }
+            else
+            {
+                Console.Write("type [Enter] to start executing the ");
+            }
+
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write($"{typeName} ");
+            Console.ResetColor();
+            Console.WriteLine("job");
+            Console.WriteLine();
+
+            var index = 1;
+            foreach (var p in Debugger.Profiles)
+            {
+                PrintMenuItem(p.Key, index.ToString());
+                index++;
+            }
+
+            if (hasProfiles)
+            {
+                Console.WriteLine("------------------");
+                PrintMenuItem("<Default>", "Enter");
+                Console.WriteLine();
+            }
+
+            selectedIndex = GetMenuItem(quiet: !hasProfiles);
+
+            MockJobExecutionContext context;
+            IExecuteJobProperties properties;
+            if (selectedIndex == null)
+            {
+                properties = new ExecuteJobPropertiesBuilder().SetDevelopmentEnvironment().Build();
+                context = new MockJobExecutionContext(properties);
+            }
+            else
+            {
+                properties = Debugger.Profiles.Values.ToList()[selectedIndex.Value - 1];
+                context = new MockJobExecutionContext(properties);
+            }
+
+            Environment = properties.Environment;
+            var json = JsonSerializer.Serialize(context);
+            return json;
+        }
+
+        private static int? GetMenuItem(bool quiet)
+        {
+            int index = 0;
+            var valid = false;
+            while (!valid)
+            {
+                if (!quiet) { Console.Write("Code: "); }
+                using (var timer = new Timer(60_000))
+                {
+                    timer.Elapsed += TimerElapsed;
+                    timer.Start();
+                    var selected = Console.ReadLine();
+                    timer.Stop();
+                    if (string.IsNullOrEmpty(selected))
+                    {
+                        if (!quiet) { Console.WriteLine("<Default>"); }
+                        return null;
+                    }
+
+                    if (!int.TryParse(selected, out index))
+                    {
+                        ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
+                    }
+                    else if (index > Debugger.Profiles.Count || index <= 0)
+                    {
+                        ShowErrorMenu($"Selected value '{index}' is not exists");
+                    }
+                    else
+                    {
+                        valid = true;
+                    }
+                }
+            }
+
+            return index;
+        }
+
+        private static void ShowErrorMenu(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        private static void PrintMenuItem(string text, string key)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"[{key}] ");
+            Console.ResetColor();
+            Console.WriteLine(text);
         }
 
         private static void TimerElapsed(object sender, ElapsedEventArgs e)

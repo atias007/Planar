@@ -44,7 +44,7 @@ namespace Planar.Job
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue($"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}"));
+            client.DefaultRequestHeaders.UserAgent.ParseAdd($"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}");
 
             return client;
         }

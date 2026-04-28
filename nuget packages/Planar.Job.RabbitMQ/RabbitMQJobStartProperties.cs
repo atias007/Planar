@@ -4,11 +4,31 @@ using System.Collections.Generic;
 
 namespace Planar.Job.RabbitMQ
 {
-    public class RabbitMQConnectionInfo
+    public class RabbitMQJobStartProperties : PlanarJobStartProperties
     {
+        public const string Exchange = "Planar";
+
         private readonly ConnectionFactory _factory = new ConnectionFactory();
 
         private string _queueName = AppDomain.CurrentDomain.FriendlyName;
+        private string _planarHostName = string.Empty;
+
+        public RabbitMQJobStartProperties(string planarHostName)
+        {
+            if (!string.IsNullOrWhiteSpace(planarHostName))
+            {
+                _planarHostName = planarHostName;
+            }
+        }
+
+        private static bool IsValidBaseAddress(string baseAddress, out Uri uri)
+        {
+            return Uri.TryCreate(baseAddress, UriKind.Absolute, out uri);
+        }
+
+        public string ExchangeName => Exchange;
+
+        public string PlanarHostName => _planarHostName;
 
         public string QueueName
         {
