@@ -35,6 +35,7 @@ namespace Planar.Job
         private string? _planarHost;
 #endif
 
+        private bool _isHosted = false;
         private JobExecutionContext _context = new JobExecutionContext();
         private bool _inConfiguration;
 
@@ -94,6 +95,7 @@ namespace Planar.Job
 #endif
         {
             _planarHost = planarHost;
+            _isHosted = !string.IsNullOrWhiteSpace(planarHost);
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
@@ -108,6 +110,8 @@ namespace Planar.Job
             try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex; }
             try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 #endif
+
+            ValidateJobExecutionContext(_context);
 
             try
             {
@@ -161,7 +165,7 @@ namespace Planar.Job
 
                 SafeHandle(() => _timer?.Dispose());
                 SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
-                await SafeHandleAsync(MqttClient.StopAsync);
+                if (!_isHosted) { await SafeHandleAsync(MqttClient.StopAsync); }
             }
         }
 
@@ -319,6 +323,7 @@ namespace Planar.Job
 
         {
             InitializeBaseJobFactory(json);
+            ValidateJobExecutionContext(_context);
             InitializeConfiguration(_context, configureAction);
             InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
 
@@ -622,6 +627,34 @@ namespace Planar.Job
             }
         }
 
+        private void ValidateJobExecutionContext(JobExecutionContext ctx)
+        {
+            if (string.IsNullOrWhiteSpace(ctx.FireInstanceId))
+            {
+                throw new PlanarJobException("FireInstanceId property in job context is required");
+            }
+
+            if (ctx.JobDetails == null)
+            {
+                throw new PlanarJobException("JobDetails property in job context is required");
+            }
+
+            if (ctx.TriggerDetails == null)
+            {
+                throw new PlanarJobException("TriggerDetails property in job context is required");
+            }
+
+            if (ctx.JobDetails.Key == null)
+            {
+                throw new PlanarJobException("JobDetails.Key property in job context is required");
+            }
+
+            if (string.IsNullOrWhiteSpace(ctx.JobDetails.Key.Name))
+            {
+                throw new PlanarJobException("JobDetails.Key.Name property in job context is required");
+            }
+        }
+
         private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
         {
             _inConfiguration = true;
@@ -686,7 +719,7 @@ namespace Planar.Job
 
             try
             {
-                await MqttClient.StopAsync();
+                if (!_isHosted) { await MqttClient.StopAsync(); }
                 _timer?.Dispose();
             }
             catch
@@ -694,7 +727,7 @@ namespace Planar.Job
                 // *** DO NOTHING ***
             }
 
-            Environment.Exit(-1);
+            if (!_isHosted) { Environment.Exit(-1); }
         }
 
         private static void ValidateJobId(string id)

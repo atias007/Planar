@@ -13,7 +13,6 @@ namespace Planar.Job
     {
         private static readonly object Locker = new object();
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
-
         private readonly bool _isNowOverrideValueExists;
         private readonly DateTime? _nowOverrideValue;
         private readonly IJobExecutionContext _context;

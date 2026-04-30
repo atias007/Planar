@@ -32,6 +32,7 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="..\Planar.Job\Argument.cs" Link="Argument.cs" />
 		<Compile Include="..\Planar.Job\BaseJob.cs" Link="BaseJob.cs" />
 		<Compile Include="..\Planar.Job\BaseJobFactory.cs" Link="BaseJobFactory.cs" />
 		<Compile Include="..\Planar.Job\DataMapConvertor.cs" Link="DataMapConvertor.cs" />
@@ -46,6 +47,8 @@
 		<Compile Include="..\Planar.Job\MqttClient.cs" Link="MqttClient.cs" />
 		<Compile Include="..\Planar.Job\MqttExtensions.cs" Link="MqttExtensions.cs" />
 		<Compile Include="..\Planar.Job\PlanarJobAggragateException.cs" Link="PlanarJobAggragateException.cs" />
+		<Compile Include="..\Planar.Job\PlanarJobCommon.cs" Link="PlanarJobCommon.cs" />
+		<Compile Include="..\Planar.Job\PlanarJobDebugger.cs" Link="PlanarJobDebugger.cs" />
 		<Compile Include="..\Planar.Job\PlanarJobException.cs" Link="PlanarJobException.cs" />
 
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />

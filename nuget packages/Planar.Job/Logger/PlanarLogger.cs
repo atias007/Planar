@@ -10,6 +10,10 @@ namespace Planar.Job.Logger
         private static readonly StringBuilder _logBuilder = new StringBuilder();
         private static readonly object _locker = new object();
 
+        public BaseLogger()
+        {
+        }
+
 #pragma warning disable IDE0060 // Remove unused parameter
 
 #pragma warning restore IDE0060 // Remove unused parameter
@@ -89,10 +93,6 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger<TContext> : BaseLogger, ILogger<TContext>
     {
-        public PlanarLogger() : base()
-        {
-        }
-
 #if NETSTANDARD2_0
 
         public IDisposable BeginScope<TState>(TState state) => default;

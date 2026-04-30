@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "RabbitMQJob": {
+      "commandName": "Project"
+    },
+    "RabbitMQJob.Debug": {
+      "commandName": "Project",
+      "commandLineArgs": "--debug"
+    }
+  }
+}

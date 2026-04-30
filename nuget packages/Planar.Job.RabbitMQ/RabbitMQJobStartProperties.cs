@@ -7,11 +7,10 @@ namespace Planar.Job.RabbitMQ
     public class RabbitMQJobStartProperties : PlanarJobStartProperties
     {
         public const string Exchange = "Planar";
+        public ConnectionFactory RabbitMQConnectionFactory = new ConnectionFactory();
 
-        private readonly ConnectionFactory _factory = new ConnectionFactory();
-
+        private readonly string _planarHostName = "127.0.0.1";
         private string _queueName = AppDomain.CurrentDomain.FriendlyName;
-        private string _planarHostName = string.Empty;
 
         public RabbitMQJobStartProperties(string planarHostName)
         {
@@ -19,11 +18,6 @@ namespace Planar.Job.RabbitMQ
             {
                 _planarHostName = planarHostName;
             }
-        }
-
-        private static bool IsValidBaseAddress(string baseAddress, out Uri uri)
-        {
-            return Uri.TryCreate(baseAddress, UriKind.Absolute, out uri);
         }
 
         public string ExchangeName => Exchange;
@@ -40,64 +34,7 @@ namespace Planar.Job.RabbitMQ
             }
         }
 
-        public string Hostname
-        {
-            get { return _factory.HostName; }
-            set { _factory.HostName = value; }
-        }
-
-        public string UserName
-        {
-            get { return _factory.UserName; }
-            set { _factory.UserName = value; }
-        }
-
-        public string Password
-        {
-            get { return _factory.Password; }
-            set { _factory.Password = value; }
-        }
-
-        public string VirtualHost
-        {
-            get { return _factory.VirtualHost; }
-            set { _factory.VirtualHost = value; }
-        }
-
-        public SslOption Ssl
-        {
-            get { return _factory.Ssl; }
-            set { _factory.Ssl = value; }
-        }
-
-        public uint MaxInboundMessageBodySize
-        {
-            get { return _factory.MaxInboundMessageBodySize; }
-            set { _factory.MaxInboundMessageBodySize = value; }
-        }
-
-        public int Port
-        {
-            get { return _factory.Port; }
-            set { _factory.Port = value; }
-        }
-
-        public AmqpTcpEndpoint Endpoint
-        {
-            get { return _factory.Endpoint; }
-            set { _factory.Endpoint = value; }
-        }
-
-        public List<AmqpTcpEndpoint> Endpoints { get; set; } = new List<AmqpTcpEndpoint>();
-
-        internal ConnectionFactory GetConnectionFactory()
-        {
-            _factory.AutomaticRecoveryEnabled = true;
-            _factory.NetworkRecoveryInterval = TimeSpan.FromSeconds(10);
-            _factory.RequestedHeartbeat = TimeSpan.FromSeconds(60);
-            _factory.RequestedConnectionTimeout = TimeSpan.FromSeconds(30);
-
-            return _factory;
-        }
+        public List<AmqpTcpEndpoint> RabbitMQEndpoints { get; private set; } = new List<AmqpTcpEndpoint>();
+        public List<string> RabbitMQHostNames { get; private set; } = new List<string>();
     }
 }

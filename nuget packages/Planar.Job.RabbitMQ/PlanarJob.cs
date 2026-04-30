@@ -1,46 +1,49 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
 using Planar.Job.RabbitMQ;
 using RabbitMQ.Client.Events;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
     public static partial class PlanarJob
     {
 #if NETSTANDARD2_0
-        internal static string Environment { get; private set; }
         private static Type _jobType;
         internal static RabbitMQJobStartProperties Properties { get; set; }
+        private static RabbitMQFactory _rabbitMQFactory;
 #else
-        internal static string Environment { get; private set; } = null!;
         internal static RabbitMQJobStartProperties Properties { get; set; } = null!;
         private static Type? _jobType;
+        private static RabbitMQFactory? _rabbitMQFactory;
 #endif
-        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
-        private static List<Argument> Arguments { get; set; } = new List<Argument>();
-        internal static RunningMode Mode { get; set; } = RunningMode.Release;
-        internal static Stopwatch Stopwatch { get; set; } = new Stopwatch();
+
+        private static readonly ConcurrentDictionary<string, object> _jobInstances = new ConcurrentDictionary<string, object>();
+        private static readonly SemaphoreSlim _handleLock = new SemaphoreSlim(1, 1);
 
         public async static Task StartAsync<TJob>(RabbitMQJobStartProperties properties)
                     where TJob : BaseJob, new()
         {
+            if (properties == null)
+            {
+                throw new ArgumentNullException(nameof(properties));
+            }
+
             _jobType = typeof(TJob);
 
             try
             {
+                Stopwatch.Start();
+                FillProperties();
+                if (await Debug(_jobType, properties.PlanarHostName)) { return; }
+
                 await SafeStartAsync<TJob>(properties);
             }
             catch (Exception ex)
@@ -56,31 +59,14 @@ namespace Planar.Job
                     where TJob : BaseJob, new()
         {
             Properties = properties;
-
-            var factory = properties.GetConnectionFactory();
             var cancellationToken = GetMainCancellationToken();
+            _rabbitMQFactory = RabbitMQFactory.GetInstance(properties, cancellationToken);
 
             // set rabbitmq definition (exchange, queue, binding)
-            await RabbitMQFactory.EnsureDefinition(
-                connectionFactory: factory,
-                properties,
-                cancellationToken: cancellationToken);
+            await _rabbitMQFactory.EnsureDefinition();
 
             // Start consuming messages
-            await RabbitMQFactory.StartConsumeAsync(
-                connectionFactory: factory,
-                properties,
-                messageHandler: ProcessMessageAsync,
-                cancellationToken: cancellationToken
-            );
-        }
-
-        private static CancellationToken GetMainCancellationToken()
-        {
-            var host = Host.CreateDefaultBuilder(System.Environment.GetCommandLineArgs()).Build();
-            var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
-            var cancellationToken = lifetime.ApplicationStopping;
-            return cancellationToken;
+            await _rabbitMQFactory.StartConsumeAsync(messageHandler: ProcessMessageAsync);
         }
 
         /// <summary>
@@ -92,9 +78,11 @@ namespace Planar.Job
         private static async Task ProcessMessageAsync(BasicDeliverEventArgs eventArgs)
         {
             await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
-
+            string fid = string.Empty;
             try
             {
+                fid = GetFireInstanceId(eventArgs);
+
                 await Execute(eventArgs);
             }
             catch (Exception ex)
@@ -104,50 +92,66 @@ namespace Planar.Job
                 log.Message = ex.ToString();
                 await Console.Error.WriteLineAsync(log.ToString());
             }
+            finally
+            {
+                _jobInstances.TryRemove(fid, out _);
+                if (_jobInstances.Count == 0)
+                {
+                    // TODO: close mqtt connection if no more job instance is running
+                }
+            }
+        }
+
+        private static string GetFireInstanceId(BasicDeliverEventArgs eventArgs)
+        {
+#if NETSTANDARD2_0
+            object fireInstanceIdObj = null;
+#else
+            object? fireInstanceIdObj = null;
+#endif
+
+            eventArgs.BasicProperties.Headers?.TryGetValue("FireInstanceId", out fireInstanceIdObj);
+            if (fireInstanceIdObj is byte[] bytes)
+            {
+                fireInstanceIdObj = Encoding.UTF8.GetString(bytes);
+            }
+
+            var result = Convert.ToString(fireInstanceIdObj);
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                throw new PlanarJobException("FireInstanceId header is missing or empty in the message headers");
+            }
+
+            ////await _handleLock.WaitAsync();
+            ////try
+            ////{
+            ////}
+            ////finally
+            ////{
+            ////}
+
+            if (!_jobInstances.TryAdd(result, result))
+            {
+                throw new PlanarJobException($"Duplicate FireInstanceId detected: {result}");
+            }
+
+            return result;
         }
 
         private static async Task Execute(BasicDeliverEventArgs eventArgs)
         {
-            string json;
-            if (Mode == RunningMode.Debug)
-            {
-                if (_jobType == null) { return; }
-                json = ShowDebugMenu(_jobType);
-            }
-            else
-            {
-                json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
-            }
+            var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
+            if (_jobType == null) { return; }
+            await Execute(_jobType, Properties?.PlanarHostName, json);
+        }
 
-            if (Mode == RunningMode.Debug)
-            {
-                await Console.Out.WriteLineAsync("---------------------------------------");
-                await Console.Out.WriteAsync(">> Environment: ");
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                await Console.Out.WriteLineAsync(Environment);
-                Console.ResetColor();
-                await Console.Out.WriteLineAsync("---------------------------------------");
-            }
-
-            var instance = Activator.CreateInstance(_jobType) as BaseJob ??
-                throw new InvalidOperationException($"Failed to create an instance of {_jobType?.Name}");
-
-            var success = await instance.Execute(json, Properties.PlanarHostName);
-
-            if (Mode == RunningMode.Debug)
-            {
-                await instance.PrintDebugSummary(success);
-                await Console.Out.WriteLineAsync("---------------------------------------");
-                await Console.Out.WriteLineAsync(">> Press any key to exit");
-                await Console.Out.WriteLineAsync("---------------------------------------");
-                using (var timer = new Timer(60_000))
-                {
-                    timer.Elapsed += TimerElapsed;
-                    timer.Start();
-                    Console.ReadKey(true);
-                    timer.Stop();
-                }
-            }
+        private static CancellationToken GetMainCancellationToken()
+        {
+            var host = Host.CreateDefaultBuilder(System.Environment.GetCommandLineArgs()).Build();
+            var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
+            var cancellationToken = lifetime.ApplicationStopping;
+            return cancellationToken;
         }
 
         private static void FillProperties()
@@ -163,172 +167,6 @@ namespace Planar.Job
             }
 
             Environment = GetArgument("--environment")?.Value ?? "Development";
-        }
-
-#if NETSTANDARD2_0
-
-        private static Argument GetArgument(string key)
-#else
-        private static Argument? GetArgument(string key)
-#endif
-        {
-            return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static bool IsKeyArgument(Argument arg)
-        {
-            if (string.IsNullOrEmpty(arg.Key)) { return false; }
-            const string template = "^--[a-z,A-Z]";
-            return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-        }
-
-        private static void FillArguments()
-        {
-            var source = System.Environment.GetCommandLineArgs();
-            for (int i = 0; i < source.Length; i++)
-            {
-                Arguments.Add(new Argument { Key = source[i] });
-            }
-
-            for (int i = 1; i < Arguments.Count; i++)
-            {
-                var item1 = Arguments[i - 1];
-                var item2 = Arguments[i];
-
-                if (IsKeyArgument(item1) && !IsKeyArgument(item2))
-                {
-                    item1.Value = item2.Key;
-                    item2.Key = null;
-                    i++;
-                }
-            }
-        }
-
-        private static bool HasArgument(string key)
-        {
-            return Arguments.Exists(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
-        }
-
-        ////private static string ShowDebugMenu<TJob>()
-        ////     where TJob : BaseJob, new()
-        ////{
-        ////    return ShowDebugMenu(typeof(TJob));
-        ////}
-
-        private static string ShowDebugMenu(Type type)
-        {
-            int? selectedIndex;
-
-            var typeName = type.Name;
-            var hasProfiles = Debugger.Profiles.Any();
-            if (hasProfiles)
-            {
-                Console.Write("type the profile code ");
-                Console.Write("to start executing the ");
-            }
-            else
-            {
-                Console.Write("type [Enter] to start executing the ");
-            }
-
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.Write($"{typeName} ");
-            Console.ResetColor();
-            Console.WriteLine("job");
-            Console.WriteLine();
-
-            var index = 1;
-            foreach (var p in Debugger.Profiles)
-            {
-                PrintMenuItem(p.Key, index.ToString());
-                index++;
-            }
-
-            if (hasProfiles)
-            {
-                Console.WriteLine("------------------");
-                PrintMenuItem("<Default>", "Enter");
-                Console.WriteLine();
-            }
-
-            selectedIndex = GetMenuItem(quiet: !hasProfiles);
-
-            MockJobExecutionContext context;
-            IExecuteJobProperties properties;
-            if (selectedIndex == null)
-            {
-                properties = new ExecuteJobPropertiesBuilder().SetDevelopmentEnvironment().Build();
-                context = new MockJobExecutionContext(properties);
-            }
-            else
-            {
-                properties = Debugger.Profiles.Values.ToList()[selectedIndex.Value - 1];
-                context = new MockJobExecutionContext(properties);
-            }
-
-            Environment = properties.Environment;
-            var json = JsonSerializer.Serialize(context);
-            return json;
-        }
-
-        private static int? GetMenuItem(bool quiet)
-        {
-            int index = 0;
-            var valid = false;
-            while (!valid)
-            {
-                if (!quiet) { Console.Write("Code: "); }
-                using (var timer = new Timer(60_000))
-                {
-                    timer.Elapsed += TimerElapsed;
-                    timer.Start();
-                    var selected = Console.ReadLine();
-                    timer.Stop();
-                    if (string.IsNullOrEmpty(selected))
-                    {
-                        if (!quiet) { Console.WriteLine("<Default>"); }
-                        return null;
-                    }
-
-                    if (!int.TryParse(selected, out index))
-                    {
-                        ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
-                    }
-                    else if (index > Debugger.Profiles.Count || index <= 0)
-                    {
-                        ShowErrorMenu($"Selected value '{index}' is not exists");
-                    }
-                    else
-                    {
-                        valid = true;
-                    }
-                }
-            }
-
-            return index;
-        }
-
-        private static void ShowErrorMenu(string message)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
-            Console.ResetColor();
-        }
-
-        private static void PrintMenuItem(string text, string key)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($"[{key}] ");
-            Console.ResetColor();
-            Console.WriteLine(text);
-        }
-
-        private static void TimerElapsed(object sender, ElapsedEventArgs e)
-        {
-            Console.BackgroundColor = ConsoleColor.Red;
-            Console.WriteLine("User input timeout. Terminate application");
-            Console.ResetColor();
-            System.Environment.Exit(-1);
         }
     }
 }

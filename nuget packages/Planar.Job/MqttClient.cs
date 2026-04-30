@@ -5,7 +5,6 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Protocol;
-using MQTTnet.Server;
 using Newtonsoft.Json;
 using Planar.Job;
 using System;

@@ -2,5 +2,5 @@
 using Planar.Job.RabbitMQ;
 using RabbitMQJob;
 
-var connectionInfo = new RabbitMQJobStartProperties("localhost1") { Hostname = "localhost" };
+var connectionInfo = new RabbitMQJobStartProperties(planarHostName: "localhost");
 await PlanarJob.StartAsync<Job>(connectionInfo);
