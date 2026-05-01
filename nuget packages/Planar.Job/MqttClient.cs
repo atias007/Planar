@@ -8,7 +8,6 @@ using MQTTnet.Protocol;
 using Newtonsoft.Json;
 using Planar.Job;
 using System;
-using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,35 +15,32 @@ namespace Planar
 {
     internal static class MqttClient
     {
-        public const string Source = "http://planar.me";
-
+        private const string Source = "http://planar.me";
         private const int _autoReconnectDelay = 1;
-
         private const int _keepAlivePeriod = 1;
-
         private const int _defaultMqttPort = 206;
         private const int _defaultHttpPort = 2306;
         private const string _defaultHost = "127.0.0.1";
-
         private const int _timeout = 12;
 
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter(JsonSerializer.Create(_jsonSerializerSettings));
+        private static readonly SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
+        private static readonly TimeSpan _lockerTimeout = TimeSpan.FromMinutes(1);
         private static string _id = "none";
         private static string _host = _defaultHost;
         private static int _mqttPort;
 
 #if NETSTANDARD2_0
         private static FailOverProxy _failOverProxy;
-
         private static IManagedMqttClient _mqttClient;
+        private static System.Timers.Timer _timer;
 
         public static event EventHandler Connected;
 
 #else
         private static FailOverProxy? _failOverProxy;
-
         private static IManagedMqttClient? _mqttClient;
-
+        private static System.Timers.Timer? _timer;
         public static event EventHandler? Connected;
 #endif
 
@@ -140,11 +136,23 @@ namespace Planar
                 .WithClientOptions(clientOptions)
                 .Build();
 
-            _mqttClient = new MqttFactory().CreateManagedMqttClient();
-            _mqttClient.ConnectedAsync += ConnectedAsync;
-            _mqttClient.DisconnectedAsync += DisconnectedAsync;
-            _mqttClient.ConnectingFailedAsync += ConnectingFailedAsync;
-            await _mqttClient.StartAsync(options);
+            await _locker.WaitAsync(_lockerTimeout);
+            try
+            {
+                _timer?.Stop();
+                _timer?.Dispose();
+                _timer = null;
+
+                _mqttClient = new MqttFactory().CreateManagedMqttClient();
+                _mqttClient.ConnectedAsync += ConnectedAsync;
+                _mqttClient.DisconnectedAsync += DisconnectedAsync;
+                _mqttClient.ConnectingFailedAsync += ConnectingFailedAsync;
+                await _mqttClient.StartAsync(options);
+            }
+            finally
+            {
+                _locker.Release();
+            }
         }
 
         public static void StartFailOver(string id, int port)
@@ -153,6 +161,29 @@ namespace Planar
             if (port <= 0) { port = _defaultHttpPort; }
             _failOverProxy = new FailOverProxy(port);
             _mqttClient = null;
+        }
+
+        public static async Task StopAsync(int delaySeconds)
+        {
+            await _locker.WaitAsync(_lockerTimeout);
+            try
+            {
+                _timer?.Stop();
+                _timer?.Dispose();
+                _timer = null;
+                _timer = new System.Timers.Timer(delaySeconds * 1_000);
+                _timer.Elapsed += async (s, e) =>
+                {
+                    _timer.Stop();
+                    _timer.Dispose();
+                    _timer = null;
+                    await StopAsync();
+                };
+            }
+            finally
+            {
+                _locker.Release();
+            }
         }
 
         public static async Task StopAsync()
@@ -215,6 +246,7 @@ namespace Planar
 
         private async static Task SafeCloseMqttClient()
         {
+            await _locker.WaitAsync(_lockerTimeout);
             try
             {
                 if (_mqttClient == null) { return; }
@@ -228,6 +260,10 @@ namespace Planar
             catch
             {
                 // *** DO NOTHING *** //
+            }
+            finally
+            {
+                _locker.Release();
             }
         }
 
@@ -269,7 +305,7 @@ namespace Planar
 #if NETSTANDARD2_0
                 DataContentType = Json,
 #else
-                DataContentType = MediaTypeNames.Application.Json,
+                DataContentType = System.Net.Mime.MediaTypeNames.Application.Json,
 #endif
                 Data = message,
                 Subject = _id,

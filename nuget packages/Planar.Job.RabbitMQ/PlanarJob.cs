@@ -97,7 +97,7 @@ namespace Planar.Job
                 _jobInstances.TryRemove(fid, out _);
                 if (_jobInstances.Count == 0)
                 {
-                    // TODO: close mqtt connection if no more job instance is running
+                    await MqttClient.StopAsync(60);
                 }
             }
         }
