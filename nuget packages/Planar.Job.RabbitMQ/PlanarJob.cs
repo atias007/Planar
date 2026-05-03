@@ -1,12 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Job.RabbitMQ;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,8 +22,8 @@ namespace Planar.Job
         private static RabbitMQFactory? _rabbitMQFactory;
 #endif
 
-        private static readonly ConcurrentDictionary<string, object> _jobInstances = new ConcurrentDictionary<string, object>();
-        private static readonly SemaphoreSlim _handleLock = new SemaphoreSlim(1, 1);
+        private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
+        private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
         public async static Task StartAsync<TJob>(RabbitMQJobStartProperties properties)
                     where TJob : BaseJob, new()
@@ -37,12 +34,12 @@ namespace Planar.Job
             }
 
             _jobType = typeof(TJob);
+            AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
 
             try
             {
-                Stopwatch.Start();
                 FillProperties();
-                if (await Debug(_jobType, properties.PlanarHostName)) { return; }
+                if (await Debug(_jobType, properties.PlanarHostName, _mainCancellationTokenSource.Token)) { return; }
 
                 await SafeStartAsync<TJob>(properties);
             }
@@ -59,8 +56,7 @@ namespace Planar.Job
                     where TJob : BaseJob, new()
         {
             Properties = properties;
-            var cancellationToken = GetMainCancellationToken();
-            _rabbitMQFactory = RabbitMQFactory.GetInstance(properties, cancellationToken);
+            _rabbitMQFactory = RabbitMQFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
 
             // set rabbitmq definition (exchange, queue, binding)
             await _rabbitMQFactory.EnsureDefinition();
@@ -77,13 +73,13 @@ namespace Planar.Job
         /// <returns>True if message processed successfully, False to requeue</returns>
         private static async Task ProcessMessageAsync(BasicDeliverEventArgs eventArgs)
         {
+            Stopwatch.Start();
             await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
             string fid = string.Empty;
             try
             {
-                fid = GetFireInstanceId(eventArgs);
-
-                await Execute(eventArgs);
+                fid = TrackInstance(eventArgs);
+                await Execute(eventArgs, _mainCancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -94,15 +90,11 @@ namespace Planar.Job
             }
             finally
             {
-                _jobInstances.TryRemove(fid, out _);
-                if (_jobInstances.Count == 0)
-                {
-                    await MqttClient.StopAsync(60);
-                }
+                await UntrackInstance(fid);
             }
         }
 
-        private static string GetFireInstanceId(BasicDeliverEventArgs eventArgs)
+        private static string TrackInstance(BasicDeliverEventArgs eventArgs)
         {
 #if NETSTANDARD2_0
             object fireInstanceIdObj = null;
@@ -123,15 +115,9 @@ namespace Planar.Job
                 throw new PlanarJobException("FireInstanceId header is missing or empty in the message headers");
             }
 
-            ////await _handleLock.WaitAsync();
-            ////try
-            ////{
-            ////}
-            ////finally
-            ////{
-            ////}
+            var info = new JobInstanceInfo(result, _mainCancellationTokenSource.Token);
 
-            if (!_jobInstances.TryAdd(result, result))
+            if (!_jobInstances.TryAdd(result, info))
             {
                 throw new PlanarJobException($"Duplicate FireInstanceId detected: {result}");
             }
@@ -139,19 +125,24 @@ namespace Planar.Job
             return result;
         }
 
-        private static async Task Execute(BasicDeliverEventArgs eventArgs)
+        private static async Task UntrackInstance(string fireInstanceId)
+        {
+            if (_jobInstances.TryRemove(fireInstanceId, out var info))
+            {
+                try { info.Dispose(); } catch { }
+            }
+
+            if (_jobInstances.Count == 0)
+            {
+                try { await MqttClient.StopAsync(delaySeconds: 125); } catch { }
+            }
+        }
+
+        private static async Task Execute(BasicDeliverEventArgs eventArgs, CancellationToken cancellationToken)
         {
             var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
             if (_jobType == null) { return; }
-            await Execute(_jobType, Properties?.PlanarHostName, json);
-        }
-
-        private static CancellationToken GetMainCancellationToken()
-        {
-            var host = Host.CreateDefaultBuilder(System.Environment.GetCommandLineArgs()).Build();
-            var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
-            var cancellationToken = lifetime.ApplicationStopping;
-            return cancellationToken;
+            await Execute(_jobType, Properties?.PlanarHostName, json, cancellationToken);
         }
 
         private static void FillProperties()

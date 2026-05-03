@@ -24,6 +24,8 @@ namespace Planar.Job
         private Version _version;
         private AutoResetEvent _executeResetEvent;
         private string _planarHost;
+        private CancellationTokenSource _timeoutCancelTokenSource;
+        private CancellationTokenSource _linkedCancelTokenSource;
 #else
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
@@ -33,6 +35,8 @@ namespace Planar.Job
         private Version? _version;
         private AutoResetEvent? _executeResetEvent;
         private string? _planarHost;
+        private CancellationTokenSource? _timeoutCancelTokenSource;
+        private CancellationTokenSource? _linkedCancelTokenSource;
 #endif
 
         private bool _isHosted = false;
@@ -89,9 +93,9 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        internal async Task<bool> Execute(string json, string planarHost = null)
+        internal async Task<bool> Execute(string json, string planarHost = null, CancellationToken cancellationToken = default)
 #else
-        internal async Task<bool> Execute(string json, string? planarHost = null)
+        internal async Task<bool> Execute(string json, string? planarHost = null, CancellationToken cancellationToken = default)
 #endif
         {
             _planarHost = planarHost;
@@ -127,10 +131,7 @@ namespace Planar.Job
 
                 var timeout = _context.TriggerDetails.Timeout;
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
-                var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
-                _timer = new Timer(timeoutms);
-                _timer.Elapsed += async (s, e) => await TimerElapsed();
-                _timer.Start();
+                SetContextTimeoutCancellationToken(timeout.Value, cancellationToken);
 
                 Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
                     _context.FireInstanceId,
@@ -157,6 +158,10 @@ namespace Planar.Job
             }
             finally
             {
+                _timer?.Stop();
+                _timeoutCancelTokenSource?.Dispose();
+                _linkedCancelTokenSource?.Dispose();
+
                 await SafeHandleAsync(async () =>
                 {
                     var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
@@ -240,6 +245,21 @@ namespace Planar.Job
             }
 
             throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
+        }
+
+        private void SetContextTimeoutCancellationToken(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            if (!_isHosted)
+            {
+                var timeoutms = timeout.Add(TimeSpan.FromMinutes(2)).TotalMilliseconds;
+                _timer = new Timer(timeoutms);
+                _timer.Elapsed += async (s, e) => await TimerElapsed();
+                _timer.Start();
+            }
+
+            _timeoutCancelTokenSource = new CancellationTokenSource(timeout);
+            _linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_timeoutCancelTokenSource.Token, cancellationToken);
+            _context.CancellationToken = _linkedCancelTokenSource.Token;
         }
 
         private async Task<bool> SafeStartFailOverProxy()
@@ -719,7 +739,7 @@ namespace Planar.Job
 
             try
             {
-                if (!_isHosted) { await MqttClient.StopAsync(); }
+                await MqttClient.StopAsync();
                 _timer?.Dispose();
             }
             catch

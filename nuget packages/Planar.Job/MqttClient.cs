@@ -179,6 +179,7 @@ namespace Planar
                     _timer = null;
                     await StopAsync();
                 };
+                _timer.Start();
             }
             finally
             {
@@ -223,7 +224,7 @@ namespace Planar
                 if (_mqttClient == null) { return; }
 
                 var messages = new string[] {
-                        "there are many logs in outgoing queue. some of them will not be saved.",
+                        "there are many logs in MQTT outgoing queue. some of them will not be saved.",
                         $"for {defaultWaitSecondes:N0} seconds, after job finish to run, the job flushes {delta:N0} log item.",
                         $"{pendingAfter:N0} log messages remains in queue and will not be saved.",
                         $"you can increase the flush default timeout of {defaultWaitSecondes:N0} seconds by settings the LogFlushTimeout property of PlanarJobStartProperties class which you can pass to Start/StartAsync startup method of PlanarJob"
@@ -256,6 +257,9 @@ namespace Planar
 
                 await _mqttClient.StopAsync(true);
                 _mqttClient?.Dispose();
+
+                var log = new LogEntity { Level = LogLevel.Debug, Message = "gracefully disconnected from MQTT broker" };
+                await Console.Out.WriteLineAsync(log.ToString());
             }
             catch
             {
@@ -270,13 +274,13 @@ namespace Planar
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
             _ = OnConnected();
-            var log = new LogEntity { Level = LogLevel.Debug, Message = "successfully connected to broker" };
+            var log = new LogEntity { Level = LogLevel.Debug, Message = "successfully connected to MQTT broker" };
             await Console.Out.WriteLineAsync(log.ToString());
         }
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to mqtt broker! (port={_mqttPort} host={_host})" };
+            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to MQTT broker! (port={_mqttPort} host={_host})" };
             await Console.Error.WriteLineAsync(log.ToString());
 
             log = new LogEntity { Level = LogLevel.Critical, Message = arg.Exception.ToString() };
@@ -317,7 +321,7 @@ namespace Planar
 
         private static async Task DisconnectedAsync(MqttClientDisconnectedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Error, Message = "successfully disconnected from broker" };
+            var log = new LogEntity { Level = LogLevel.Error, Message = "disconnected from MQTT broker" };
             await Console.Out.WriteLineAsync(log.ToString());
         }
 

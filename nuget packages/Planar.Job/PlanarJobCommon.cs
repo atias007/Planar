@@ -187,9 +187,9 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static async Task<bool> Debug(Type jobType, string planarHostName)
+        private static async Task<bool> Debug(Type jobType, string planarHostName, CancellationToken cancellationToken)
 #else
-        private static async Task<bool> Debug(Type jobType, string? planarHostName)
+        private static async Task<bool> Debug(Type jobType, string? planarHostName, CancellationToken cancellationToken)
 #endif
         {
             if (Mode != RunningMode.Debug) { return false; }
@@ -204,7 +204,7 @@ namespace Planar.Job
             Console.ResetColor();
             await Console.Out.WriteLineAsync("---------------------------------------");
 
-            var (Success, Instance) = await Execute(jobType, planarHostName, json);
+            var (Success, Instance) = await Execute(jobType, planarHostName, json, cancellationToken);
 
             await Instance.PrintDebugSummary(Success);
             await Console.Out.WriteLineAsync("---------------------------------------");
@@ -223,13 +223,13 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, string planarHostName, string json)
+        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, string planarHostName, string json, CancellationToken cancellationToken)
 #else
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, string? planarHostName, string json)
+        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, string? planarHostName, string json, CancellationToken cancellationToken)
 #endif
         {
             var instance = GetInstance(jobType);
-            return (await instance.Execute(json, planarHostName), instance);
+            return (await instance.Execute(json, planarHostName, cancellationToken), instance);
         }
 
         private static BaseJob GetInstance(Type jobType) => Activator.CreateInstance(jobType) as BaseJob ??

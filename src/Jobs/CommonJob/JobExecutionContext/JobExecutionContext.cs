@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Planar.Job
 {
@@ -12,29 +13,18 @@ namespace Planar.Job
 #endif
 
         public IDataMap MergedJobDataMap { get; set; } = new DataMap();
-
         public string FireInstanceId { get; set; } = string.Empty;
-
         public DateTimeOffset FireTime { get; set; }
-
         public DateTimeOffset? NextFireTime { get; set; }
-
         public DateTimeOffset? ScheduledFireTime { get; set; }
-
         public DateTimeOffset? PreviousFireTime { get; set; }
-
         public bool Recovering { get; set; }
-
         public int RefireCount { get; set; }
-
         public int JobPort { get; set; }
-
         public int JobFailOverPort { get; set; }
-
         public IJobDetail JobDetails { get; set; } = new JobDetail();
-
         public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();
-
         public string Environment { get; set; } = string.Empty;
+        public CancellationToken CancellationToken { get; set; } = default;
     }
 }

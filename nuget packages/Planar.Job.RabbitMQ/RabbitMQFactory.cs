@@ -18,6 +18,7 @@ namespace Planar.Job.RabbitMQ
         private readonly RabbitMQJobStartProperties properties;
         private readonly CancellationToken cancellationToken;
         private static readonly object _lock = new object();
+        private int healthCheckCounter = 0;
 
 #if NETSTANDARD2_0
         private IChannel _channel;
@@ -86,6 +87,8 @@ namespace Planar.Job.RabbitMQ
 
         private async Task SafeHealthCheck()
         {
+            Interlocked.Increment(ref healthCheckCounter);
+
             try
             {
                 _healthCheckTimer.Stop();
@@ -98,6 +101,19 @@ namespace Planar.Job.RabbitMQ
             finally
             {
                 _healthCheckTimer.Start();
+            }
+
+            try
+            {
+                if (healthCheckCounter == 1_000_000_000) { healthCheckCounter = 0; }
+                if (healthCheckCounter % 30 == 0)
+                {
+                    await EnsureDefinition();
+                }
+            }
+            catch (Exception ex)
+            {
+                await ConsoleLogger.Log(LogLevel.Error, $"Failed to ensure RabbitMQ definition: {ex.Message}");
             }
         }
 
