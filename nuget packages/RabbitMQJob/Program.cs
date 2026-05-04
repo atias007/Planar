@@ -1,6 +1,10 @@
 ﻿using Planar.Job;
-using Planar.Job.RabbitMQ;
+using Planar.Job.RabbitMq;
 using RabbitMQJob;
 
-var connectionInfo = new RabbitMQJobStartProperties(planarHostName: "localhost");
-await PlanarJob.StartAsync<Job>(connectionInfo);
+var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
+        .WithHostName("localhost")
+        .AddJob<JobA>()
+        .AddJob<JobB>()
+        .Build();
+await PlanarJob.StartAsync<JobA>(connectionInfo);

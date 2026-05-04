@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Logging;
-using Planar.Job.RabbitMQ;
+using Planar.Job.RabbitMq;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,33 +12,27 @@ namespace Planar.Job
     public static partial class PlanarJob
     {
 #if NETSTANDARD2_0
-        private static Type _jobType;
-        internal static RabbitMQJobStartProperties Properties { get; set; }
-        private static RabbitMQFactory _rabbitMQFactory;
+        internal static RabbitMqJobStartProperties Properties { get; set; }
+        private static RabbitMqFactory _rabbitMqFactory;
 #else
-        internal static RabbitMQJobStartProperties Properties { get; set; } = null!;
-        private static Type? _jobType;
-        private static RabbitMQFactory? _rabbitMQFactory;
+        internal static RabbitMqJobStartProperties Properties { get; set; } = null!;
+        private static RabbitMqFactory? _rabbitMqFactory;
 #endif
 
         private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
         private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
-        public async static Task StartAsync<TJob>(RabbitMQJobStartProperties properties)
+        public async static Task StartAsync<TJob>(RabbitMqJobStartProperties properties)
                     where TJob : BaseJob, new()
         {
-            if (properties == null)
-            {
-                throw new ArgumentNullException(nameof(properties));
-            }
+            if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
 
-            _jobType = typeof(TJob);
-            AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
+            GracefullShutdownSetup();
 
             try
             {
                 FillProperties();
-                if (await Debug(_jobType, properties.PlanarHostName, _mainCancellationTokenSource.Token)) { return; }
+                if (await Debug(properties.PlanarHostname, _mainCancellationTokenSource.Token)) { return; }
 
                 await SafeStartAsync<TJob>(properties);
             }
@@ -52,17 +45,42 @@ namespace Planar.Job
             }
         }
 
-        private async static Task SafeStartAsync<TJob>(RabbitMQJobStartProperties properties)
+        private static void GracefullShutdownSetup()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
+            _mainCancellationTokenSource.Token.Register(() =>
+            {
+                try
+                {
+                    foreach (var item in _jobInstances)
+                    {
+                        item.Value.Cancel();
+                    }
+                }
+                catch { }
+
+                // TODO: wait up to 30 seconds for running jobs to complete or cancel before exiting the process
+            });
+
+            Console.CancelKeyPress += (sender, args) =>
+            {
+                Console.WriteLine("\nCtrl+C detected! Performing cleanup...");
+
+                // 2. Prevent the application from terminating immediately
+                args.Cancel = true;
+
+                _mainCancellationTokenSource.Cancel();
+            };
+        }
+
+        private async static Task SafeStartAsync<TJob>(RabbitMqJobStartProperties properties)
                     where TJob : BaseJob, new()
         {
             Properties = properties;
-            _rabbitMQFactory = RabbitMQFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
-
-            // set rabbitmq definition (exchange, queue, binding)
-            await _rabbitMQFactory.EnsureDefinition();
+            _rabbitMqFactory = await RabbitMqFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
 
             // Start consuming messages
-            await _rabbitMQFactory.StartConsumeAsync(messageHandler: ProcessMessageAsync);
+            await _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync);
         }
 
         /// <summary>
@@ -71,19 +89,25 @@ namespace Planar.Job
         /// <param name="messageBody">The message body as a string</param>
         /// <param name="eventArgs">Event arguments containing message metadata</param>
         /// <returns>True if message processed successfully, False to requeue</returns>
-        private static async Task ProcessMessageAsync(BasicDeliverEventArgs eventArgs)
+        private static async Task ProcessInvokeMessageAsync(BasicDeliverEventArgs eventArgs)
         {
-            Stopwatch.Start();
             await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
             string fid = string.Empty;
+#if NETSTANDARD2_0
+            JobDefinition jobDefinition = null;
+#else
+            JobDefinition? jobDefinition = null;
+#endif
             try
             {
-                fid = TrackInstance(eventArgs);
-                await Execute(eventArgs, _mainCancellationTokenSource.Token);
+                jobDefinition = Properties.GetJobDefinition(eventArgs.RoutingKey);
+                fid = GetFireInstanceIdHeader(eventArgs);
+                var info = TrackInstance(fid);
+                await Execute(eventArgs, jobDefinition.JobType, info.CancellationToken);
             }
             catch (Exception ex)
             {
-                var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {_jobType?.Name}" };
+                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to execute {jobDefinition?.JobType.Name}".TrimEnd() };
                 await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
                 await Console.Error.WriteLineAsync(log.ToString());
@@ -94,35 +118,115 @@ namespace Planar.Job
             }
         }
 
-        private static string TrackInstance(BasicDeliverEventArgs eventArgs)
+        private static async Task ProcessCancelAsync(BasicDeliverEventArgs eventArgs)
         {
+            await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
+            string fid = string.Empty;
 #if NETSTANDARD2_0
-            object fireInstanceIdObj = null;
+            JobInstanceInfo jobInstanceInfo = null;
 #else
-            object? fireInstanceIdObj = null;
+            JobInstanceInfo? jobInstanceInfo = null;
 #endif
 
-            eventArgs.BasicProperties.Headers?.TryGetValue("FireInstanceId", out fireInstanceIdObj);
-            if (fireInstanceIdObj is byte[] bytes)
+            try
             {
-                fireInstanceIdObj = Encoding.UTF8.GetString(bytes);
+                fid = GetFireInstanceIdHeader(eventArgs);
+                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo))
+                {
+                    var log = new LogEntity { Level = LogLevel.Information, Message = $"No running job found for FireInstanceId {fid}".TrimEnd() };
+                    await Console.Error.WriteLineAsync(log.ToString());
+                    return;
+                }
+
+                jobInstanceInfo.Cancel();
+                var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
+                await Console.Error.WriteLineAsync(log2.ToString());
+            }
+            catch (Exception ex)
+            {
+                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to cancel job FireInstanceId {fid}".TrimEnd() };
+                await Console.Error.WriteLineAsync(log.ToString());
+                log.Message = ex.ToString();
+                await Console.Error.WriteLineAsync(log.ToString());
+            }
+        }
+
+        private static async Task RouteMessageAsync(BasicDeliverEventArgs eventArgs)
+        {
+            var command = SafeGetHeader(eventArgs, "Command");
+            switch (command)
+            {
+                case "Invoke":
+                    await ProcessInvokeMessageAsync(eventArgs);
+                    break;
+
+                case "Cancel":
+                    await ProcessCancelAsync(eventArgs);
+                    break;
+
+                case "Ping":
+                    break;
+
+                default:
+                    var message = string.IsNullOrWhiteSpace(command) ?
+                        "Missing or empty Command header." :
+                        $"Command header '{command}' is not supported.";
+
+                    var log = new LogEntity { Level = LogLevel.Error, Message = message };
+                    await Console.Error.WriteLineAsync(log.ToString());
+                    break;
+            }
+        }
+
+        private static string SafeGetHeader(BasicDeliverEventArgs eventArgs, string name)
+        {
+            try
+            {
+                return GetHeader(eventArgs, name);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string GetFireInstanceIdHeader(BasicDeliverEventArgs eventArgs)
+        {
+            return GetHeader(eventArgs, "FireInstanceId");
+        }
+
+        private static string GetHeader(BasicDeliverEventArgs eventArgs, string name)
+        {
+#if NETSTANDARD2_0
+            object headerValueObj = null;
+#else
+            object? headerValueObj = null;
+#endif
+            eventArgs.BasicProperties.Headers?.TryGetValue(name, out headerValueObj);
+            if (headerValueObj is byte[] bytes)
+            {
+                return Encoding.UTF8.GetString(bytes);
             }
 
-            var result = Convert.ToString(fireInstanceIdObj);
-
+            var result = Convert.ToString(headerValueObj);
             if (string.IsNullOrWhiteSpace(result))
             {
-                throw new PlanarJobException("FireInstanceId header is missing or empty in the message headers");
-            }
-
-            var info = new JobInstanceInfo(result, _mainCancellationTokenSource.Token);
-
-            if (!_jobInstances.TryAdd(result, info))
-            {
-                throw new PlanarJobException($"Duplicate FireInstanceId detected: {result}");
+                throw new PlanarJobException($"{name} header is missing or empty in the message headers");
             }
 
             return result;
+        }
+
+        private static JobInstanceInfo TrackInstance(string fireInstanceId)
+        {
+            var info = new JobInstanceInfo(fireInstanceId);
+
+            if (!_jobInstances.TryAdd(fireInstanceId, info))
+            {
+                throw new PlanarJobException($"Duplicate FireInstanceId detected: {fireInstanceId}");
+            }
+
+            return info;
         }
 
         private static async Task UntrackInstance(string fireInstanceId)
@@ -138,11 +242,11 @@ namespace Planar.Job
             }
         }
 
-        private static async Task Execute(BasicDeliverEventArgs eventArgs, CancellationToken cancellationToken)
+        private static async Task Execute(BasicDeliverEventArgs eventArgs, Type jobType, CancellationToken cancellationToken)
         {
             var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
-            if (_jobType == null) { return; }
-            await Execute(_jobType, Properties?.PlanarHostName, json, cancellationToken);
+            if (jobType == null) { return; }
+            await Execute(jobType, Properties?.PlanarHostname, json, cancellationToken);
         }
 
         private static void FillProperties()

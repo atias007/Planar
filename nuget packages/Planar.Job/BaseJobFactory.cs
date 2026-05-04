@@ -1,6 +1,7 @@
 ﻿using PlanarJobInner;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -17,6 +18,7 @@ namespace Planar.Job
         private readonly DateTime? _nowOverrideValue;
         private readonly IJobExecutionContext _context;
         private readonly List<Exception> _exceptions = new List<Exception>();
+        private readonly Stopwatch _stopWatch = new Stopwatch();
         private int? _effectedRows;
 
         public BaseJobFactory(IJobExecutionContext context)
@@ -41,11 +43,21 @@ namespace Planar.Job
 
         #region Timing
 
+        public void StartTiming()
+        {
+            _stopWatch.Restart();
+        }
+
+        public void StopTiming()
+        {
+            _stopWatch.Stop();
+        }
+
         public TimeSpan JobRunTime
         {
             get
             {
-                return TimeSpan.FromMilliseconds(PlanarJob.Stopwatch.ElapsedMilliseconds);
+                return TimeSpan.FromMilliseconds(_stopWatch.ElapsedMilliseconds);
             }
         }
 

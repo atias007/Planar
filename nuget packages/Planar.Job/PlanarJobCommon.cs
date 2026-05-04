@@ -23,7 +23,6 @@ namespace Planar.Job
         public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
-        internal static Stopwatch Stopwatch { get; set; } = new Stopwatch();
 
         private static string ShowDebugMenu(Type type)
         {
@@ -187,11 +186,12 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static async Task<bool> Debug(Type jobType, string planarHostName, CancellationToken cancellationToken)
+        private static async Task<bool> Debug(string planarHostName, CancellationToken cancellationToken)
 #else
-        private static async Task<bool> Debug(Type jobType, string? planarHostName, CancellationToken cancellationToken)
+        private static async Task<bool> Debug(string? planarHostName, CancellationToken cancellationToken)
 #endif
         {
+            var jobType = typeof(BaseJob).Assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(typeof(BaseJob)) && !t.IsAbstract);
             if (Mode != RunningMode.Debug) { return false; }
             if (jobType == null) { return false; }
 

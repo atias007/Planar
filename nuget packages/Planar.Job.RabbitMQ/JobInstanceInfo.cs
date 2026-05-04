@@ -1,28 +1,30 @@
 ﻿using System;
 using System.Threading;
 
-namespace Planar.Job.RabbitMQ
+namespace Planar.Job.RabbitMq
 {
     internal sealed class JobInstanceInfo : IDisposable
     {
-        public JobInstanceInfo(string fireInstanceId, CancellationToken cancellationToken)
+        private readonly CancellationTokenSource _cancellationTokenSource;
+
+        public JobInstanceInfo(string fireInstanceId)
         {
             FireInstanceId = fireInstanceId;
-            CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _cancellationTokenSource = new CancellationTokenSource();
         }
 
         public string FireInstanceId { get; private set; }
 
-        public CancellationTokenSource CancellationTokenSource { get; set; }
+        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
         public void Dispose()
         {
-            CancellationTokenSource.Dispose();
+            _cancellationTokenSource.Dispose();
         }
 
         public void Cancel()
         {
-            CancellationTokenSource.Cancel();
+            _cancellationTokenSource.Cancel();
         }
     }
 }

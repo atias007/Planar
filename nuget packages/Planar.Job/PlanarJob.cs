@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
@@ -28,7 +28,6 @@ namespace Planar.Job
         {
             Properties = properties;
 
-            Stopwatch.Start();
             FillProperties();
             try
             {
@@ -85,7 +84,7 @@ namespace Planar.Job
             }
 
             var instance = Activator.CreateInstance<TJob>();
-            var success = await instance.Execute(json);
+            var success = await instance.Execute(json, null, CancellationToken.None);
 
             if (Mode == RunningMode.Debug)
             {
