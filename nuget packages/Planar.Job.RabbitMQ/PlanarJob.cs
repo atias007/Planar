@@ -32,7 +32,7 @@ namespace Planar.Job
             try
             {
                 FillProperties();
-                if (await Debug(properties.PlanarHostname, _mainCancellationTokenSource.Token)) { return; }
+                if (await Debug(properties, _mainCancellationTokenSource.Token)) { return; }
 
                 await SafeStartAsync<TJob>(properties);
             }
@@ -48,8 +48,10 @@ namespace Planar.Job
         private static void GracefullShutdownSetup()
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
-            _mainCancellationTokenSource.Token.Register(() =>
+            _mainCancellationTokenSource.Token.Register(async () =>
             {
+                await ConsoleLogger.Log(LogLevel.Information, "Start gracefull shutdown");
+
                 try
                 {
                     foreach (var item in _jobInstances)
@@ -59,7 +61,17 @@ namespace Planar.Job
                 }
                 catch { }
 
-                // TODO: wait up to 30 seconds for running jobs to complete or cancel before exiting the process
+                for (int i = 0; i < 30; i++)
+                {
+                    if (_jobInstances.Count == 0) { break; }
+                    await ConsoleLogger.Log(LogLevel.Information, $"Wait for {_jobInstances.Count} jobs to finish running");
+                    await Task.Delay(1_000);
+                }
+
+                if (_jobInstances.Count > 0)
+                {
+                    await ConsoleLogger.Log(LogLevel.Error, $"{_jobInstances.Count} jobs to is running after waiting 30 seconds");
+                }
             });
 
             Console.CancelKeyPress += (sender, args) =>

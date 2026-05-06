@@ -1,7 +1,6 @@
 ﻿using Planar.Common;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -24,16 +23,41 @@ namespace Planar.Job
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
-        private static string ShowDebugMenu(Type type)
+        private static Type ShowJobMenu(IHostetJobProperties properties)
+        {
+            var jobTypes = properties.JobTypes.Select(d => d).ToList();
+            if (jobTypes.Count == 1) { return jobTypes[0]; }
+            Console.WriteLine("Multiple job definitions found. Please select a job to execute:");
+            Console.WriteLine();
+            var index = 1;
+            foreach (var jobType in jobTypes)
+            {
+                PrintMenuItem(jobType.Name, index.ToString());
+                index++;
+            }
+            Console.WriteLine();
+
+            while (true)
+            {
+                var selectedIndex = GetMenuItem(quiet: false, jobTypes.Count);
+                if (selectedIndex == null || selectedIndex <= 0 || selectedIndex > jobTypes.Count)
+                {
+                    continue;
+                }
+
+                return jobTypes[selectedIndex.Value - 1];
+            }
+        }
+
+        private static string ShowDebugMenu(Type JobType)
         {
             int? selectedIndex;
 
-            var typeName = type.Name;
             var hasProfiles = Debugger.Profiles.Any();
             if (hasProfiles)
             {
-                Console.Write("type the profile code ");
-                Console.Write("to start executing the ");
+                Console.Write("Type the Profile code ");
+                Console.Write("to start executing ");
             }
             else
             {
@@ -41,9 +65,8 @@ namespace Planar.Job
             }
 
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.Write($"{typeName} ");
+            Console.Write($"{JobType.Name} ");
             Console.ResetColor();
-            Console.WriteLine("job");
             Console.WriteLine();
 
             var index = 1;
@@ -60,7 +83,7 @@ namespace Planar.Job
                 Console.WriteLine();
             }
 
-            selectedIndex = GetMenuItem(quiet: !hasProfiles);
+            selectedIndex = GetMenuItem(quiet: !hasProfiles, Debugger.Profiles.Count);
 
             MockJobExecutionContext context;
             IExecuteJobProperties properties;
@@ -112,13 +135,13 @@ namespace Planar.Job
             return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
-        private static int? GetMenuItem(bool quiet)
+        private static int? GetMenuItem(bool quiet, int maxIndex)
         {
             int index = 0;
             var valid = false;
             while (!valid)
             {
-                if (!quiet) { Console.Write("Code: "); }
+                if (!quiet) { Console.Write("Enter number: "); }
                 using (var timer = new Timer(60_000))
                 {
                     timer.Elapsed += TimerElapsed;
@@ -135,7 +158,7 @@ namespace Planar.Job
                     {
                         ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
                     }
-                    else if (index > Debugger.Profiles.Count || index <= 0)
+                    else if (index > maxIndex || index <= 0)
                     {
                         ShowErrorMenu($"Selected value '{index}' is not exists");
                     }
@@ -184,16 +207,16 @@ namespace Planar.Job
             Console.ResetColor();
         }
 
-#if NETSTANDARD2_0
-
-        private static async Task<bool> Debug(string planarHostName, CancellationToken cancellationToken)
-#else
-        private static async Task<bool> Debug(string? planarHostName, CancellationToken cancellationToken)
-#endif
+        private static async Task<bool> Debug(IHostetJobProperties properties, CancellationToken cancellationToken)
         {
-            var jobType = typeof(BaseJob).Assembly.GetTypes().FirstOrDefault(t => t.IsSubclassOf(typeof(BaseJob)) && !t.IsAbstract);
             if (Mode != RunningMode.Debug) { return false; }
-            if (jobType == null) { return false; }
+            var type = ShowJobMenu(properties);
+            return await Debug(type, cancellationToken);
+        }
+
+        private static async Task<bool> Debug(Type jobType, CancellationToken cancellationToken)
+        {
+            if (Mode != RunningMode.Debug) { return false; }
 
             var json = ShowDebugMenu(jobType);
 
@@ -204,7 +227,7 @@ namespace Planar.Job
             Console.ResetColor();
             await Console.Out.WriteLineAsync("---------------------------------------");
 
-            var (Success, Instance) = await Execute(jobType, planarHostName, json, cancellationToken);
+            var (Success, Instance) = await Execute(jobType, planarHostName: null, json, cancellationToken);
 
             await Instance.PrintDebugSummary(Success);
             await Console.Out.WriteLineAsync("---------------------------------------");

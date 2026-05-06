@@ -35,8 +35,6 @@
 		<Compile Include="..\..\src\Jobs\PlanarJob\PlanarJobExecutionExceptionDto.cs" Link="PlanarJobExecutionExceptionDto.cs" />
 		<Compile Include="..\..\src\Planar.CLI\CliGeneral\CliFormatPartial.cs" Link="Logger\CliFormatPartial.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
-		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="Extensions.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\DataMapUtils.cs" Link="JobExecutionContext\DataMapUtils.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\General.cs" Link="JobExecutionContext\General.cs" />

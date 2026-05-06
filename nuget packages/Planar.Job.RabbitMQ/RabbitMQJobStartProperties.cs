@@ -80,8 +80,16 @@ namespace Planar.Job.RabbitMq
         {
             var jobType = typeof(TJob);
             ValidateJobType(jobType);
+            var attribute = ValidateJobQueueNameAttribute(jobType);
 
-            _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType) };
+            if (attribute == null)
+            {
+                _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType) };
+            }
+            else
+            {
+                _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType, attribute.QueueName) };
+            }
 
             return this;
         }
@@ -127,6 +135,18 @@ namespace Planar.Job.RabbitMq
                 throw new InvalidOperationException($"A job definition for queue name '{queueName}' already exists. Use AddJob<TJob>(string queueName) to specify a different queue name.");
             }
         }
+
+#if NETSTANDARD2_0
+
+        private JobQueueNameAttribute ValidateJobQueueNameAttribute(Type jobType)
+#else
+        private JobQueueNameAttribute? ValidateJobQueueNameAttribute(Type jobType)
+#endif
+        {
+            var attribute = Attribute.GetCustomAttribute(jobType, typeof(JobQueueNameAttribute));
+            if (attribute == null) { return null; }
+            return (JobQueueNameAttribute)attribute;
+        }
     }
 
     public class JobDefinition
@@ -149,7 +169,7 @@ namespace Planar.Job.RabbitMq
         public string QueueName { get; private set; }
     }
 
-    public class RabbitMqJobStartProperties : PlanarJobStartProperties
+    public class RabbitMqJobStartProperties : PlanarJobStartProperties, IHostetJobProperties
     {
         private const string DefaultExchange = "Planar";
 
@@ -158,6 +178,7 @@ namespace Planar.Job.RabbitMq
         public string ExchangeName { get; internal set; } = DefaultExchange;
         public IEnumerable<AmqpTcpEndpoint> RabbitMqEndpoints { get; internal set; } = new List<AmqpTcpEndpoint>();
         public IEnumerable<JobDefinition> JobDefinitions { get; internal set; } = new List<JobDefinition>();
+        public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
 
         internal JobDefinition GetJobDefinition(string name)
         {
