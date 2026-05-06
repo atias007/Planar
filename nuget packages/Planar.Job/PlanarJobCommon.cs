@@ -27,7 +27,7 @@ namespace Planar.Job
         {
             var jobTypes = properties.JobTypes.Select(d => d).ToList();
             if (jobTypes.Count == 1) { return jobTypes[0]; }
-            Console.WriteLine("Multiple job definitions found. Please select a job to execute:");
+            Console.WriteLine("> Multiple job definitions found. Please select a job to execute:");
             Console.WriteLine();
             var index = 1;
             foreach (var jobType in jobTypes)
@@ -39,11 +39,14 @@ namespace Planar.Job
 
             while (true)
             {
-                var selectedIndex = GetMenuItem(quiet: false, jobTypes.Count);
+                var selectedIndex = GetMenuItem(quiet: false, jobTypes.Count, withDefault: false);
                 if (selectedIndex == null || selectedIndex <= 0 || selectedIndex > jobTypes.Count)
                 {
                     continue;
                 }
+
+                Console.WriteLine("------------------");
+                Console.WriteLine();
 
                 return jobTypes[selectedIndex.Value - 1];
             }
@@ -53,24 +56,25 @@ namespace Planar.Job
         {
             int? selectedIndex;
 
-            var hasProfiles = Debugger.Profiles.Any();
+            var profiles = Debugger.Profiles.Where(p => !p.Value.JobTypes.Any() || p.Value.JobTypes.Contains(JobType)).ToList();
+            var hasProfiles = profiles.Any();
             if (hasProfiles)
             {
-                Console.Write("Type the Profile code ");
-                Console.Write("to start executing ");
+                Console.Write("> Please select the profile code to start executing ");
             }
             else
             {
-                Console.Write("type [Enter] to start executing the ");
+                Console.Write("> Please press [Enter] to start executing ");
             }
 
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.Write($"{JobType.Name} ");
             Console.ResetColor();
             Console.WriteLine();
+            Console.WriteLine();
 
             var index = 1;
-            foreach (var p in Debugger.Profiles)
+            foreach (var p in profiles)
             {
                 PrintMenuItem(p.Key, index.ToString());
                 index++;
@@ -83,7 +87,7 @@ namespace Planar.Job
                 Console.WriteLine();
             }
 
-            selectedIndex = GetMenuItem(quiet: !hasProfiles, Debugger.Profiles.Count);
+            selectedIndex = GetMenuItem(quiet: !hasProfiles, profiles.Count, withDefault: true);
 
             MockJobExecutionContext context;
             IExecuteJobProperties properties;
@@ -94,7 +98,7 @@ namespace Planar.Job
             }
             else
             {
-                properties = Debugger.Profiles.Values.ToList()[selectedIndex.Value - 1];
+                properties = profiles.ToArray()[selectedIndex.Value - 1].Value;
                 context = new MockJobExecutionContext(properties);
             }
 
@@ -135,7 +139,7 @@ namespace Planar.Job
             return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
-        private static int? GetMenuItem(bool quiet, int maxIndex)
+        private static int? GetMenuItem(bool quiet, int maxIndex, bool withDefault)
         {
             int index = 0;
             var valid = false;
@@ -150,8 +154,16 @@ namespace Planar.Job
                     timer.Stop();
                     if (string.IsNullOrEmpty(selected))
                     {
-                        if (!quiet) { Console.WriteLine("<Default>"); }
-                        return null;
+                        if (withDefault)
+                        {
+                            if (!quiet) { Console.WriteLine("<Default>"); }
+                            return null;
+                        }
+                        else
+                        {
+                            ShowErrorMenu("Selected value is empty");
+                            continue;
+                        }
                     }
 
                     if (!int.TryParse(selected, out index))

@@ -7,4 +7,10 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .AddJob<JobA>()
         .AddJob<JobB>()
         .Build();
+
+PlanarJob.Debugger.AddProfile("Test Profile", builder =>
+{
+    builder.ForJob<JobB>();
+});
+
 await PlanarJob.StartAsync<JobA>(connectionInfo);
