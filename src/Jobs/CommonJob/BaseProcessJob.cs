@@ -168,7 +168,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         return string.IsNullOrWhiteSpace(domain) ? username : $"{domain}\\{username}";
     }
 
-    protected void OnCancel()
+    protected void OnProcessCancel()
     {
         Kill("request for cancel process");
     }

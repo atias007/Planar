@@ -57,8 +57,8 @@ public class PlanarJobRedisProperties
 
 public class PlanarJobRabbitMqProperties
 {
-    [YamlMember(Alias = "exchange name")]
-    public string ExchangeName { get; set; } = null!;
+    [YamlMember(Alias = "exchange")]
+    public string Exchange { get; set; } = null!;
 
     [YamlMember(Alias = "routing key")]
     public string RoutingKey { get; set; } = null!;

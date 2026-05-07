@@ -45,12 +45,66 @@ public abstract class PlanarJob(
         try
         {
             MqttBrokerService.RegisterInterceptingPublish(InterceptingPublishAsync, context.FireInstanceId);
-
             await Initialize(context);
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+            return;
+        }
+        finally
+        {
+            await FinalizeJob(context);
+            UnregisterMqttBrokerService(context.FireInstanceId);
+        }
+
+        if (Properties.Process != null)
+        {
+            await SafeExecuteProcess(context);
+        }
+        else if (Properties.RabbitMq != null)
+        {
+            await SafeExecuteRabbitMq(context);
+        }
+        else
+        {
+            _logger.LogError("planar job with invoke type '{InvokeType}' is not supported or has no properties (job key: {JobKey})", Properties.InvokeMethod, context.JobDetail.Key);
+            MessageBroker.AppendLog(LogLevel.Error, $"planar job with invoke type '{Properties.InvokeMethod}' is not supported or has no properties (job key: {context.JobDetail.Key})");
+        }
+    }
+
+    private async Task SafeExecuteRabbitMq(IJobExecutionContext context)
+    {
+        try
+        {
+            ValidateRabbitMqJob();
+            SafeLogInvokeJobDetails(context);
+            context.CancellationToken.Register(OnRabbitMqCancel);
+            _ = SafeStartMonitorDuration(context);
+            await InvokeRabbitMqJob(context);
+            StopMonitorDuration();
+            ValidateHealthCheck();
+            CheckJobError();
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+        }
+        finally
+        {
+            await FinalizeJob(context);
+            UnregisterMqttBrokerService(context.FireInstanceId);
+        }
+    }
+
+    private async Task SafeExecuteProcess(IJobExecutionContext context)
+    {
+        try
+        {
             ValidateProcessJob();
             ValidateExeFile();
             SafeLogInvokeJobDetails(context);
-            context.CancellationToken.Register(OnCancel);
+            context.CancellationToken.Register(OnProcessCancel);
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
             var startInfo = GetProcessStartInfo();
             _ = SafeStartMonitorDuration(context);
@@ -78,6 +132,17 @@ public abstract class PlanarJob(
             UnregisterMqttBrokerService(context.FireInstanceId);
             SafeDeleteContextFile();
         }
+    }
+
+    private void OnRabbitMqCancel()
+    {
+        // TODO: add rabbitmq cancel logic
+    }
+
+    private async Task InvokeRabbitMqJob(IJobExecutionContext context)
+    {
+        // TODO: add rabbitmq invoke logic
+        await Task.CompletedTask;
     }
 
     private void SafeLogInvokeJobDetails(IJobExecutionContext context)
@@ -183,6 +248,27 @@ public abstract class PlanarJob(
             _logger.LogError("process filename '{Filename}' must have 'exe' extention", Filename);
             MessageBroker.AppendLog(LogLevel.Error, $"process filename '{Filename}' must have 'exe' extention");
             throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
+        }
+    }
+
+    private void ValidateRabbitMqJob()
+    {
+        // TODO: add rabbitmq hook & validate
+
+        if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.RoutingKey))
+        {
+            const string message = "planar job with rabbitmq invoke method must have routing key";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+
+        if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.Exchange))
+        {
+            const string message = "planar job with rabbitmq invoke method must have exchange";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
         }
     }
 

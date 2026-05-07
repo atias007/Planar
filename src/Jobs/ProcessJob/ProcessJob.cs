@@ -24,7 +24,7 @@ public abstract class ProcessJob(
             await Initialize(context);
 
             ValidateProcessJob();
-            context.CancellationToken.Register(OnCancel);
+            context.CancellationToken.Register(OnProcessCancel);
 
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
             var startInfo = GetProcessStartInfo();

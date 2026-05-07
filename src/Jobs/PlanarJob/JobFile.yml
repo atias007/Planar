@@ -20,7 +20,7 @@ properties:                           # Job Properties
     username: null                    # local or network username (any OS) [up to 100 characters]
     password: null                    # The active directory password (only on windows OS) [up to 100 characters]
   rabbitmq:                           # RabbitMQ properties (relevant only if host type is rabbitmq, server properties will be imported from panal appsettings.json)
-    exchange name: planar             # The exchange name [mandatory, up to 100 characters]
+    exchange: planar                  # The exchange name [mandatory, up to 100 characters]
     routing key: group.name           # The routing key [mandatory, up to 100 characters]
     virtual host: planar              # The virtual host [optional, up to 100 characters]
   redis:                              # Redis properties (relevant only if host type is redis, server properties will be imported from panal appsettings.json)

@@ -72,7 +72,7 @@ public class PlanarJobRabbitMqPropertiesValidator : AbstractValidator<PlanarJobR
 {
     public PlanarJobRabbitMqPropertiesValidator()
     {
-        RuleFor(e => e.ExchangeName).NotEmpty().MaximumLength(100);
+        RuleFor(e => e.Exchange).NotEmpty().MaximumLength(100);
         RuleFor(e => e.RoutingKey).NotEmpty().MaximumLength(100);
         RuleFor(e => e.VirtualHost).MaximumLength(100);
     }
