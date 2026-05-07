@@ -52,16 +52,17 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
 
         await Task.WhenAll(
             ClearTrace(),
-            ClearJobLog(),
             ClearJobWithRetentionDaysLog(),
             ClearStatistics(),
             ClearProperties(ids.Result),
             ClearLast(ids.Result),
-            ClearHistory(ids.Result),
             ClearMonitorCountersByJob(ids.Result),
             ClearMonitorCountersByMonitor(),
             ClearJobStatistics(ids.Result)
             );
+
+        await ClearJobLog();
+        await ClearHistory(ids.Result);
 
         SafeSetLastRun(context, logger);
     }
@@ -108,7 +109,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
 
     private async Task ClearJobLog()
     {
-        const int BatchSize = 5_000;
+        const int BatchSize = 1_000;
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
@@ -119,6 +120,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
             {
                 count = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays, BatchSize);
                 rows += count;
+                await Task.Delay(1_000);
             } while (count == BatchSize);
 
             logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
@@ -131,7 +133,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
 
     private async Task ClearJobWithRetentionDaysLog()
     {
-        const int BatchSize = 5_000;
+        const int BatchSize = 1_000;
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
@@ -154,6 +156,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
                 {
                     count = await data.ClearJobLogTable(jobId, days.Value, BatchSize);
                     rows += count;
+                    await Task.Delay(1_000);
                 } while (count == BatchSize);
 
                 logger.LogDebug("clear job {JobId} log table rows (older then {Days} days) with {Total} effected row(s)", jobId, days, rows);

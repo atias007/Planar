@@ -16,6 +16,7 @@ using Planar.Service.Monitor;
 using Planar.Service.Reports;
 using Quartz;
 using Quartz.Impl.Matchers;
+using Quartz.Util;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -1128,7 +1129,7 @@ public partial class JobDomain(
 
         var oldAuthor = JobHelper.GetJobAuthor(info);
         request.Author = request.Author?.Trim() ?? string.Empty;
-        info.JobDataMap.Put(Consts.Author, request.Author);
+        info.JobDataMap[Consts.Author] = request.Author;
 
         // Reschedule job
         var triggers = await scheduler.GetTriggersOfJob(jobKey);

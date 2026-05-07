@@ -27,8 +27,6 @@ namespace Planar.Job
         {
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
 
-            GracefullShutdownSetup();
-
             try
             {
                 FillProperties();
@@ -45,7 +43,7 @@ namespace Planar.Job
             }
         }
 
-        private static void GracefullShutdownSetup()
+        static partial void GracefullShutdownSetup()
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
             _mainCancellationTokenSource.Token.Register(async () =>

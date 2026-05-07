@@ -8,16 +8,14 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
-
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+		<EmbeddedResource Include="JobFile.yml" />
 	</ItemGroup>
 	<ItemGroup>
-		<EmbeddedResource Include="JobFile.yml" />
+		<ProjectReference Include="..\CommonJob\CommonJob.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
@@ -28,8 +26,5 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\CommonJob\CommonJob.csproj" />
 	</ItemGroup>
 </Project>

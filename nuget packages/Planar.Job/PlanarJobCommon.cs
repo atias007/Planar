@@ -23,6 +23,8 @@ namespace Planar.Job
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
+        static partial void GracefullShutdownSetup();
+
         private static Type ShowJobMenu(IHostetJobProperties properties)
         {
             var jobTypes = properties.JobTypes.Select(d => d).ToList();
@@ -231,6 +233,7 @@ namespace Planar.Job
             if (Mode != RunningMode.Debug) { return false; }
 
             var json = ShowDebugMenu(jobType);
+            GracefullShutdownSetup();
 
             await Console.Out.WriteLineAsync("---------------------------------------");
             await Console.Out.WriteAsync(">> Environment: ");

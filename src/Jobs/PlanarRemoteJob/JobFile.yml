@@ -1,4 +1,4 @@
-﻿job type: PlanarJob                   # Fixed! don't change it
+﻿job type: PlanarRemoteJob             # Fixed! don't change it
 name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
 author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
