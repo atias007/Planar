@@ -125,7 +125,7 @@ public sealed class JobLogBroker : IDisposable
         lock (Locker)
         {
             var value = PlanarConvert.ToString(item.Value);
-            _context.JobDetail.JobDataMap.Put(item.Key, value);
+            _context.JobDetail.JobDataMap[item.Key] = value ?? string.Empty;
         }
     }
 
@@ -170,7 +170,7 @@ public sealed class JobLogBroker : IDisposable
         lock (Locker)
         {
             var value = PlanarConvert.ToString(item.Value);
-            _context.Trigger.JobDataMap.Put(item.Key, value);
+            _context.Trigger.JobDataMap[item.Key] = value ?? string.Empty;
         }
     }
 

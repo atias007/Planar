@@ -225,7 +225,7 @@ public class RestJob(
             var source = nameof(ValidateRestJob);
             _logger.LogError(ex, "fail at {Source}", source);
             MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
-            throw;
+            throw new RestJobException("Fail to validate rest job", ex);
         }
     }
 

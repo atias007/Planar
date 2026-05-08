@@ -62,7 +62,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
                 throw new RestConflictException($"data with key '{request.DataKey}' already exists");
             }
 
-            info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
+            info.Trigger.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
             AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("update", request.DataKey), new { value = request.DataValue?.Trim() });
         }
         else
@@ -78,7 +78,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
                 throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
+            info.Trigger.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
             AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
         }
 

@@ -1,14 +1,13 @@
-﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Planar.Common.Exceptions;
 using Planar.Common.Validation;
-using Polly;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Security;
 using System.Text;
 using EC = Planar.Common.EnvironmentVariableConsts;
 
@@ -134,6 +133,12 @@ public static class AppSettings
         {
             ValidateUri(Smtp.HtmlImageInternalBaseUrl, "html image internal base url");
         }
+
+        if (!Smtp.UseDefaultCredentials)
+        {
+            ValidateRequired(Smtp.Username, "smtp username", "use default credentials is false");
+            ValidateRequired(Smtp.Password, "smtp password", "use default credentials is false");
+        }
     }
 
     private static T ValidateEnum<T>(string? value, string fieldName)
@@ -149,11 +154,18 @@ public static class AppSettings
         return result;
     }
 
-    private static void ValidateRequired(string? value, string fieldName)
+    private static void ValidateRequired(string? value, string fieldName, string? when = null)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new AppSettingsException($"'{fieldName}' is required. current value is null or empty");
+            if (string.IsNullOrWhiteSpace(when))
+            {
+                throw new AppSettingsException($"'{fieldName}' is required. current value is null or empty");
+            }
+            else
+            {
+                throw new AppSettingsException($"'{fieldName}' is required when {when}. current value is null or empty");
+            }
         }
     }
 
@@ -244,21 +256,63 @@ public static class AppSettings
     private static void InitializeHooks(IConfiguration configuration)
     {
         const string hooks_redis = "hooks:redis";
-        Hooks.Rest.DefaultUrl = GetSettings(configuration, EC.HooksRestDefaultUrl, "hooks:rest", "default url", string.Empty);
-        Hooks.Teams.DefaultUrl = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, "hooks:teams", "default url", string.Empty);
-        Hooks.TwilioSms.AccountSid = GetSettings(configuration, EC.HooksTwilioSmsAccountSid, "hooks:twilio sms", "account sid", string.Empty);
-        Hooks.TwilioSms.AuthToken = GetSettings(configuration, EC.HooksTwilioSmsAuthToken, "hooks:twilio sms", "auth token", string.Empty);
-        Hooks.TwilioSms.FromNumber = GetSettings(configuration, EC.HooksTwilioSmsFromNumber, "hooks:twilio sms", "from number", string.Empty);
-        Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, EC.HooksTwilioSmsDefaultPhonePrefix, "hooks:twilio sms", "default phone prefix", string.Empty);
-        Hooks.Redis.Endpoints = [.. GetSettings(configuration, EC.HooksRedisEndpoints, hooks_redis, "endpoints", string.Empty).Split(',')];
-        Hooks.Redis.Password = GetSettings(configuration, EC.HooksRedisPassword, hooks_redis, "password", string.Empty);
-        Hooks.Redis.User = GetSettings(configuration, EC.HooksRedisUser, hooks_redis, "user", string.Empty);
-        Hooks.Redis.Database = GetSettings(configuration, EC.HooksRedisDatabase, hooks_redis, "db", (ushort)0);
-        Hooks.Redis.StreamName = GetSettings(configuration, EC.HooksRedisStreamName, hooks_redis, "stream name", string.Empty);
-        Hooks.Redis.PubSubChannel = GetSettings(configuration, EC.HooksRedisPubSubChannel, hooks_redis, "pub sub channel", string.Empty);
-        Hooks.Redis.Ssl = GetSettings(configuration, EC.HooksRedisSsl, hooks_redis, "ssl", false);
-        Hooks.Telegram.BotToken = GetSettings(configuration, EC.HooksTelegramBotToken, "hooks:telegram", "bot token", string.Empty);
-        Hooks.Telegram.ChatId = GetSettings(configuration, EC.HooksTelegramChatId, "hooks:telegram", "chat id", string.Empty);
+        const string hooks_twilio_sms = "hooks:twilio sms";
+        const string hooks_rabbitmq = "hooks:rabbitmq";
+        const string endpoints_have_value = "rabbitmq endpoints have value";
+        const string ssl_has_value = "rabbitmq ssl has value";
+
+        Hooks.Rest.DefaultUrl = GetSettings(configuration, string.Empty, "hooks:rest", "default url", string.Empty);
+
+        Hooks.Teams.DefaultUrl = GetSettings(configuration, string.Empty, "hooks:teams", "default url", string.Empty);
+
+        Hooks.TwilioSms.AccountSid = GetSettings(configuration, string.Empty, hooks_twilio_sms, "account sid", string.Empty);
+        Hooks.TwilioSms.AuthToken = GetSettings(configuration, string.Empty, hooks_twilio_sms, "auth token", string.Empty);
+        Hooks.TwilioSms.FromNumber = GetSettings(configuration, string.Empty, hooks_twilio_sms, "from number", string.Empty);
+        Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, string.Empty, hooks_twilio_sms, "default phone prefix", string.Empty);
+
+        Hooks.Redis.Endpoints = [.. GetSettings(configuration, string.Empty, hooks_redis, "endpoints", string.Empty).Split(',')];
+        Hooks.Redis.Password = GetSettings(configuration, string.Empty, hooks_redis, "password", string.Empty);
+        Hooks.Redis.User = GetSettings(configuration, string.Empty, hooks_redis, "user", string.Empty);
+        Hooks.Redis.Database = GetSettings(configuration, string.Empty, hooks_redis, "db", (ushort)0);
+        Hooks.Redis.StreamName = GetSettings(configuration, string.Empty, hooks_redis, "stream name", string.Empty);
+        Hooks.Redis.PubSubChannel = GetSettings(configuration, string.Empty, hooks_redis, "pub sub channel", string.Empty);
+        Hooks.Redis.Ssl = GetSettings(configuration, string.Empty, hooks_redis, "ssl", false);
+
+        Hooks.RabbitMq.VirtualHost = GetSettings(configuration, string.Empty, hooks_rabbitmq, "virtual host", "/");
+        Hooks.RabbitMq.Username = GetSettings(configuration, string.Empty, hooks_rabbitmq, "username", string.Empty);
+        Hooks.RabbitMq.Password = GetSettings(configuration, string.Empty, hooks_rabbitmq, "password", string.Empty);
+        Hooks.RabbitMq.Exchange = GetSettings(configuration, string.Empty, hooks_rabbitmq, "exchange", string.Empty);
+        Hooks.RabbitMq.RoutingKey = GetSettings(configuration, string.Empty, hooks_rabbitmq, "routing key", string.Empty);
+        var ssl = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:enable", false);
+        if (ssl)
+        {
+            Hooks.RabbitMq.Ssl = new RabbitMqSslSettings
+            {
+                Enable = ssl,
+                PolicyErrors = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:policy errors", "none"),
+                CertPassphrase = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:cert passphrase", string.Empty),
+                CertPath = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:cert path", string.Empty)
+            };
+        }
+        Hooks.RabbitMq.Endpoints = configuration.GetSection("hooks:rabbitmq:endpoints").Get<List<RabbitMqEndpoint>>() ?? [];
+
+        if (Hooks.RabbitMq.Ssl != null)
+        {
+            ValidateRequired(Hooks.RabbitMq.Ssl.CertPassphrase, "rabbitmq -> ssl -> cert passphrase", ssl_has_value);
+            ValidateRequired(Hooks.RabbitMq.Ssl.CertPath, "rabbitmq -> ssl -> cert path", ssl_has_value);
+            ValidateEnum<SslPolicyErrors>(Hooks.RabbitMq.Ssl.PolicyErrors, "rabbitmq -> ssl -> policy errors");
+        }
+
+        if (Hooks.RabbitMq.Endpoints.Any())
+        {
+            ValidateRequired(Hooks.RabbitMq.Username, "rabbitmq -> username", endpoints_have_value);
+            ValidateRequired(Hooks.RabbitMq.Password, "rabbitmq -> password", endpoints_have_value);
+            ValidateRequired(Hooks.RabbitMq.Exchange, "rabbitmq -> exchange", endpoints_have_value);
+            ValidateRequired(Hooks.RabbitMq.RoutingKey, "rabbitmq -> routing key", endpoints_have_value);
+        }
+
+        Hooks.Telegram.BotToken = GetSettings(configuration, string.Empty, "hooks:telegram", "bot token", string.Empty);
+        Hooks.Telegram.ChatId = GetSettings(configuration, string.Empty, "hooks:telegram", "chat id", string.Empty);
     }
 
     private static void InitializePersistanceSpan(IConfiguration configuration)
@@ -347,12 +401,12 @@ public static class AppSettings
 
     private static void InitializeAuthentication(IConfiguration configuration)
     {
-        const string DefaultAuthenticationSecret = "ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby";
+        const string authentication = "authentication";
 
-        var mode = GetSettings(configuration, EC.AuthenticationModeVariableKey, "authentication", "mode", AuthMode.AllAnonymous.ToString());
-        Authentication.Secret = GetSettings(configuration, EC.AuthenticationSecretVariableKey, "authentication", "secret", DefaultAuthenticationSecret);
-        Authentication.TokenExpire = GetSettings(configuration, EC.AuthenticationTokenExpireVariableKey, "authentication", "token expire", TimeSpan.FromMinutes(20));
-        Authentication.ApiSecurityHeaders = GetSettings(configuration, EC.AuthenticationApiSecurityHeadersVariableKey, "authentication", "api security headers", false);
+        var mode = GetSettings(configuration, EC.AuthenticationModeVariableKey, authentication, "mode", AuthMode.AllAnonymous.ToString());
+        Authentication.Secret = GetSettings(configuration, EC.AuthenticationSecretVariableKey, authentication, "secret", string.Empty);
+        Authentication.TokenExpire = GetSettings(configuration, EC.AuthenticationTokenExpireVariableKey, authentication, "token expire", TimeSpan.FromMinutes(20));
+        Authentication.ApiSecurityHeaders = GetSettings(configuration, EC.AuthenticationApiSecurityHeadersVariableKey, authentication, "api security headers", false);
 
         mode = mode.Replace(" ", string.Empty);
         if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))
@@ -393,7 +447,10 @@ public static class AppSettings
         where T : struct
     {
         // Environment Variable
-        var property = configuration.GetValue<T?>(environmentKey);
+        var property =
+            string.IsNullOrWhiteSpace(environmentKey) ?
+            null :
+            configuration.GetValue<T?>(environmentKey);
 
         // AppSettings File
         property ??= configuration.GetValue<T?>($"{section}:{appSettingsKey}");

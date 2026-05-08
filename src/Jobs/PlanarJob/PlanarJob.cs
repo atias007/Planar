@@ -12,6 +12,7 @@ using Planar.Common.Helpers;
 using Planar.Service.General;
 using PlanarJob;
 using PlanarJobInner;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -76,7 +77,7 @@ public abstract class PlanarJob(
         {
             ValidateRabbitMqJob();
             SafeLogInvokeJobDetails(context);
-            context.CancellationToken.Register(OnRabbitMqCancel);
+            context.CancellationToken.Register(() => OnRabbitMqCancel(context).Wait());
             _ = SafeStartMonitorDuration(context);
             await InvokeRabbitMqJob(context);
             StopMonitorDuration();
@@ -131,15 +132,35 @@ public abstract class PlanarJob(
         }
     }
 
-    private void OnRabbitMqCancel()
+    private async Task OnRabbitMqCancel(IJobExecutionContext context)
     {
-        // TODO: add rabbitmq cancel logic
+        if (Properties.RabbitMq == null) { return; }
+        var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
+        await factory.EnsureConnectionAsync();
+        var exchange = Properties.RabbitMq.Exchange;
+        var routingKey = Properties.RabbitMq.RoutingKey;
+        await factory.PublishAsync(
+            exchange,
+            routingKey,
+            context.FireInstanceId,
+            "Cancel",
+            string.Empty,
+            20);
     }
 
     private async Task InvokeRabbitMqJob(IJobExecutionContext context)
     {
-        // TODO: add rabbitmq invoke logic
-        await Task.CompletedTask;
+        if (Properties.RabbitMq == null) { return; }
+        var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
+        await factory.EnsureConnectionAsync();
+        var exchange = Properties.RabbitMq.Exchange;
+        var routingKey = Properties.RabbitMq.RoutingKey;
+        await factory.PublishAsync(
+            exchange,
+            routingKey,
+            context.FireInstanceId,
+            "Invoke",
+            MessageBroker.Details);
     }
 
     private void SafeLogInvokeJobDetails(IJobExecutionContext context)
@@ -250,8 +271,6 @@ public abstract class PlanarJob(
 
     private void ValidateRabbitMqJob()
     {
-        // TODO: add rabbitmq hook & validate
-
         if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.RoutingKey))
         {
             const string message = "planar job with rabbitmq invoke method must have routing key";

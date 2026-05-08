@@ -7,6 +7,7 @@ using Planar.Service.Audit;
 using Planar.Service.General;
 using Planar.Service.Monitor;
 using Planar.Service.Services;
+using PlanarJob;
 using Quartz;
 using System;
 using System.Reflection;
@@ -46,6 +47,7 @@ namespace Planar.Service
             services.AddSingleton<JobMonitorUtil>();
             services.AddSingleton<SchedulerHealthCheckUtil>();
             services.AddSingleton<JobDetailsResolver>();
+            services.AddSingleton<RabbitMqFactory>();
 
             // AutoMapper
             services.AddAutoMapper(c => c.LicenseKey = null, Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));

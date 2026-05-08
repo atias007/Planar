@@ -1,218 +1,218 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Planar.Common;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Security;
+using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
-using static Quartz.Logging.OperationName;
 using Timer = System.Timers.Timer;
 
-namespace PlanarJob
+namespace PlanarJob;
+
+public sealed class RabbitMqFactory
 {
-    internal sealed class RabbitMqFactory
+    private readonly CancellationToken _cancellationToken;
+    private readonly ConnectionFactory _connectionFactory;
+    private readonly IEnumerable<AmqpTcpEndpoint> _endpoints;
+    private readonly Timer _healthCheckTimer;
+    private readonly ILogger<RabbitMqFactory> _logger;
+    private readonly SemaphoreSlim _reconnectSemaphore = new(1, 1);
+    private IConnection? _connection;
+    private int healthCheckFailCounter = 0;
+
+    public RabbitMqFactory(IHostApplicationLifetime hostApplicationLifetime, ILogger<RabbitMqFactory> logger)
     {
-        private readonly SemaphoreSlim _reconnectSemaphore = new(1, 1);
-        private readonly Timer _healthCheckTimer;
-        private readonly ConnectionFactory _connectionFactory;
-        private readonly CancellationToken _cancellationToken;
-        private readonly IEnumerable<AmqpTcpEndpoint> _endpoints;
-        private static readonly SemaphoreSlim _lock = new(1, 1);
-        private int healthCheckCounter = 0;
+        _logger = logger;
+        _healthCheckTimer = new Timer(20_000);
 
-        private IConnection? _connection;
-        private IChannel? _channel;
-        private static RabbitMqFactory? _instance;
+        var settings = AppSettings.Hooks.RabbitMq;
 
-        public static async Task<RabbitMqFactory> GetInstance(CancellationToken cancellationToken)
+        if (settings.Endpoints == null || !settings.Endpoints.Any())
         {
-            if (_instance != null) { return _instance; }
-            await _lock.WaitAsync(cancellationToken);
-            try
+            _connectionFactory = new ConnectionFactory();
+            _endpoints = [];
+            return;
+        }
+
+        _connectionFactory = new ConnectionFactory();
+        if (!string.IsNullOrEmpty(settings.Username)) { _connectionFactory.UserName = settings.Username; }
+        if (!string.IsNullOrEmpty(settings.Password)) { _connectionFactory.Password = settings.Password; }
+        if (!string.IsNullOrEmpty(settings.VirtualHost)) { _connectionFactory.VirtualHost = settings.VirtualHost; }
+
+        if (settings.Ssl?.Enable ?? false)
+        {
+            _connectionFactory.Ssl = new SslOption
             {
-                if (_instance != null) { return _instance; }
-                _instance = new RabbitMqFactory(cancellationToken);
-                return _instance;
-            }
-            finally
+                Enabled = settings.Ssl.Enable,
+                AcceptablePolicyErrors = Enum.Parse<SslPolicyErrors>(settings.Ssl.PolicyErrors, ignoreCase: true),
+                CertPassphrase = settings.Ssl.CertPassphrase,
+            };
+
+            if (!string.IsNullOrWhiteSpace(settings.Ssl.CertPath))
             {
-                _lock.Release();
+                _connectionFactory.Ssl.CertPath = settings.Ssl.CertPath;
             }
         }
 
-        private RabbitMqFactory(CancellationToken cancellationToken)
+        _endpoints = settings.Endpoints.Select(e => new AmqpTcpEndpoint(e.Host, e.Port));
+
+        if (settings.Ssl != null)
         {
-            _healthCheckTimer = new Timer(20_000);
-
-            var settings = AppSettings.Hooks.RabbitMq;
-
-            if (settings.Endpoints == null || !settings.Endpoints.Any())
+            _connectionFactory.Ssl = new SslOption
             {
-                _connectionFactory = new ConnectionFactory();
-                _endpoints = [];
-                return;
-            }
+                Enabled = settings.Ssl.Enable,
+                ServerName = settings.Ssl.PolicyErrors,
+                CertPassphrase = settings.Ssl.CertPassphrase
+            };
+        }
 
-            _connectionFactory = new ConnectionFactory();
-            if (!string.IsNullOrEmpty(settings.Username)) { _connectionFactory.UserName = settings.Username; }
-            if (!string.IsNullOrEmpty(settings.Password)) { _connectionFactory.Password = settings.Password; }
-            if (!string.IsNullOrEmpty(settings.VirtualHost)) { _connectionFactory.VirtualHost = settings.VirtualHost; }
+        _healthCheckTimer.Elapsed += async (sender, e) => await SafeHealthCheck();
+        _healthCheckTimer.Start();
+        _cancellationToken = hostApplicationLifetime.ApplicationStopping;
+    }
 
-            _endpoints = settings.Endpoints.Select(e => new AmqpTcpEndpoint(e.Host, e.Port));
+    /// <summary>
+    /// Ensures connection and channel are established and healthy (Singleton pattern)
+    /// </summary>
+    public async Task EnsureConnectionAsync()
+    {
+        if (!_endpoints.Any())
+        {
+            throw new InvalidOperationException("No RabbitMQ endpoints configured");
+        }
 
-            if (settings.Ssl != null)
+        await _reconnectSemaphore.WaitAsync(_cancellationToken);
+
+        try
+        {
+            // Ensure connection is open
+            if (_connection == null || !_connection.IsOpen)
             {
-                _connectionFactory.Ssl = new SslOption
+                if (_connection != null)
                 {
-                    Enabled = settings.Ssl.Enable,
-                    ServerName = settings.Ssl.SslPolicyErrors,
-                    CertPassphrase = settings.Ssl.CertPassphrase
+                    await SafeInvoke(() => _connection.CloseAsync(_cancellationToken));
+                    _connection = null;
+                }
+
+                var connectionName = $"{nameof(Planar)}:Server:{Environment.MachineName}";
+                _connection = await _connectionFactory.CreateConnectionAsync(_endpoints, connectionName, _cancellationToken);
+                _connection.ConnectionShutdownAsync += async (sender, args) =>
+                {
+                    _logger.LogWarning("RabbitMQ connection shutdown: {ReplyText}", args.ReplyText);
+                    await CloseConnectionAsync();
+                };
+
+                _connection.ConnectionRecoveryErrorAsync += async (sender, args) =>
+                {
+                    _logger.LogError("RabbitMQ connection recovery error: {Message}", args.Exception.Message);
+                    await CloseConnectionAsync();
+                };
+
+                _connection.RecoverySucceededAsync += async (sender, args) =>
+                {
+                    _logger.LogInformation("RabbitMQ connection recovery succeeded");
                 };
             }
 
-            _healthCheckTimer.Elapsed += async (sender, e) => await SafeHealthCheck();
+            _logger.LogInformation("Connected to RabbitMQ");
+        }
+        finally
+        {
+            _reconnectSemaphore.Release();
+        }
+    }
+
+    public async Task PublishAsync(
+        string exchange,
+        string routingKey,
+        string fireInstanceId,
+        string command,
+        string body,
+        int copies = 1)
+    {
+        await EnsureConnectionAsync();
+        ArgumentNullException.ThrowIfNull(_connection);
+
+        var bodyBytes = Encoding.UTF8.GetBytes(body);
+
+        // 1. Enable confirms when creating the channel
+        var channelOptions = new CreateChannelOptions(
+            publisherConfirmationsEnabled: true,
+            publisherConfirmationTrackingEnabled: true
+        );
+
+        using var channel = await _connection.CreateChannelAsync(channelOptions, cancellationToken: _cancellationToken);
+        var properties = new BasicProperties
+        {
+            Persistent = true,
+            Headers = new Dictionary<string, object?>
+            {
+                { "FireInstanceId", fireInstanceId },
+                { "Command", command }
+            }
+        };
+
+        for (int i = 0; i < copies; i++)
+        {
+            await channel.BasicPublishAsync(
+                  exchange: exchange,
+                  routingKey: routingKey,
+                  mandatory: true,
+                  basicProperties: properties,
+                  body: bodyBytes);
+        }
+    }
+
+    private static async Task SafeInvoke(Func<Task> func)
+    {
+        try
+        {
+            await func();
+        }
+        catch
+        {
+            // *** DO NOTHING *** //
+        }
+    }
+
+    /// <summary>
+    /// Closes the channel and connection gracefully
+    /// </summary>
+    private async Task CloseConnectionAsync()
+    {
+        try
+        {
+            if (_connection != null) { await _connection.CloseAsync(); }
+            _connection?.Dispose();
+            _connection = null;
+        }
+        catch
+        {
+            // DO NOTHING //
+        }
+    }
+
+    private async Task SafeHealthCheck()
+    {
+        try
+        {
+            _healthCheckTimer.Stop();
+            await EnsureConnectionAsync();
+            healthCheckFailCounter = 0;
+        }
+        catch (Exception ex)
+        {
+            Interlocked.Increment(ref healthCheckFailCounter);
+            _logger.LogError(ex, "RabbitMQ health check failed on attempt {Attempt}", healthCheckFailCounter);
+        }
+        finally
+        {
             _healthCheckTimer.Start();
-            _cancellationToken = cancellationToken;
-        }
-
-        /// <summary>
-        /// Closes the channel and connection gracefully
-        /// </summary>
-        private async Task CloseConnectionAsync()
-        {
-            try
-            {
-                if (_channel != null) { await _channel.CloseAsync(); }
-                _channel?.Dispose();
-                _channel = null;
-            }
-            catch
-            {
-                // DO NOTHING //
-            }
-
-            try
-            {
-                if (_connection != null) { await _connection.CloseAsync(); }
-                _connection?.Dispose();
-                _connection = null;
-            }
-            catch
-            {
-                // DO NOTHING //
-            }
-        }
-
-        private async Task SafeHealthCheck()
-        {
-            Interlocked.Increment(ref healthCheckCounter);
-
-            try
-            {
-                _healthCheckTimer.Stop();
-                await EnsureConnectionAsync();
-            }
-            catch (Exception ex)
-            {
-                // TODO: log the error
-            }
-            finally
-            {
-                _healthCheckTimer.Start();
-            }
-        }
-
-        /// <summary>
-        /// Ensures connection and channel are established and healthy (Singleton pattern)
-        /// </summary>
-        private async Task EnsureConnectionAsync()
-        {
-            if (!_endpoints.Any())
-            {
-                throw new InvalidOperationException("No RabbitMQ endpoints configured");
-            }
-
-            await _reconnectSemaphore.WaitAsync(_cancellationToken);
-
-            try
-            {
-                // Ensure connection is open
-                if (_connection == null || !_connection.IsOpen)
-                {
-                    if (_connection != null)
-                    {
-                        await SafeInvoke(() => _connection.CloseAsync(_cancellationToken));
-                        _connection = null;
-                    }
-
-                    var connectionName = $"{nameof(Planar)}:Server:{Environment.MachineName}";
-                    _connection = await _connectionFactory.CreateConnectionAsync(_endpoints, connectionName, _cancellationToken);
-                    _connection.ConnectionShutdownAsync += async (sender, args) =>
-                    {
-                        // TODO: log
-                        //// await ConsoleLogger.Log(LogLevel.Warning, $"RabbitMQ connection shutdown: {args.ReplyText}");
-                        await CloseConnectionAsync();
-                    };
-
-                    _connection.ConnectionRecoveryErrorAsync += async (sender, args) =>
-                    {
-                        // TODO: log
-                        //// await ConsoleLogger.Log(LogLevel.Error, $"RabbitMQ connection recovery error: {args.Exception.Message}");
-                        await CloseConnectionAsync();
-                    };
-
-                    _connection.RecoverySucceededAsync += async (sender, args) =>
-                    {
-                        // TODO: log
-                        //// await ConsoleLogger.Log(LogLevel.Information, $"RabbitMQ connection recovery succeeded");
-                    };
-                }
-
-                // Ensure channel is open
-                if (_channel == null || !_channel.IsOpen)
-                {
-                    if (_channel != null)
-                    {
-                        await _channel.DisposeAsync();
-                        await SafeInvoke(() => _channel.DisposeAsync());
-                        _channel = null;
-                    }
-
-                    _channel = await _connection.CreateChannelAsync(cancellationToken: _cancellationToken);
-                    // Set Quality of Service (prefetch)
-                    await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 100, global: false, cancellationToken: _cancellationToken);
-                    // TODO: log
-                    //// await ConsoleLogger.Log(LogLevel.Information, $"Connected to RabbitMQ");
-                }
-            }
-            finally
-            {
-                _reconnectSemaphore.Release();
-            }
-        }
-
-        private static async Task SafeInvoke(Func<Task> func)
-        {
-            try
-            {
-                await func();
-            }
-            catch
-            {
-                // *** DO NOTHING *** //
-            }
-        }
-
-        private static async ValueTask SafeInvoke(Func<ValueTask> func)
-        {
-            try
-            {
-                await func();
-            }
-            catch
-            {
-                // *** DO NOTHING *** //
-            }
         }
     }
 }

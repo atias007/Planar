@@ -84,7 +84,7 @@ public partial class JobDomain(
                 throw new RestConflictException($"data with key '{request.DataKey}' already exists");
             }
 
-            info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+            info.JobDetails.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
             AuditJobSafe(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
         }
         else
@@ -100,7 +100,7 @@ public partial class JobDomain(
                 throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+            info.JobDetails.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
             AuditJobSafe(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
         }
 

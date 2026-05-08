@@ -98,7 +98,7 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
     private static void SaveCircuitBreaker(IJobExecutionContext context, JobCircuitBreakerMetadata circuitBreaker)
     {
         var cbText = circuitBreaker.ToString();
-        context.JobDetail.JobDataMap.Put(Consts.CircuitBreaker, cbText);
+        context.JobDetail.JobDataMap[Consts.CircuitBreaker] = cbText;
     }
 
     private static async Task PauseJob(IJobExecutionContext context)

@@ -61,7 +61,7 @@ public static class TriggerHelper
         }
         else
         {
-            trigger.JobDataMap.Put(Consts.TriggerTimeout, span.Value.Ticks.ToString());
+            trigger.JobDataMap[Consts.TriggerTimeout] = span.Value.Ticks.ToString();
         }
     }
 

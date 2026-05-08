@@ -212,26 +212,26 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         return result;
     }
 
-    private async Task ClearHistory(IEnumerable<string> existsIds)
-    {
-        try
-        {
-            using var scope = serviceScopeFactory.CreateScope();
-            var historyData = scope.ServiceProvider.GetRequiredService<IHistoryData>();
-            var historyIds = await historyData.GetHistoryJobIds();
-            var toBeDelete = historyIds.Except(existsIds);
-            if (toBeDelete.Any())
-            {
-                await historyData.ClearJobHistory(toBeDelete);
-            }
+    ////private async Task ClearHistory(IEnumerable<string> existsIds)
+    ////{
+    ////    try
+    ////    {
+    ////        using var scope = serviceScopeFactory.CreateScope();
+    ////        var historyData = scope.ServiceProvider.GetRequiredService<IHistoryData>();
+    ////        var historyIds = await historyData.GetHistoryJobIds();
+    ////        var toBeDelete = historyIds.Except(existsIds);
+    ////        if (toBeDelete.Any())
+    ////        {
+    ////            await historyData.ClearJobHistory(toBeDelete);
+    ////        }
 
-            logger.LogDebug("clear history table rows with {Total} effected row(s)", toBeDelete.Count());
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "fail to clear history table rows");
-        }
-    }
+    ////        logger.LogDebug("clear history table rows with {Total} effected row(s)", toBeDelete.Count());
+    ////    }
+    ////    catch (Exception ex)
+    ////    {
+    ////        logger.LogError(ex, "fail to clear history table rows");
+    ////    }
+    ////}
 
     private async Task ClearLast(IEnumerable<string> existsIds)
     {

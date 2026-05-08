@@ -41,7 +41,7 @@ public abstract class SystemJob
     {
         try
         {
-            context.JobDetail.JobDataMap.Put(LastRunKey, DateTime.Now.ToString());
+            context.JobDetail.JobDataMap[LastRunKey] = DateTime.Now.ToString();
         }
         catch (Exception ex)
         {

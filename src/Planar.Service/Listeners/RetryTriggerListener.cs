@@ -86,7 +86,7 @@ public class RetryTriggerListener(IServiceScopeFactory serviceScopeFactory, ILog
             }
 
             numTries++;
-            trigger.JobDataMap.Put(Consts.RetryCounter, numTries.ToString());
+            trigger.JobDataMap[Consts.RetryCounter] = numTries.ToString();
 
             var id = TriggerHelper.GetTriggerId(trigger);
             var name = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString().Replace("-", string.Empty) : id;

@@ -10,6 +10,32 @@ using System.Text.Json;
 
 namespace Planar.Hooks;
 
+public sealed class PlanarRabbitMqHook : BaseSystemHook
+{
+    public override string Name => "Planar.RabbitMq";
+
+    public override string Description =>
+"""
+This hook sends messages to a RabbitMQ exchange.
+You can find the default RabbitMQ settings in appsettings.yml (Data folder of Planar).
+To use different settings per group, you can set one of the 'AdditionalField' of monitor group to the following value:
+----------------------------------------------
+  rabbitmq-exchange:<your-exchange-name>
+  rabbitmq-routing-key:<your-routing-key>
+----------------------------------------------
+""";
+
+    public override Task Handle(IMonitorDetails monitorDetails)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task HandleSystem(IMonitorSystemDetails monitorDetails)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 public sealed class PlanarRedisStreamHook : BaseSystemHook
 {
     public override string Name => "Planar.Redis.PubSub";

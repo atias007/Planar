@@ -47,6 +47,8 @@ namespace Planar.Common
         public string? Password { get; set; }
         public string? Username { get; set; }
         public string? VirtualHost { get; set; }
+        public string? Exchange { get; set; }
+        public string? RoutingKey { get; set; }
         public RabbitMqSslSettings? Ssl { get; set; }
         public IEnumerable<RabbitMqEndpoint> Endpoints { get; set; } = [];
     }
@@ -54,13 +56,14 @@ namespace Planar.Common
     public class RabbitMqSslSettings
     {
         public bool Enable { get; set; }
-        public string SslPolicyErrors { get; set; } = "None";
+        public string PolicyErrors { get; set; } = "None";
         public string? CertPassphrase { get; set; }
+        public string? CertPath { get; set; }
     }
 
     public class RabbitMqEndpoint
     {
-        public required string Host { get; set; }
+        public string Host { get; set; } = string.Empty;
         public int Port { get; set; }
     }
 

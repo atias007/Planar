@@ -62,9 +62,6 @@ public class PlanarJobRabbitMqProperties
 
     [YamlMember(Alias = "routing key")]
     public string RoutingKey { get; set; } = null!;
-
-    [YamlMember(Alias = "virtual host")]
-    public string? VirtualHost { get; set; }
 }
 
 public class PlanarJobProcessProperties : BaseProcessJobProperties, IFileJobProperties

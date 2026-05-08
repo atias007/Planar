@@ -21,16 +21,16 @@ namespace Planar.Service.Monitor.Test
             Result = metadata;
             JobDetail = new TestJob();
             Trigger = new TestTrigger(JobDetail.Key);
-            MergedJobDataMap = new JobDataMap();
+            MergedJobDataMap = [];
 
             foreach (var item in JobDetail.JobDataMap)
             {
-                MergedJobDataMap.Put(item.Key, item.Value);
+                MergedJobDataMap[item.Key] = item.Value ?? string.Empty;
             }
 
             foreach (var item in Trigger.JobDataMap)
             {
-                MergedJobDataMap.Put(item.Key, item.Value);
+                MergedJobDataMap[item.Key] = item.Value ?? string.Empty;
             }
         }
 
