@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using Planar.Common;
+using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace PlanarJob
     {
         private readonly SemaphoreSlim _reconnectSemaphore = new(1, 1);
         private readonly Timer _healthCheckTimer;
-        private readonly IConnectionFactory _connectionFactory;
+        private readonly ConnectionFactory _connectionFactory;
         private readonly CancellationToken _cancellationToken;
         private readonly IEnumerable<AmqpTcpEndpoint> _endpoints;
         private static readonly SemaphoreSlim _lock = new(1, 1);
@@ -42,15 +43,35 @@ namespace PlanarJob
         private RabbitMqFactory(CancellationToken cancellationToken)
         {
             _healthCheckTimer = new Timer(20_000);
-            _healthCheckTimer.Elapsed += async (sender, e) => await SafeHealthCheck();
-            _healthCheckTimer.Start();
+
+            var settings = AppSettings.Hooks.RabbitMq;
+
+            if (settings.Endpoints == null || !settings.Endpoints.Any())
+            {
+                _connectionFactory = new ConnectionFactory();
+                _endpoints = [];
+                return;
+            }
 
             _connectionFactory = new ConnectionFactory();
-            _endpoints = new List<AmqpTcpEndpoint>();
+            if (!string.IsNullOrEmpty(settings.Username)) { _connectionFactory.UserName = settings.Username; }
+            if (!string.IsNullOrEmpty(settings.Password)) { _connectionFactory.Password = settings.Password; }
+            if (!string.IsNullOrEmpty(settings.VirtualHost)) { _connectionFactory.VirtualHost = settings.VirtualHost; }
 
-            // TODO: _connectionFactory = AppSettings.Hooks.RabbitMq.ConnectionFactory;
-            // TODO: _endpoints = AppSettings.Hooks.RabbitMq.Endpoints;
+            _endpoints = settings.Endpoints.Select(e => new AmqpTcpEndpoint(e.Host, e.Port));
 
+            if (settings.Ssl != null)
+            {
+                _connectionFactory.Ssl = new SslOption
+                {
+                    Enabled = settings.Ssl.Enable,
+                    ServerName = settings.Ssl.SslPolicyErrors,
+                    CertPassphrase = settings.Ssl.CertPassphrase
+                };
+            }
+
+            _healthCheckTimer.Elapsed += async (sender, e) => await SafeHealthCheck();
+            _healthCheckTimer.Start();
             _cancellationToken = cancellationToken;
         }
 
@@ -89,6 +110,7 @@ namespace PlanarJob
             try
             {
                 _healthCheckTimer.Stop();
+                await EnsureConnectionAsync();
             }
             catch (Exception ex)
             {
@@ -105,6 +127,11 @@ namespace PlanarJob
         /// </summary>
         private async Task EnsureConnectionAsync()
         {
+            if (!_endpoints.Any())
+            {
+                throw new InvalidOperationException("No RabbitMQ endpoints configured");
+            }
+
             await _reconnectSemaphore.WaitAsync(_cancellationToken);
 
             try
@@ -114,36 +141,30 @@ namespace PlanarJob
                 {
                     if (_connection != null)
                     {
-                        await _connection.CloseAsync(_cancellationToken);
+                        await SafeInvoke(() => _connection.CloseAsync(_cancellationToken));
                         _connection = null;
                     }
 
-                    var connectionName = $"{nameof(Planar)}:{nameof(Job)}:{nameof(RabbitMQ)}";
-
-                    if (_endpoints.Any())
-                    {
-                        _connection = await _connectionFactory.CreateConnectionAsync(_endpoints, connectionName, _cancellationToken);
-                    }
-                    else
-                    {
-                        _connection = await _connectionFactory.CreateConnectionAsync(connectionName, _cancellationToken);
-                    }
-
+                    var connectionName = $"{nameof(Planar)}:Server:{Environment.MachineName}";
+                    _connection = await _connectionFactory.CreateConnectionAsync(_endpoints, connectionName, _cancellationToken);
                     _connection.ConnectionShutdownAsync += async (sender, args) =>
                     {
-                        await ConsoleLogger.Log(LogLevel.Warning, $"RabbitMQ connection shutdown: {args.ReplyText}");
+                        // TODO: log
+                        //// await ConsoleLogger.Log(LogLevel.Warning, $"RabbitMQ connection shutdown: {args.ReplyText}");
                         await CloseConnectionAsync();
                     };
 
                     _connection.ConnectionRecoveryErrorAsync += async (sender, args) =>
                     {
-                        await ConsoleLogger.Log(LogLevel.Error, $"RabbitMQ connection recovery error: {args.Exception.Message}");
+                        // TODO: log
+                        //// await ConsoleLogger.Log(LogLevel.Error, $"RabbitMQ connection recovery error: {args.Exception.Message}");
                         await CloseConnectionAsync();
                     };
 
                     _connection.RecoverySucceededAsync += async (sender, args) =>
                     {
-                        await ConsoleLogger.Log(LogLevel.Information, $"RabbitMQ connection recovery succeeded");
+                        // TODO: log
+                        //// await ConsoleLogger.Log(LogLevel.Information, $"RabbitMQ connection recovery succeeded");
                     };
                 }
 
@@ -160,12 +181,25 @@ namespace PlanarJob
                     _channel = await _connection.CreateChannelAsync(cancellationToken: _cancellationToken);
                     // Set Quality of Service (prefetch)
                     await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 100, global: false, cancellationToken: _cancellationToken);
-                    await ConsoleLogger.Log(LogLevel.Information, $"Connected to RabbitMQ");
+                    // TODO: log
+                    //// await ConsoleLogger.Log(LogLevel.Information, $"Connected to RabbitMQ");
                 }
             }
             finally
             {
                 _reconnectSemaphore.Release();
+            }
+        }
+
+        private static async Task SafeInvoke(Func<Task> func)
+        {
+            try
+            {
+                await func();
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
             }
         }
 

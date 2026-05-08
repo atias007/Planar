@@ -50,12 +50,9 @@ public abstract class PlanarJob(
         catch (Exception ex)
         {
             HandleException(context, ex);
-            return;
-        }
-        finally
-        {
             await FinalizeJob(context);
             UnregisterMqttBrokerService(context.FireInstanceId);
+            return;
         }
 
         if (Properties.Process != null)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -51,8 +52,8 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         }
 
         await Task.WhenAll(
+            ClearJobInstanceLog(),
             ClearTrace(),
-            ClearJobWithRetentionDaysLog(),
             ClearStatistics(),
             ClearProperties(ids.Result),
             ClearLast(ids.Result),
@@ -61,10 +62,14 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
             ClearJobStatistics(ids.Result)
             );
 
-        await ClearJobLog();
-        await ClearHistory(ids.Result);
-
         SafeSetLastRun(context, logger);
+    }
+
+    private async Task ClearJobInstanceLog()
+    {
+        await ClearJobWithRetentionDaysLog();
+        await ClearJobLog();
+        ////await ClearHistory(ids.Result);
     }
 
     private async Task<bool> CheckIfStatisticsJobRun()

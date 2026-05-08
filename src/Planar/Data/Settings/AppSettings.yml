@@ -1,3 +1,4 @@
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 general:
   environment: Development
   service name: PlanarService
@@ -18,41 +19,41 @@ general:
   developer exception page: true                     # this value is automatically set to false in production environment
   concurrency rate limiting: 10                      # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1
   encrypt all settings: false                        # encrypt all ymf files in settings folder. set this value to true in production environment
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 database:
   provider: Sqlite                                   # options: SqlServer, Sqlite, PostgreSql, MySql
   connection string: null                            # connection string to the database
   run migration: true                                # run migration on startup
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 cluster:
   clustering: false
   port: 12306
   checkin interval: 00:00:05
   checkin misfire threshold: 00:00:05
   health check interval: 00:01:00
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 retention:
   trace retention days: 365
   job log retention days: 365
   statistics retention days: 365
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 authentication:
   mode: all anonymous                  # options: all anonymous | view anonymous | authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
   secret: ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby     # 65 to 256 charecters secret to encrypt and decrypt jwt tokens
   token expire: 00:20:00               # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute
   api security headers: false          # adding security headers to the api endpoints. set this value to true in production environment
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 monitor:
   max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1
   max alerts period: 06:00:00          # the period for 'max alerts per monitor' parameter. default is 6 hours. minimum value 1 hour
   manual mute max period: 1.00:00:00   # the maximum period for manual mute. default is 1 day. minimum value 1 hour
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 protection:
   max memory usage: 5000               # the maximum memory usage in MB. default is 5000 MB. minimum value 1000 MB
   restart on high memory usage: true   # restart the service on high memory usage. default is true
   wait before restart: 00:05:00        # the time span to wait before restarting the service. default is 5 minutes. minimum value 1 minute
   regular restart expression: null     # cron expression for timing regular restart. the time is estimated. restart will occur when no jobs is currently running. set to null for no regular restart. the default null
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 smtp: 
   from address: admin@planar.me
   from name: Planar [Do Not Reply]
@@ -64,17 +65,33 @@ smtp:
   default credentials: true
   html image mode: embedded            # how to implant images in email html templates. embedded (base64 inside html. default), internal (internal link to planar server and http/s port), external (link to external internet resource)
   html image internal base url: null   # the base url of this server (proxy serve, load balancer) for html internal images url. must be valid uri
-
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 hooks:
   rest:
     default url: http://localhost:2306/api/hooks/rest
+  # -------------------------------------------------- #
   teams:
     default url: https://teams.microsoft.com/channel-id
+  # -------------------------------------------------- #
   twilio sms:
     account sid: null
     auth token: null
     from number: null
     default phone prefix: +972
+  # -------------------------------------------------- #
+  rabbitmq:
+    username: guest
+    password: guest
+    virtual host: Planar
+    ssl:
+      enable: false
+      ssl policy errors: none          # [none | remote certificate not available | remote certificate name mismatch | remote certificate chain errors]
+      cert passphrase: null
+      cert path: null
+    endpoints:
+      - host: localhost
+        port: 6379
+  # -------------------------------------------------- #
   redis:
     endpoints: redis-server-1:6379,redis-server-2:6379
     ssl: false
@@ -83,6 +100,8 @@ hooks:
     database: 0
     stream name: planar
     pub sub channel: planar
+  # -------------------------------------------------- #
   telegram:
     bot token: null
     chat id: null
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
