@@ -1,10 +1,11 @@
-﻿using MimeKit;
+﻿using Microsoft.Extensions.Logging;
+using MimeKit;
 using Planar.Hook;
 using Planar.Hooks.EmailTemplates;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarSmtpHook : BaseSystemHook
+public sealed class PlanarSmtpHook(ILogger<PlanarSmtpHook> logger) : BaseSystemHook(logger)
 {
     public override string Name => "Planar.Smtp";
 

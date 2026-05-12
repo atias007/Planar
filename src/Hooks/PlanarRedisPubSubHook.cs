@@ -1,135 +1,82 @@
-﻿using CloudNative.CloudEvents;
-using CloudNative.CloudEvents.SystemTextJson;
-using Core.JsonConvertors;
+﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Hook;
+using Planar.Hooks.Serialize;
 using StackExchange.Redis;
-using System.Net.Mime;
-using System.Text;
-using System.Text.Json;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarRabbitMqHook : BaseSystemHook
+public sealed class PlanarRedisPubSubHook(ILogger<PlanarRedisPubSubHook> logger) : BaseSystemHook(logger)
 {
-    public override string Name => "Planar.RabbitMq";
+    public override string Name => "Planar.Redis.Stream";
 
     public override string Description =>
 """
-This hook sends messages to a RabbitMQ exchange.
-You can find the default RabbitMQ settings in appsettings.yml (Data folder of Planar).
-To use different settings per group, you can set one of the 'AdditionalField' of monitor group to the following value:
-----------------------------------------------
-  rabbitmq-exchange:<your-exchange-name>
-  rabbitmq-routing-key:<your-routing-key>
-----------------------------------------------
-""";
-
-    public override Task Handle(IMonitorDetails monitorDetails)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override Task HandleSystem(IMonitorSystemDetails monitorDetails)
-    {
-        throw new NotImplementedException();
-    }
-}
-
-public sealed class PlanarRedisStreamHook : BaseSystemHook
-{
-    public override string Name => "Planar.Redis.PubSub";
-
-    public override string Description =>
-"""
-This hook use redis server to publish message via Pub/Sub component.
+This hook use redis server to add message to stream component.
 You can find the configuration of redis server is in appsettings.yml (Data folder of Planar).
-The configuration also define the default channel name.
-To use different channel name, you can set one of the 'AdditionalField' of monitor group to the following value:
-----------------------------------------
-  redis-channel-name:<your-channel-name>
-----------------------------------------
+The configuration also define the default stream name.
+To use different stream name per group, you can set one of the 'AdditionalField' of monitor group to the following value:
+--------------------------------------
+  redis-stream-name:<your-stream-name>
+--------------------------------------
 """;
-
-    private static readonly JsonSerializerOptions _jsonSerializerSettings = new()
-    {
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters =
-        {
-            new SystemTextTimeSpanConverter(),
-            new SystemTextNullableTimeSpanConverter(),
-        }
-    };
-
-    private static readonly JsonEventFormatter _formatter = new(
-        serializerOptions: _jsonSerializerSettings,
-         documentOptions: default
-        );
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        await InvokePubSub(monitorDetails);
+        await InvokeStream(monitorDetails);
     }
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
-        await InvokePubSub(monitorDetails);
+        await InvokeStream(monitorDetails);
     }
 
-    private List<string> GetChannels(IMonitor monitor)
+    private List<string> GetStreamNames(IMonitor monitor)
     {
-        if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.PubSubChannel))
+        if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.StreamName))
         {
-            LogError("Redis.Stream.Hook: pub sub channel is null or empty");
+            LogError("Redis.Stream.Hook: stream name is null or empty");
             return [];
         }
 
-        var channels = new List<string>();
+        var streams = new List<string>();
         foreach (var group in monitor.Groups)
         {
-            var channel = GetParameter("redis-channel-name", group);
-            if (string.IsNullOrWhiteSpace(channel))
+            var stream = GetParameter("redis-stream-name", group);
+            if (string.IsNullOrWhiteSpace(stream))
             {
-                channel = AppSettings.Hooks.Redis.PubSubChannel;
+                stream = AppSettings.Hooks.Redis.StreamName;
             }
 
-            if (!string.IsNullOrWhiteSpace(channel)) { channels.Add(channel); }
+            if (!string.IsNullOrWhiteSpace(stream)) { streams.Add(stream); }
         }
 
-        return channels;
+        return streams;
     }
 
-    private async Task InvokePubSub<T>(T detials)
+    private async Task InvokeStream<T>(T detials)
         where T : IMonitor
     {
-        var channels = GetChannels(detials);
-        if (channels.Count == 0) { return; }
+        var streams = GetStreamNames(detials);
+        if (streams.Count == 0) { return; }
 
         try
         {
-#pragma warning disable S1075 // URIs should not be hardcoded
-            var body = new CloudEvent
+            var entries = new NameValueEntry[]
             {
-                Id = Guid.NewGuid().ToString("N"),
-                Time = DateTimeOffset.Now,
-                Subject = Name,
-                Data = detials,
-                DataContentType = MediaTypeNames.Application.Json,
-                Source = new Uri("https://www.planar.me"),
-                Type = typeof(T).Name
+                new("version", "1.0.0"),
+                new("environment", detials.Environment),
+                new("data-type", typeof(T).Name),
+                new("data", CoreSerializer.Serialize(detials)),
+                new("event-id", detials.EventId),
+                new("group", detials.Groups.First().Name),
             };
-#pragma warning restore S1075 // URIs should not be hardcoded
 
-            body.SetAttributeFromString("version", "1.0.0");
-            var bytes = _formatter.EncodeStructuredModeMessage(body, out _);
-            var json = Encoding.UTF8.GetString(bytes.Span);
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
 
-            foreach (var channelName in channels)
+            foreach (var streamName in streams)
             {
-                var channel = new RedisChannel(channelName, RedisChannel.PatternMode.Auto);
-                await db.PublishAsync(channel, json);
+                await db.StreamAddAsync(streamName, entries);
             }
         }
         catch (Exception ex)

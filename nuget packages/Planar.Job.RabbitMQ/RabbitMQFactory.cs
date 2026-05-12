@@ -108,15 +108,15 @@ namespace Planar.Job.RabbitMq
                 {
                     await EnsureConnectionAsync();
                     if (_channel == null) { continue; }
+                    await ConsoleLogger.Log(LogLevel.Information, $"Started consuming messages from RabbitMQ");
 
                     foreach (var def in properties.JobDefinitions)
                     {
                         var consumer = await CreateConsumer(def.QueueName);
                         _consumers.Add(def.QueueName, consumer);
+                        await ConsoleLogger.Log(LogLevel.Information, $"Consume from queue '{def.QueueName}' for job: {def.JobType.FullName}");
                     }
 
-                    var names = string.Join(",", properties.JobDefinitions.Select(d => d.QueueName));
-                    await ConsoleLogger.Log(LogLevel.Information, $"Started consuming from queue(s) '{names}'");
                     await Task.Delay(Timeout.Infinite, cancellationToken);
                 }
                 catch (OperationCanceledException)

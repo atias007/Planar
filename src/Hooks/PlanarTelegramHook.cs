@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using Planar.Common;
 using Planar.Hook;
 using System.Globalization;
@@ -9,7 +10,7 @@ using System.Text.Json;
 namespace Planar.Hooks;
 
 // https://telegram-bot-sdk.readme.io/reference/sendmessage
-public sealed class PlanarTelegramHook : BaseSystemHook
+public sealed class PlanarTelegramHook(ILogger<PlanarTelegramHook> logger) : BaseSystemHook(logger)
 {
     record TelegramApiInfo(string ChatId, string TokenId);
 

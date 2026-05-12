@@ -1,4 +1,4 @@
-﻿namespace Planar
+﻿namespace Planar // **** DO NOT CHANGE NAMESPACE IDENTETION ****
 {
     public enum MessageBrokerChannels
     {
@@ -18,6 +18,7 @@
         HealthCheck,
         MonitorCustomEvent,
         InvokeJob,
-        QueueInvokeJob
+        QueueInvokeJob,
+        FinishInvokeJob,
     }
 }

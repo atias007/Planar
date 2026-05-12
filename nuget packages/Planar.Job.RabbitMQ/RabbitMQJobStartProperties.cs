@@ -18,7 +18,7 @@ namespace Planar.Job.RabbitMq
 
         private readonly RabbitMqJobStartProperties _properties = new RabbitMqJobStartProperties();
 
-        public RabbitMqJobStartPropertiesBuilder WithHostName(string hostName)
+        public RabbitMqJobStartPropertiesBuilder WithPlanarHostName(string hostName)
         {
             if (string.IsNullOrWhiteSpace(hostName)) { throw new ArgumentNullException(nameof(hostName)); }
             _properties.PlanarHostname = hostName;

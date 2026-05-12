@@ -313,7 +313,7 @@ namespace Planar
 #endif
                 Data = message,
                 Subject = _id,
-                Source = new Uri(Source)
+                Source = new Uri(Source),
             };
 
             return cloudEvent;

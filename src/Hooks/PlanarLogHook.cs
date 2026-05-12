@@ -1,8 +1,9 @@
-﻿using Planar.Hook;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Hook;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarLogHook : BaseSystemHook
+public sealed class PlanarLogHook(ILogger<PlanarLogHook> logger) : BaseSystemHook(logger)
 {
     public override string Name => "Planar.Log";
 

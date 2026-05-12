@@ -24,7 +24,6 @@
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.6" />
 		<PackageReference Include="MQTTnet.Server" Version="5.1.0.1559" />
-		<PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.23.0.137933">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

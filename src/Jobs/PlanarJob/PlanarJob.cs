@@ -12,7 +12,6 @@ using Planar.Common.Helpers;
 using Planar.Service.General;
 using PlanarJob;
 using PlanarJobInner;
-using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -37,7 +36,9 @@ public abstract class PlanarJob(
     private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     private bool _isHealthCheck;
     private string? _contextFilename;
-
+    private string? _fireInstanceId;
+    private AutoResetEvent? _healthCheckResetEvent;
+    private AutoResetEvent? _invokeResetEvent;
     private PlanarJobExecutionException? _executionException;
     private readonly List<PlanarJobException> _jobActionExceptions = [];
 
@@ -45,6 +46,7 @@ public abstract class PlanarJob(
     {
         try
         {
+            _fireInstanceId = context.FireInstanceId;
             MqttBrokerService.RegisterInterceptingPublish(InterceptingPublishAsync, context.FireInstanceId);
             await Initialize(context);
         }
@@ -136,7 +138,6 @@ public abstract class PlanarJob(
     {
         if (Properties.RabbitMq == null) { return; }
         var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
-        await factory.EnsureConnectionAsync();
         var exchange = Properties.RabbitMq.Exchange;
         var routingKey = Properties.RabbitMq.RoutingKey;
         await factory.PublishAsync(
@@ -151,8 +152,9 @@ public abstract class PlanarJob(
     private async Task InvokeRabbitMqJob(IJobExecutionContext context)
     {
         if (Properties.RabbitMq == null) { return; }
+        _healthCheckResetEvent = new AutoResetEvent(false);
+
         var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
-        await factory.EnsureConnectionAsync();
         var exchange = Properties.RabbitMq.Exchange;
         var routingKey = Properties.RabbitMq.RoutingKey;
         await factory.PublishAsync(
@@ -161,6 +163,17 @@ public abstract class PlanarJob(
             context.FireInstanceId,
             "Invoke",
             MessageBroker.Details);
+
+        var success = _healthCheckResetEvent.WaitOne(30_000);
+        if (!success) { return; }
+        _invokeResetEvent = new AutoResetEvent(false);
+        var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+        success = _invokeResetEvent.WaitOne(timeout);
+        if (!success)
+        {
+            await OnRabbitMqCancel(context);
+            MessageBroker.AppendLog(LogLevel.Error, $"rabbitmq job invoke timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
+        }
     }
 
     private void SafeLogInvokeJobDetails(IJobExecutionContext context)
@@ -396,7 +409,7 @@ public abstract class PlanarJob(
             var log = new LogEntity
             {
                 Level = LogLevel.Warning,
-                Message = "WARNING! No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project (Program.cs)"
+                Message = "WARNING! No health check signal from job. Check if the following code: \"PlanarJob.StartAsync;\" exists in startup of your console project (Program.cs)"
             };
 
             MessageBroker.AppendLog(log);
@@ -631,6 +644,7 @@ public abstract class PlanarJob(
 
             case MessageBrokerChannels.HealthCheck:
                 _isHealthCheck = true;
+                _healthCheckResetEvent?.Set();
                 SafeUnsubscribeOutput();
                 break;
 
@@ -647,6 +661,10 @@ public abstract class PlanarJob(
             case MessageBrokerChannels.QueueInvokeJob:
                 var queueInvokeValue = GetCloudEventEntityValue<QueueInvokeJobModel>(e.CloudEvent);
                 RunQueueInvokeJob(queueInvokeValue).Wait();
+                break;
+
+            case MessageBrokerChannels.FinishInvokeJob:
+                _invokeResetEvent?.Set();
                 break;
 
             default:

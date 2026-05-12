@@ -22,8 +22,7 @@ namespace Planar.Job
         private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
         private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
-        public async static Task StartAsync<TJob>(RabbitMqJobStartProperties properties)
-                    where TJob : BaseJob, new()
+        public async static Task StartAsync(RabbitMqJobStartProperties properties)
         {
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
 
@@ -32,7 +31,7 @@ namespace Planar.Job
                 FillProperties();
                 if (await Debug(properties, _mainCancellationTokenSource.Token)) { return; }
 
-                await SafeStartAsync<TJob>(properties);
+                await SafeStartAsync(properties);
             }
             catch (Exception ex)
             {
@@ -83,8 +82,7 @@ namespace Planar.Job
             };
         }
 
-        private async static Task SafeStartAsync<TJob>(RabbitMqJobStartProperties properties)
-                    where TJob : BaseJob, new()
+        private async static Task SafeStartAsync(RabbitMqJobStartProperties properties)
         {
             Properties = properties;
             _rabbitMqFactory = await RabbitMqFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
@@ -248,6 +246,12 @@ namespace Planar.Job
 
             if (_jobInstances.Count == 0)
             {
+                try { await MqttClient.PublishAsync(MessageBrokerChannels.FinishInvokeJob); } catch { }
+                await Task.Delay(50);
+                try { await MqttClient.PublishAsync(MessageBrokerChannels.FinishInvokeJob); } catch { }
+                await Task.Delay(50);
+                try { await MqttClient.PublishAsync(MessageBrokerChannels.FinishInvokeJob); } catch { }
+                await Task.Delay(50);
                 try { await MqttClient.StopAsync(delaySeconds: 125); } catch { }
             }
         }

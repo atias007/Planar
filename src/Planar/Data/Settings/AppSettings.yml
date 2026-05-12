@@ -83,7 +83,7 @@ hooks:
     username: guest
     password: guest
     virtual host: Planar
-    exchange: planar
+    exchange: Planar
     routing key: Alerts
     ssl:
       enable: false
@@ -92,7 +92,7 @@ hooks:
       cert path: null
     endpoints:
       - host: localhost
-        port: 6379
+        port: 5672
   # -------------------------------------------------- #
   redis:
     endpoints: redis-server-1:6379,redis-server-2:6379

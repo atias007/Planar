@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Hook;
 using System.Globalization;
 using Twilio;
@@ -6,7 +7,7 @@ using Twilio.Rest.Api.V2010.Account;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarTwilioSmsHook : BaseSystemHook
+public sealed class PlanarTwilioSmsHook(ILogger<PlanarTwilioSmsHook> logger) : BaseSystemHook(logger)
 {
     public override string Name => "Planar.Twilio.Sms";
 

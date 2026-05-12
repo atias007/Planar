@@ -209,7 +209,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
         if (!_process.HasExited)
         {
-            MessageBroker.AppendLog(LogLevel.Error, $"process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
+            MessageBroker.AppendLog(LogLevel.Error, $"process execution timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
             return false;
         }
 
