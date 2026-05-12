@@ -84,7 +84,7 @@ namespace Planar.Job
             {
                 var message = new ExceptionDto(ex);
                 _exceptions.Add(ex);
-                await MqttClient.PublishAsync(MessageBrokerChannels.AddAggregateException, message);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.AddAggregateException, message);
 
                 if (_exceptions.Count >= maxItems)
                 {
@@ -131,7 +131,7 @@ namespace Planar.Job
 #endif
         {
             var message = new { Key = key, Value = value };
-            await MqttClient.PublishAsync(MessageBrokerChannels.PutJobData, message);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.PutJobData, message);
         }
 
 #if NETSTANDARD2_0
@@ -142,31 +142,31 @@ namespace Planar.Job
 #endif
         {
             var message = new { Key = key, Value = value };
-            await MqttClient.PublishAsync(MessageBrokerChannels.PutTriggerData, message);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.PutTriggerData, message);
         }
 
         public async Task RemoveJobDataAsync(string key)
         {
             var message = new { Key = key };
-            await MqttClient.PublishAsync(MessageBrokerChannels.RemoveJobData, message);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.RemoveJobData, message);
         }
 
         public async Task RemoveTriggerDataAsync(string key)
         {
             var message = new { Key = key };
-            await MqttClient.PublishAsync(MessageBrokerChannels.RemoveTriggerData, message);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.RemoveTriggerData, message);
         }
 
         public async Task ClearJobDataAsync()
         {
             var message = new { };
-            await MqttClient.PublishAsync(MessageBrokerChannels.ClearJobData, message);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.ClearJobData, message);
         }
 
         public async Task ClearTriggerDataAsync()
         {
             var message = new { };
-            await MqttClient.PublishAsync(MessageBrokerChannels.ClearTriggerData, message);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.ClearTriggerData, message);
         }
 
         #endregion Data
@@ -184,7 +184,7 @@ namespace Planar.Job
             try
             {
                 _effectedRows += value;
-                await MqttClient.PublishAsync(MessageBrokerChannels.IncreaseEffectedRows, value);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.IncreaseEffectedRows, value);
             }
             finally
             {
@@ -198,7 +198,7 @@ namespace Planar.Job
             try
             {
                 _effectedRows = value;
-                await MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.SetEffectedRows, value);
             }
             finally
             {
@@ -222,7 +222,7 @@ namespace Planar.Job
                 MostInnerMessage = innerEx.Message,
             };
 
-            await MqttClient.PublishAsync(MessageBrokerChannels.ReportExceptionV2, dto);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.ReportExceptionV2, dto);
 
             return text;
         }
@@ -283,7 +283,7 @@ namespace Planar.Job
 
         public async Task UpdateProgressAsync(byte value)
         {
-            await MqttClient.PublishAsync(MessageBrokerChannels.UpdateProgress, value);
+            await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.UpdateProgress, value);
         }
 
         public async Task UpdateProgressAsync(long current, long total)
@@ -312,7 +312,7 @@ namespace Planar.Job
             {
                 var number = ((int)customMonitorEvents) - 399;
                 var entity = new { Number = number, Message = message };
-                await MqttClient.PublishAsync(MessageBrokerChannels.MonitorCustomEvent, entity);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.MonitorCustomEvent, entity);
             }
             finally
             {
@@ -336,7 +336,7 @@ namespace Planar.Job
             try
             {
                 var entity = new { Id = id, Options = options };
-                await MqttClient.PublishAsync(MessageBrokerChannels.InvokeJob, entity);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.InvokeJob, entity);
             }
             finally
             {
@@ -356,7 +356,7 @@ namespace Planar.Job
             try
             {
                 var entity = new { Id = id, DueDate = dueDate, Options = options };
-                await MqttClient.PublishAsync(MessageBrokerChannels.QueueInvokeJob, entity);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.QueueInvokeJob, entity);
             }
             finally
             {

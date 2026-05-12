@@ -246,13 +246,13 @@ namespace Planar.Job
 
             if (_jobInstances.Count == 0)
             {
-                try { await MqttClient.PublishAsync(MessageBrokerChannels.FinishInvokeJob); } catch { }
+                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
                 await Task.Delay(50);
-                try { await MqttClient.PublishAsync(MessageBrokerChannels.FinishInvokeJob); } catch { }
+                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
                 await Task.Delay(50);
-                try { await MqttClient.PublishAsync(MessageBrokerChannels.FinishInvokeJob); } catch { }
+                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
                 await Task.Delay(50);
-                try { await MqttClient.StopAsync(delaySeconds: 125); } catch { }
+                try { await MqttClient.StopAsync(fireInstanceId, delaySeconds: 125); } catch { }
             }
         }
 

@@ -54,7 +54,7 @@ namespace Planar
 
         public static bool IsConnected => _mqttClient?.IsConnected ?? false;
 
-        public static async Task PingAsync()
+        public static async Task PingAsync(string fireInstanceId)
         {
             // mqtt
             if (_mqttClient != null)
@@ -74,39 +74,39 @@ namespace Planar
             if (_failOverProxy != null)
             {
                 var cloudEvent = CreateCloudEvent(MessageBrokerChannels.HealthCheck);
-                await _failOverProxy.PingAsync(cloudEvent);
+                await _failOverProxy.PingAsync(fireInstanceId, cloudEvent);
                 return;
             }
         }
 
-        public static async Task PublishAsync(MessageBrokerChannels channel)
+        public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel)
         {
             var cloudEvent = CreateCloudEvent(channel, string.Empty);
 
             // mqtt
             if (_mqttClient != null)
             {
-                await PublishInnerAsync(cloudEvent);
+                await PublishInnerAsync(fireInstanceId, cloudEvent);
                 return;
             }
 
             // failover
             if (_failOverProxy != null)
             {
-                await _failOverProxy.PublishAsync(cloudEvent);
+                await _failOverProxy.PublishAsync(fireInstanceId, cloudEvent);
                 return;
             }
         }
 
 #if NETSTANDARD2_0
 
-        public static async Task PublishAsync(MessageBrokerChannels channel, object message)
+        public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel, object message)
 #else
-        public static async Task PublishAsync(MessageBrokerChannels channel, object? message)
+        public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel, object? message)
 #endif
         {
             var cloudEvent = CreateCloudEvent(channel, message);
-            await PublishInnerAsync(cloudEvent);
+            await PublishInnerAsync(fireInstanceId, cloudEvent);
         }
 
 #if NETSTANDARD2_0
@@ -163,7 +163,7 @@ namespace Planar
             _mqttClient = null;
         }
 
-        public static async Task StopAsync(int delaySeconds)
+        public static async Task StopAsync(string fireInstanceId, int delaySeconds)
         {
             await _locker.WaitAsync(_lockerTimeout);
             try
@@ -177,7 +177,7 @@ namespace Planar
                     _timer.Stop();
                     _timer.Dispose();
                     _timer = null;
-                    await StopAsync();
+                    await StopAsync(fireInstanceId);
                 };
                 _timer.Start();
             }
@@ -187,7 +187,7 @@ namespace Planar
             }
         }
 
-        public static async Task StopAsync()
+        public static async Task StopAsync(string fireInstanceId)
         {
             // mqtt
             if (_mqttClient != null)
@@ -199,7 +199,7 @@ namespace Planar
 
                 await SafeCloseMqttClient();
 
-                await SafeWarnLostOfLogs(defaultWaitSecondes.TotalSeconds, pendingBefore, pendingAfter);
+                await SafeWarnLostOfLogs(fireInstanceId, defaultWaitSecondes.TotalSeconds, pendingBefore, pendingAfter);
 
                 return;
             }
@@ -213,7 +213,7 @@ namespace Planar
             }
         }
 
-        private static async Task SafeWarnLostOfLogs(double defaultWaitSecondes, int pendingBefore, int pendingAfter)
+        private static async Task SafeWarnLostOfLogs(string fireInstanceId, double defaultWaitSecondes, int pendingBefore, int pendingAfter)
         {
             try
             {
@@ -233,7 +233,7 @@ namespace Planar
                 foreach (var message in messages)
                 {
                     var entity = new LogEntity { Message = message, Level = LogLevel.Warning };
-                    PublishAsync(MessageBrokerChannels.AppendLog, entity).Wait();
+                    PublishAsync(fireInstanceId, MessageBrokerChannels.AppendLog, entity).Wait();
                 }
 
                 SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, TimeSpan.FromSeconds(5));
@@ -330,12 +330,12 @@ namespace Planar
             return Task.Run(() => Connected?.Invoke(null, EventArgs.Empty));
         }
 
-        private static async Task PublishInnerAsync(CloudEvent cloudEvent)
+        private static async Task PublishInnerAsync(string fireInstanceId, CloudEvent cloudEvent)
         {
             // mqtt
             if (_mqttClient != null)
             {
-                var mqttMessage = cloudEvent.ToMqttApplicationMessage(ContentMode.Structured, _formatter, _id);
+                var mqttMessage = cloudEvent.ToMqttApplicationMessage(ContentMode.Structured, _formatter, fireInstanceId);
                 mqttMessage.QualityOfServiceLevel = MqttQualityOfServiceLevel.ExactlyOnce;
                 await _mqttClient.EnqueueAsync(mqttMessage);
             }
@@ -343,7 +343,7 @@ namespace Planar
             // failover
             if (_failOverProxy != null)
             {
-                await _failOverProxy.PublishAsync(cloudEvent);
+                await _failOverProxy.PublishAsync(fireInstanceId, cloudEvent);
             }
         }
     }

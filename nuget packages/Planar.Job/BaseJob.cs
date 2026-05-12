@@ -172,7 +172,7 @@ namespace Planar.Job
 
                 SafeHandle(() => _timeoutTimer?.Dispose());
                 SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
-                if (!_isHosted) { await SafeHandleAsync(MqttClient.StopAsync); }
+                if (!_isHosted) { await SafeHandleAsync(() => MqttClient.StopAsync(_context.FireInstanceId)); }
             }
         }
 
@@ -269,13 +269,13 @@ namespace Planar.Job
             try
             {
                 MqttClient.StartFailOver(_context.FireInstanceId, _context.JobFailOverPort);
-                await MqttClient.PingAsync();
-                await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
+                await MqttClient.PingAsync(_context.FireInstanceId);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
                 return true;
             }
             catch
             {
-                await MqttClient.StopAsync();
+                await MqttClient.StopAsync(_context.FireInstanceId);
                 return false;
             }
         }
@@ -292,18 +292,18 @@ namespace Planar.Job
                 _executeResetEvent = new AutoResetEvent(false);
                 await MqttClient.StartAsync(_context.FireInstanceId, brokerHost, _context.JobPort);
                 if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("Mqtt connection timeout"); }
-                await MqttClient.PingAsync();
+                await MqttClient.PingAsync(_context.FireInstanceId);
 
                 for (int i = 0; i < 3; i++)
                 {
-                    await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
+                    await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
                     await Task.Delay(50);
                 }
                 return true;
             }
             catch
             {
-                await MqttClient.StopAsync();
+                await MqttClient.StopAsync(_context.FireInstanceId);
                 await Task.Delay(500);
                 return false;
             }
@@ -741,7 +741,7 @@ namespace Planar.Job
 
             try
             {
-                await MqttClient.StopAsync();
+                await MqttClient.StopAsync(_context.FireInstanceId);
                 _timeoutTimer?.Dispose();
             }
             catch
