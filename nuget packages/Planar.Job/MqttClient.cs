@@ -26,7 +26,6 @@ namespace Planar
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter(JsonSerializer.Create(_jsonSerializerSettings));
         private static readonly SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
         private static readonly TimeSpan _lockerTimeout = TimeSpan.FromMinutes(1);
-        private static string _id = "none";
         private static string _host = _defaultHost;
         private static int _mqttPort;
 
@@ -73,7 +72,7 @@ namespace Planar
             // failover
             if (_failOverProxy != null)
             {
-                var cloudEvent = CreateCloudEvent(MessageBrokerChannels.HealthCheck);
+                var cloudEvent = CreateCloudEvent(fireInstanceId, MessageBrokerChannels.HealthCheck);
                 await _failOverProxy.PingAsync(fireInstanceId, cloudEvent);
                 return;
             }
@@ -81,7 +80,7 @@ namespace Planar
 
         public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel)
         {
-            var cloudEvent = CreateCloudEvent(channel, string.Empty);
+            var cloudEvent = CreateCloudEvent(fireInstanceId, channel, message: string.Empty);
 
             // mqtt
             if (_mqttClient != null)
@@ -105,18 +104,17 @@ namespace Planar
         public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel, object? message)
 #endif
         {
-            var cloudEvent = CreateCloudEvent(channel, message);
+            var cloudEvent = CreateCloudEvent(fireInstanceId, channel, message);
             await PublishInnerAsync(fireInstanceId, cloudEvent);
         }
 
 #if NETSTANDARD2_0
 
-        public static async Task StartAsync(string id, string host, int port)
+        public static async Task StartAsync(string host, int port)
 #else
-        public static async Task StartAsync(string id, string? host, int port)
+        public static async Task StartAsync(string? host, int port)
 #endif
         {
-            _id = id;
             _mqttPort = port <= 0 ? _defaultMqttPort : port;
             if (!string.IsNullOrWhiteSpace(host)) { _host = host; }
             await RestartAsync();
@@ -124,9 +122,10 @@ namespace Planar
 
         public static async Task RestartAsync()
         {
+            var clientId = $"{Environment.MachineName}_{Guid.NewGuid():N}";
             var clientOptions = new MqttClientOptionsBuilder()
                 .WithTimeout(TimeSpan.FromSeconds(_timeout))
-                .WithClientId(_id)
+                .WithClientId(clientId)
                 .WithKeepAlivePeriod(TimeSpan.FromSeconds(_keepAlivePeriod))
                 .WithTcpServer(_host, _mqttPort)
                 .Build();
@@ -155,9 +154,8 @@ namespace Planar
             }
         }
 
-        public static void StartFailOver(string id, int port)
+        public static void StartFailOver(int port)
         {
-            _id = id;
             if (port <= 0) { port = _defaultHttpPort; }
             _failOverProxy = new FailOverProxy(port);
             _mqttClient = null;
@@ -287,18 +285,18 @@ namespace Planar
             await Console.Error.WriteLineAsync(log.ToString());
         }
 
-        private static CloudEvent CreateCloudEvent(MessageBrokerChannels channel)
+        private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel)
         {
-            return CreateCloudEvent(channel, string.Empty);
+            return CreateCloudEvent(fireInstanceId, channel, message: string.Empty);
         }
 
 #if NETSTANDARD2_0
 
-        private static CloudEvent CreateCloudEvent(MessageBrokerChannels channel, object message)
+        private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel, object message)
         {
             const string Json = "application/json";
 #else
-        private static CloudEvent CreateCloudEvent(MessageBrokerChannels channel, object? message)
+        private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel, object? message)
         {
 #endif
             var cloudEvent = new CloudEvent
@@ -312,7 +310,7 @@ namespace Planar
                 DataContentType = System.Net.Mime.MediaTypeNames.Application.Json,
 #endif
                 Data = message,
-                Subject = _id,
+                Subject = fireInstanceId,
                 Source = new Uri(Source),
             };
 

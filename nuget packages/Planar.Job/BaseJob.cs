@@ -268,7 +268,7 @@ namespace Planar.Job
         {
             try
             {
-                MqttClient.StartFailOver(_context.FireInstanceId, _context.JobFailOverPort);
+                MqttClient.StartFailOver(_context.JobFailOverPort);
                 await MqttClient.PingAsync(_context.FireInstanceId);
                 await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
                 return true;
@@ -290,7 +290,7 @@ namespace Planar.Job
             try
             {
                 _executeResetEvent = new AutoResetEvent(false);
-                await MqttClient.StartAsync(_context.FireInstanceId, brokerHost, _context.JobPort);
+                await MqttClient.StartAsync(brokerHost, _context.JobPort);
                 if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("Mqtt connection timeout"); }
                 await MqttClient.PingAsync(_context.FireInstanceId);
 

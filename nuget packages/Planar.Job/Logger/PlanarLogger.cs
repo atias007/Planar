@@ -9,9 +9,11 @@ namespace Planar.Job.Logger
     {
         private static readonly StringBuilder _logBuilder = new StringBuilder();
         private static readonly object _locker = new object();
+        private readonly string _fireInstanceId;
 
-        public BaseLogger()
+        public BaseLogger(string fireInstanceId)
         {
+            _fireInstanceId = fireInstanceId;
         }
 
 #pragma warning disable IDE0060 // Remove unused parameter
@@ -29,7 +31,7 @@ namespace Planar.Job.Logger
         protected void Log(LogLevel logLevel, string message)
         {
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.PublishAsync(MessageBrokerChannels.AppendLog, entity).Wait();
+            MqttClient.PublishAsync(_fireInstanceId, MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
 
@@ -93,6 +95,10 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger<TContext> : BaseLogger, ILogger<TContext>
     {
+        public PlanarLogger(IBaseJob baseJob) : base(baseJob.Context.FireInstanceId)
+        {
+        }
+
 #if NETSTANDARD2_0
 
         public IDisposable BeginScope<TState>(TState state) => default;
@@ -123,6 +129,10 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger : BaseLogger, ILogger
     {
+        public PlanarLogger(IBaseJob baseJob) : base(baseJob.Context.FireInstanceId)
+        {
+        }
+
 #if NETSTANDARD2_0
 
         public IDisposable BeginScope<TState>(TState state) => default;
