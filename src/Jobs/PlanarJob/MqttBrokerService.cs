@@ -46,7 +46,7 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHost
 
     private static void OnInterceptingPublishAsync(CloudEvent cloudEvent, InterceptingPublishEventArgs arg)
     {
-        var args = new CloudEventArgs(cloudEvent, arg.ClientId);
+        var args = new CloudEventArgs(cloudEvent, arg.ApplicationMessage.Topic);
         Publish(args);
     }
 
