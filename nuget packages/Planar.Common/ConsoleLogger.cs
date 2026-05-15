@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Planar.Job.RabbitMq
+namespace Planar
 {
     internal class ConsoleLogger
     {

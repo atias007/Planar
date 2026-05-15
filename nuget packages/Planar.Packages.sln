@@ -38,6 +38,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Job.RabbitMQ", "Plan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQJob", "RabbitMQJob\RabbitMQJob.csproj", "{414371B7-DFBE-431C-9EEC-1F106C4883CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Job.Http", "Planar.Job.Http\Planar.Job.Http.csproj", "{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,10 @@ Global
 		{414371B7-DFBE-431C-9EEC-1F106C4883CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{414371B7-DFBE-431C-9EEC-1F106C4883CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{414371B7-DFBE-431C-9EEC-1F106C4883CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

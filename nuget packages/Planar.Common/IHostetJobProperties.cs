@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar.Job
+namespace Planar.Common
 {
-    internal interface IHostetJobProperties
+    public interface IHostetJobProperties
     {
+        string PlanarHostname { get; }
         IEnumerable<Type> JobTypes { get; }
     }
 }

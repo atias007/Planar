@@ -1,29 +1,22 @@
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Planar.Common;
-using Planar.Job.RabbitMq;
-using RabbitMQ.Client.Events;
-using System;
+using Planar.Job.Http;
 using System.Collections.Concurrent;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Planar.Job
 {
     public static partial class PlanarJob
     {
 #if NETSTANDARD2_0
-        internal static RabbitMqJobStartProperties Properties { get; set; }
-        private static RabbitMqFactory _rabbitMqFactory;
+        internal static HttpJobStartProperties Properties { get; set; }
 #else
-        internal static RabbitMqJobStartProperties Properties { get; set; } = null!;
-        private static RabbitMqFactory? _rabbitMqFactory;
+        internal static HttpJobStartProperties Properties { get; set; } = null!;
 #endif
 
-        private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
-        private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
-
-        public async static Task StartAsync(RabbitMqJobStartProperties properties)
+        public async static Task StartAsync(HttpJobStartProperties properties)
         {
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
 
@@ -42,6 +35,20 @@ namespace Planar.Job
                 await ConsoleLogger.Log(LogLevel.Critical, ex.ToString());
             }
         }
+
+        private async static Task SafeStartAsync(HttpJobStartProperties properties)
+        {
+            Properties = properties;
+            ////_rabbitMqFactory = await RabbitMqFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
+
+            // Start consuming messages
+            ////await _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync);
+        }
+
+        #region Common
+
+        private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
+        private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
         static partial void GracefullShutdownSetup()
         {
@@ -83,143 +90,6 @@ namespace Planar.Job
             };
         }
 
-        private async static Task SafeStartAsync(RabbitMqJobStartProperties properties)
-        {
-            Properties = properties;
-            _rabbitMqFactory = await RabbitMqFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
-
-            // Start consuming messages
-            await _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync);
-        }
-
-        /// <summary>
-        /// Message handler - processes each received message
-        /// </summary>
-        /// <param name="messageBody">The message body as a string</param>
-        /// <param name="eventArgs">Event arguments containing message metadata</param>
-        /// <returns>True if message processed successfully, False to requeue</returns>
-        private static async Task ProcessInvokeMessageAsync(BasicDeliverEventArgs eventArgs)
-        {
-            await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
-            string fid = string.Empty;
-#if NETSTANDARD2_0
-            JobDefinition jobDefinition = null;
-#else
-            JobDefinition? jobDefinition = null;
-#endif
-            try
-            {
-                jobDefinition = Properties.GetJobDefinition(eventArgs.RoutingKey);
-                fid = GetFireInstanceIdHeader(eventArgs);
-                var info = TrackInstance(fid);
-                await Execute(eventArgs, jobDefinition.JobType, info.CancellationToken);
-            }
-            catch (Exception ex)
-            {
-                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to execute {jobDefinition?.JobType.Name}".TrimEnd() };
-                await Console.Error.WriteLineAsync(log.ToString());
-                log.Message = ex.ToString();
-                await Console.Error.WriteLineAsync(log.ToString());
-            }
-            finally
-            {
-                await UntrackInstance(fid);
-            }
-        }
-
-        private static async Task ProcessCancelAsync(BasicDeliverEventArgs eventArgs)
-        {
-            string fid = string.Empty;
-#if NETSTANDARD2_0
-            JobInstanceInfo jobInstanceInfo = null;
-#else
-            JobInstanceInfo? jobInstanceInfo = null;
-#endif
-
-            try
-            {
-                fid = GetFireInstanceIdHeader(eventArgs);
-                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return; }
-
-                jobInstanceInfo.Cancel();
-                var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
-                await Console.Error.WriteLineAsync(log2.ToString());
-            }
-            catch (Exception ex)
-            {
-                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to cancel job FireInstanceId {fid}".TrimEnd() };
-                await Console.Error.WriteLineAsync(log.ToString());
-                log.Message = ex.ToString();
-                await Console.Error.WriteLineAsync(log.ToString());
-            }
-        }
-
-        private static async Task RouteMessageAsync(BasicDeliverEventArgs eventArgs)
-        {
-            var command = SafeGetHeader(eventArgs, "Command");
-            switch (command)
-            {
-                case "Invoke":
-                    await ProcessInvokeMessageAsync(eventArgs);
-                    break;
-
-                case "Cancel":
-                    await ProcessCancelAsync(eventArgs);
-                    break;
-
-                case "Ping":
-                    break;
-
-                default:
-                    var message = string.IsNullOrWhiteSpace(command) ?
-                        "Missing or empty Command header." :
-                        $"Command header '{command}' is not supported.";
-
-                    var log = new LogEntity { Level = LogLevel.Error, Message = message };
-                    await Console.Error.WriteLineAsync(log.ToString());
-                    break;
-            }
-        }
-
-        private static string SafeGetHeader(BasicDeliverEventArgs eventArgs, string name)
-        {
-            try
-            {
-                return GetHeader(eventArgs, name);
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
-
-        private static string GetFireInstanceIdHeader(BasicDeliverEventArgs eventArgs)
-        {
-            return GetHeader(eventArgs, "FireInstanceId");
-        }
-
-        private static string GetHeader(BasicDeliverEventArgs eventArgs, string name)
-        {
-#if NETSTANDARD2_0
-            object headerValueObj = null;
-#else
-            object? headerValueObj = null;
-#endif
-            eventArgs.BasicProperties.Headers?.TryGetValue(name, out headerValueObj);
-            if (headerValueObj is byte[] bytes)
-            {
-                return Encoding.UTF8.GetString(bytes);
-            }
-
-            var result = Convert.ToString(headerValueObj);
-            if (string.IsNullOrWhiteSpace(result))
-            {
-                throw new PlanarJobException($"{name} header is missing or empty in the message headers");
-            }
-
-            return result;
-        }
-
         private static JobInstanceInfo TrackInstance(string fireInstanceId)
         {
             var info = new JobInstanceInfo(fireInstanceId);
@@ -252,9 +122,125 @@ namespace Planar.Job
             }
         }
 
-        private static async Task Execute(BasicDeliverEventArgs eventArgs, Type jobType, CancellationToken cancellationToken)
+        #endregion Common
+
+        private static async Task ProcessInvokeMessageAsync(HttpContext httpContext)
         {
-            var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
+            await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
+            string fid = string.Empty;
+#if NETSTANDARD2_0
+            JobDefinition jobDefinition = null;
+#else
+            JobDefinition? jobDefinition = null;
+#endif
+            try
+            {
+                jobDefinition = Properties.GetJobDefinition(httpContext.Request.Path);
+                fid = GetFireInstanceIdHeader(httpContext);
+                var info = TrackInstance(fid);
+                await Execute(httpContext, jobDefinition.JobType, info.CancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to execute {jobDefinition?.JobType.Name}".TrimEnd() };
+                await Console.Error.WriteLineAsync(log.ToString());
+                log.Message = ex.ToString();
+                await Console.Error.WriteLineAsync(log.ToString());
+            }
+            finally
+            {
+                await UntrackInstance(fid);
+            }
+        }
+
+        private static async Task ProcessCancelAsync(HttpContext httpContext)
+        {
+            string fid = string.Empty;
+#if NETSTANDARD2_0
+            JobInstanceInfo jobInstanceInfo = null;
+#else
+            JobInstanceInfo? jobInstanceInfo = null;
+#endif
+
+            try
+            {
+                fid = GetFireInstanceIdHeader(httpContext);
+                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return; }
+
+                jobInstanceInfo.Cancel();
+                var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
+                await Console.Error.WriteLineAsync(log2.ToString());
+            }
+            catch (Exception ex)
+            {
+                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to cancel job FireInstanceId {fid}".TrimEnd() };
+                await Console.Error.WriteLineAsync(log.ToString());
+                log.Message = ex.ToString();
+                await Console.Error.WriteLineAsync(log.ToString());
+            }
+        }
+
+        private static async Task RouteMessageAsync(HttpContext httpContext)
+        {
+            var command = SafeGetHeader(httpContext, "Command");
+            switch (command)
+            {
+                case "Invoke":
+                    await ProcessInvokeMessageAsync(httpContext);
+                    break;
+
+                case "Cancel":
+                    await ProcessCancelAsync(httpContext);
+                    break;
+
+                case "Ping":
+                    break;
+
+                default:
+                    var message = string.IsNullOrWhiteSpace(command) ?
+                        "Missing or empty Command header." :
+                        $"Command header '{command}' is not supported.";
+
+                    var log = new LogEntity { Level = LogLevel.Error, Message = message };
+                    await Console.Error.WriteLineAsync(log.ToString());
+                    break;
+            }
+        }
+
+        private static string SafeGetHeader(HttpContext httpContext, string name)
+        {
+            try
+            {
+                return GetHeader(httpContext, name);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string GetFireInstanceIdHeader(HttpContext httpContext)
+        {
+            return GetHeader(httpContext, "FireInstanceId");
+        }
+
+        private static string GetHeader(HttpContext httpContext, string name)
+        {
+            httpContext.Request.Headers.TryGetValue(name, out var headerValueObj);
+            var result = headerValueObj.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                throw new PlanarJobException($"{name} header is missing or empty in the http request headers");
+            }
+
+            return result;
+        }
+
+        private static async Task Execute(HttpContext httpContext, Type jobType, CancellationToken cancellationToken)
+        {
+            using var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8);
+            var json = await reader.ReadToEndAsync(cancellationToken);
             if (jobType == null) { return; }
             await Execute(jobType, Properties?.PlanarHostname, json, cancellationToken);
         }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Planar.Job.RabbitMq
+namespace Planar.Common
 {
     internal sealed class JobInstanceInfo : IDisposable
     {

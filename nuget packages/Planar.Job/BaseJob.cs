@@ -137,8 +137,7 @@ namespace Planar.Job
                 Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
                     _context.FireInstanceId,
                     _context.JobDetails.Key,
-                    _context.TriggerDetails.Key.Name,
-                    timeout);
+                    _context.TriggerDetails.Key.Name);
 
                 _baseJobFactory.StartTiming();
                 var task = ExecuteJob(_context);
@@ -149,8 +148,7 @@ namespace Planar.Job
                 Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
                     _context.FireInstanceId,
                     _context.JobDetails.Key,
-                    _context.TriggerDetails.Key.Name,
-                    timeout);
+                    _context.TriggerDetails.Key.Name);
 
                 return true;
             }
@@ -313,7 +311,13 @@ namespace Planar.Job
             }
         }
 
+#if NETSTANDARD2_0
+
         private void MqttClient_Connected(object sender, EventArgs e)
+
+#else
+        private void MqttClient_Connected(object? sender, EventArgs e)
+#endif
         {
             _executeResetEvent?.Set();
         }

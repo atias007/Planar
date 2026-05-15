@@ -186,7 +186,12 @@ namespace Planar.Job
             return index;
         }
 
+#if NETSTANDARD2_0
+
         private static void TimerElapsed(object sender, ElapsedEventArgs e)
+#else
+        private static void TimerElapsed(object? sender, ElapsedEventArgs e)
+#endif
         {
             Console.BackgroundColor = ConsoleColor.Red;
             Console.WriteLine("User input timeout. Terminate application");

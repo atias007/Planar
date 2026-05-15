@@ -29,7 +29,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Remove="ConsoleLogger.cs" />
 		<Compile Remove="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
+		<Compile Remove="JobInstanceInfo.cs" />
+		<Compile Remove="LogEntity.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -48,7 +51,10 @@
 			<PackagePath>\</PackagePath>
 			<Pack>True</Pack>
 		</None>
+		<None Include="ConsoleLogger.cs" />
 		<None Include="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
+		<None Include="JobInstanceInfo.cs" />
+		<None Include="LogEntity.cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">

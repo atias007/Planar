@@ -45,6 +45,7 @@
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockKey.cs" Link="JobExecutionContext\MockKey.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockTriggerDetails.cs" Link="JobExecutionContext\MockTriggerDetails.cs" />
 		<Compile Include="..\Planar.Common\JobMapper.cs" Link="JobMapper.cs" />
+		<Compile Include="..\Planar.Common\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	</ItemGroup>
 	<ItemGroup>
