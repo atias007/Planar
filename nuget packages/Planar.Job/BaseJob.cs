@@ -120,6 +120,7 @@ namespace Planar.Job
             try
             {
                 await OpenMqttConnection(_planarHost);
+                _ = SendHealthCheckSignal();
 
                 Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -293,12 +294,6 @@ namespace Planar.Job
                 await MqttClient.StartAsync(brokerHost, _context.JobPort);
                 if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("Mqtt connection timeout"); }
                 await MqttClient.PingAsync(_context.FireInstanceId);
-
-                for (int i = 0; i < 3; i++)
-                {
-                    await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
-                    await Task.Delay(50);
-                }
                 return true;
             }
             catch
@@ -306,6 +301,15 @@ namespace Planar.Job
                 await MqttClient.StopAsync(_context.FireInstanceId);
                 await Task.Delay(500);
                 return false;
+            }
+        }
+
+        private async Task SendHealthCheckSignal()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
+                await Task.Delay(50);
             }
         }
 

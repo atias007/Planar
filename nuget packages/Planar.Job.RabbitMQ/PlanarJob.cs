@@ -99,7 +99,7 @@ namespace Planar.Job
         /// <returns>True if message processed successfully, False to requeue</returns>
         private static async Task ProcessInvokeMessageAsync(BasicDeliverEventArgs eventArgs)
         {
-            await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
+            await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
             string fid = string.Empty;
 #if NETSTANDARD2_0
             JobDefinition jobDefinition = null;
@@ -128,7 +128,6 @@ namespace Planar.Job
 
         private static async Task ProcessCancelAsync(BasicDeliverEventArgs eventArgs)
         {
-            await ConsoleLogger.Log(LogLevel.Debug, ">> Received message <<");
             string fid = string.Empty;
 #if NETSTANDARD2_0
             JobInstanceInfo jobInstanceInfo = null;
@@ -139,12 +138,7 @@ namespace Planar.Job
             try
             {
                 fid = GetFireInstanceIdHeader(eventArgs);
-                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo))
-                {
-                    var log = new LogEntity { Level = LogLevel.Information, Message = $"No running job found for FireInstanceId {fid}".TrimEnd() };
-                    await Console.Error.WriteLineAsync(log.ToString());
-                    return;
-                }
+                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return; }
 
                 jobInstanceInfo.Cancel();
                 var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
@@ -246,13 +240,14 @@ namespace Planar.Job
 
             if (_jobInstances.Count == 0)
             {
-                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
-                await Task.Delay(50);
-                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
-                await Task.Delay(50);
-                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
-                await Task.Delay(50);
-                try { await MqttClient.StopAsync(fireInstanceId, delaySeconds: 125); } catch { }
+                for (int i = 0; i < 3; i++)
+                {
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
+                    await Task.Delay(50);
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
+                    await Task.Delay(50);
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
+                }
             }
         }
 
