@@ -58,7 +58,7 @@ namespace Planar.Job
 
             if (!_jobInstances.TryAdd(fireInstanceId, info))
             {
-                throw new PlanarJobException($"Duplicate FireInstanceId detected: {fireInstanceId}");
+                throw new PlanarJobConflictException($"Duplicate FireInstanceId detected: {fireInstanceId}");
             }
 
             return info;

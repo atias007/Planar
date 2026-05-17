@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Connections;
 using Planar.Common;
 
 namespace Planar.Job.Http
 {
     public class HttpJobStartPropertiesBuilder
     {
-        private readonly HttpJobStartProperties _properties = new HttpJobStartProperties();
+        private readonly HttpJobStartProperties _properties = new();
 
         public HttpJobStartPropertiesBuilder()
         {
@@ -53,11 +52,11 @@ namespace Planar.Job.Http
 
             if (attribute == null)
             {
-                _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType) };
+                _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType)];
             }
             else
             {
-                _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType, attribute.Route) };
+                _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType, attribute.Route)];
             }
 
             return this;
@@ -70,7 +69,7 @@ namespace Planar.Job.Http
             ValidateJobType(jobType);
             ValidateRoute(queueName);
 
-            _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType, queueName) };
+            _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType, queueName)];
             return this;
         }
 
@@ -124,7 +123,8 @@ namespace Planar.Job.Http
                 return false;
             }
 
-            if (segment.StartsWith(".") || segment.EndsWith("."))
+            const char dot = '.';
+            if (segment.StartsWith(dot) || segment.EndsWith(dot))
             {
                 return false;
             }
@@ -143,10 +143,10 @@ namespace Planar.Job.Http
 
 #if NETSTANDARD2_0
 
-        private JobRouteAttribute ValidateJobRouteAttribute(Type jobType)
+        private static JobRouteAttribute ValidateJobRouteAttribute(Type jobType)
 #else
 
-        private JobRouteAttribute? ValidateJobRouteAttribute(Type jobType)
+        private static JobRouteAttribute? ValidateJobRouteAttribute(Type jobType)
 #endif
         {
             var attribute = Attribute.GetCustomAttribute(jobType, typeof(JobRouteAttribute));
@@ -179,14 +179,14 @@ namespace Planar.Job.Http
     {
         public WebApplication? WebApplication { get; set; }
         public string PlanarHostname { get; internal set; } = string.Empty;
-        public IEnumerable<JobDefinition> JobDefinitions { get; internal set; } = new List<JobDefinition>();
+        public IEnumerable<JobDefinition> JobDefinitions { get; internal set; } = [];
         public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
 
         internal JobDefinition GetJobDefinition(string name)
         {
             var jobDefinition = JobDefinitions.FirstOrDefault(jd => jd.Route.Equals(name, StringComparison.OrdinalIgnoreCase));
             return jobDefinition ??
-                throw new InvalidOperationException($"No job definition found for job type name '{name}'. Ensure that the job type has been added using AddJobType<TJob>() or AddJobType<TJob>(string resource) in the HttpJobStartPropertiesBuilder.");
+                throw new PlanarJobNotFoundException($"No job definition found for job type name '{name}'. Ensure that the job type has been added using AddJobType<TJob>() or AddJobType<TJob>(string resource) in the HttpJobStartPropertiesBuilder.");
         }
     }
 }

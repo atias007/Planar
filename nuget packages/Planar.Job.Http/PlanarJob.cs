@@ -41,12 +41,12 @@ namespace Planar.Job
             properties.WebApplication ??= WebApplication.CreateBuilder().Build();
 
             properties.WebApplication.MapPost("/planar/invoke/{route}",
-                   (HttpContext httpContext, string route) => RouteMessageAsync(httpContext, route));
+                   (HttpContext httpContext, string route) => SafeRouteMessageAsync(httpContext, route));
 
             await properties.WebApplication.RunAsync();
         }
 
-        private static async Task ProcessInvokeMessageAsync(HttpContext httpContext, string route)
+        private static async Task<IResult> ProcessInvokeMessageAsync(HttpContext httpContext, string route)
         {
             await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
             string fid = string.Empty;
@@ -60,7 +60,8 @@ namespace Planar.Job
                 jobDefinition = Properties.GetJobDefinition(route);
                 fid = GetFireInstanceIdHeader(httpContext);
                 var info = TrackInstance(fid);
-                await Execute(httpContext, jobDefinition.JobType, info.CancellationToken);
+                await Execute(httpContext, jobDefinition.JobType, info);
+                return Results.Accepted();
             }
             catch (Exception ex)
             {
@@ -68,14 +69,16 @@ namespace Planar.Job
                 await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
                 await Console.Error.WriteLineAsync(log.ToString());
-            }
-            finally
-            {
-                await UntrackInstance(fid);
+
+                if (ex is PlanarJobConflictException) { return Results.Conflict(ex.Message); }
+                if (ex is PlanarJobNotFoundException) { return Results.NotFound(ex.Message); }
+                if (ex is PlanarJobBadRequestException) { return Results.BadRequest(ex.Message); }
+
+                return Results.Json(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-        private static async Task ProcessCancelAsync(HttpContext httpContext)
+        private static async Task<IResult> ProcessCancelAsync(HttpContext httpContext)
         {
             string fid = string.Empty;
 #if NETSTANDARD2_0
@@ -87,11 +90,12 @@ namespace Planar.Job
             try
             {
                 fid = GetFireInstanceIdHeader(httpContext);
-                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return; }
+                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.Conflict(); }
 
                 jobInstanceInfo.Cancel();
                 var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
                 await Console.Error.WriteLineAsync(log2.ToString());
+                return Results.Accepted();
             }
             catch (Exception ex)
             {
@@ -99,24 +103,35 @@ namespace Planar.Job
                 await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
                 await Console.Error.WriteLineAsync(log.ToString());
+                return Results.Json(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
-        private static async Task RouteMessageAsync(HttpContext httpContext, string route)
+        private static async Task<IResult> SafeRouteMessageAsync(HttpContext httpContext, string route)
+        {
+            try
+            {
+                return await RouteMessageAsync(httpContext, route);
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        private static async Task<IResult> RouteMessageAsync(HttpContext httpContext, string route)
         {
             var command = SafeGetHeader(httpContext, "Command");
             switch (command)
             {
                 case "Invoke":
-                    await ProcessInvokeMessageAsync(httpContext, route);
-                    break;
+                    return await ProcessInvokeMessageAsync(httpContext, route);
 
                 case "Cancel":
-                    await ProcessCancelAsync(httpContext);
-                    break;
+                    return await ProcessCancelAsync(httpContext);
 
                 case "Ping":
-                    break;
+                    return Results.Ok("Pong");
 
                 default:
                     var message = string.IsNullOrWhiteSpace(command) ?
@@ -125,7 +140,7 @@ namespace Planar.Job
 
                     var log = new LogEntity { Level = LogLevel.Error, Message = message };
                     await Console.Error.WriteLineAsync(log.ToString());
-                    break;
+                    return Results.BadRequest(message);
             }
         }
 
@@ -153,18 +168,23 @@ namespace Planar.Job
 
             if (string.IsNullOrWhiteSpace(result))
             {
-                throw new PlanarJobException($"{name} header is missing or empty in the http request headers");
+                throw new PlanarJobBadRequestException($"{name} header is missing or empty in the http request headers");
             }
 
             return result;
         }
 
-        private static async Task Execute(HttpContext httpContext, Type jobType, CancellationToken cancellationToken)
+        private static async Task Execute(HttpContext httpContext, Type jobType, JobInstanceInfo jobInstanceInfo)
         {
             using var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8);
-            var json = await reader.ReadToEndAsync(cancellationToken);
+            var json = await reader.ReadToEndAsync(jobInstanceInfo.CancellationToken);
             if (jobType == null) { return; }
-            await Execute(jobType, Properties?.PlanarHostname, json, cancellationToken);
+
+            _ = Execute(jobType, Properties?.PlanarHostname, json, jobInstanceInfo.CancellationToken)
+                .ContinueWith(async t =>
+                {
+                    await UntrackInstance(jobInstanceInfo.FireInstanceId);
+                });
         }
 
         private static void FillProperties()
