@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using Planar.Common;
 using Planar.Job.Http;
-using System.Collections.Concurrent;
 using System.Text;
 
 namespace Planar.Job
@@ -39,92 +38,15 @@ namespace Planar.Job
         private async static Task SafeStartAsync(HttpJobStartProperties properties)
         {
             Properties = properties;
-            ////_rabbitMqFactory = await RabbitMqFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
+            properties.WebApplication ??= WebApplication.CreateBuilder().Build();
 
-            // Start consuming messages
-            ////await _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync);
+            properties.WebApplication.MapPost("/planar/invoke/{route}",
+                   (HttpContext httpContext, string route) => RouteMessageAsync(httpContext, route));
+
+            await properties.WebApplication.RunAsync();
         }
 
-        #region Common
-
-        private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
-        private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
-
-        static partial void GracefullShutdownSetup()
-        {
-            AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
-            _mainCancellationTokenSource.Token.Register(async () =>
-            {
-                await ConsoleLogger.Log(LogLevel.Information, "Start gracefull shutdown");
-
-                try
-                {
-                    foreach (var item in _jobInstances)
-                    {
-                        item.Value.Cancel();
-                    }
-                }
-                catch { }
-
-                for (int i = 0; i < 30; i++)
-                {
-                    if (_jobInstances.Count == 0) { break; }
-                    await ConsoleLogger.Log(LogLevel.Information, $"Wait for {_jobInstances.Count} jobs to finish running");
-                    await Task.Delay(1_000);
-                }
-
-                if (_jobInstances.Count > 0)
-                {
-                    await ConsoleLogger.Log(LogLevel.Error, $"{_jobInstances.Count} jobs to is running after waiting 30 seconds");
-                }
-            });
-
-            Console.CancelKeyPress += (sender, args) =>
-            {
-                Console.WriteLine("\nCtrl+C detected! Performing cleanup...");
-
-                // 2. Prevent the application from terminating immediately
-                args.Cancel = true;
-
-                _mainCancellationTokenSource.Cancel();
-            };
-        }
-
-        private static JobInstanceInfo TrackInstance(string fireInstanceId)
-        {
-            var info = new JobInstanceInfo(fireInstanceId);
-
-            if (!_jobInstances.TryAdd(fireInstanceId, info))
-            {
-                throw new PlanarJobException($"Duplicate FireInstanceId detected: {fireInstanceId}");
-            }
-
-            return info;
-        }
-
-        private static async Task UntrackInstance(string fireInstanceId)
-        {
-            if (_jobInstances.TryRemove(fireInstanceId, out var info))
-            {
-                try { info.Dispose(); } catch { }
-            }
-
-            if (_jobInstances.Count == 0)
-            {
-                for (int i = 0; i < 3; i++)
-                {
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
-                    await Task.Delay(50);
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
-                    await Task.Delay(50);
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
-                }
-            }
-        }
-
-        #endregion Common
-
-        private static async Task ProcessInvokeMessageAsync(HttpContext httpContext)
+        private static async Task ProcessInvokeMessageAsync(HttpContext httpContext, string route)
         {
             await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
             string fid = string.Empty;
@@ -135,7 +57,7 @@ namespace Planar.Job
 #endif
             try
             {
-                jobDefinition = Properties.GetJobDefinition(httpContext.Request.Path);
+                jobDefinition = Properties.GetJobDefinition(route);
                 fid = GetFireInstanceIdHeader(httpContext);
                 var info = TrackInstance(fid);
                 await Execute(httpContext, jobDefinition.JobType, info.CancellationToken);
@@ -180,13 +102,13 @@ namespace Planar.Job
             }
         }
 
-        private static async Task RouteMessageAsync(HttpContext httpContext)
+        private static async Task RouteMessageAsync(HttpContext httpContext, string route)
         {
             var command = SafeGetHeader(httpContext, "Command");
             switch (command)
             {
                 case "Invoke":
-                    await ProcessInvokeMessageAsync(httpContext);
+                    await ProcessInvokeMessageAsync(httpContext, route);
                     break;
 
                 case "Cancel":

@@ -53,6 +53,7 @@
 		<Compile Include="..\Planar.Common\ConsoleLogger.cs" Link="ConsoleLogger.cs" />
 		<Compile Include="..\Planar.Common\JobInstanceInfo.cs" Link="JobInstanceInfo.cs" />
 		<Compile Include="..\Planar.Common\LogEntity.cs" Link="LogEntity.cs" />
+		<Compile Include="..\Planar.Job.RabbitMQ\PlanarHostedJobCommon.cs" Link="PlanarHostedJobCommon.cs" />
 		<Compile Include="..\Planar.Job\Argument.cs" Link="Argument.cs" />
 		<Compile Include="..\Planar.Job\BaseJob.cs" Link="BaseJob.cs" />
 		<Compile Include="..\Planar.Job\BaseJobFactory.cs" Link="BaseJobFactory.cs" />
