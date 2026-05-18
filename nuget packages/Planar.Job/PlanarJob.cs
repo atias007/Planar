@@ -12,9 +12,12 @@ namespace Planar.Job
     {
 #if NETSTANDARD2_0
         private static string ContextBase64 { get; set; }
+
 #else
         private static string? ContextBase64 { get; set; }
+
 #endif
+
         internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
 
         public static Task StartAsync<TJob>()

@@ -1,12 +1,16 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Planar.Common;
 using Planar.Job.Http;
 using System.Text;
 
 namespace Planar.Job
 {
+    internal interface IPlanarJob { }
+
     public static partial class PlanarJob
     {
 #if NETSTANDARD2_0
@@ -15,9 +19,13 @@ namespace Planar.Job
         internal static HttpJobStartProperties Properties { get; set; } = null!;
 #endif
 
+        private static ILogger? _logger;
+
         public async static Task StartAsync(HttpJobStartProperties properties)
         {
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
+            InitWebApplication(properties);
+            _logger = GetLogger(properties);
 
             try
             {
@@ -28,11 +36,27 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                await ConsoleLogger.Log(LogLevel.Critical, "----------------");
-                await ConsoleLogger.Log(LogLevel.Critical, " Fail to start");
-                await ConsoleLogger.Log(LogLevel.Critical, "----------------");
-                await ConsoleLogger.Log(LogLevel.Critical, ex.ToString());
+                _logger.LogCritical(ex, "Fail to start http planar hosted job");
             }
+        }
+
+        private static void InitWebApplication(HttpJobStartProperties properties)
+        {
+            if (properties.WebApplication != null) { return; }
+            var builder = WebApplication.CreateBuilder();
+            properties.WebApplication = builder.Build();
+        }
+
+        private static ILogger GetLogger(HttpJobStartProperties properties)
+        {
+            ArgumentNullException.ThrowIfNull(properties.WebApplication);
+            var logger = properties.WebApplication.Services.GetService<ILogger<IPlanarJob>>();
+            if (logger == null)
+            {
+                return new ConsoleLogger<IPlanarJob>();
+            }
+
+            return logger;
         }
 
         private async static Task SafeStartAsync(HttpJobStartProperties properties)
@@ -48,7 +72,7 @@ namespace Planar.Job
 
         private static async Task<IResult> ProcessInvokeMessageAsync(HttpContext httpContext, string route)
         {
-            await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
+            _logger?.LogDebug("Received invoke message");
             string fid = string.Empty;
 #if NETSTANDARD2_0
             JobDefinition jobDefinition = null;
@@ -90,7 +114,7 @@ namespace Planar.Job
             try
             {
                 fid = GetFireInstanceIdHeader(httpContext);
-                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.Conflict(); }
+                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.NotFound(); }
 
                 jobInstanceInfo.Cancel();
                 var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };

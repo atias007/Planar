@@ -11,9 +11,10 @@ namespace Planar.Job.Http
         {
         }
 
-        public HttpJobStartPropertiesBuilder(WebApplication webApplication)
+        public HttpJobStartPropertiesBuilder WithWebApplication(WebApplication webApplication)
         {
             _properties.WebApplication = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
+            return this;
         }
 
         public HttpJobStartPropertiesBuilder WithPlanarHostName(string hostName)

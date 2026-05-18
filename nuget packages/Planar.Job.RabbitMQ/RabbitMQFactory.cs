@@ -25,23 +25,29 @@ namespace Planar.Job.RabbitMq
 
 #if NETSTANDARD2_0
         private IChannel _channel;
+        private static ILogger _logger;
         private IConnection _connection;
         private static RabbitMqFactory _instance;
         private Func<BasicDeliverEventArgs, Task> _messageHandler;
 #else
         private IConnection? _connection;
         private IChannel? _channel;
+        private static ILogger? _logger;
         private static RabbitMqFactory? _instance;
         private Func<BasicDeliverEventArgs, Task>? _messageHandler;
 #endif
 
-        public static async Task<RabbitMqFactory> GetInstance(RabbitMqJobStartProperties properties, CancellationToken cancellationToken)
+        public static async Task<RabbitMqFactory> GetInstance(
+            ILogger logger,
+            RabbitMqJobStartProperties properties,
+            CancellationToken cancellationToken)
         {
             if (_instance != null) { return _instance; }
             await _lock.WaitAsync(cancellationToken);
             try
             {
                 if (_instance != null) { return _instance; }
+                _logger = logger;
                 _instance = new RabbitMqFactory(properties.RabbitMQConnectionFactory, properties, cancellationToken);
                 await _instance.EnsureDefinitions();
                 return _instance;
@@ -68,7 +74,7 @@ namespace Planar.Job.RabbitMq
             }
             catch (OperationInterruptedException ex)
             {
-                await ConsoleLogger.Log(LogLevel.Warning, $"Failed to declare exchange or queue. Attempting to delete and recreate. Error: {ex.Message}");
+                _logger?.LogWarning(ex, "Failed to declare exchange or queue. Attempting to delete and recreate. Error: {Message}", ex.Message);
                 await EnsureConnectionAsync();
 
                 if (_channel == null) { return; }
@@ -108,13 +114,13 @@ namespace Planar.Job.RabbitMq
                 {
                     await EnsureConnectionAsync();
                     if (_channel == null) { continue; }
-                    await ConsoleLogger.Log(LogLevel.Information, $"Started consuming messages from RabbitMQ");
+                    _logger?.LogInformation("Started consuming messages from RabbitMQ");
 
                     foreach (var def in properties.JobDefinitions)
                     {
                         var consumer = await CreateConsumer(def.QueueName);
                         _consumers.Add(def.QueueName, consumer);
-                        await ConsoleLogger.Log(LogLevel.Information, $"Consume from queue '{def.QueueName}' for job: {def.JobType.FullName}");
+                        _logger?.LogInformation("Consume from queue '{QueueName}' for job: {FullName}", def.QueueName, def.JobType.FullName);
                     }
 
                     await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -202,7 +208,7 @@ namespace Planar.Job.RabbitMq
             }
             catch (Exception ex)
             {
-                await ConsoleLogger.Log(LogLevel.Error, $"Failed to ensure that RabbitMQ connection is alive: {ex.Message}");
+                _logger?.LogError(ex, "Failed to ensure that RabbitMQ connection is alive: {Message}", ex.Message);
             }
             finally
             {
@@ -219,7 +225,7 @@ namespace Planar.Job.RabbitMq
             }
             catch (Exception ex)
             {
-                await ConsoleLogger.Log(LogLevel.Error, $"Failed to ensure RabbitMQ definition: {ex.Message}");
+                _logger?.LogError(ex, "Failed to ensure RabbitMQ definition: {Message}", ex.Message);
             }
         }
 
@@ -278,19 +284,19 @@ namespace Planar.Job.RabbitMq
 
                     _connection.ConnectionShutdownAsync += async (sender, args) =>
                     {
-                        await ConsoleLogger.Log(LogLevel.Warning, $"RabbitMQ connection shutdown: {args.ReplyText}");
+                        _logger?.LogWarning("RabbitMQ connection shutdown: {ReplyText}", args.ReplyText);
                         await CloseConnectionAsync();
                     };
 
                     _connection.ConnectionRecoveryErrorAsync += async (sender, args) =>
                     {
-                        await ConsoleLogger.Log(LogLevel.Error, $"RabbitMQ connection recovery error: {args.Exception.Message}");
+                        _logger?.LogError(args.Exception, "RabbitMQ connection recovery error: {Message}", args.Exception.Message);
                         await CloseConnectionAsync();
                     };
 
                     _connection.RecoverySucceededAsync += async (sender, args) =>
                     {
-                        await ConsoleLogger.Log(LogLevel.Information, $"RabbitMQ connection recovery succeeded");
+                        _logger?.LogInformation("RabbitMQ connection recovery succeeded");
                     };
                 }
 
@@ -307,7 +313,7 @@ namespace Planar.Job.RabbitMq
                     _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
                     // Set Quality of Service (prefetch)
                     await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 100, global: false, cancellationToken: cancellationToken);
-                    await ConsoleLogger.Log(LogLevel.Information, $"Connected to RabbitMQ");
+                    _logger?.LogInformation("Connected to RabbitMQ");
                 }
             }
             finally
@@ -352,7 +358,7 @@ namespace Planar.Job.RabbitMq
                 routingKey: queueName,
                 arguments: null);
 
-            await ConsoleLogger.Log(LogLevel.Information, $"Exchange '{properties.ExchangeName}' and queue '{queueName}' created successfully");
+            _logger?.LogInformation("Exchange '{ExchangeName}' and queue '{QueueName}' created successfully", properties.ExchangeName, queueName);
         }
     }
 }

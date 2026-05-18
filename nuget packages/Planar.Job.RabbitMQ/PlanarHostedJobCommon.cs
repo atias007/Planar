@@ -17,7 +17,7 @@ namespace Planar.Job
             AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
             _mainCancellationTokenSource.Token.Register(async () =>
             {
-                await ConsoleLogger.Log(LogLevel.Information, "Start gracefull shutdown");
+                _logger?.LogInformation("Start gracefull shutdown");
 
                 try
                 {
@@ -31,13 +31,13 @@ namespace Planar.Job
                 for (int i = 0; i < 30; i++)
                 {
                     if (_jobInstances.Count == 0) { break; }
-                    await ConsoleLogger.Log(LogLevel.Information, $"Wait for {_jobInstances.Count} jobs to finish running");
+                    _logger?.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
                     await Task.Delay(1_000);
                 }
 
                 if (_jobInstances.Count > 0)
                 {
-                    await ConsoleLogger.Log(LogLevel.Error, $"{_jobInstances.Count} jobs to is running after waiting 30 seconds");
+                    _logger?.LogError("{Count} jobs to is running after waiting 30 seconds", _jobInstances.Count);
                 }
             });
 

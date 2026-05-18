@@ -44,6 +44,9 @@ public class PlanarJobHttpProperties
 {
     [YamlMember(Alias = "url")]
     public string Url { get; set; } = null!;
+
+    [YamlMember(Alias = "route")]
+    public string Route { get; set; } = null!;
 }
 
 public class PlanarJobRedisProperties

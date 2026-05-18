@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Hosting;
+using Planar.Common;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
@@ -8,16 +9,17 @@ namespace Planar.Job.RabbitMq
 {
     public class RabbitMqJobStartPropertiesBuilder
     {
+        private readonly RabbitMqJobStartProperties _properties = new RabbitMqJobStartProperties();
+
         public RabbitMqJobStartPropertiesBuilder()
         {
         }
 
-        public RabbitMqJobStartPropertiesBuilder(RabbitMqJobStartProperties properties)
+        public RabbitMqJobStartPropertiesBuilder WithApplicationHost(IHost applicationHost)
         {
-            _properties = properties ?? throw new ArgumentNullException(nameof(properties));
+            _properties.ApplicationHost = applicationHost ?? throw new ArgumentNullException(nameof(applicationHost));
+            return this;
         }
-
-        private readonly RabbitMqJobStartProperties _properties = new RabbitMqJobStartProperties();
 
         public RabbitMqJobStartPropertiesBuilder WithPlanarHostName(string hostName)
         {
@@ -177,6 +179,11 @@ namespace Planar.Job.RabbitMq
         public ConnectionFactory RabbitMQConnectionFactory { get; internal set; } = new ConnectionFactory();
         public string PlanarHostname { get; internal set; } = string.Empty;
         public string ExchangeName { get; internal set; } = DefaultExchange;
+#if NETSTANDARD2_0
+        public IHost ApplicationHost { get; internal set; }
+#else
+        public IHost? ApplicationHost { get; internal set; }
+#endif
         public IEnumerable<AmqpTcpEndpoint> RabbitMqEndpoints { get; internal set; } = new List<AmqpTcpEndpoint>();
         public IEnumerable<JobDefinition> JobDefinitions { get; internal set; } = new List<JobDefinition>();
         public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);

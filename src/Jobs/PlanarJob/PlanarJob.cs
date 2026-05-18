@@ -18,6 +18,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -36,7 +39,6 @@ public abstract class PlanarJob(
     private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     private bool _isHealthCheck;
     private string? _contextFilename;
-    private string? _fireInstanceId;
     private AutoResetEvent? _healthCheckResetEvent;
     private AutoResetEvent? _invokeResetEvent;
     private PlanarJobExecutionException? _executionException;
@@ -46,7 +48,6 @@ public abstract class PlanarJob(
     {
         try
         {
-            _fireInstanceId = context.FireInstanceId;
             MqttBrokerService.RegisterInterceptingPublish(InterceptingPublishAsync, context.FireInstanceId);
             await Initialize(context);
         }
@@ -66,10 +67,38 @@ public abstract class PlanarJob(
         {
             await SafeExecuteRabbitMq(context);
         }
+        else if (Properties.Http != null)
+        {
+            await SafeExecuteHttp(context);
+        }
         else
         {
             _logger.LogError("planar job with invoke type '{InvokeType}' is not supported or has no properties (job key: {JobKey})", Properties.InvokeMethod, context.JobDetail.Key);
             MessageBroker.AppendLog(LogLevel.Error, $"planar job with invoke type '{Properties.InvokeMethod}' is not supported or has no properties (job key: {context.JobDetail.Key})");
+        }
+    }
+
+    private async Task SafeExecuteHttp(IJobExecutionContext context)
+    {
+        try
+        {
+            ValidateHttpJob();
+            SafeLogInvokeJobDetails(context);
+            context.CancellationToken.Register(async () => await OnHttpCancel(context));
+            _ = SafeStartMonitorDuration(context);
+            await InvokeHttpJob(context);
+            StopMonitorDuration();
+            ValidateHealthCheck();
+            CheckJobError();
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+        }
+        finally
+        {
+            await FinalizeJob(context);
+            UnregisterMqttBrokerService(context.FireInstanceId);
         }
     }
 
@@ -79,7 +108,7 @@ public abstract class PlanarJob(
         {
             ValidateRabbitMqJob();
             SafeLogInvokeJobDetails(context);
-            context.CancellationToken.Register(() => OnRabbitMqCancel(context).Wait());
+            context.CancellationToken.Register(async () => await OnRabbitMqCancel(context));
             _ = SafeStartMonitorDuration(context);
             await InvokeRabbitMqJob(context);
             StopMonitorDuration();
@@ -134,6 +163,32 @@ public abstract class PlanarJob(
         }
     }
 
+    private async Task OnHttpCancel(IJobExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(Properties.Http);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.Url);
+
+        using var httpClient = new HttpClient();
+        httpClient.BaseAddress = new Uri(Properties.Http.Url);
+        var resource = $"planar/invoke/{Properties.Http.Route}";
+        var request = new HttpRequestMessage(HttpMethod.Post, resource)
+        {
+            Content = new StringContent(string.Empty, Encoding.UTF8, MediaTypeNames.Application.Json),
+            Headers =
+            {
+                { "FireInstanceId", context.FireInstanceId },
+                { "Command", "Cancel" }
+            }
+        };
+
+        for (int i = 0; i < 20; i++)
+        {
+            var response = await httpClient.SendAsync(request, context.CancellationToken);
+            if (response.StatusCode == HttpStatusCode.NotFound) { continue; }
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
     private async Task OnRabbitMqCancel(IJobExecutionContext context)
     {
         if (Properties.RabbitMq == null) { return; }
@@ -147,6 +202,28 @@ public abstract class PlanarJob(
             "Cancel",
             string.Empty,
             20);
+    }
+
+    private async Task InvokeHttpJob(IJobExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(Properties.Http);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.Url);
+
+        using var httpClient = new HttpClient();
+        httpClient.BaseAddress = new Uri(Properties.Http.Url);
+        var resource = $"planar/invoke/{Properties.Http.Route}";
+        var request = new HttpRequestMessage(HttpMethod.Post, resource)
+        {
+            Content = new StringContent(MessageBroker.Details, Encoding.UTF8, MediaTypeNames.Application.Json),
+            Headers =
+            {
+                { "FireInstanceId", context.FireInstanceId },
+                { "Command", "Invoke" }
+            }
+        };
+
+        var response = await httpClient.SendAsync(request, context.CancellationToken);
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task InvokeRabbitMqJob(IJobExecutionContext context)
@@ -279,6 +356,33 @@ public abstract class PlanarJob(
             _logger.LogError("process filename '{Filename}' must have 'exe' extention", Filename);
             MessageBroker.AppendLog(LogLevel.Error, $"process filename '{Filename}' must have 'exe' extention");
             throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
+        }
+    }
+
+    private void ValidateHttpJob()
+    {
+        if (string.IsNullOrWhiteSpace(Properties.Http?.Url))
+        {
+            const string message = "planar job with http invoke method must have url";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+
+        if (!Uri.TryCreate(Properties.Http?.Url, UriKind.Absolute, out _))
+        {
+            const string message = "planar job with http invoke method must have valid url ('{Url}' is invalid)";
+            _logger.LogError(message, Properties.Http?.Url);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+
+        if (string.IsNullOrWhiteSpace(Properties.Http?.Route))
+        {
+            const string message = "planar job with http invoke method must have route";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
         }
     }
 

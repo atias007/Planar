@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Job.RabbitMq;
@@ -9,19 +10,26 @@ using System.Threading.Tasks;
 
 namespace Planar.Job
 {
+    internal interface IPlanarJob { }
+
     public static partial class PlanarJob
     {
 #if NETSTANDARD2_0
         internal static RabbitMqJobStartProperties Properties { get; set; }
         private static RabbitMqFactory _rabbitMqFactory;
+        private static ILogger _logger;
+
 #else
         internal static RabbitMqJobStartProperties Properties { get; set; } = null!;
         private static RabbitMqFactory? _rabbitMqFactory;
+        private static ILogger? _logger;
+
 #endif
 
         public async static Task StartAsync(RabbitMqJobStartProperties properties)
         {
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
+            _logger = GetLogger(properties);
 
             try
             {
@@ -32,17 +40,26 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                await ConsoleLogger.Log(LogLevel.Critical, "----------------");
-                await ConsoleLogger.Log(LogLevel.Critical, " Fail to start");
-                await ConsoleLogger.Log(LogLevel.Critical, "----------------");
-                await ConsoleLogger.Log(LogLevel.Critical, ex.ToString());
+                _logger.LogCritical(ex, "Fail to start rabbitmq planar hosted job");
             }
+        }
+
+        private static ILogger GetLogger(RabbitMqJobStartProperties properties)
+        {
+            var logger = properties.ApplicationHost?.Services.GetService<ILogger<IPlanarJob>>();
+            if (logger == null)
+            {
+                return new ConsoleLogger<IPlanarJob>();
+            }
+
+            return logger;
         }
 
         private async static Task SafeStartAsync(RabbitMqJobStartProperties properties)
         {
+            if (_logger == null) { throw new ArgumentNullException(nameof(_logger)); }
             Properties = properties;
-            _rabbitMqFactory = await RabbitMqFactory.GetInstance(properties, _mainCancellationTokenSource.Token);
+            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, _mainCancellationTokenSource.Token);
 
             // Start consuming messages
             await _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync);
@@ -56,7 +73,7 @@ namespace Planar.Job
         /// <returns>True if message processed successfully, False to requeue</returns>
         private static async Task ProcessInvokeMessageAsync(BasicDeliverEventArgs eventArgs)
         {
-            await ConsoleLogger.Log(LogLevel.Debug, ">> Received invoke message <<");
+            _logger?.LogDebug("Received invoke message");
             string fid = string.Empty;
 #if NETSTANDARD2_0
             JobDefinition jobDefinition = null;

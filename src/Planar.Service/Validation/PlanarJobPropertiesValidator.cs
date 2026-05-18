@@ -91,6 +91,7 @@ public class PlanarJobHttpPropertiesValidator : AbstractValidator<PlanarJobHttpP
     public PlanarJobHttpPropertiesValidator()
     {
         RuleFor(e => e.Url).NotEmpty().MaximumLength(1000).IsUri();
+        RuleFor(e => e.Route).NotEmpty().Length(2, 100);
     }
 }
 
