@@ -40,7 +40,9 @@ namespace Planar
         private static FailOverProxy? _failOverProxy;
         private static IManagedMqttClient? _mqttClient;
         private static System.Timers.Timer? _timer;
+
         public static event EventHandler? Connected;
+
 #endif
 
         private static readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
@@ -101,6 +103,7 @@ namespace Planar
 
         public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel, object message)
 #else
+
         public static async Task PublishAsync(string fireInstanceId, MessageBrokerChannels channel, object? message)
 #endif
         {
@@ -112,6 +115,7 @@ namespace Planar
 
         public static async Task StartAsync(string host, int port)
 #else
+
         public static async Task StartAsync(string? host, int port)
 #endif
         {
@@ -122,7 +126,7 @@ namespace Planar
 
         public static async Task RestartAsync()
         {
-            var clientId = $"{Environment.MachineName}_{Guid.NewGuid():N}";
+            var clientId = $"MachineName_{Environment.MachineName}";
             var clientOptions = new MqttClientOptionsBuilder()
                 .WithTimeout(TimeSpan.FromSeconds(_timeout))
                 .WithClientId(clientId)
@@ -296,6 +300,7 @@ namespace Planar
         {
             const string Json = "application/json";
 #else
+
         private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel, object? message)
         {
 #endif

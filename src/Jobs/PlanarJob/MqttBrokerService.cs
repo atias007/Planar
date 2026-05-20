@@ -7,10 +7,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Planar.per
+
 
 namespace Planar;
 
-public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedService
+public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, PeriodicalBatchProducer<TMessage>) : IHostedService
 {
     private sealed record PublishWrapper(Action<CloudEventArgs> Handler, DateTimeOffset CreatedAt);
 

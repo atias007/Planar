@@ -18,6 +18,7 @@ using System;
 using System.Net;
 using System.Threading.RateLimiting;
 using Planar.Hooks;
+using Planar.PeriodicalBatch;
 
 namespace Planar.Startup;
 
@@ -137,5 +138,9 @@ public static class ServiceCollectionInitializer
             .AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
 
         services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
+
+        services.AddPeriodicalBatchService<AgentPeriodicalBatch, AgentInfo>(opt => opt
+            .WithPeriod(TimeSpan.FromMinutes(1))
+            .WithBatchSize(20));
     }
 }

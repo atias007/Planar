@@ -20,5 +20,6 @@
         InvokeJob,
         QueueInvokeJob,
         FinishInvokeJob,
+        AgentHealthCheck,
     }
 }
