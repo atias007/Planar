@@ -3,7 +3,7 @@ using System;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace Planar.PeriodicalBatch;
+namespace Planar.Common.PeriodicalBatch;
 
 public class PeriodicalBatchProducer<T>(Channel<T> channel, ILogger<PeriodicalBatchProducer<T>> logger)
         where T : class

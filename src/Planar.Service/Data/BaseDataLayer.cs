@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Data.Common;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
 public interface IBaseDataLayer
 {
-    IDbConnection DbConnection { get; }
+    DbConnection DbConnection { get; }
 
     Task<int> SaveChangesAsync();
 
@@ -27,7 +28,7 @@ public abstract class BaseDataLayer(PlanarContext context) : IBaseDataLayer
         return await _context.SaveChangesAsync(acceptAllChangesOnSuccess);
     }
 
-    public IDbConnection DbConnection => _context.Database.GetDbConnection();
+    public DbConnection DbConnection => _context.Database.GetDbConnection();
 }
 
 public abstract class BaseTraceDataLayer(PlanarTraceContext context) : IBaseDataLayer
@@ -44,5 +45,5 @@ public abstract class BaseTraceDataLayer(PlanarTraceContext context) : IBaseData
         return await _context.SaveChangesAsync(acceptAllChangesOnSuccess);
     }
 
-    public IDbConnection DbConnection => _context.Database.GetDbConnection();
+    public DbConnection DbConnection => _context.Database.GetDbConnection();
 }

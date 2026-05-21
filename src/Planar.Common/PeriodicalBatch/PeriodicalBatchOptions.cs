@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Planar.PeriodicalBatch;
+namespace Planar.Common.PeriodicalBatch;
 
 public class PeriodicalBatchOptions<TMessage>
         where TMessage : class

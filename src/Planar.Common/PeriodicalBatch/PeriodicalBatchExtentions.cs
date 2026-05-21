@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Channels;
 
-namespace Planar.PeriodicalBatch;
+namespace Planar.Common.PeriodicalBatch;
 
 public static class PeriodicalBatchExtentions
 
@@ -16,7 +16,7 @@ public static class PeriodicalBatchExtentions
         services.AddSingleton<TService>();
         services.AddSingleton<PeriodicalBatchProducer<TMessage>>();
         services.AddSingleton(Channel.CreateUnbounded<TMessage>());
-        services.AddSingleton<PeriodicalBatchOptions<TMessage>>(PeriodicalBatchOptions<TMessage>.Empty);
+        services.AddSingleton(PeriodicalBatchOptions<TMessage>.Empty);
         return services;
     }
 

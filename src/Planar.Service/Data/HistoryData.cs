@@ -347,8 +347,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             commandType: CommandType.Text
         );
 
-        var connection = _context.Database.GetDbConnection();
-        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        var reader = await DbConnection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
         return reader;
     }
 
@@ -363,8 +362,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             commandType: CommandType.Text
         );
 
-        var connection = _context.Database.GetDbConnection();
-        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        var reader = await DbConnection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
         return reader;
     }
 
@@ -378,8 +376,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             commandType: CommandType.Text
         );
 
-        var connection = _context.Database.GetDbConnection();
-        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        var reader = await DbConnection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
         return reader;
     }
 
@@ -393,8 +390,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             commandType: CommandType.Text
         );
 
-        var connection = _context.Database.GetDbConnection();
-        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        var reader = await DbConnection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
         return reader;
     }
 
@@ -416,8 +412,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             commandType: CommandType.Text
         );
 
-        var connection = _context.Database.GetDbConnection();
-        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        var reader = await DbConnection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
         return reader;
     }
 
@@ -431,8 +426,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             commandType: CommandType.Text
         );
 
-        var connection = _context.Database.GetDbConnection();
-        var reader = await connection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
+        var reader = await DbConnection.ExecuteReaderAsync(def, commandBehavior: CommandBehavior.SequentialAccess);
         return reader;
     }
 

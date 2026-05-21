@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Common.PeriodicalBatch;
 using Planar.Service.Model;
+using RepoDb;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,6 +14,10 @@ public interface IServiceData : IBaseDataLayer
     Task AddSecurityAudit(SecurityAudit audit);
 
     IQueryable<SecurityAudit> GetSecurityAudits(SecurityAuditsFilter request);
+
+    Task<IEnumerable<Agent>> GetAgents();
+
+    void AddAgent(Agent agent);
 
     Task HealthCheck();
 }
@@ -25,6 +32,16 @@ public class ServiceDataSqlServer(PlanarContext context) : ServiceData(context),
 
 public class ServiceData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<IEnumerable<Agent>> GetAgents()
+    {
+        return await _context.Agents.ToListAsync();
+    }
+
+    public void AddAgent(Agent agent)
+    {
+        _context.Agents.Add(agent);
+    }
+
     public async Task HealthCheck()
     {
         const string query = "SELECT 1";

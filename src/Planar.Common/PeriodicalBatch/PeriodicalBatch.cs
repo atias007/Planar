@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿#nullable enable
+
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
 using System;
-
-#nullable enable
-
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +14,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
-namespace Planar.PeriodicalBatch;
+namespace Planar.Common.PeriodicalBatch;
 
 public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider) : BackgroundService
     where TMessage : class
@@ -28,6 +27,8 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
     private readonly ILogger<PeriodicalBatch<TMessage>> _logger = serviceProvider.GetRequiredService<ILogger<PeriodicalBatch<TMessage>>>();
     private readonly PeriodicalBatchOptions<TMessage> _options = serviceProvider.GetRequiredService<PeriodicalBatchOptions<TMessage>>();
     private AsyncRetryPolicy? _policy;
+
+    protected IServiceProvider ServiceProvider => serviceProvider;
 
     protected AsyncRetryPolicy RetryPolicy
     {

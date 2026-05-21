@@ -126,7 +126,7 @@ namespace Planar
 
         public static async Task RestartAsync()
         {
-            var clientId = $"MachineName_{Environment.MachineName}";
+            var clientId = $"MachineName:{Environment.MachineName}";
             var clientOptions = new MqttClientOptionsBuilder()
                 .WithTimeout(TimeSpan.FromSeconds(_timeout))
                 .WithClientId(clientId)

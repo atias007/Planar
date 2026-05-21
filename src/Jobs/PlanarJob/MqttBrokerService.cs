@@ -3,16 +3,17 @@ using CloudNative.CloudEvents.NewtonsoftJson;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MQTTnet.Server;
+using Planar.Common.PeriodicalBatch;
 using System;
 using System.Collections.Concurrent;
+using System.Net;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using Planar.per
-
 
 namespace Planar;
 
-public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, PeriodicalBatchProducer<TMessage>) : IHostedService
+public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, PeriodicalBatchProducer<AgentInfo> producer) : IHostedService
 {
     private sealed record PublishWrapper(Action<CloudEventArgs> Handler, DateTimeOffset CreatedAt);
 
@@ -131,8 +132,9 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, Periodi
     {
         SafeHandle(() =>
         logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {RemoteEndPoint}", arg.ClientId, arg.RemoteEndPoint.ToString()));
-
-        await Task.CompletedTask;
+        if (arg.RemoteEndPoint is not IPEndPoint endpoint) { return; }
+        var info = new AgentInfo { ClientId = arg.ClientId, IpAddress = endpoint.Address.ToString(), LastSeen = DateTime.Now };
+        await producer.PublishAsync(info);
     }
 
     private async Task InterceptingPublish(InterceptingPublishEventArgs arg)
@@ -140,11 +142,22 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, Periodi
         try
         {
             var cloudEvent = arg.ApplicationMessage.ToCloudEvent(_formatter);
-            await Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg));
+            _ = Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg));
+
         }
         catch (Exception ex)
         {
             logger.LogCritical(ex, "fail to handle MQTT published message");
+        }
+
+        try
+        {
+            var info = new AgentInfo { ClientId = arg.ClientId, IpAddress = string.Empty, LastSeen = DateTime.Now };
+            _ = producer.PublishAsync(info);
+        }
+        catch
+        {
+            // *** DO NOTHING ***
         }
     }
 

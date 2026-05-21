@@ -131,9 +131,8 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
-            var conn = _context.Database.GetDbConnection();
             var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
-            await conn.InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+            await DbConnection.InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
 
             ////var monitorHook = new MonitorActionsHook { Hook = hook, MonitorId = request.Id };
             ////await conn.InsertAsync(monitorHook, transaction: tran.GetDbTransaction());
@@ -298,7 +297,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup)
     {
-        await _context.Database.GetDbConnection().InsertAsync(monitorActionGroup);
+        await DbConnection.InsertAsync(monitorActionGroup);
     }
 
     public async Task AddMonitorHook(MonitorActionsHook monitorActionsHook)
@@ -309,7 +308,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup)
     {
-        await _context.Database.GetDbConnection().DeleteAsync<MonitorActionGroup>(ag =>
+        await DbConnection.DeleteAsync<MonitorActionGroup>(ag =>
             ag.GroupId == monitorActionGroup.GroupId &&
             ag.MonitorId == monitorActionGroup.MonitorId);
     }
