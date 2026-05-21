@@ -4,7 +4,7 @@ namespace Planar.Common.PeriodicalBatch;
 
 public class AgentInfo
 {
-    public string ClientId { get; set; } = string.Empty;
-    public string IpAddress { get; set; } = string.Empty;
+    public required string ClientId { get; set; }
+    public required string IpAddress { get; set; }
     public DateTime LastSeen { get; set; }
 }

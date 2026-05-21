@@ -19,6 +19,8 @@ public interface IServiceData : IBaseDataLayer
 
     void AddAgent(Agent agent);
 
+    void RemoveAgent(Agent agent);
+
     Task HealthCheck();
 }
 
@@ -40,6 +42,11 @@ public class ServiceData(PlanarContext context) : BaseDataLayer(context)
     public void AddAgent(Agent agent)
     {
         _context.Agents.Add(agent);
+    }
+
+    public void RemoveAgent(Agent agent)
+    {
+        _context.Agents.Remove(agent);
     }
 
     public async Task HealthCheck()

@@ -20,6 +20,15 @@ namespace Planar.CLI.Actions;
 [Module("service", "operate service, check alive, list calendars and more")]
 public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 {
+    [Action("agents")]
+    public static async Task<CliActionResponse> GetAgents(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("service/agents", Method.Get);
+        var result = await RestProxy.Invoke<List<AgentModel>>(restRequest, cancellationToken);
+        var table = CliTableExtensions.GetTable(result.Data);
+        return new CliActionResponse(result, table);
+    }
+
     [Action("halt")]
     public static async Task<CliActionResponse> StopScheduler(CancellationToken cancellationToken = default)
     {

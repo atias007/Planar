@@ -42,6 +42,18 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
         return Ok(response);
     }
 
+    [HttpGet("agents")]
+    [ViewerAuthorize]
+    [EndpointName("get_service_agents")]
+    [EndpointDescription("Get all agents")]
+    [EndpointSummary("Get All Agents")]
+    [OkJsonResponse(typeof(IEnumerable<AgentModel>))]
+    public async Task<ActionResult<IEnumerable<AgentModel>>> GetAgents()
+    {
+        var response = await BusinesLayer.GetAgents();
+        return Ok(response);
+    }
+
     [HttpGet("health-check")]
     [AllowAnonymous]
     [EndpointName("get_service_health_check")]

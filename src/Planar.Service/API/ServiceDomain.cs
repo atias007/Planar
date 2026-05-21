@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -54,6 +55,32 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         result.General.UpTime = DateTime.UtcNow - startTime;
 
         return await Task.FromResult(result);
+    }
+
+    public async Task<IEnumerable<AgentModel>> GetAgents()
+    {
+        var agents = await DataLayer.GetAgents();
+        var result = agents.Adapt<IEnumerable<AgentModel>>().ToList();
+        foreach (var item in result)
+        {
+            if (item.NotSeenSpan.TotalHours <= 24)
+            {
+                item.Status = 1;
+                item.StatusTitle = "Online";
+            }
+            else if (item.NotSeenSpan.TotalHours is > 24 and <= 72)
+            {
+                item.Status = 2;
+                item.StatusTitle = "Warning";
+            }
+            else
+            {
+                item.Status = 3;
+                item.StatusTitle = "Error";
+            }
+        }
+
+        return result;
     }
 
     public async Task<string> HealthCheck()
