@@ -25,7 +25,7 @@ namespace Planar.Job
 
         static partial void GracefullShutdownSetup();
 
-        private static Type ShowJobMenu(IHostetJobProperties properties)
+        private static Type ShowJobMenu(IHostedJobProperties properties)
         {
             var jobTypes = properties.JobTypes.Select(d => d).ToList();
             if (jobTypes.Count == 1) { return jobTypes[0]; }
@@ -226,7 +226,7 @@ namespace Planar.Job
             Console.ResetColor();
         }
 
-        private static async Task<bool> Debug(IHostetJobProperties properties, CancellationToken cancellationToken)
+        private static async Task<bool> Debug(IHostedJobProperties properties, CancellationToken cancellationToken)
         {
             if (Mode != RunningMode.Debug) { return false; }
             var type = ShowJobMenu(properties);
@@ -247,7 +247,7 @@ namespace Planar.Job
             Console.ResetColor();
             await Console.Out.WriteLineAsync("---------------------------------------");
 
-            var (Success, Instance) = await Execute(jobType, planarHostName: null, json, cancellationToken);
+            var (Success, Instance) = await Execute(jobType, hostedProperties: null, json, cancellationToken);
 
             await Instance.PrintDebugSummary(Success);
             await Console.Out.WriteLineAsync("---------------------------------------");
@@ -266,13 +266,13 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, string planarHostName, string json, CancellationToken cancellationToken)
+        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties hostedProperties, string json, CancellationToken cancellationToken)
 #else
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, string? planarHostName, string json, CancellationToken cancellationToken)
+        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties? hostedProperties, string json, CancellationToken cancellationToken)
 #endif
         {
             var instance = GetInstance(jobType);
-            return (await instance.Execute(json, planarHostName, cancellationToken), instance);
+            return (await instance.Execute(json, hostedProperties, cancellationToken), instance);
         }
 
         private static BaseJob GetInstance(Type jobType) => Activator.CreateInstance(jobType) as BaseJob ??

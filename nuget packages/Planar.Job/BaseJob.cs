@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Job.Logger;
@@ -23,7 +24,7 @@ namespace Planar.Job
         private Timer _timeoutTimer;
         private Version _version;
         private AutoResetEvent _executeResetEvent;
-        private string _planarHost;
+        private IHostedJobProperties _hostedProperties;
         private CancellationTokenSource _timeoutCancelTokenSource;
         private CancellationTokenSource _linkedCancelTokenSource;
 #else
@@ -34,7 +35,7 @@ namespace Planar.Job
         private Timer? _timeoutTimer;
         private Version? _version;
         private AutoResetEvent? _executeResetEvent;
-        private string? _planarHost;
+        private IHostedJobProperties? _hostedProperties;
         private CancellationTokenSource? _timeoutCancelTokenSource;
         private CancellationTokenSource? _linkedCancelTokenSource;
 #endif
@@ -93,13 +94,13 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        internal async Task<bool> Execute(string json, string planarHost, CancellationToken cancellationToken)
+        internal async Task<bool> Execute(string json, IHostedJobProperties hostedProperties, CancellationToken cancellationToken)
 #else
-        internal async Task<bool> Execute(string json, string? planarHost, CancellationToken cancellationToken)
+        internal async Task<bool> Execute(string json, IHostedJobProperties? hostedProperties, CancellationToken cancellationToken)
 #endif
         {
-            _planarHost = planarHost;
-            _isHosted = !string.IsNullOrWhiteSpace(planarHost);
+            _hostedProperties = hostedProperties;
+            _isHosted = hostedProperties != null;
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
@@ -119,7 +120,7 @@ namespace Planar.Job
 
             try
             {
-                await OpenMqttConnection(_planarHost);
+                await OpenMqttConnection();
                 _ = SendHealthCheckSignal();
 
                 Logger = ServiceProvider.GetRequiredService<ILogger>();
@@ -221,12 +222,7 @@ namespace Planar.Job
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
-#if NETSTANDARD2_0
-
-        private async Task OpenMqttConnection(string brokerHost)
-#else
-        private async Task OpenMqttConnection(string? brokerHost)
-#endif
+        private async Task OpenMqttConnection()
         {
             if (PlanarJob.Mode != RunningMode.Release) { return; }
             if (MqttClient.IsConnected) { return; }
@@ -236,7 +232,7 @@ namespace Planar.Job
 
             for (int i = 0; i < 3; i++)
             {
-                if (await SafeStartMqttClient(brokerHost, connectTimeout)) { return; }
+                if (await SafeStartMqttClient(_hostedProperties?.PlanarHostname, connectTimeout)) { return; }
             }
 
             // mqtt failover by http to planar service
@@ -714,6 +710,14 @@ namespace Planar.Job
             services.AddSingleton<IBaseJob>(baseJobFactory);
             services.AddSingleton<ILogger, PlanarLogger>();
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
+
+            if (_hostedProperties != null)
+            {
+                foreach (var item in _hostedProperties.HostSingletonTypes)
+                {
+                    services.AddSingleton(item, p => _hostedProperties.ApplicationHost.Services.GetRequiredService(item));
+                }
+            }
 
             try
             {

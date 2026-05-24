@@ -36,12 +36,15 @@ namespace Planar
 
         public static event EventHandler Connected;
 
+        public static ILogger Logger { get; set; }
+
 #else
         private static FailOverProxy? _failOverProxy;
         private static IManagedMqttClient? _mqttClient;
         private static System.Timers.Timer? _timer;
 
         public static event EventHandler? Connected;
+        public static ILogger? Logger { get; set; }
 
 #endif
 
@@ -260,8 +263,7 @@ namespace Planar
                 await _mqttClient.StopAsync(true);
                 _mqttClient?.Dispose();
 
-                var log = new LogEntity { Level = LogLevel.Debug, Message = "gracefully disconnected from MQTT broker" };
-                await Console.Out.WriteLineAsync(log.ToString());
+                Logger?.LogDebug("gracefully disconnected from MQTT broker");
             }
             catch
             {
@@ -276,17 +278,12 @@ namespace Planar
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
             _ = OnConnected();
-            var log = new LogEntity { Level = LogLevel.Debug, Message = "successfully connected to MQTT broker" };
-            await Console.Out.WriteLineAsync(log.ToString());
+            Logger?.LogDebug("successfully connected to MQTT broker");
         }
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Critical, Message = $"couldn't connect to MQTT broker! (port={_mqttPort} host={_host})" };
-            await Console.Error.WriteLineAsync(log.ToString());
-
-            log = new LogEntity { Level = LogLevel.Critical, Message = arg.Exception.ToString() };
-            await Console.Error.WriteLineAsync(log.ToString());
+            Logger?.LogCritical(arg.Exception, "couldn't connect to MQTT broker! (port={Port} host={Host})", _mqttPort, _host);
         }
 
         private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel)
@@ -324,8 +321,7 @@ namespace Planar
 
         private static async Task DisconnectedAsync(MqttClientDisconnectedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Error, Message = "disconnected from MQTT broker" };
-            await Console.Out.WriteLineAsync(log.ToString());
+            Logger?.LogDebug("disconnected from MQTT broker");
         }
 
         private static Task OnConnected()

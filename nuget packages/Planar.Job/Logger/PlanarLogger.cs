@@ -18,10 +18,6 @@ namespace Planar.Job.Logger
 
 #pragma warning disable IDE0060 // Remove unused parameter
 
-#pragma warning restore IDE0060 // Remove unused parameter
-
-#pragma warning disable IDE0060 // Remove unused parameter
-
         public bool IsEnabled(LogLevel logLevel) => true;
 
 #pragma warning restore IDE0060 // Remove unused parameter

@@ -41,18 +41,18 @@ namespace Planar.Job
 
         private static void InitWebApplication(HttpJobStartProperties properties)
         {
-            if (properties.WebApplication != null) { return; }
+            if (properties.ApplicationHost != null) { return; }
             var builder = WebApplication.CreateBuilder();
-            properties.WebApplication = builder.Build();
+            properties.ApplicationHost = builder.Build();
         }
 
         private static ILogger GetLogger(HttpJobStartProperties properties)
         {
-            ArgumentNullException.ThrowIfNull(properties.WebApplication);
-            var logger = properties.WebApplication.Services.GetService<ILogger<IPlanarJob>>();
+            ArgumentNullException.ThrowIfNull(properties.ApplicationHost);
+            var logger = properties.ApplicationHost.Services.GetService<ILogger<IPlanarJob>>();
             if (logger == null)
             {
-                return new ConsoleLogger<IPlanarJob>();
+                return new CustomConsoleLogger(nameof(PlanarJob));
             }
 
             return logger;
@@ -61,12 +61,13 @@ namespace Planar.Job
         private async static Task SafeStartAsync(HttpJobStartProperties properties)
         {
             Properties = properties;
-            properties.WebApplication ??= WebApplication.CreateBuilder().Build();
+            properties.ApplicationHost ??= WebApplication.CreateBuilder().Build();
 
-            properties.WebApplication.MapPost("/planar/invoke/{route}",
+            var webApp = (WebApplication)properties.ApplicationHost;
+            webApp.MapPost("/planar/invoke/{route}",
                    (HttpContext httpContext, string route) => SafeRouteMessageAsync(httpContext, route));
 
-            await properties.WebApplication.RunAsync();
+            await webApp.RunAsync();
         }
 
         private static async Task<IResult> ProcessInvokeMessageAsync(HttpContext httpContext, string route)
@@ -88,10 +89,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to execute {jobDefinition?.JobType.Name}".TrimEnd() };
-                await Console.Error.WriteLineAsync(log.ToString());
-                log.Message = ex.ToString();
-                await Console.Error.WriteLineAsync(log.ToString());
+                _logger?.LogError(ex, "Fail to execute {Name}", jobDefinition?.JobType.Name);
 
                 if (ex is PlanarJobConflictException) { return Results.Conflict(ex.Message); }
                 if (ex is PlanarJobNotFoundException) { return Results.NotFound(ex.Message); }
@@ -116,16 +114,12 @@ namespace Planar.Job
                 if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.NotFound(); }
 
                 jobInstanceInfo.Cancel();
-                var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
-                await Console.Error.WriteLineAsync(log2.ToString());
+                _logger?.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
                 return Results.Accepted();
             }
             catch (Exception ex)
             {
-                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to cancel job FireInstanceId {fid}".TrimEnd() };
-                await Console.Error.WriteLineAsync(log.ToString());
-                log.Message = ex.ToString();
-                await Console.Error.WriteLineAsync(log.ToString());
+                _logger?.LogError(ex, "Fail to cancel job FireInstanceId {FireInstanceId}", fid);
                 return Results.Json(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
@@ -154,16 +148,20 @@ namespace Planar.Job
                     return await ProcessCancelAsync(httpContext);
 
                 case "Ping":
+                    _logger?.LogDebug("Received Ping");
                     return Results.Ok("Pong");
 
                 default:
-                    var message = string.IsNullOrWhiteSpace(command) ?
-                        "Missing or empty Command header." :
-                        $"Command header '{command}' is not supported.";
-
-                    var log = new LogEntity { Level = LogLevel.Error, Message = message };
-                    await Console.Error.WriteLineAsync(log.ToString());
-                    return Results.BadRequest(message);
+                    if (string.IsNullOrWhiteSpace(command))
+                    {
+                        _logger?.LogError("Missing or empty Command header.");
+                        return Results.BadRequest("Missing or empty Command header.");
+                    }
+                    else
+                    {
+                        _logger?.LogError("Command header '{Command}' is not supported.", command);
+                        return Results.BadRequest($"Command header '{command}' is not supported.");
+                    }
             }
         }
 
@@ -203,7 +201,7 @@ namespace Planar.Job
             var json = await reader.ReadToEndAsync(jobInstanceInfo.CancellationToken);
             if (jobType == null) { return; }
 
-            _ = Execute(jobType, Properties?.PlanarHostname, json, jobInstanceInfo.CancellationToken)
+            _ = Execute(jobType, Properties, json, jobInstanceInfo.CancellationToken)
                 .ContinueWith(async t =>
                 {
                     await UntrackInstance(jobInstanceInfo.FireInstanceId);

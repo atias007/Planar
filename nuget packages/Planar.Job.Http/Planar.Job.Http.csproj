@@ -40,7 +40,7 @@
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 
-		<PackageReference Include="YamlDotNet" Version="17.1.0" />
+		<PackageReference Include="YamlDotNet" Version="18.0.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />

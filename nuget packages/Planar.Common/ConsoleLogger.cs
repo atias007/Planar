@@ -1,50 +1,156 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 
 namespace Planar
 {
-    internal class ConsoleLogger<TContext> : ILogger<TContext>
+    using Microsoft.Extensions.Logging;
+    using System.Linq;
+
+    public sealed class CustomConsoleLogger : ILogger
     {
-#if NETSTANDARD2_0
+        private readonly string _categoryName;
+        private readonly LogLevel _minLevel;
 
-        public IDisposable BeginScope<TState>(TState state) => default;
-
-#else
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
-#endif
-
-        public bool IsEnabled(LogLevel logLevel) => true;
-
-#if NETSTANDARD2_0
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
-#else
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-#endif
+        public CustomConsoleLogger(string categoryName, LogLevel minLevel = LogLevel.Trace)
         {
-            if (!IsEnabled(logLevel)) { return; }
-
-            var message = $"<{typeof(TContext).Name}> {formatter(state, exception)}";
-            Log(logLevel, message);
-
-            if (exception != null)
-            {
-                message = $"<{typeof(TContext).Name}> {exception}";
-                Log(logLevel, message);
-            }
+            _categoryName = categoryName;
+            _minLevel = minLevel;
         }
 
-        private static void Log(LogLevel logLevel, string message)
+#if NETSTANDARD2_0
+
+        public IDisposable BeginScope<TState>(TState state) => null;
+
+#else
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+#endif
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= _minLevel;
+
+#if NETSTANDARD2_0
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception exception,
+            Func<TState, Exception, string> formatter)
+#else
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+#endif
+
         {
-            var log = new LogEntity { Level = logLevel, Message = message };
-            if (logLevel == LogLevel.Error || logLevel == LogLevel.Critical)
+            if (!IsEnabled(logLevel)) return;
+
+#if NETSTANDARD2_0
+            ConsoleColor color;
+            switch (logLevel)
             {
-                Console.Error.WriteLine(log.ToString());
+                case LogLevel.Trace:
+                    color = ConsoleColor.Gray;
+                    break;
+
+                case LogLevel.Debug:
+                    color = ConsoleColor.Cyan;
+                    break;
+
+                case LogLevel.Information:
+                    color = ConsoleColor.White;
+                    break;
+
+                case LogLevel.Warning:
+                    color = ConsoleColor.Yellow;
+                    break;
+
+                case LogLevel.Error:
+                    color = ConsoleColor.Red;
+                    break;
+
+                case LogLevel.Critical:
+                    color = ConsoleColor.Magenta;
+                    break;
+
+                default:
+                    color = ConsoleColor.White;
+                    break;
             }
-            else
+            ;
+#else
+  var color = logLevel switch
             {
-                Console.Out.WriteLine(log.ToString());
+                LogLevel.Trace => ConsoleColor.Gray,
+                LogLevel.Debug => ConsoleColor.Cyan,
+                LogLevel.Information => ConsoleColor.White,
+                LogLevel.Warning => ConsoleColor.Yellow,
+                LogLevel.Error => ConsoleColor.Red,
+                LogLevel.Critical => ConsoleColor.Magenta,
+                _ => ConsoleColor.White
+            };
+#endif
+
+#if NETSTANDARD2_0
+            string level;
+            switch (logLevel)
+            {
+                case LogLevel.Trace:
+                    level = "TRC";
+                    break;
+
+                case LogLevel.Debug:
+                    level = "DBG";
+                    break;
+
+                case LogLevel.Information:
+                    level = "INF";
+                    break;
+
+                case LogLevel.Warning:
+                    level = "WRN";
+                    break;
+
+                case LogLevel.Error:
+                    level = "ERR";
+                    break;
+
+                case LogLevel.Critical:
+                    level = "CRT";
+                    break;
+
+                default:
+                    level = "UNK";
+                    break;
             }
+            ;
+#else
+  var level = logLevel switch
+            {
+                LogLevel.Trace => "TRC",
+                LogLevel.Debug => "DBG",
+                LogLevel.Information => "INF",
+                LogLevel.Warning => "WRN",
+                LogLevel.Error => "ERR",
+                LogLevel.Critical => "CRT",
+                _ => "UNK"
+            };
+#endif
+
+            var message = formatter(state, exception);
+            var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            var shortCategory = _categoryName.Split('.').Last(); // avoid long namespaces
+
+            Console.ForegroundColor = color;
+            Console.WriteLine($"[{timestamp}] [{level}] [{shortCategory}] {message}");
+
+            if (!(exception is null))
+            {
+                Console.WriteLine($"    Exception: {exception}");
+            }
+
+            Console.ResetColor();
         }
     }
 }

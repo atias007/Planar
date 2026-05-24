@@ -152,7 +152,7 @@ namespace Planar.Job.RabbitMq
         }
     }
 
-    public class JobDefinition
+    public class JobDefinition : IJobDefinition
     {
         public JobDefinition(Type jobType)
         {
@@ -172,21 +172,14 @@ namespace Planar.Job.RabbitMq
         public string QueueName { get; private set; }
     }
 
-    public class RabbitMqJobStartProperties : PlanarJobStartProperties, IHostetJobProperties
+    public class RabbitMqJobStartProperties : PlanarHostedJobStartProperties<JobDefinition>
     {
         private const string DefaultExchange = "Planar";
 
         public ConnectionFactory RabbitMQConnectionFactory { get; internal set; } = new ConnectionFactory();
-        public string PlanarHostname { get; internal set; } = string.Empty;
         public string ExchangeName { get; internal set; } = DefaultExchange;
-#if NETSTANDARD2_0
-        public IHost ApplicationHost { get; internal set; }
-#else
-        public IHost? ApplicationHost { get; internal set; }
-#endif
+
         public IEnumerable<AmqpTcpEndpoint> RabbitMqEndpoints { get; internal set; } = new List<AmqpTcpEndpoint>();
-        public IEnumerable<JobDefinition> JobDefinitions { get; internal set; } = new List<JobDefinition>();
-        public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
 
         internal JobDefinition GetJobDefinition(string name)
         {

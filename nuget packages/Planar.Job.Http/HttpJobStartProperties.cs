@@ -11,9 +11,9 @@ namespace Planar.Job.Http
         {
         }
 
-        public HttpJobStartPropertiesBuilder WithWebApplication(WebApplication webApplication)
+        public HttpJobStartPropertiesBuilder WithWebApplicationHost(WebApplication webApplication)
         {
-            _properties.WebApplication = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
+            _properties.ApplicationHost = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
             return this;
         }
 
@@ -156,7 +156,7 @@ namespace Planar.Job.Http
         }
     }
 
-    public class JobDefinition
+    public class JobDefinition : IJobDefinition
     {
         public JobDefinition(Type jobType)
         {
@@ -164,25 +164,20 @@ namespace Planar.Job.Http
             Route = jobType.Name ?? throw new ArgumentException("Job type must have a name", nameof(jobType));
         }
 
-        public JobDefinition(Type jobType, string resource)
+        public JobDefinition(Type jobType, string route)
         {
-            if (string.IsNullOrWhiteSpace(resource)) { throw new ArgumentException("Resource cannot be empty or whitespace", nameof(resource)); }
+            if (string.IsNullOrWhiteSpace(route)) { throw new ArgumentException("Route cannot be empty or whitespace", nameof(route)); }
 
             JobType = jobType ?? throw new ArgumentNullException(nameof(jobType));
-            Route = resource;
+            Route = route;
         }
 
         public Type JobType { get; private set; }
         public string Route { get; private set; }
     }
 
-    public class HttpJobStartProperties : PlanarJobStartProperties, IHostetJobProperties
+    public class HttpJobStartProperties : PlanarHostedJobStartProperties<JobDefinition>
     {
-        public WebApplication? WebApplication { get; set; }
-        public string PlanarHostname { get; internal set; } = string.Empty;
-        public IEnumerable<JobDefinition> JobDefinitions { get; internal set; } = [];
-        public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
-
         internal JobDefinition GetJobDefinition(string name)
         {
             var jobDefinition = JobDefinitions.FirstOrDefault(jd => jd.Route.Equals(name, StringComparison.OrdinalIgnoreCase));

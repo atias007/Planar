@@ -87,7 +87,7 @@ namespace Planar.Job
             }
 
             var instance = Activator.CreateInstance<TJob>();
-            var success = await instance.Execute(json, null, CancellationToken.None);
+            var success = await instance.Execute(json, hostedProperties: null, CancellationToken.None);
 
             if (Mode == RunningMode.Debug)
             {

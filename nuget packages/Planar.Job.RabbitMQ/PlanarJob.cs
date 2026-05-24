@@ -49,7 +49,7 @@ namespace Planar.Job
             var logger = properties.ApplicationHost?.Services.GetService<ILogger<IPlanarJob>>();
             if (logger == null)
             {
-                return new ConsoleLogger<IPlanarJob>();
+                return new CustomConsoleLogger(nameof(PlanarJob));
             }
 
             return logger;
@@ -89,10 +89,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to execute {jobDefinition?.JobType.Name}".TrimEnd() };
-                await Console.Error.WriteLineAsync(log.ToString());
-                log.Message = ex.ToString();
-                await Console.Error.WriteLineAsync(log.ToString());
+                _logger?.LogError(ex, "Fail to execute {Name}", jobDefinition?.JobType.Name);
             }
             finally
             {
@@ -115,15 +112,11 @@ namespace Planar.Job
                 if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return; }
 
                 jobInstanceInfo.Cancel();
-                var log2 = new LogEntity { Level = LogLevel.Information, Message = $"Job with FireInstanceId {fid} has been cancelled" };
-                await Console.Error.WriteLineAsync(log2.ToString());
+                _logger?.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
             }
             catch (Exception ex)
             {
-                var log = new LogEntity { Level = LogLevel.Error, Message = $"Fail to cancel job FireInstanceId {fid}".TrimEnd() };
-                await Console.Error.WriteLineAsync(log.ToString());
-                log.Message = ex.ToString();
-                await Console.Error.WriteLineAsync(log.ToString());
+                _logger?.LogError(ex, "Fail to cancel job FireInstanceId {FireInstanceId}", fid);
             }
         }
 
@@ -141,15 +134,19 @@ namespace Planar.Job
                     break;
 
                 case "Ping":
+                    _logger?.LogDebug("Received Ping");
                     break;
 
                 default:
-                    var message = string.IsNullOrWhiteSpace(command) ?
-                        "Missing or empty Command header." :
-                        $"Command header '{command}' is not supported.";
+                    if (string.IsNullOrWhiteSpace(command))
+                    {
+                        _logger?.LogError("Missing or empty Command header.");
+                    }
+                    else
+                    {
+                        _logger?.LogError("Command header '{Command}' is not supported.", command);
+                    }
 
-                    var log = new LogEntity { Level = LogLevel.Error, Message = message };
-                    await Console.Error.WriteLineAsync(log.ToString());
                     break;
             }
         }
@@ -197,7 +194,7 @@ namespace Planar.Job
         {
             var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
             if (jobType == null) { return; }
-            await Execute(jobType, Properties?.PlanarHostname, json, cancellationToken);
+            await Execute(jobType, Properties, json, cancellationToken);
         }
 
         private static void FillProperties()

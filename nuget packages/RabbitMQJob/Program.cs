@@ -1,9 +1,17 @@
-﻿using Planar.Job;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Planar.Job;
 using Planar.Job.RabbitMq;
 using RabbitMQJob;
 
+var builder = new HostApplicationBuilder();
+builder.Services.AddSingleton<DemoSignleton>();
+var app = builder.Build();
+
 var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .WithPlanarHostName("localhost")
+        .WithApplicationHost(app)
+        .si
         .WithRabbitMqConnectionFactory(new RabbitMQ.Client.ConnectionFactory
         {
             HostName = "localhost",

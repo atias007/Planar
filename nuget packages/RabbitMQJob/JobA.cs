@@ -75,6 +75,10 @@ internal class JobA : BaseJob
 
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
+        var s = ServiceProvider.GetRequiredService<DemoSignleton>();
+        Logger.LogWarning("{CreateDate}", s.CreateDate);
+        Logger.LogWarning("{HashCode}", s.GetHashCode());
+        Logger.LogWarning("------------------------------");
         var dal = ServiceProvider.GetRequiredService<DataLayer>();
         var currencies = dal.GetCurrency();
         Logger.LogDebug("Currency count: {Count}", currencies.Count());
@@ -82,7 +86,7 @@ internal class JobA : BaseJob
         var current = 0;
         foreach (var item in currencies)
         {
-            Logger.LogInformation($"{item.Name}: {item.Rate:N4}");
+            Logger.LogInformation("{Name}: {Rate:N4}", item.Name, item.Rate);
             await IncreaseEffectedRowsAsync();
             current++;
             await base.UpdateProgressAsync(current, total);
