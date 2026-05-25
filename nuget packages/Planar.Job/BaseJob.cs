@@ -715,7 +715,7 @@ namespace Planar.Job
             {
                 foreach (var item in _hostedProperties.HostSingletonTypes)
                 {
-                    services.AddSingleton(item, p => _hostedProperties.ApplicationHost.Services.GetRequiredService(item));
+                    services.AddSingleton(item, p => _hostedProperties.Host.Services.GetRequiredService(item));
                 }
             }
 

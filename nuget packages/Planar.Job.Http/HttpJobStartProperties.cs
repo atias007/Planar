@@ -11,9 +11,9 @@ namespace Planar.Job.Http
         {
         }
 
-        public HttpJobStartPropertiesBuilder WithWebApplicationHost(WebApplication webApplication)
+        public HttpJobStartPropertiesBuilder WithHost(WebApplication webApplication)
         {
-            _properties.ApplicationHost = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
+            _properties.Host = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
             return this;
         }
 
@@ -42,6 +42,18 @@ namespace Planar.Job.Http
         {
             if (timeout <= TimeSpan.Zero) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(timeout)); }
             _properties.LogFlushTimeout = timeout;
+            return this;
+        }
+
+#if NETSTANDARD2_0
+
+        public HttpJobStartPropertiesBuilder AddHostSingletonType<T>()
+#else
+
+        public HttpJobStartPropertiesBuilder AddHostSingletonType<T>() where T : notnull
+#endif
+        {
+            _properties.AddHostSingletonType<T>();
             return this;
         }
 

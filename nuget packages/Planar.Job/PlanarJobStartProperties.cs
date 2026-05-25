@@ -23,15 +23,19 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        public IHost ApplicationHost { get; internal set; }
+        public IHost Host { get; internal set; }
 #else
-        public IHost ApplicationHost { get; internal set; } = null!;
+        public IHost Host { get; internal set; } = null!;
 #endif
 
         public IEnumerable<TDefinition> JobDefinitions { get; internal set; } = new List<TDefinition>();
         public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
+#if NETSTANDARD2_0
 
         internal void AddHostSingletonType<T>()
+#else
+        internal void AddHostSingletonType<T>() where T : notnull
+#endif
         {
             var singletonType = typeof(T);
             if (singletonType == null) { throw new ArgumentNullException(nameof(singletonType)); }

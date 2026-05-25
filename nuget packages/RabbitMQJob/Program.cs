@@ -10,8 +10,10 @@ var app = builder.Build();
 
 var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .WithPlanarHostName("localhost")
-        .WithApplicationHost(app)
-        .si
+        .WithHost(app)
+        .AddHostSingletonType<DemoSignleton>()
+        .WithDeadLetterExchange("DLX")
+        .WithDeadLetterRoutingKey("Errors")
         .WithRabbitMqConnectionFactory(new RabbitMQ.Client.ConnectionFactory
         {
             HostName = "localhost",

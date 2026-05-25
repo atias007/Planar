@@ -9,15 +9,15 @@ namespace Planar.Job.RabbitMq
 {
     public class RabbitMqJobStartPropertiesBuilder
     {
-        private readonly RabbitMqJobStartProperties _properties = new RabbitMqJobStartProperties();
+        protected readonly RabbitMqJobStartProperties _properties = new RabbitMqJobStartProperties();
 
         public RabbitMqJobStartPropertiesBuilder()
         {
         }
 
-        public RabbitMqJobStartPropertiesBuilder WithApplicationHost(IHost applicationHost)
+        public RabbitMqJobStartPropertiesBuilder WithHost(IHost host)
         {
-            _properties.ApplicationHost = applicationHost ?? throw new ArgumentNullException(nameof(applicationHost));
+            _properties.Host = host ?? throw new ArgumentNullException(nameof(host));
             return this;
         }
 
@@ -25,30 +25,6 @@ namespace Planar.Job.RabbitMq
         {
             if (string.IsNullOrWhiteSpace(hostName)) { throw new ArgumentNullException(nameof(hostName)); }
             _properties.PlanarHostname = hostName;
-            return this;
-        }
-
-        public RabbitMqJobStartPropertiesBuilder WithExchangeName(string exchangeName)
-        {
-            if (string.IsNullOrWhiteSpace(exchangeName)) { throw new ArgumentNullException(nameof(exchangeName)); }
-            _properties.ExchangeName = exchangeName;
-            return this;
-        }
-
-        public RabbitMqJobStartPropertiesBuilder AddRabbitMqEndpoints(params AmqpTcpEndpoint[] endpoints)
-        {
-            if (endpoints == null) { throw new ArgumentNullException(nameof(endpoints)); }
-            _properties.RabbitMqEndpoints = new List<AmqpTcpEndpoint>(_properties.RabbitMqEndpoints).Concat(endpoints).ToList();
-            return this;
-        }
-
-        public RabbitMqJobStartPropertiesBuilder AddRabbitMqEndpoints(params string[] endpoints)
-        {
-            if (endpoints == null) { throw new ArgumentNullException(nameof(endpoints)); }
-            foreach (var endpoint in endpoints)
-            {
-                _properties.RabbitMqEndpoints = new List<AmqpTcpEndpoint>(_properties.RabbitMqEndpoints) { new AmqpTcpEndpoint(endpoint) };
-            }
             return this;
         }
 
@@ -70,6 +46,55 @@ namespace Planar.Job.RabbitMq
         {
             if (timeout <= TimeSpan.Zero) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(timeout)); }
             _properties.LogFlushTimeout = timeout;
+            return this;
+        }
+
+#if NETSTANDARD2_0
+
+        public RabbitMqJobStartPropertiesBuilder AddHostSingletonType<T>()
+#else
+        public RabbitMqJobStartPropertiesBuilder AddHostSingletonType<T>() where T : notnull
+#endif
+        {
+            _properties.AddHostSingletonType<T>();
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder WithExchange(string exchange)
+        {
+            if (string.IsNullOrWhiteSpace(exchange)) { throw new ArgumentNullException(nameof(exchange)); }
+            _properties.Exchange = exchange;
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder WithDeadLetterExchange(string deadLetterExchange)
+        {
+            if (string.IsNullOrWhiteSpace(deadLetterExchange)) { throw new ArgumentNullException(nameof(deadLetterExchange)); }
+            _properties.DeadLetterExchange = deadLetterExchange;
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder WithDeadLetterRoutingKey(string deadLetterRoutingKey)
+        {
+            if (string.IsNullOrWhiteSpace(deadLetterRoutingKey)) { throw new ArgumentNullException(nameof(deadLetterRoutingKey)); }
+            _properties.DeadLetterRoutingKey = deadLetterRoutingKey;
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder AddRabbitMqEndpoints(params AmqpTcpEndpoint[] endpoints)
+        {
+            if (endpoints == null) { throw new ArgumentNullException(nameof(endpoints)); }
+            _properties.RabbitMqEndpoints = new List<AmqpTcpEndpoint>(_properties.RabbitMqEndpoints).Concat(endpoints).ToList();
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder AddRabbitMqEndpoints(params string[] endpoints)
+        {
+            if (endpoints == null) { throw new ArgumentNullException(nameof(endpoints)); }
+            foreach (var endpoint in endpoints)
+            {
+                _properties.RabbitMqEndpoints = new List<AmqpTcpEndpoint>(_properties.RabbitMqEndpoints) { new AmqpTcpEndpoint(endpoint) };
+            }
             return this;
         }
 
@@ -118,6 +143,16 @@ namespace Planar.Job.RabbitMq
             if (string.IsNullOrWhiteSpace(_properties.PlanarHostname))
             {
                 throw new InvalidOperationException("Planar hostname must be set. Use WithHostName(string hostName) to set the hostname.");
+            }
+
+            if (string.IsNullOrWhiteSpace(_properties.DeadLetterExchange) && !string.IsNullOrWhiteSpace(_properties.DeadLetterRoutingKey))
+            {
+                throw new InvalidOperationException("Dead letter exchange must be set if dead letter routing key is specified. Use WithDeadLetterExchange(string deadLetterExchange) to set the dead letter exchange.");
+            }
+
+            if (_properties.HostSingletonTypes.Any() && _properties.Host == null)
+            {
+                throw new InvalidOperationException("Host must be set if host singleton types are specified. Use WithHost(IHost host) to set the host.");
             }
 
             return _properties;
@@ -177,7 +212,21 @@ namespace Planar.Job.RabbitMq
         private const string DefaultExchange = "Planar";
 
         public ConnectionFactory RabbitMQConnectionFactory { get; internal set; } = new ConnectionFactory();
-        public string ExchangeName { get; internal set; } = DefaultExchange;
+
+        public string Exchange { get; internal set; } = DefaultExchange;
+#if NETSTANDARD2_0
+
+        public string DeadLetterExchange { get; set; }
+#else
+        public string? DeadLetterExchange { get; set; }
+#endif
+
+#if NETSTANDARD2_0
+
+        public string DeadLetterRoutingKey { get; set; }
+#else
+        public string? DeadLetterRoutingKey { get; set; }
+#endif
 
         public IEnumerable<AmqpTcpEndpoint> RabbitMqEndpoints { get; internal set; } = new List<AmqpTcpEndpoint>();
 

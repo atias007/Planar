@@ -41,7 +41,8 @@ public sealed class RabbitMqFactory
             string? fireInstanceId,
             string command,
             string body,
-            int copies = 1)
+            int copies = 1,
+            int? timeoutSeconds = null)
     {
         await EnsureConnectionAsync();
         ArgumentNullException.ThrowIfNull(_connection);
@@ -58,19 +59,22 @@ public sealed class RabbitMqFactory
         var properties = new BasicProperties
         {
             Persistent = true,
-            Headers =
-            string.IsNullOrWhiteSpace(fireInstanceId) ?
-                new Dictionary<string, object?>
-                {
-                    { "Command", command }
-                }
-                :
-                new Dictionary<string, object?>
-                {
-                    { "FireInstanceId", fireInstanceId },
-                    { "Command", command }
-                }
+            Headers = new Dictionary<string, object?>
+            {
+                { "Command", command }
+            }
         };
+
+        if (!string.IsNullOrWhiteSpace(fireInstanceId))
+        {
+            properties.Headers["FireInstanceId"] = fireInstanceId;
+        }
+
+        if (timeoutSeconds.HasValue)
+        {
+            properties.Expiration = (timeoutSeconds.Value * 1000).ToString();
+            properties.Headers["InvokeDeadline"] = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds.Value).ToUnixTimeMilliseconds();
+        }
 
         for (int i = 0; i < copies; i++)
         {

@@ -35,6 +35,7 @@ public abstract class PlanarJob(
     IClusterUtil clusterUtil,
     IServiceProvider serviceProvider) : BaseProcessJob<PlanarJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
+    private const int HealthCheckTimeoutSeconds = 30;
     private readonly Lock ConsoleLocker = new();
     private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     private bool _isHealthCheck;
@@ -199,9 +200,9 @@ public abstract class PlanarJob(
             exchange,
             routingKey,
             context.FireInstanceId,
-            "Cancel",
-            string.Empty,
-            20);
+            command: "Cancel",
+            body: string.Empty,
+            copies: 20);
     }
 
     private async Task InvokeHttpJob(IJobExecutionContext context)
@@ -238,10 +239,11 @@ public abstract class PlanarJob(
             exchange,
             routingKey,
             context.FireInstanceId,
-            "Invoke",
-            MessageBroker.Details);
+            command: "Invoke",
+            body: MessageBroker.Details,
+            timeoutSeconds: HealthCheckTimeoutSeconds);
 
-        var success = _healthCheckResetEvent.WaitOne(30_000);
+        var success = _healthCheckResetEvent.WaitOne(HealthCheckTimeoutSeconds * 1_000);
         if (!success) { return; }
         _invokeResetEvent = new AutoResetEvent(false);
         var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);

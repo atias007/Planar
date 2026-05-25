@@ -41,15 +41,15 @@ namespace Planar.Job
 
         private static void InitWebApplication(HttpJobStartProperties properties)
         {
-            if (properties.ApplicationHost != null) { return; }
+            if (properties.Host != null) { return; }
             var builder = WebApplication.CreateBuilder();
-            properties.ApplicationHost = builder.Build();
+            properties.Host = builder.Build();
         }
 
         private static ILogger GetLogger(HttpJobStartProperties properties)
         {
-            ArgumentNullException.ThrowIfNull(properties.ApplicationHost);
-            var logger = properties.ApplicationHost.Services.GetService<ILogger<IPlanarJob>>();
+            ArgumentNullException.ThrowIfNull(properties.Host);
+            var logger = properties.Host.Services.GetService<ILogger<IPlanarJob>>();
             if (logger == null)
             {
                 return new CustomConsoleLogger(nameof(PlanarJob));
@@ -61,11 +61,14 @@ namespace Planar.Job
         private async static Task SafeStartAsync(HttpJobStartProperties properties)
         {
             Properties = properties;
-            properties.ApplicationHost ??= WebApplication.CreateBuilder().Build();
+            properties.Host ??= WebApplication.CreateBuilder().Build();
 
-            var webApp = (WebApplication)properties.ApplicationHost;
+            var webApp = (WebApplication)properties.Host;
             webApp.MapPost("/planar/invoke/{route}",
                    (HttpContext httpContext, string route) => SafeRouteMessageAsync(httpContext, route));
+
+            webApp.MapGet("/planar/health-check", () => Results.Ok("Healthy"));
+            ////webApp.MapGet("/planar/info", () => Results.Ok(properties));
 
             await webApp.RunAsync();
         }

@@ -46,7 +46,7 @@ namespace Planar.Job
 
         private static ILogger GetLogger(RabbitMqJobStartProperties properties)
         {
-            var logger = properties.ApplicationHost?.Services.GetService<ILogger<IPlanarJob>>();
+            var logger = properties.Host?.Services.GetService<ILogger<IPlanarJob>>();
             if (logger == null)
             {
                 return new CustomConsoleLogger(nameof(PlanarJob));

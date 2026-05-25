@@ -86,7 +86,7 @@ namespace Planar.Job.RabbitMq
 
                 await _channel.QueueUnbindAsync(
                     queueName,
-                    properties.ExchangeName,
+                    properties.Exchange,
                     routingKey: queueName,
                     arguments: null,
                     cancellationToken);
@@ -339,8 +339,29 @@ namespace Planar.Job.RabbitMq
             await EnsureConnectionAsync();
             if (_channel == null) { return; }
 
+#if NETSTANDARD2_0
+
+            var queueArguments =
+                string.IsNullOrWhiteSpace(properties.DeadLetterExchange) ?
+                null :
+                new Dictionary<string, object>
+            {
+                { "x-dead-letter-exchange", properties.DeadLetterExchange },
+                { "x-dead-letter-routing-key", properties.DeadLetterRoutingKey }
+            };
+#else
+            var queueArguments =
+                string.IsNullOrWhiteSpace(properties.DeadLetterExchange) ?
+                null :
+                new Dictionary<string, object?>
+            {
+                { "x-dead-letter-exchange", properties.DeadLetterExchange },
+                { "x-dead-letter-routing-key", properties.DeadLetterRoutingKey }
+            };
+#endif
+
             await _channel.ExchangeDeclareAsync(
-                exchange: properties.ExchangeName,
+                exchange: properties.Exchange,
                 type: ExchangeType.Direct,
                 durable: true,
                 autoDelete: false,
@@ -350,15 +371,16 @@ namespace Planar.Job.RabbitMq
                 queue: queueName,
                 durable: true,        // quorum queues must be durable
                 exclusive: false,     // quorum queues cannot be exclusive
-                autoDelete: false);   // quorum queues cannot be auto-delete
+                autoDelete: false,    // quorum queues cannot be auto-delete
+                arguments: queueArguments);
 
             await _channel.QueueBindAsync(
                 queue: queueName,
-                exchange: properties.ExchangeName,
+                exchange: properties.Exchange,
                 routingKey: queueName,
                 arguments: null);
 
-            _logger?.LogInformation("Exchange '{ExchangeName}' and queue '{QueueName}' created successfully", properties.ExchangeName, queueName);
+            _logger?.LogInformation("Exchange '{ExchangeName}' and queue '{QueueName}' created successfully", properties.Exchange, queueName);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Planar.Common
         string PlanarHostname { get; }
         IEnumerable<Type> JobTypes { get; }
         IEnumerable<Type> HostSingletonTypes { get; }
-        IHost ApplicationHost { get; }
+        IHost Host { get; }
     }
 
     public interface IJobDefinition
