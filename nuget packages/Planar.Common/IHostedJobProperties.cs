@@ -7,6 +7,7 @@ namespace Planar.Common
     public interface IHostedJobProperties
     {
         string PlanarHostname { get; }
+        int PlanarPort { get; }
         IEnumerable<Type> JobTypes { get; }
         IEnumerable<Type> HostSingletonTypes { get; }
         IHost Host { get; }

@@ -30,6 +30,7 @@ namespace Planar.Job
         {
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
             _logger = GetLogger(properties);
+            _ = StartHealthCheck(properties, _logger);
 
             try
             {

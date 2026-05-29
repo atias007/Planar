@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.Common.PeriodicalBatch;
 using Planar.Service.Data;
 using Planar.Service.Model;
@@ -34,6 +35,17 @@ public class AgentPeriodicalBatch(IServiceProvider serviceProvider) :
             await Task.Delay(1_000);
             await SaveChanges(groupItems);
         }
+
+        try
+        {
+            var dal = ServiceProvider.GetRequiredService<IServiceData>();
+            await dal.DeleteAgents(DateTime.UtcNow.AddDays(-7)); // Delete agents not seen for 7 days
+        }
+        catch (Exception ex)
+        {
+            var logger = ServiceProvider.GetRequiredService<ILogger<AgentPeriodicalBatch>>();
+            logger.LogError(ex, "Error deleting old agents");
+        }
     }
 
     private async Task SaveChanges(IEnumerable<Agent> groupItems)
@@ -45,8 +57,6 @@ public class AgentPeriodicalBatch(IServiceProvider serviceProvider) :
             var agent = agents.FirstOrDefault(x => x.ClientId.Equals(item.ClientId, StringComparison.OrdinalIgnoreCase));
             if (agent == null && string.IsNullOrWhiteSpace(item.IpAddress)) { continue; } // New agent without IP address, skip
             if (agent == null) { dal.AddAgent(item); continue; } // Add new agent
-            if (DateTime.UtcNow.Subtract(agent.LastSeen).TotalHours > 96) { dal.RemoveAgent(agent); continue; } // delete agent if last seen is over 96 hours
-            if (!string.IsNullOrWhiteSpace(item.IpAddress)) { agent.IpAddress = item.IpAddress; } // Update IP address if available
             agent.LastSeen = item.LastSeen; // Update last seen time
         }
 

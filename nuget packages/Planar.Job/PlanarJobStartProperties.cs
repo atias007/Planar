@@ -21,6 +21,8 @@ namespace Planar.Job
 
         public string PlanarHostname { get; internal set; } = string.Empty;
 
+        public int PlanarPort { get; internal set; } = 206;
+
 #if NETSTANDARD2_0
 
         public IHost Host { get; internal set; }

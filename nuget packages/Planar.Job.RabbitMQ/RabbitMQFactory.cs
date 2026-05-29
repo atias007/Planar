@@ -58,19 +58,19 @@ namespace Planar.Job.RabbitMq
             }
         }
 
-        public async Task EnsureDefinitions()
+        public async Task EnsureDefinitions(bool logSuccess = true)
         {
             foreach (var def in properties.JobDefinitions)
             {
-                await EnsureDefinition(queueName: def.QueueName);
+                await EnsureDefinition(queueName: def.QueueName, logSuccess: logSuccess);
             }
         }
 
-        private async Task EnsureDefinition(string queueName)
+        private async Task EnsureDefinition(string queueName, bool logSuccess = true)
         {
             try
             {
-                await EnsureDefinitionInner(queueName);
+                await EnsureDefinitionInner(queueName, logSuccess);
             }
             catch (OperationInterruptedException ex)
             {
@@ -220,7 +220,7 @@ namespace Planar.Job.RabbitMq
                 if (healthCheckCounter == 1_000_000_000) { healthCheckCounter = 0; }
                 if (healthCheckCounter % 30 == 0)
                 {
-                    await EnsureDefinitions();
+                    await EnsureDefinitions(false);
                 }
             }
             catch (Exception ex)
@@ -334,7 +334,7 @@ namespace Planar.Job.RabbitMq
             }
         }
 
-        private async Task EnsureDefinitionInner(string queueName)
+        private async Task EnsureDefinitionInner(string queueName, bool logSuccess = true)
         {
             await EnsureConnectionAsync();
             if (_channel == null) { return; }
@@ -380,7 +380,10 @@ namespace Planar.Job.RabbitMq
                 routingKey: queueName,
                 arguments: null);
 
-            _logger?.LogInformation("Exchange '{ExchangeName}' and queue '{QueueName}' created successfully", properties.Exchange, queueName);
+            if (logSuccess)
+            {
+                _logger?.LogInformation("Ensure definition for exchange '{ExchangeName}' and queue '{QueueName}' successfully", properties.Exchange, queueName);
+            }
         }
     }
 }

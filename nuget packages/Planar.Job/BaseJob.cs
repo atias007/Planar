@@ -222,7 +222,12 @@ namespace Planar.Job
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
+#if NETSTANDARD2_0
+
         private async Task OpenMqttConnection()
+#else
+        private async Task OpenMqttConnection()
+#endif
         {
             if (PlanarJob.Mode != RunningMode.Release) { return; }
             if (MqttClient.IsConnected) { return; }
@@ -232,7 +237,7 @@ namespace Planar.Job
 
             for (int i = 0; i < 3; i++)
             {
-                if (await SafeStartMqttClient(_hostedProperties?.PlanarHostname, connectTimeout)) { return; }
+                if (await SafeStartMqttClient(connectTimeout)) { return; }
             }
 
             // mqtt failover by http to planar service
@@ -275,18 +280,22 @@ namespace Planar.Job
             }
         }
 
-#if NETSTANDARD2_0
-
-        private async Task<bool> SafeStartMqttClient(string brokerHost, TimeSpan connectTimeout)
-#else
-        private async Task<bool> SafeStartMqttClient(string? brokerHost, TimeSpan connectTimeout)
-#endif
+        private async Task<bool> SafeStartMqttClient(TimeSpan connectTimeout)
         {
             try
             {
                 _executeResetEvent = new AutoResetEvent(false);
-                await MqttClient.StartAsync(brokerHost, _context.JobPort);
-                if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("Mqtt connection timeout"); }
+                if (_hostedProperties == null)
+                {
+                    const string local = "127.0.0.1";
+                    await MqttClient.StartAsync(local, _context.JobPort);
+                }
+                else
+                {
+                    await MqttClient.StartAsync(_hostedProperties.PlanarHostname, _hostedProperties.PlanarPort);
+                }
+
+                if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("MQTT connection timeout"); }
                 await MqttClient.PingAsync(_context.FireInstanceId);
                 return true;
             }

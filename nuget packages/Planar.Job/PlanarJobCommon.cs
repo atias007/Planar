@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,8 @@ namespace Planar.Job
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
         static partial void GracefullShutdownSetup();
+
+        private readonly static Timer _healthCheckTimer = new Timer(15 * 60_000);
 
         private static Type ShowJobMenu(IHostedJobProperties properties)
         {
@@ -273,6 +276,40 @@ namespace Planar.Job
         {
             var instance = GetInstance(jobType);
             return (await instance.Execute(json, hostedProperties, cancellationToken), instance);
+        }
+
+        private async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
+        {
+            await Task.Delay(10_000);
+            await ExecuteHealthCheck(properties, logger);
+            _healthCheckTimer.Elapsed += async (s, e) => await ExecuteHealthCheck(properties, logger);
+            _healthCheckTimer.Start();
+        }
+
+        private async static Task ExecuteHealthCheck(IHostedJobProperties properties, ILogger logger)
+        {
+            try
+            {
+                if (!MqttClient.IsConnected)
+                {
+                    await MqttClient.StartAsync(properties.PlanarHostname, properties.PlanarPort);
+                    await Task.Delay(4_000);
+                }
+                await MqttClient.PingAsync(string.Empty);
+
+                if (MqttClient.IsConnected)
+                {
+                    logger.LogInformation("Success to ping Planar server");
+                }
+                else
+                {
+                    logger.LogWarning("Failed to ping Planar server. Will retry in 15 minutes");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to ping Planar server. Will retry in 15 minutes");
+            }
         }
 
         private static BaseJob GetInstance(Type jobType) => Activator.CreateInstance(jobType) as BaseJob ??

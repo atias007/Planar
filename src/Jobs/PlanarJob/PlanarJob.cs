@@ -167,10 +167,10 @@ public abstract class PlanarJob(
     private async Task OnHttpCancel(IJobExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(Properties.Http);
-        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.Url);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.BaseUrl);
 
         using var httpClient = new HttpClient();
-        httpClient.BaseAddress = new Uri(Properties.Http.Url);
+        httpClient.BaseAddress = new Uri(Properties.Http.BaseUrl);
         var resource = $"planar/invoke/{Properties.Http.Route}";
         var request = new HttpRequestMessage(HttpMethod.Post, resource)
         {
@@ -208,10 +208,10 @@ public abstract class PlanarJob(
     private async Task InvokeHttpJob(IJobExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(Properties.Http);
-        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.Url);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.BaseUrl);
 
         using var httpClient = new HttpClient();
-        httpClient.BaseAddress = new Uri(Properties.Http.Url);
+        httpClient.BaseAddress = new Uri(Properties.Http.BaseUrl);
         var resource = $"planar/invoke/{Properties.Http.Route}";
         var request = new HttpRequestMessage(HttpMethod.Post, resource)
         {
@@ -225,12 +225,24 @@ public abstract class PlanarJob(
 
         var response = await httpClient.SendAsync(request, context.CancellationToken);
         response.EnsureSuccessStatusCode();
+
+        _healthCheckResetEvent = new AutoResetEvent(false);
+        var success = _healthCheckResetEvent.WaitOne(HealthCheckTimeoutSeconds * 1_000);
+        if (!success) { return; }
+
+        _invokeResetEvent = new AutoResetEvent(false);
+        var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+        success = _invokeResetEvent.WaitOne(timeout);
+        if (!success)
+        {
+            await OnHttpCancel(context);
+            MessageBroker.AppendLog(LogLevel.Error, $"http job invoke timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
+        }
     }
 
     private async Task InvokeRabbitMqJob(IJobExecutionContext context)
     {
         if (Properties.RabbitMq == null) { return; }
-        _healthCheckResetEvent = new AutoResetEvent(false);
 
         var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
         var exchange = Properties.RabbitMq.Exchange;
@@ -243,8 +255,10 @@ public abstract class PlanarJob(
             body: MessageBroker.Details,
             timeoutSeconds: HealthCheckTimeoutSeconds);
 
+        _healthCheckResetEvent = new AutoResetEvent(false);
         var success = _healthCheckResetEvent.WaitOne(HealthCheckTimeoutSeconds * 1_000);
         if (!success) { return; }
+
         _invokeResetEvent = new AutoResetEvent(false);
         var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
         success = _invokeResetEvent.WaitOne(timeout);
@@ -363,7 +377,7 @@ public abstract class PlanarJob(
 
     private void ValidateHttpJob()
     {
-        if (string.IsNullOrWhiteSpace(Properties.Http?.Url))
+        if (string.IsNullOrWhiteSpace(Properties.Http?.BaseUrl))
         {
             const string message = "planar job with http invoke method must have url";
             _logger.LogError(message);
@@ -371,10 +385,10 @@ public abstract class PlanarJob(
             throw new PlanarException(message);
         }
 
-        if (!Uri.TryCreate(Properties.Http?.Url, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(Properties.Http?.BaseUrl, UriKind.Absolute, out _))
         {
             const string message = "planar job with http invoke method must have valid url ('{Url}' is invalid)";
-            _logger.LogError(message, Properties.Http?.Url);
+            _logger.LogError(message, Properties.Http?.BaseUrl);
             MessageBroker.AppendLog(LogLevel.Error, message);
             throw new PlanarException(message);
         }

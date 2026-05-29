@@ -142,7 +142,8 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, Periodi
         try
         {
             var cloudEvent = arg.ApplicationMessage.ToCloudEvent(_formatter);
-            _ = Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg));
+            //// **** IMPORTANT: keep await to Task.Run to preserve the log order ***** ////
+            await Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg));
 
         }
         catch (Exception ex)

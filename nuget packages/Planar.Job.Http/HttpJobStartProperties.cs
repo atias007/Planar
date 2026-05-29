@@ -24,6 +24,13 @@ namespace Planar.Job.Http
             return this;
         }
 
+        public HttpJobStartPropertiesBuilder WithPlanarPort(int port)
+        {
+            if (port > 0 || port < 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
+            _properties.PlanarPort = port;
+            return this;
+        }
+
         public HttpJobStartPropertiesBuilder WithLogFlushTimeoutSeconds(int seconds)
         {
             if (seconds <= 0) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(seconds)); }

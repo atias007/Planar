@@ -42,8 +42,8 @@ public class PlanarJobProperties : IFileJobProperties
 
 public class PlanarJobHttpProperties
 {
-    [YamlMember(Alias = "url")]
-    public string Url { get; set; } = null!;
+    [YamlMember(Alias = "base url")]
+    public string BaseUrl { get; set; } = null!;
 
     [YamlMember(Alias = "route")]
     public string Route { get; set; } = null!;

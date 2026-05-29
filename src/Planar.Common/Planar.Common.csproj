@@ -45,7 +45,7 @@
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.18.0" />
 		<PackageReference Include="Polly" Version="8.6.6" />
 		<PackageReference Include="Quartz" Version="3.18.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.26.0.140279">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

@@ -80,7 +80,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="16.1.1" />
-		<PackageReference Include="CronExpressionDescriptor" Version="2.45.0" />
+		<PackageReference Include="CronExpressionDescriptor" Version="2.48.0" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="Google.Protobuf" Version="3.35.0" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.80.0" />
@@ -103,7 +103,7 @@
 		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
 		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
 		<PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.26.0.140279">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

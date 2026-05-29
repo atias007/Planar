@@ -189,12 +189,19 @@ internal static class CliTableExtensions
         foreach (var item in response)
         {
             if (item == null) { continue; }
+            var statusColor = item.Status switch
+            {
+                1 => CliFormat.OkColor,
+                2 => CliFormat.WarningColor,
+                _ => CliFormat.ErrorColor
+            };
+
             table.Table.AddRow(
                 item.ClientId.EscapeMarkup(),
                 item.IpAddress.EscapeMarkup(),
                 CliTableFormat.FormatDateTime(item.LastSeen),
-                item.StatusTitle.EscapeMarkup());
-        }
+                $"[{statusColor}]{item.StatusTitle.EscapeMarkup()}[/]");
+    }
         return table;
     }
 

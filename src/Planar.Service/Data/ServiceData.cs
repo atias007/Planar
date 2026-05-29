@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Common.PeriodicalBatch;
 using Planar.Service.Model;
 using RepoDb;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ public interface IServiceData : IBaseDataLayer
 
     void AddAgent(Agent agent);
 
-    void RemoveAgent(Agent agent);
+    Task DeleteAgents(DateTime fromLastSeen);
 
     Task HealthCheck();
 }
@@ -44,9 +45,9 @@ public class ServiceData(PlanarContext context) : BaseDataLayer(context)
         _context.Agents.Add(agent);
     }
 
-    public void RemoveAgent(Agent agent)
+    public async Task DeleteAgents(DateTime fromLastSeen)
     {
-        _context.Agents.Remove(agent);
+        await _context.Agents.Where(x => x.LastSeen < fromLastSeen).ExecuteDeleteAsync();
     }
 
     public async Task HealthCheck()

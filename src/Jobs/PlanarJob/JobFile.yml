@@ -26,7 +26,8 @@ properties:                           # Job Properties
     stream name: planar               # The stream name [mandatory, up to 100 characters]
     consumer group: group.name        # The consumer group name [mandatory, up to 100 characters]
   http:                               # HTTP properties (relevant only if host type is http)
-    url: http://example.com/api/job   # The URL to send the HTTP request to [mandatory, up to 1000 characters]
+    base url: http://example.com      # The URL to send the HTTP request to [mandatory, up to 1000 characters]
+    route: hello-world
 
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker
