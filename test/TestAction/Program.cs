@@ -1,4 +1,4 @@
 ﻿using Planar.Job;
 using TestAction;
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

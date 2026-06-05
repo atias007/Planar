@@ -1,4 +1,4 @@
 ﻿using EFCoreTest;
 using Planar.Job;
 
-PlanarJob.Start<JobInstanceLogTracker>();
+await PlanarJob.StartAsync<JobInstanceLogTracker>();
