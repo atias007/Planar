@@ -42,6 +42,7 @@ To use different settings per group, you can set one of the 'AdditionalField' of
 
         try
         {
+#pragma warning disable S1075 // URIs should not be hardcoded
             var body = new CloudEvent
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -52,6 +53,7 @@ To use different settings per group, you can set one of the 'AdditionalField' of
                 Source = new Uri("https://www.planar.me"),
                 Type = typeof(T).Name
             };
+#pragma warning restore S1075 // URIs should not be hardcoded
 #pragma warning restore S1075 // URIs should not be hardcoded
 
             body.SetAttributeFromString("version", "1.0.0");

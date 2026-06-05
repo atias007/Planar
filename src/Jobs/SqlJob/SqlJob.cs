@@ -204,7 +204,10 @@ public abstract class SqlJob(
         }
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     protected async Task<int?> WriteReaderToLog(DbDataReader reader, SqlStep step, CancellationToken cancellationToken)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         int? result = null;
         if (!step.LogResultSet)

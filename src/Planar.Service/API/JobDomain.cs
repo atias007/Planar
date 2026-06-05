@@ -16,7 +16,6 @@ using Planar.Service.Monitor;
 using Planar.Service.Reports;
 using Quartz;
 using Quartz.Impl.Matchers;
-using Quartz.Util;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -803,6 +802,7 @@ public partial class JobDomain(
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateDataMap(request.Data, "invoke");
+        await ValidateSchedulerRunning();
 
         request.Data ??= [];
         if (request.NowOverrideValue.HasValue)
@@ -984,6 +984,7 @@ public partial class JobDomain(
 
     public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
     {
+        await ValidateSchedulerRunning();
         var jobKey = await InternalJobPrepareQueueInvoke(request);
         var response = await InternalJobQueueInvoke(request, jobKey);
         AuditJobSafe(jobKey, "job queue invoked", request);

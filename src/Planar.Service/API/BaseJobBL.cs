@@ -335,6 +335,14 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
+    protected async Task ValidateSchedulerRunning()
+    {
+        if (!await SchedulerUtil.IsSchedulerRunning())
+        {
+            throw new RestValidationException("scheduler", "scheduler is not running");
+        }
+    }
+
     protected async Task PauseTriggers(JobKey jobKey, IEnumerable<TriggerKey> triggers)
     {
         var scheduler = await GetScheduler();

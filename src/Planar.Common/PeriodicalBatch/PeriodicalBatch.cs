@@ -67,13 +67,20 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         }
 
         var reader = _channel.Reader;
-        while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
+        try
         {
-            if (reader.TryRead(out var message))
+            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
             {
-                _queue.Enqueue(message);
-                _ = CheckQueueSize();
+                if (reader.TryRead(out var message))
+                {
+                    _queue.Enqueue(message);
+                    _ = CheckQueueSize();
+                }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // *** DO NOTHING ** //
         }
 
         _channel.Writer.TryComplete();

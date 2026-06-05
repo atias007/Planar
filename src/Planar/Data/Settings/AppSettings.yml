@@ -100,7 +100,9 @@ hooks:
     user: null
     password: null
     database: 0
+    service name: null
     stream name: planar
+    stream size: 1000
     pub sub channel: planar
   # -------------------------------------------------- #
   telegram:

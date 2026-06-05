@@ -37,7 +37,9 @@ namespace Planar.Common
         public string? Password { get; set; }
         public string? User { get; set; }
         public ushort Database { get; set; }
+        public string? ServiceName { get; set; }
         public string? StreamName { get; set; }
+        public int StreamSize { get; set; }
         public string? PubSubChannel { get; set; }
         public bool Ssl { get; set; }
     }

@@ -829,7 +829,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         if (string.IsNullOrEmpty(request.FireInstanceId))
         {
             restRequest = new RestRequest("job/running", Method.Get);
-            var result = await RestProxy.Invoke<List<RunningJobDetails>>(restRequest, cancellationToken);
+            var result =
+                request.Iterative ?
+                await RestProxy.InvokeWithoutSpinner<List<RunningJobDetails>>(restRequest, cancellationToken) :
+                await RestProxy.Invoke<List<RunningJobDetails>>(restRequest, cancellationToken);
             resultData = result.Data;
             restResponse = result;
         }
@@ -837,7 +840,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         {
             restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+            var result =
+                request.Iterative ?
+                await RestProxy.InvokeWithoutSpinner<RunningJobDetails>(restRequest, cancellationToken) :
+                await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+
             if (result.Data != null)
             {
                 resultData = [result.Data];

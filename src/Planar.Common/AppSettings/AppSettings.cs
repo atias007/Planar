@@ -275,8 +275,12 @@ public static class AppSettings
         Hooks.Redis.User = GetSettings(configuration, string.Empty, hooks_redis, "user", string.Empty);
         Hooks.Redis.Database = GetSettings(configuration, string.Empty, hooks_redis, "db", (ushort)0);
         Hooks.Redis.StreamName = GetSettings(configuration, string.Empty, hooks_redis, "stream name", string.Empty);
+        Hooks.Redis.StreamSize = GetSettings(configuration, string.Empty, hooks_redis, "stream size", 1000);
         Hooks.Redis.PubSubChannel = GetSettings(configuration, string.Empty, hooks_redis, "pub sub channel", string.Empty);
         Hooks.Redis.Ssl = GetSettings(configuration, string.Empty, hooks_redis, "ssl", false);
+        Hooks.Redis.ServiceName = GetSettings(configuration, string.Empty, hooks_redis, "service name", string.Empty);
+        if (string.IsNullOrWhiteSpace(Hooks.Redis.StreamName)) { Hooks.Redis.StreamName = null; }
+        ValidateMinimumValue(Hooks.Redis.StreamSize, minimum: 50, "redis stream size");
 
         Hooks.RabbitMq.VirtualHost = GetSettings(configuration, string.Empty, hooks_rabbitmq, "virtual host", "/");
         Hooks.RabbitMq.Username = GetSettings(configuration, string.Empty, hooks_rabbitmq, "username", string.Empty);

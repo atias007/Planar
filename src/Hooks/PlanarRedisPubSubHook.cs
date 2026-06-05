@@ -31,7 +31,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         await InvokeStream(monitorDetails);
     }
 
-    private List<string> GetStreamNames(IMonitor monitor)
+    private IEnumerable<string> GetStreamNames(IMonitor monitor)
     {
         if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.StreamName))
         {
@@ -51,14 +51,14 @@ To use different stream name per group, you can set one of the 'AdditionalField'
             if (!string.IsNullOrWhiteSpace(stream)) { streams.Add(stream); }
         }
 
-        return streams;
+        return streams.Distinct();
     }
 
     private async Task InvokeStream<T>(T detials)
         where T : IMonitor
     {
         var streams = GetStreamNames(detials);
-        if (streams.Count == 0) { return; }
+        if (!streams.Any()) { return; }
 
         try
         {
@@ -76,12 +76,27 @@ To use different stream name per group, you can set one of the 'AdditionalField'
 
             foreach (var streamName in streams)
             {
+                await CreateRedisStreamIfNotExists(db, streamName);
                 await db.StreamAddAsync(streamName, entries);
             }
         }
         catch (Exception ex)
         {
             throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
+        }
+    }
+
+    private async Task CreateRedisStreamIfNotExists(IDatabase db, string streamName)
+    {
+        var exists = await db.KeyExistsAsync(streamName);
+        if (!exists)
+        {
+            await db.StreamAddAsync(streamName, [new("version", "1.0.0")], maxLength: AppSettings.Hooks.Redis.StreamSize, useApproximateMaxLength: true);
+
+            // clear all stream item
+            var entries = await db.StreamRangeAsync(streamName);
+            var ids = entries.Select(e => e.Id).ToArray();
+            await db.StreamDeleteAsync(streamName, ids);
         }
     }
 }
