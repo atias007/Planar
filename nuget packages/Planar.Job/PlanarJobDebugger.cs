@@ -15,7 +15,7 @@ namespace Planar.Job
 
         public void AddProfile(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
         {
-            // if (PlanarJob.Mode == RunningMode.Release) { return; }
+            //// if (PlanarJob.Mode == RunningMode.Release) { return; }
 
             if (_profiles.ContainsKey(name))
             {

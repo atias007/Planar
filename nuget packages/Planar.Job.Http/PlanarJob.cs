@@ -123,7 +123,7 @@ namespace Planar.Job
                 jobInstanceInfo.Cancel();
                 if(_logger?.IsEnabled(LogLevel.Information) == true)
                 {
-                    _logger?.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
+                    _logger.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
                 }
 
                 return Results.Accepted();

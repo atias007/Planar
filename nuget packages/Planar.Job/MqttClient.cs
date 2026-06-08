@@ -278,12 +278,18 @@ namespace Planar
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
             _ = OnConnected();
-            Logger?.LogDebug("successfully connected to MQTT broker");
+            if (Logger?.IsEnabled(LogLevel.Debug) == true)
+            {
+                Logger?.LogDebug("successfully connected to MQTT broker");
+            }
         }
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
-            Logger?.LogCritical(arg.Exception, "couldn't connect to MQTT broker! (port={Port} host={Host})", _mqttPort, _host);
+            if (Logger?.IsEnabled(LogLevel.Critical) == true)
+            {
+                Logger.LogCritical(arg.Exception, "couldn't connect to MQTT broker! (port={Port} host={Host})", _mqttPort, _host);
+            }
         }
 
         private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel)

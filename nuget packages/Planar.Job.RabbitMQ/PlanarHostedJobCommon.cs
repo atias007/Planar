@@ -36,7 +36,7 @@ namespace Planar.Job
                     if (_jobInstances.IsEmpty) { break; }
                     if(_logger?.IsEnabled(LogLevel.Information) == true)
                     {
-                        _logger?.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
+                        _logger.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
                     }
 
                     await Task.Delay(1_000);

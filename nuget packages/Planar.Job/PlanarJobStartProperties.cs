@@ -2,6 +2,7 @@
 using Planar.Common;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Planar.Job
@@ -40,7 +41,6 @@ namespace Planar.Job
 #endif
         {
             var singletonType = typeof(T);
-            if (singletonType == null) { throw new ArgumentNullException(nameof(singletonType)); }
             if (!_hostSingletonTypes.Contains(singletonType))
             {
                 _hostSingletonTypes.Add(singletonType);

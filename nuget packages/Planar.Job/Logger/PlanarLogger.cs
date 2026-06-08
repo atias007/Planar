@@ -5,24 +5,16 @@ using System.Text;
 
 namespace Planar.Job.Logger
 {
-    internal class BaseLogger
+    internal abstract class BaseLogger
     {
         private static readonly StringBuilder _logBuilder = new StringBuilder();
         private static readonly object _locker = new object();
         private readonly string _fireInstanceId;
 
-        public BaseLogger(string fireInstanceId)
+        protected BaseLogger(string fireInstanceId)
         {
             _fireInstanceId = fireInstanceId;
         }
-
-#pragma warning disable IDE0060 // Remove unused parameter
-
-#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
-        public bool IsEnabled(LogLevel logLevel) => true;
-#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
-
-#pragma warning restore IDE0060 // Remove unused parameter
 
         public static string LogText => _logBuilder.ToString();
 
@@ -33,9 +25,7 @@ namespace Planar.Job.Logger
             LogToConsole(entity.ToString());
         }
 
-#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
-        protected void LogToConsole(string message)
-#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
+        protected static void LogToConsole(string message)
         {
             lock (_locker)
             {
@@ -107,6 +97,8 @@ namespace Planar.Job.Logger
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
 #endif
 
+        public bool IsEnabled(LogLevel logLevel) => true;
+
 #if NETSTANDARD2_0
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
@@ -140,6 +132,8 @@ namespace Planar.Job.Logger
 #else
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
 #endif
+
+        public bool IsEnabled(LogLevel logLevel) => true;
 
 #if NETSTANDARD2_0
 
