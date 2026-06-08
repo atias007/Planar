@@ -1,7 +1,6 @@
-﻿using Dapper;
-using DbUp;
-using Microsoft.Data.SqlClient;
+﻿using DbUp;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Service.API.Helpers;
@@ -9,14 +8,64 @@ using Planar.Service.Data;
 using Planar.Service.General;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Startup;
 
+public interface IDatabaseMigrationInitializerLogger
+{
+}
+
 public static class DatabaseMigrationInitializer
 {
     private static readonly IExecuter _executer = DbFactory.CreateDbMigrationExecuter(AppSettings.Database.ProviderName);
+
+    public static async Task FixPlanarJobPropertiesForV182(IServiceProvider provider)
+    {
+        var dal = provider.GetRequiredService<IJobData>();
+
+        var items = await dal.GetAllPropertiesForFixVersion182();
+        var logger = provider.GetRequiredService<ILogger<IDatabaseMigrationInitializerLogger>>();
+        var errors = new List<Exception>();
+        try
+        {
+            foreach (var item in items)
+            {
+                try
+                {
+                    if (item.Properties == null) { continue; }
+                    var processProperties = YmlUtil.Deserialize<PlanarJobProcessProperties>(item.Properties);
+                    if (string.IsNullOrWhiteSpace(processProperties.Filename)) { continue; }
+
+                    var newProperties = new PlanarJobProperties
+                    {
+                        InvokeMethod = "process",
+                        Process = processProperties,
+                    };
+
+                    item.Properties = YmlUtil.Serialize(newProperties);
+                    await dal.UpdateJobProperty(item);
+                    Console.WriteLine($">> Upgrade job {item.JobId} properties to V1.8.2");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "fail to fix job properties (job id: {Id}) for version 1.8.2", item.JobId);
+                    errors.Add(ex);
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                throw new AggregateException(errors);
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleError(ex);
+        }
+    }
 
     public static async Task FixJobProperties(IServiceProvider provider)
     {

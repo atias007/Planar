@@ -1,4 +1,5 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common.Exceptions;
@@ -45,10 +46,10 @@ public static class ServiceUtil
         return result;
     }
 
-    public static void LoadMonitorHooks<T>(IEnumerable<MonitorHookDetails> hooks, ILogger<T> logger)
+    public static void LoadMonitorHooks(IServiceProvider serviceProvider, IEnumerable<MonitorHookDetails> hooks, ILogger logger)
     {
         MonitorHooks.Clear();
-        LoadSystemHooks(logger);
+        LoadSystemHooks(serviceProvider, logger);
 
         foreach (var item in hooks)
         {
@@ -56,7 +57,7 @@ public static class ServiceUtil
         }
     }
 
-    private static void LoadHook<T>(ILogger<T> logger, MonitorHookDetails hookDetails)
+    private static void LoadHook(ILogger logger, MonitorHookDetails hookDetails)
     {
         var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
         var filename = Path.Combine(path, hookDetails.Path);
@@ -73,25 +74,20 @@ public static class ServiceUtil
         }
     }
 
-    private static void LoadSystemHooks<TLogger>(ILogger<TLogger> logger)
+    private static void LoadSystemHooks(IServiceProvider serviceProvider, ILogger logger)
     {
-        LoadSystemHook<TLogger, PlanarRestHook>(logger);
-        LoadSystemHook<TLogger, PlanarSmtpHook>(logger);
-        LoadSystemHook<TLogger, PlanarLogHook>(logger);
-        LoadSystemHook<TLogger, PlanarTeamsHook>(logger);
-        LoadSystemHook<TLogger, PlanarTwilioSmsHook>(logger);
-        LoadSystemHook<TLogger, PlanarRedisStreamHook>(logger);
-        LoadSystemHook<TLogger, PlanarRedisPubSubHook>(logger);
-        LoadSystemHook<TLogger, PlanarTelegramHook>(logger);
+        var allHooks = serviceProvider.GetServices<ISystemHook>();
+        foreach (var item in allHooks)
+        {
+            LoadSystemHook(item, logger);
+        }
     }
 
-    private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
-        where THook : BaseSystemHook
+    private static void LoadSystemHook(ISystemHook instance, ILogger logger)
     {
         try
         {
-            var instance = Activator.CreateInstance<THook>();
-            var wrapper = HookWrapper.CreateInternal(instance, logger);
+            var wrapper = HookWrapper.CreateInternal(instance);
             var result = MonitorHooks.TryAdd(instance.Name, wrapper);
 
             if (result)
@@ -105,7 +101,7 @@ public static class ServiceUtil
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "fail to load system hook {Name}", typeof(THook).Name);
+            logger.LogError(ex, "fail to load system hook {Name}", instance.GetType().Name);
         }
     }
 

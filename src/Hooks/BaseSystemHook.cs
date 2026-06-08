@@ -3,13 +3,16 @@ using Planar.Hook;
 
 namespace Planar.Hooks;
 
-public abstract class BaseSystemHook : BaseHook
+public interface ISystemHook
 {
-    private ILogger? _logger;
+    string Name { get; }
+    string Description { get; }
+    ILogger Logger { get; }
+}
 
-    protected BaseSystemHook()
-    {
-    }
+public abstract class BaseSystemHook(ILogger logger) : BaseHook, ISystemHook
+{
+    public ILogger Logger => logger;
 
     protected static string? GetParameter(string name, IMonitorGroup group)
     {
@@ -46,83 +49,78 @@ public abstract class BaseSystemHook : BaseHook
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
     protected override void LogError(string message)
     {
-        if (_logger == null)
+        if (logger == null)
         {
             base.LogError(message);
         }
         else
         {
-            _logger.LogError(message);
+            logger.LogError(message);
         }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
     protected override void LogCritical(string message)
     {
-        if (_logger == null)
+        if (logger == null)
         {
             base.LogCritical(message);
         }
         else
         {
-            _logger.LogCritical(message);
+            logger.LogCritical(message);
         }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
     protected override void LogDebug(string message)
     {
-        if (_logger == null)
+        if (logger == null)
         {
             base.LogDebug(message);
         }
         else
         {
-            _logger.LogDebug(message);
+            logger.LogDebug(message);
         }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
     protected override void LogInformation(string message)
     {
-        if (_logger == null)
+        if (logger == null)
         {
             base.LogInformation(message);
         }
         else
         {
-            _logger.LogInformation(message);
+            logger.LogInformation(message);
         }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
     protected override void LogTrace(string message)
     {
-        if (_logger == null)
+        if (logger == null)
         {
             base.LogTrace(message);
         }
         else
         {
-            _logger.LogTrace(message);
+            logger.LogTrace(message);
         }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
     protected override void LogWarning(string message)
     {
-        if (_logger == null)
+        if (logger == null)
         {
             base.LogWarning(message);
         }
         else
         {
-            _logger.LogWarning(message);
+            logger.LogWarning(message);
         }
-    }
-
-    public void SetLogger(ILogger logger)
-    {
-        _logger = logger;
     }
 }

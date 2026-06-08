@@ -35,17 +35,29 @@ internal static class DbFactory
             case DbProviders.SqlServer:
                 services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                      AppSettings.Database.ConnectionString,
-                     options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),
+                     options => 
+                     {
+                         options.EnableRetryOnFailure(4, TimeSpan.FromSeconds(1), errorNumbersToAdd: null);
+                         options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                     }),
                  contextLifetime: ServiceLifetime.Transient,
                  optionsLifetime: ServiceLifetime.Singleton);
                 break;
 
             case DbProviders.Sqlite:
-                services.AddDbContext<PlanarContext>(o => o.UseSqlite(AppSettings.Database.ConnectionString),
+                services.AddDbContext<PlanarContext>(o => o.UseSqlite(AppSettings.Database.ConnectionString,
+                    options =>
+                    {
+                        options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                    }),
                     contextLifetime: ServiceLifetime.Transient,
                     optionsLifetime: ServiceLifetime.Singleton);
 
-                services.AddDbContext<PlanarTraceContext>(o => o.UseSqlite(AppSettings.Database.ConnectionString),
+                services.AddDbContext<PlanarTraceContext>(o => o.UseSqlite(AppSettings.Database.ConnectionString,
+                    options =>
+                    {
+                        options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                    }),
                     contextLifetime: ServiceLifetime.Transient,
                     optionsLifetime: ServiceLifetime.Singleton);
                 break;

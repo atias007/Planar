@@ -18,6 +18,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -32,11 +35,13 @@ public abstract class PlanarJob(
     IClusterUtil clusterUtil,
     IServiceProvider serviceProvider) : BaseProcessJob<PlanarJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
+    private const int HealthCheckTimeoutSeconds = 30;
     private readonly Lock ConsoleLocker = new();
     private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     private bool _isHealthCheck;
     private string? _contextFilename;
-
+    private AutoResetEvent? _healthCheckResetEvent;
+    private AutoResetEvent? _invokeResetEvent;
     private PlanarJobExecutionException? _executionException;
     private readonly List<PlanarJobException> _jobActionExceptions = [];
 
@@ -45,12 +50,91 @@ public abstract class PlanarJob(
         try
         {
             MqttBrokerService.RegisterInterceptingPublish(InterceptingPublishAsync, context.FireInstanceId);
-
             await Initialize(context);
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+            await FinalizeJob(context);
+            UnregisterMqttBrokerService(context.FireInstanceId);
+            return;
+        }
+
+        if (Properties.Process != null)
+        {
+            await SafeExecuteProcess(context);
+        }
+        else if (Properties.RabbitMq != null)
+        {
+            await SafeExecuteRabbitMq(context);
+        }
+        else if (Properties.Http != null)
+        {
+            await SafeExecuteHttp(context);
+        }
+        else
+        {
+            _logger.LogError("planar job with invoke type '{InvokeType}' is not supported or has no properties (job key: {JobKey})", Properties.InvokeMethod, context.JobDetail.Key);
+            MessageBroker.AppendLog(LogLevel.Error, $"planar job with invoke type '{Properties.InvokeMethod}' is not supported or has no properties (job key: {context.JobDetail.Key})");
+        }
+    }
+
+    private async Task SafeExecuteHttp(IJobExecutionContext context)
+    {
+        try
+        {
+            ValidateHttpJob();
+            SafeLogInvokeJobDetails(context);
+            context.CancellationToken.Register(async () => await OnHttpCancel(context));
+            _ = SafeStartMonitorDuration(context);
+            await InvokeHttpJob(context);
+            StopMonitorDuration();
+            ValidateHealthCheck();
+            CheckJobError();
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+        }
+        finally
+        {
+            await FinalizeJob(context);
+            UnregisterMqttBrokerService(context.FireInstanceId);
+        }
+    }
+
+    private async Task SafeExecuteRabbitMq(IJobExecutionContext context)
+    {
+        try
+        {
+            ValidateRabbitMqJob();
+            SafeLogInvokeJobDetails(context);
+            context.CancellationToken.Register(async () => await OnRabbitMqCancel(context));
+            _ = SafeStartMonitorDuration(context);
+            await InvokeRabbitMqJob(context);
+            StopMonitorDuration();
+            ValidateHealthCheck();
+            CheckJobError();
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+        }
+        finally
+        {
+            await FinalizeJob(context);
+            UnregisterMqttBrokerService(context.FireInstanceId);
+        }
+    }
+
+    private async Task SafeExecuteProcess(IJobExecutionContext context)
+    {
+        try
+        {
             ValidateProcessJob();
             ValidateExeFile();
             SafeLogInvokeJobDetails(context);
-            context.CancellationToken.Register(OnCancel);
+            context.CancellationToken.Register(OnProcessCancel);
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
             var startInfo = GetProcessStartInfo();
             _ = SafeStartMonitorDuration(context);
@@ -77,6 +161,111 @@ public abstract class PlanarJob(
             FinalizeProcess();
             UnregisterMqttBrokerService(context.FireInstanceId);
             SafeDeleteContextFile();
+        }
+    }
+
+    private async Task OnHttpCancel(IJobExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(Properties.Http);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.BaseUrl);
+
+        using var httpClient = new HttpClient();
+        httpClient.BaseAddress = new Uri(Properties.Http.BaseUrl);
+        var resource = $"planar/invoke/{Properties.Http.Route}";
+        var request = new HttpRequestMessage(HttpMethod.Post, resource)
+        {
+            Content = new StringContent(string.Empty, Encoding.UTF8, MediaTypeNames.Application.Json),
+            Headers =
+            {
+                { "FireInstanceId", context.FireInstanceId },
+                { "Command", "Cancel" }
+            }
+        };
+
+        for (int i = 0; i < 20; i++)
+        {
+            var response = await httpClient.SendAsync(request, context.CancellationToken);
+            if (response.StatusCode == HttpStatusCode.NotFound) { continue; }
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
+    private async Task OnRabbitMqCancel(IJobExecutionContext context)
+    {
+        if (Properties.RabbitMq == null) { return; }
+        var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
+        var exchange = Properties.RabbitMq.Exchange;
+        var routingKey = Properties.RabbitMq.RoutingKey;
+        await factory.PublishAsync(
+            exchange,
+            routingKey,
+            context.FireInstanceId,
+            command: "Cancel",
+            body: string.Empty,
+            copies: 20);
+    }
+
+    private async Task InvokeHttpJob(IJobExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(Properties.Http);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.BaseUrl);
+
+        using var httpClient = new HttpClient();
+        httpClient.BaseAddress = new Uri(Properties.Http.BaseUrl);
+        var resource = $"planar/invoke/{Properties.Http.Route}";
+        var request = new HttpRequestMessage(HttpMethod.Post, resource)
+        {
+            Content = new StringContent(MessageBroker.Details, Encoding.UTF8, MediaTypeNames.Application.Json),
+            Headers =
+            {
+                { "FireInstanceId", context.FireInstanceId },
+                { "Command", "Invoke" }
+            }
+        };
+
+        var response = await httpClient.SendAsync(request, context.CancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        _healthCheckResetEvent = new AutoResetEvent(false);
+        var success = _healthCheckResetEvent.WaitOne(HealthCheckTimeoutSeconds * 1_000);
+        if (!success) { return; }
+
+        _invokeResetEvent = new AutoResetEvent(false);
+        var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+        success = _invokeResetEvent.WaitOne(timeout);
+        if (!success)
+        {
+            await OnHttpCancel(context);
+            MessageBroker.AppendLog(LogLevel.Error, $"http job invoke timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
+        }
+    }
+
+    private async Task InvokeRabbitMqJob(IJobExecutionContext context)
+    {
+        if (Properties.RabbitMq == null) { return; }
+
+        var factory = serviceProvider.GetRequiredService<RabbitMqFactory>();
+        var exchange = Properties.RabbitMq.Exchange;
+        var routingKey = Properties.RabbitMq.RoutingKey;
+        await factory.PublishAsync(
+            exchange,
+            routingKey,
+            context.FireInstanceId,
+            command: "Invoke",
+            body: MessageBroker.Details,
+            timeoutSeconds: HealthCheckTimeoutSeconds);
+
+        _healthCheckResetEvent = new AutoResetEvent(false);
+        var success = _healthCheckResetEvent.WaitOne(HealthCheckTimeoutSeconds * 1_000);
+        if (!success) { return; }
+
+        _invokeResetEvent = new AutoResetEvent(false);
+        var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+        success = _invokeResetEvent.WaitOne(timeout);
+        if (!success)
+        {
+            await OnRabbitMqCancel(context);
+            MessageBroker.AppendLog(LogLevel.Error, $"rabbitmq job invoke timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
         }
     }
 
@@ -183,6 +372,52 @@ public abstract class PlanarJob(
             _logger.LogError("process filename '{Filename}' must have 'exe' extention", Filename);
             MessageBroker.AppendLog(LogLevel.Error, $"process filename '{Filename}' must have 'exe' extention");
             throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
+        }
+    }
+
+    private void ValidateHttpJob()
+    {
+        if (string.IsNullOrWhiteSpace(Properties.Http?.BaseUrl))
+        {
+            const string message = "planar job with http invoke method must have url";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+
+        if (!Uri.TryCreate(Properties.Http?.BaseUrl, UriKind.Absolute, out _))
+        {
+            const string message = "planar job with http invoke method must have valid url ('{Url}' is invalid)";
+            _logger.LogError(message, Properties.Http?.BaseUrl);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+
+        if (string.IsNullOrWhiteSpace(Properties.Http?.Route))
+        {
+            const string message = "planar job with http invoke method must have route";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+    }
+
+    private void ValidateRabbitMqJob()
+    {
+        if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.RoutingKey))
+        {
+            const string message = "planar job with rabbitmq invoke method must have routing key";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
+        }
+
+        if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.Exchange))
+        {
+            const string message = "planar job with rabbitmq invoke method must have exchange";
+            _logger.LogError(message);
+            MessageBroker.AppendLog(LogLevel.Error, message);
+            throw new PlanarException(message);
         }
     }
 
@@ -294,7 +529,7 @@ public abstract class PlanarJob(
             var log = new LogEntity
             {
                 Level = LogLevel.Warning,
-                Message = "WARNING! No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project (Program.cs)"
+                Message = "WARNING! No health check signal from job. Check if the following code: \"PlanarJob.StartAsync;\" exists in startup of your console project (Program.cs)"
             };
 
             MessageBroker.AppendLog(log);
@@ -529,6 +764,7 @@ public abstract class PlanarJob(
 
             case MessageBrokerChannels.HealthCheck:
                 _isHealthCheck = true;
+                _healthCheckResetEvent?.Set();
                 SafeUnsubscribeOutput();
                 break;
 
@@ -545,6 +781,10 @@ public abstract class PlanarJob(
             case MessageBrokerChannels.QueueInvokeJob:
                 var queueInvokeValue = GetCloudEventEntityValue<QueueInvokeJobModel>(e.CloudEvent);
                 RunQueueInvokeJob(queueInvokeValue).Wait();
+                break;
+
+            case MessageBrokerChannels.FinishInvokeJob:
+                _invokeResetEvent?.Set();
                 break;
 
             default:

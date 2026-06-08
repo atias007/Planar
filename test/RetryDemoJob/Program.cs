@@ -1,4 +1,4 @@
 ﻿using Planar.Job;
 using RetryDemoJob;
 
-PlanarJob.Start<Worker>();
+await PlanarJob.StartAsync<Worker>();

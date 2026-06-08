@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Polly;
+using System.Collections.Generic;
 
 namespace Planar.Common
 {
@@ -9,6 +10,7 @@ namespace Planar.Common
         public TwilioSmsHookSettings TwilioSms { get; set; } = new();
         public RedisSettings Redis { get; set; } = new();
         public TelegramSettings Telegram { get; set; } = new();
+        public RabbitMqSettings RabbitMq { get; set; } = new();
     }
 
     public class RestHookSettings
@@ -35,9 +37,36 @@ namespace Planar.Common
         public string? Password { get; set; }
         public string? User { get; set; }
         public ushort Database { get; set; }
+        public string? ServiceName { get; set; }
         public string? StreamName { get; set; }
+        public int StreamSize { get; set; }
         public string? PubSubChannel { get; set; }
         public bool Ssl { get; set; }
+    }
+
+    public class RabbitMqSettings
+    {
+        public string? Password { get; set; }
+        public string? Username { get; set; }
+        public string? VirtualHost { get; set; }
+        public string? Exchange { get; set; }
+        public string? RoutingKey { get; set; }
+        public RabbitMqSslSettings? Ssl { get; set; }
+        public IEnumerable<RabbitMqEndpoint> Endpoints { get; set; } = [];
+    }
+
+    public class RabbitMqSslSettings
+    {
+        public bool Enable { get; set; }
+        public string PolicyErrors { get; set; } = "None";
+        public string? CertPassphrase { get; set; }
+        public string? CertPath { get; set; }
+    }
+
+    public class RabbitMqEndpoint
+    {
+        public string Host { get; set; } = string.Empty;
+        public int Port { get; set; }
     }
 
     public class TelegramSettings

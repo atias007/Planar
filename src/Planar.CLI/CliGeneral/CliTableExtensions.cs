@@ -181,6 +181,30 @@ internal static class CliTableExtensions
         return table;
     }
 
+    public static CliTable GetTable(IEnumerable<AgentModel>? response)
+    {
+        var table = new CliTable(showCount: true, entityName: "agent");
+        table.Table.AddColumns("Client Id", "Ip Address", "Last Seen", "Status");
+        if (response == null) { return table; }
+        foreach (var item in response)
+        {
+            if (item == null) { continue; }
+            var statusColor = item.Status switch
+            {
+                1 => CliFormat.OkColor,
+                2 => CliFormat.WarningColor,
+                _ => CliFormat.ErrorColor
+            };
+
+            table.Table.AddRow(
+                item.ClientId.EscapeMarkup(),
+                item.IpAddress.EscapeMarkup(),
+                CliTableFormat.FormatDateTime(item.LastSeen),
+                $"[{statusColor}]{item.StatusTitle.EscapeMarkup()}[/]");
+    }
+        return table;
+    }
+
     public static CliTable GetTable(IEnumerable<ReportsStatus>? response)
     {
         var table = new CliTable();

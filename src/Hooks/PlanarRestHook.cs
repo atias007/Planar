@@ -1,15 +1,17 @@
 ﻿using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.SystemTextJson;
 using Core.JsonConvertors;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Hook;
+using Planar.Hooks.Serialize;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarRestHook : BaseSystemHook
+public sealed class PlanarRestHook(ILogger<PlanarRestHook> logger) : BaseSystemHook(logger)
 {
     public override string Name => "Planar.Rest";
 
@@ -25,22 +27,6 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
 
     private static readonly Lock Locker = new();
     private static HttpClient _sharedClient = null!;
-
-    private static readonly JsonSerializerOptions _jsonSerializerSettings = new()
-    {
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters =
-        {
-            new SystemTextTimeSpanConverter(),
-            new SystemTextNullableTimeSpanConverter()
-        }
-    };
-
-    private static readonly JsonEventFormatter _formatter = new(
-        serializerOptions: _jsonSerializerSettings,
-         documentOptions: default
-        );
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
@@ -109,8 +95,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
         var method = new HttpMethod("Post");
 
         using var restRequest = new HttpRequestMessage(method, url);
-        var bytes = _formatter.EncodeStructuredModeMessage(body, out _);
-        var json = Encoding.UTF8.GetString(bytes.Span);
+        var json = CoreSerializer.SerializeCloudEvent(body);
         var content = new StringContent(json, Encoding.UTF8, MediaTypeNames.Application.Json);
         restRequest.Content = content;
 

@@ -6,6 +6,8 @@ namespace Planar.Common
     {
         IExecuteJobProperties Build();
 
+        IExecuteJobPropertiesBuilder ForJob<T>() where T : class, new();
+
         IExecuteJobPropertiesBuilder WithEnvironment(string environment);
 
         IExecuteJobPropertiesBuilder SetRecoveringMode();

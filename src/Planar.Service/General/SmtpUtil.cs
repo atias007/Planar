@@ -31,7 +31,7 @@ internal static class SmtpUtil
 
         if (!smtp.UseDefaultCredentials)
         {
-            await client.AuthenticateAsync(encoding: Encoding.UTF8, smtp.Username, smtp.Password, tokenSource.Token);
+            await client.AuthenticateAsync(encoding: Encoding.UTF8, smtp.Username ?? string.Empty, smtp.Password ?? string.Empty, tokenSource.Token);
         }
 
         var result = await client.SendAsync(message, tokenSource.Token);

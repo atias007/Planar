@@ -379,7 +379,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     {
         var hooks = await DataLayer.GetAllMonitorHooks();
         var hooksDetails = Mapper.Map<IEnumerable<MonitorHookDetails>>(hooks);
-        ServiceUtil.LoadMonitorHooks(hooksDetails, Logger);
+        ServiceUtil.LoadMonitorHooks(ServiceProvider, hooksDetails, Logger);
         if (clusterReload && AppSettings.Cluster.Clustering)
         {
             await ClusterUtil.LoadMonitorHooks();

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Planar.Job.Http": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57767;http://localhost:57768"
+    }
+  }
+}

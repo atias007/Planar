@@ -24,7 +24,6 @@ namespace TestAction
             Logger.LogInformation("Start Exist...");
             await Task.Delay(3_000);
             await base.RaiseCustomEventAsync(CustomMonitorEvents.CustomEvent1, "This is demo custom event");
-            return;
             if (Value == 100.1)
             {
                 for (int i = 0; i < 130; i++)

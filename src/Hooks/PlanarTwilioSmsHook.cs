@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Hook;
 using System.Globalization;
 using Twilio;
@@ -6,14 +7,14 @@ using Twilio.Rest.Api.V2010.Account;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarTwilioSmsHook : BaseSystemHook
+public sealed class PlanarTwilioSmsHook(ILogger<PlanarTwilioSmsHook> logger) : BaseSystemHook(logger)
 {
     public override string Name => "Planar.Twilio.Sms";
 
     public override string Description =>
         """
 This hook send SMS message via Twilio API server.
-You can find the configuration of Twilio API server is in appsettings.yml (Data folder of Planar).
+You can find the configuration of Twilio API server in appsettings.yml (Data folder of Planar).
 SMS will be sent to all users of the monitor group.
 The phone number of the user is defined in the user profile at 'PhoneNumber' fields.
 Hook will send the message to all valid phone numbers of the user.

@@ -83,7 +83,7 @@ public partial class JobDomain(
                 throw new RestConflictException($"data with key '{request.DataKey}' already exists");
             }
 
-            info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+            info.JobDetails.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
             AuditJobSafe(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
         }
         else
@@ -99,7 +99,7 @@ public partial class JobDomain(
                 throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+            info.JobDetails.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
             AuditJobSafe(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
         }
 
@@ -802,6 +802,7 @@ public partial class JobDomain(
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateDataMap(request.Data, "invoke");
+        await ValidateSchedulerRunning();
 
         request.Data ??= [];
         if (request.NowOverrideValue.HasValue)
@@ -983,6 +984,7 @@ public partial class JobDomain(
 
     public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
     {
+        await ValidateSchedulerRunning();
         var jobKey = await InternalJobPrepareQueueInvoke(request);
         var response = await InternalJobQueueInvoke(request, jobKey);
         AuditJobSafe(jobKey, "job queue invoked", request);
@@ -1128,7 +1130,7 @@ public partial class JobDomain(
 
         var oldAuthor = JobHelper.GetJobAuthor(info);
         request.Author = request.Author?.Trim() ?? string.Empty;
-        info.JobDataMap.Put(Consts.Author, request.Author);
+        info.JobDataMap[Consts.Author] = request.Author;
 
         // Reschedule job
         var triggers = await scheduler.GetTriggersOfJob(jobKey);

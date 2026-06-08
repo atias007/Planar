@@ -20,6 +20,7 @@ namespace Planar
             AppSettingsInitializer.TestDatabasePermission();
             var app = WebApplicationInitializer.Initialize(args);
             await DatabaseMigrationInitializer.FixJobProperties(app.Services);
+            await DatabaseMigrationInitializer.FixPlanarJobPropertiesForV182(app.Services);
             await CalendarsInitializer.Initialize(app.Services);
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);

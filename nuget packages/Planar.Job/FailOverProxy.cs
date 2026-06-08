@@ -44,13 +44,14 @@ namespace Planar.Job
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue($"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}"));
+            client.DefaultRequestHeaders.UserAgent.ParseAdd($"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}");
 
             return client;
         }
 
-        private static HttpRequestMessage CreateRequest(string body)
+        private static HttpRequestMessage CreateRequest(string body, string fireInstanceId)
         {
+            const string fireInstanceIdKey = "x-fire-instance-id";
             const string contentType = "application/json";
             const string resource = "job/failover-publish";
 
@@ -60,6 +61,7 @@ namespace Planar.Job
             if (request.Content.Headers.ContentType != null)
             {
                 request.Content.Headers.ContentType.MediaType = contentType;
+                request.Content.Headers.Add(fireInstanceIdKey, fireInstanceId);
             }
 
             return request;
@@ -70,11 +72,11 @@ namespace Planar.Job
             _client.Dispose();
         }
 
-        public async Task PingAsync(CloudEvent cloudEvent)
+        public async Task PingAsync(string fireInstanceId, CloudEvent cloudEvent)
         {
             var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
             var json = Encoding.UTF8.GetString(bytes.ToArray());
-            var restRequest = CreateRequest(json);
+            var restRequest = CreateRequest(json, fireInstanceId);
             var response = await ExecuteRestWithRetryAsync(restRequest);
             if (!response.IsSuccessStatusCode)
             {
@@ -82,11 +84,11 @@ namespace Planar.Job
             }
         }
 
-        public async Task PublishAsync(CloudEvent cloudEvent)
+        public async Task PublishAsync(string fireInstanceId, CloudEvent cloudEvent)
         {
             var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
             var json = Encoding.UTF8.GetString(bytes.ToArray());
-            var restRequest = CreateRequest(json);
+            var restRequest = CreateRequest(json, fireInstanceId);
             await ExecuteRestWithRetryAsync(restRequest);
         }
 

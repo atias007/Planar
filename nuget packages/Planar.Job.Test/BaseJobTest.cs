@@ -15,11 +15,8 @@ namespace Planar.Job.Test
         protected IJobExecutionResult ExecuteJob<T>()
             where T : BaseJob, new()
         {
-            var props = new ExecuteJobProperties
-            {
-                JobType = typeof(T)
-            };
-
+            var props = new ExecuteJobProperties();
+            props.AddJobType(typeof(T));
             return ExecuteJob<T>(props);
         }
 

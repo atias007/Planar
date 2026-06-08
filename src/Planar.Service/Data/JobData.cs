@@ -39,6 +39,8 @@ public interface IJobData : IJobPropertyDataLayer, IBaseDataLayer
     Task UpdateJobProperty(JobProperty jobProperty);
 
     Task<IEnumerable<JobProperty>> GetAllProperties(string typeName);
+
+    Task<IEnumerable<JobProperty>> GetAllPropertiesForFixVersion182();
 }
 
 public class JobDataSqlite(PlanarContext context) : JobData(context), IJobData
@@ -51,6 +53,15 @@ public class JobDataSqlServer(PlanarContext context) : JobData(context), IJobDat
 
 public class JobData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<IEnumerable<JobProperty>> GetAllPropertiesForFixVersion182()
+    {
+        var properties = await _context.JobProperties
+            .Where(j => j.JobType == "PlanarJob" && j.Properties != null && j.Properties.StartsWith("filename:"))
+            .ToListAsync();
+
+        return properties;
+    }
+
     public async Task<IEnumerable<JobProperty>> GetAllProperties(string typeName)
     {
         var properties = await _context.JobProperties

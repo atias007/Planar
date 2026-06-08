@@ -15,6 +15,8 @@ namespace Planar.Common
         IDictionary<string, object?> TriggerData { get; }
 #endif
 
+        IEnumerable<Type> JobTypes { get; }
+
         string Environment { get; }
         DateTimeOffset? ExecutionDate { get; }
 

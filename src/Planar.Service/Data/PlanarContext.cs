@@ -12,6 +12,8 @@ public partial class PlanarContext : DbContext
     {
     }
 
+    public virtual DbSet<Agent> Agents { get; set; }
+
     public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
 
     public virtual DbSet<ConcurrentExecution> ConcurrentExecutions { get; set; }

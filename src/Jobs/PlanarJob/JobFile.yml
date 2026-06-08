@@ -13,10 +13,21 @@ job data:                             # Key/Value pairs used by job code
   key3: value3                        # value --> [up to 1000 characters]
 
 properties:                           # Job Properties
-  filename: HelloWorld.exe            # Name of assembly file [mandatory, up to 500 characters]
-  domain: null                        # The active directory domain name (only on windows OS) [up to 100 characters]
-  username: null                      # local or network username (any OS) [up to 100 characters]
-  password: null                      # The active directory password (only on windows OS) [up to 100 characters]
+  invoke method: process              # The invoke method of job [process | rabbitmq | redis | http ]
+  process:
+    filename: HelloWorld.exe          # Name of assembly file [mandatory, up to 500 characters]
+    domain: null                      # The active directory domain name (only on windows OS) [up to 100 characters]
+    username: null                    # local or network username (any OS) [up to 100 characters]
+    password: null                    # The active directory password (only on windows OS) [up to 100 characters]
+  rabbitmq:                           # RabbitMQ properties (relevant only if host type is rabbitmq, server properties will be imported from panal appsettings.json)
+    exchange: planar                  # The exchange name [mandatory, up to 100 characters]
+    routing key: group.name           # The routing key [mandatory, up to 100 characters]
+  redis:                              # Redis properties (relevant only if host type is redis, server properties will be imported from panal appsettings.json)
+    stream name: planar               # The stream name [mandatory, up to 100 characters]
+    consumer group: group.name        # The consumer group name [mandatory, up to 100 characters]
+  http:                               # HTTP properties (relevant only if host type is http)
+    base url: http://example.com      # The URL to send the HTTP request to [mandatory, up to 1000 characters]
+    route: hello-world
 
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker

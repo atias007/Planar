@@ -7,4 +7,4 @@ PlanarJob.Debugger.AddProfile("Data = 20", b => b.WithJobData("DurationSeconds",
 
 PlanarJob.Debugger.AddProfile("Speed Running", b => b.WithJobData("Speed Running", true));
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

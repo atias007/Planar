@@ -19,17 +19,16 @@ internal class HookWrapper
         Description = description;
     }
 
-    public static HookWrapper CreateInternal(BaseSystemHook instance, ILogger logger)
+    public static HookWrapper CreateInternal(ISystemHook instance)
     {
         var wrapper = new HookWrapper(instance.Name, instance.Description)
         {
             HookType = HookTypeMembers.Internal,
             Instance = instance,
             ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance),
-            Logger = logger
+            Logger = instance.Logger
         };
 
-        instance.SetLogger(logger);
         return wrapper;
     }
 
@@ -53,7 +52,7 @@ internal class HookWrapper
 
     public HookTypeMembers HookType { get; private set; }
 
-    public BaseSystemHook? Instance { get; private set; }
+    public ISystemHook? Instance { get; private set; }
 
     public string? Filename { get; private set; }
 

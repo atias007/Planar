@@ -51,8 +51,8 @@
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockKey.cs" Link="JobExecutionContext\MockKey.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockTriggerDetails.cs" Link="JobExecutionContext\MockTriggerDetails.cs" />
 		<Compile Include="..\Planar.Common\JobMapper.cs" Link="JobMapper.cs" />
+		<Compile Include="..\Planar.Common\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
-		<Compile Include="..\Planar.Job\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\Planar.Job\UnitTestResult.cs" Link="UnitTestResult.cs" />
 	</ItemGroup>
 	<ItemGroup>
@@ -63,13 +63,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.6" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
-		<PackageReference Include="System.Text.Json" Version="10.0.6" />
-		<PackageReference Include="YamlDotNet" Version="17.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="System.Text.Json" Version="10.0.8" />
+		<PackageReference Include="YamlDotNet" Version="18.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

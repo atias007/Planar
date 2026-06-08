@@ -1,8 +1,8 @@
 ﻿using Core.JsonConvertors;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -13,12 +13,12 @@ using Planar.Filters;
 using Planar.Service;
 using Planar.Service.Services;
 using Prometheus;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using System;
 using System.Net;
 using System.Threading.RateLimiting;
-using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
-using SharpGrip.FluentValidation.AutoValidation.Shared.Extensions;
-using FluentValidation;
+using Planar.Hooks;
+using Planar.Common.PeriodicalBatch;
 
 namespace Planar.Startup;
 
@@ -75,6 +75,7 @@ public static class ServiceCollectionInitializer
             });
         });
 
+        services.AddHooks();
         services.AddMemoryCache();
         services.AddPlanarServices();
         services.AddGrpc();
@@ -137,5 +138,9 @@ public static class ServiceCollectionInitializer
             .AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
 
         services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
+
+        services.AddPeriodicalBatchService<AgentPeriodicalBatch, AgentInfo>(opt => opt
+            .WithPeriod(TimeSpan.FromMinutes(1))
+            .WithBatchSize(20));
     }
 }

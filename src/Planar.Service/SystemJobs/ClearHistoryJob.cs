@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -51,19 +52,24 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         }
 
         await Task.WhenAll(
+            ClearJobInstanceLog(),
             ClearTrace(),
-            ClearJobLog(),
-            ClearJobWithRetentionDaysLog(),
             ClearStatistics(),
             ClearProperties(ids.Result),
             ClearLast(ids.Result),
-            ClearHistory(ids.Result),
             ClearMonitorCountersByJob(ids.Result),
             ClearMonitorCountersByMonitor(),
             ClearJobStatistics(ids.Result)
             );
 
         SafeSetLastRun(context, logger);
+    }
+
+    private async Task ClearJobInstanceLog()
+    {
+        await ClearJobWithRetentionDaysLog();
+        await ClearJobLog();
+        ////await ClearHistory(ids.Result);
     }
 
     private async Task<bool> CheckIfStatisticsJobRun()
@@ -108,7 +114,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
 
     private async Task ClearJobLog()
     {
-        const int BatchSize = 5_000;
+        const int BatchSize = 1_000;
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
@@ -119,6 +125,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
             {
                 count = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays, BatchSize);
                 rows += count;
+                await Task.Delay(1_000);
             } while (count == BatchSize);
 
             logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
@@ -131,7 +138,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
 
     private async Task ClearJobWithRetentionDaysLog()
     {
-        const int BatchSize = 5_000;
+        const int BatchSize = 1_000;
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
@@ -154,6 +161,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
                 {
                     count = await data.ClearJobLogTable(jobId, days.Value, BatchSize);
                     rows += count;
+                    await Task.Delay(1_000);
                 } while (count == BatchSize);
 
                 logger.LogDebug("clear job {JobId} log table rows (older then {Days} days) with {Total} effected row(s)", jobId, days, rows);
@@ -204,26 +212,26 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         return result;
     }
 
-    private async Task ClearHistory(IEnumerable<string> existsIds)
-    {
-        try
-        {
-            using var scope = serviceScopeFactory.CreateScope();
-            var historyData = scope.ServiceProvider.GetRequiredService<IHistoryData>();
-            var historyIds = await historyData.GetHistoryJobIds();
-            var toBeDelete = historyIds.Except(existsIds);
-            if (toBeDelete.Any())
-            {
-                await historyData.ClearJobHistory(toBeDelete);
-            }
+    ////private async Task ClearHistory(IEnumerable<string> existsIds)
+    ////{
+    ////    try
+    ////    {
+    ////        using var scope = serviceScopeFactory.CreateScope();
+    ////        var historyData = scope.ServiceProvider.GetRequiredService<IHistoryData>();
+    ////        var historyIds = await historyData.GetHistoryJobIds();
+    ////        var toBeDelete = historyIds.Except(existsIds);
+    ////        if (toBeDelete.Any())
+    ////        {
+    ////            await historyData.ClearJobHistory(toBeDelete);
+    ////        }
 
-            logger.LogDebug("clear history table rows with {Total} effected row(s)", toBeDelete.Count());
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "fail to clear history table rows");
-        }
-    }
+    ////        logger.LogDebug("clear history table rows with {Total} effected row(s)", toBeDelete.Count());
+    ////    }
+    ////    catch (Exception ex)
+    ////    {
+    ////        logger.LogError(ex, "fail to clear history table rows");
+    ////    }
+    ////}
 
     private async Task ClearLast(IEnumerable<string> existsIds)
     {

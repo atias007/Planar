@@ -5,31 +5,27 @@ using System.Text;
 
 namespace Planar.Job.Logger
 {
-    internal class BaseLogger
+    internal abstract class BaseLogger
     {
         private static readonly StringBuilder _logBuilder = new StringBuilder();
         private static readonly object _locker = new object();
+        private readonly string _fireInstanceId;
 
-#pragma warning disable IDE0060 // Remove unused parameter
-
-#pragma warning restore IDE0060 // Remove unused parameter
-
-#pragma warning disable IDE0060 // Remove unused parameter
-
-        public bool IsEnabled(LogLevel logLevel) => true;
-
-#pragma warning restore IDE0060 // Remove unused parameter
+        protected BaseLogger(string fireInstanceId)
+        {
+            _fireInstanceId = fireInstanceId;
+        }
 
         public static string LogText => _logBuilder.ToString();
 
         protected void Log(LogLevel logLevel, string message)
         {
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.PublishAsync(MessageBrokerChannels.AppendLog, entity).Wait();
+            MqttClient.PublishAsync(_fireInstanceId, MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
 
-        protected void LogToConsole(string message)
+        protected static void LogToConsole(string message)
         {
             lock (_locker)
             {
@@ -89,7 +85,7 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger<TContext> : BaseLogger, ILogger<TContext>
     {
-        public PlanarLogger() : base()
+        public PlanarLogger(IBaseJob baseJob) : base(baseJob.Context.FireInstanceId)
         {
         }
 
@@ -100,6 +96,8 @@ namespace Planar.Job.Logger
 #else
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
 #endif
+
+        public bool IsEnabled(LogLevel logLevel) => true;
 
 #if NETSTANDARD2_0
 
@@ -123,6 +121,10 @@ namespace Planar.Job.Logger
 
     internal class PlanarLogger : BaseLogger, ILogger
     {
+        public PlanarLogger(IBaseJob baseJob) : base(baseJob.Context.FireInstanceId)
+        {
+        }
+
 #if NETSTANDARD2_0
 
         public IDisposable BeginScope<TState>(TState state) => default;
@@ -130,6 +132,8 @@ namespace Planar.Job.Logger
 #else
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
 #endif
+
+        public bool IsEnabled(LogLevel logLevel) => true;
 
 #if NETSTANDARD2_0
 

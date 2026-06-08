@@ -138,5 +138,11 @@ namespace Planar.Common
         {
             return _properties;
         }
+
+        public IExecuteJobPropertiesBuilder ForJob<T>() where T : class, new()
+        {
+            _properties.AddJobType(typeof(T));
+            return this;
+        }
     }
 }

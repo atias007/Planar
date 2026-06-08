@@ -1,4 +1,4 @@
 ﻿using LongRunningJob;
 using Planar.Job;
 
-PlanarJob.Start<Worker>();
+await PlanarJob.StartAsync<Worker>();

@@ -40,4 +40,4 @@ PlanarJob.Debugger.AddProfile("Override Global Settings", builder =>
         .WithJobData("SomeMappedInt", 555)
         .WithGlobalSettings("Max Diffrance Hours", 999));
 
-PlanarJob.Start<Worker>();
+await PlanarJob.StartAsync<Worker>();

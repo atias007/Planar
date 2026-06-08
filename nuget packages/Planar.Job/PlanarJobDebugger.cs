@@ -15,7 +15,7 @@ namespace Planar.Job
 
         public void AddProfile(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
         {
-            if (PlanarJob.Mode == RunningMode.Release) { return; }
+            //// if (PlanarJob.Mode == RunningMode.Release) { return; }
 
             if (_profiles.ContainsKey(name))
             {
@@ -35,6 +35,16 @@ namespace Planar.Job
             var builder = new ExecuteJobPropertiesBuilder().SetDevelopmentEnvironment();
             builderAction(builder);
             var properties = builder.Build();
+
+            var baseJobType = typeof(BaseJob);
+            foreach (var type in properties.JobTypes)
+            {
+                if (!baseJobType.IsAssignableFrom(type))
+                {
+                    throw new PlanarJobException($"Debug profile contains invalid job type: {type.FullName}. Verify that all job types inherit from {nameof(BaseJob)}.");
+                }
+            }
+
             _profiles.Add(name, properties);
         }
     }

@@ -99,19 +99,19 @@ public partial class JobDomain
     private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
     {
         if (string.IsNullOrEmpty(metadata.Author)) { return; }
-        job.JobDataMap.Put(Consts.Author, metadata.Author);
+        job.JobDataMap[Consts.Author] = metadata.Author;
     }
 
     private static void AddCircuitBreaker(SetJobRequest metadata, IJobDetail job)
     {
         if (!metadata.CircuitBreaker.Enabled) { return; }
-        job.JobDataMap.Put(Consts.CircuitBreaker, metadata.CircuitBreaker.ToString());
+        job.JobDataMap[Consts.CircuitBreaker] = metadata.CircuitBreaker.ToString();
     }
 
     private static void AddLogRetentionDays(SetJobRequest metadata, IJobDetail job)
     {
         if (metadata.LogRetentionDays == null) { return; }
-        job.JobDataMap.Put(Consts.LogRetentionDays, metadata.LogRetentionDays.Value.ToString());
+        job.JobDataMap[Consts.LogRetentionDays] = metadata.LogRetentionDays.Value.ToString();
     }
 
     private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
@@ -143,7 +143,7 @@ public partial class JobDomain
         if (metadata.JobData == null) { return; }
         foreach (var item in metadata.JobData)
         {
-            job.JobDataMap.Put(item.Key, item.Value);
+            job.JobDataMap[item.Key] = item.Value ?? string.Empty;
         }
     }
 

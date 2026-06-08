@@ -6,4 +6,4 @@ PlanarJob.Debugger.AddProfile("Dev 2", b => b.WithGlobalSettings("x", 3).WithRef
 
 PlanarJob.Debugger.AddProfile("BugFix", b => b.WithGlobalSettings("RabbitMq:Hosts:0", "x"));
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

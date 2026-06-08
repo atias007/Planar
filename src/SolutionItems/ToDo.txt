@@ -1,8 +1,6 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
-- add stream max length to settings of hooks
-
 - add mcp command to cli
 - validate on startup that instance id not exists in nodes table
 - Security report
@@ -410,3 +408,6 @@ V 1.8.2
 - job apply with client library
 - client library: add error code (string) to bad request
 - add the ability to add/remove hooks to monitor
+- BUG: load jobfile with simple trigger without interval
+- BUG: cli manual run job when service is halted
+- add stream max length to settings of hooks

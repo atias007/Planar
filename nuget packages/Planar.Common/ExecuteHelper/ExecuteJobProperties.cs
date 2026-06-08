@@ -10,12 +10,9 @@ namespace Planar.Common
         private const string DefaultJobName = "TestJob";
         private const string DefaultTriggerName = "TestTrigger";
 
-#if NETSTANDARD2_0
-        public Type JobType { get; set; }
-#else
-        public Type? JobType { get; set; }
-#endif
+        private readonly List<Type> _jobTypes = new List<Type>();
 
+        public IEnumerable<Type> JobTypes => _jobTypes;
         public DateTimeOffset? ExecutionDate { get; set; }
 
         public bool Recovering { get; set; }
@@ -39,5 +36,15 @@ namespace Planar.Common
         public IDictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();
         public IDictionary<string, string?> GlobalSettings { get; set; } = new Dictionary<string, string?>();
 #endif
+
+        internal void AddJobType(Type type)
+        {
+            if (type == null)
+            {
+                throw new ExecuteJobPropertiesBuilderException("job type parameter should not be null");
+            }
+
+            _jobTypes.Add(type);
+        }
     }
 }

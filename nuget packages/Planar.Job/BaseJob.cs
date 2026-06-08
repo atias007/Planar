@@ -1,17 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Job.Logger;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using YamlDotNet.Core.Tokens;
 using Timer = System.Timers.Timer;
 
 namespace Planar.Job
@@ -23,33 +21,28 @@ namespace Planar.Job
         private IConfiguration _configuration = null;
         private ILogger _logger = null;
         private IServiceProvider _provider = null;
-        private Timer _timer;
+        private Timer _timeoutTimer;
         private Version _version;
         private AutoResetEvent _executeResetEvent;
+        private IHostedJobProperties _hostedProperties;
+        private CancellationTokenSource _timeoutCancelTokenSource;
+        private CancellationTokenSource _linkedCancelTokenSource;
 #else
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
         private ILogger _logger = null!;
         private IServiceProvider _provider = null!;
-        private Timer? _timer;
+        private Timer? _timeoutTimer;
         private Version? _version;
         private AutoResetEvent? _executeResetEvent;
+        private IHostedJobProperties? _hostedProperties;
+        private CancellationTokenSource? _timeoutCancelTokenSource;
+        private CancellationTokenSource? _linkedCancelTokenSource;
 #endif
 
+        private bool _isHosted = false;
         private JobExecutionContext _context = new JobExecutionContext();
         private bool _inConfiguration;
-
-        protected IConfiguration Configuration
-        {
-            get
-            {
-                return _configuration;
-            }
-            private set
-            {
-                _configuration = value;
-            }
-        }
 
         public int? EffectedRows => _baseJobFactory.EffectedRows;
 
@@ -70,6 +63,7 @@ namespace Planar.Job
         }
 
         protected IServiceProvider ServiceProvider => _provider;
+        protected IConfiguration Configuration => _configuration;
 
 #if NETSTANDARD2_0
 
@@ -98,8 +92,15 @@ namespace Planar.Job
 
         public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        internal async Task<bool> Execute(string json)
+#if NETSTANDARD2_0
+
+        internal async Task<bool> Execute(string json, IHostedJobProperties hostedProperties, CancellationToken cancellationToken)
+#else
+        internal async Task<bool> Execute(string json, IHostedJobProperties? hostedProperties, CancellationToken cancellationToken)
+#endif
         {
+            _hostedProperties = hostedProperties;
+            _isHosted = hostedProperties != null;
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
@@ -115,9 +116,12 @@ namespace Planar.Job
             try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 #endif
 
+            ValidateJobExecutionContext(_context);
+
             try
             {
                 await OpenMqttConnection();
+                _ = SendHealthCheckSignal();
 
                 Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -129,14 +133,29 @@ namespace Planar.Job
 
                 var timeout = _context.TriggerDetails.Timeout;
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
-                var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
-                _timer = new Timer(timeoutms);
-                _timer.Elapsed += async (s, e) => await TimerElapsed();
-                _timer.Start();
+                SetContextTimeoutCancellationToken(timeout.Value, cancellationToken);
 
-                var task = ExecuteJob(_context);
-                await Task.WhenAll(task);
-                _timer?.Stop();
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                        _context.FireInstanceId,
+                        _context.JobDetails.Key,
+                        _context.TriggerDetails.Key.Name);
+                }
+
+                _baseJobFactory.StartTiming();
+                await ExecuteJob(_context);
+                _timeoutTimer?.Stop();
+                _baseJobFactory.StopTiming();
+
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                    _context.FireInstanceId,
+                    _context.JobDetails.Key,
+                    _context.TriggerDetails.Key.Name);
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -146,15 +165,19 @@ namespace Planar.Job
             }
             finally
             {
+                _timeoutTimer?.Stop();
+                _timeoutCancelTokenSource?.Dispose();
+                _linkedCancelTokenSource?.Dispose();
+
                 await SafeHandleAsync(async () =>
                 {
                     var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
                     await mapperBack.MapJobInstancePropertiesBack(_context, this);
                 });
 
-                SafeHandle(() => _timer?.Dispose());
+                SafeHandle(() => _timeoutTimer?.Dispose());
                 SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
-                await SafeHandleAsync(MqttClient.StopAsync);
+                if (!_isHosted) { await SafeHandleAsync(() => MqttClient.StopAsync(_context.FireInstanceId)); }
             }
         }
 
@@ -204,40 +227,60 @@ namespace Planar.Job
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
+#if NETSTANDARD2_0
+
         private async Task OpenMqttConnection()
+#else
+        private async Task OpenMqttConnection()
+#endif
         {
-            if (PlanarJob.Mode == RunningMode.Release)
+            if (PlanarJob.Mode != RunningMode.Release) { return; }
+            if (MqttClient.IsConnected) { return; }
+
+            var connectTimeout = TimeSpan.FromSeconds(4);
+            MqttClient.Connected += MqttClient_Connected;
+
+            for (int i = 0; i < 3; i++)
             {
-                var connectTimeout = TimeSpan.FromSeconds(6);
-                MqttClient.Connected += MqttClient_Connected;
-
-                for (int i = 0; i < 3; i++)
-                {
-                    if (await SafeStartMqttClient(connectTimeout)) { return; }
-                }
-
-                // mqtt failover by http to planar service
-                for (int i = 0; i < 3; i++)
-                {
-                    if (await SafeStartFailOverProxy()) { return; }
-                }
-
-                throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
+                if (await SafeStartMqttClient(connectTimeout)) { return; }
             }
+
+            // mqtt failover by http to planar service
+            for (int i = 0; i < 3; i++)
+            {
+                if (await SafeStartFailOverProxy()) { return; }
+            }
+
+            throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
+        }
+
+        private void SetContextTimeoutCancellationToken(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            if (!_isHosted)
+            {
+                var timeoutms = timeout.Add(TimeSpan.FromMinutes(2)).TotalMilliseconds;
+                _timeoutTimer = new Timer(timeoutms);
+                _timeoutTimer.Elapsed += async (s, e) => await TimerElapsed();
+                _timeoutTimer.Start();
+            }
+
+            _timeoutCancelTokenSource = new CancellationTokenSource(timeout);
+            _linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_timeoutCancelTokenSource.Token, cancellationToken);
+            _context.CancellationToken = _linkedCancelTokenSource.Token;
         }
 
         private async Task<bool> SafeStartFailOverProxy()
         {
             try
             {
-                MqttClient.StartFailOver(_context.FireInstanceId, _context.JobFailOverPort);
-                await MqttClient.PingAsync();
-                await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
+                MqttClient.StartFailOver(_context.JobFailOverPort);
+                await MqttClient.PingAsync(_context.FireInstanceId);
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
                 return true;
             }
             catch
             {
-                await MqttClient.StopAsync();
+                await MqttClient.StopAsync(_context.FireInstanceId);
                 return false;
             }
         }
@@ -247,26 +290,44 @@ namespace Planar.Job
             try
             {
                 _executeResetEvent = new AutoResetEvent(false);
-                await MqttClient.StartAsync(_context.FireInstanceId, _context.JobPort);
-                _executeResetEvent.WaitOne(connectTimeout);
-                await MqttClient.PingAsync();
-
-                for (int i = 0; i < 3; i++)
+                if (_hostedProperties == null)
                 {
-                    await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
-                    await Task.Delay(50);
+                    const string local = "127.0.0.1";
+                    await MqttClient.StartAsync(local, _context.JobPort);
                 }
+                else
+                {
+                    await MqttClient.StartAsync(_hostedProperties.PlanarHostname, _hostedProperties.PlanarPort);
+                }
+
+                if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("MQTT connection timeout"); }
+                await MqttClient.PingAsync(_context.FireInstanceId);
                 return true;
             }
             catch
             {
-                await MqttClient.StopAsync();
+                await MqttClient.StopAsync(_context.FireInstanceId);
                 await Task.Delay(500);
                 return false;
             }
         }
 
+        private async Task SendHealthCheckSignal()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
+                await Task.Delay(50);
+            }
+        }
+
+#if NETSTANDARD2_0
+
         private void MqttClient_Connected(object sender, EventArgs e)
+
+#else
+        private void MqttClient_Connected(object? sender, EventArgs e)
+#endif
         {
             _executeResetEvent?.Set();
         }
@@ -302,6 +363,7 @@ namespace Planar.Job
 
         {
             InitializeBaseJobFactory(json);
+            ValidateJobExecutionContext(_context);
             InitializeConfiguration(_context, configureAction);
             InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
 
@@ -560,22 +622,22 @@ namespace Planar.Job
             }
         }
 
-        private void InitializeBaseJobFactory(string json)
+        private readonly static JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
         {
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    Converters =
+            Converters =
                     {
                         new TypeMappingConverter<IJobDetail, JobDetail>(),
                         new TypeMappingConverter<ITriggerDetail, TriggerDetail>(),
                         new TypeMappingConverter<IKey, Key>(),
                         new DataMapConvertor()
                     }
-                };
+        };
 
-                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(json, options) ??
+        private void InitializeBaseJobFactory(string json)
+        {
+            try
+            {
+                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(json, _jsonSerializerOptions) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from json (error 7379)");
 
                 _baseJobFactory = new BaseJobFactory(ctx);
@@ -605,6 +667,34 @@ namespace Planar.Job
             }
         }
 
+        private static void ValidateJobExecutionContext(JobExecutionContext ctx)
+        {
+            if (string.IsNullOrWhiteSpace(ctx.FireInstanceId))
+            {
+                throw new PlanarJobException("FireInstanceId property in job context is required");
+            }
+
+            if (ctx.JobDetails == null)
+            {
+                throw new PlanarJobException("JobDetails property in job context is required");
+            }
+
+            if (ctx.TriggerDetails == null)
+            {
+                throw new PlanarJobException("TriggerDetails property in job context is required");
+            }
+
+            if (ctx.JobDetails.Key == null)
+            {
+                throw new PlanarJobException("JobDetails.Key property in job context is required");
+            }
+
+            if (string.IsNullOrWhiteSpace(ctx.JobDetails.Key.Name))
+            {
+                throw new PlanarJobException("JobDetails.Key.Name property in job context is required");
+            }
+        }
+
         private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
         {
             _inConfiguration = true;
@@ -622,7 +712,7 @@ namespace Planar.Job
             finally
             {
                 _inConfiguration = false;
-                Configuration = builder.Build();
+                _configuration = builder.Build();
             }
         }
 
@@ -634,6 +724,14 @@ namespace Planar.Job
             services.AddSingleton<IBaseJob>(baseJobFactory);
             services.AddSingleton<ILogger, PlanarLogger>();
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
+
+            if (_hostedProperties != null)
+            {
+                foreach (var item in _hostedProperties.HostSingletonTypes)
+                {
+                    services.AddSingleton(item, p => _hostedProperties.Host.Services.GetRequiredService(item));
+                }
+            }
 
             try
             {
@@ -652,7 +750,10 @@ namespace Planar.Job
         private void LogVersion()
         {
             if (Version == null) { return; }
-            Logger.LogInformation("job version: {Version}", Version);
+            if(Logger.IsEnabled(LogLevel.Information))
+            {
+                Logger.LogInformation("job version: {Version}", Version);
+            }
         }
 
         private async Task TimerElapsed()
@@ -669,15 +770,15 @@ namespace Planar.Job
 
             try
             {
-                await MqttClient.StopAsync();
-                _timer?.Dispose();
+                await MqttClient.StopAsync(_context.FireInstanceId);
+                _timeoutTimer?.Dispose();
             }
             catch
             {
                 // *** DO NOTHING ***
             }
 
-            Environment.Exit(-1);
+            if (!_isHosted) { Environment.Exit(-1); }
         }
 
         private static void ValidateJobId(string id)

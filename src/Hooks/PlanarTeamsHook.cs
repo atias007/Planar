@@ -1,12 +1,14 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Hook;
 using Planar.Hooks.Enities;
+using Planar.Hooks.Serialize;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace Planar.Hooks;
 
-public sealed class PlanarTeamsHook : BaseSystemHook
+public sealed class PlanarTeamsHook(ILogger<PlanarTeamsHook> logger) : BaseSystemHook(logger)
 {
     public override string Name => "Planar.Teams";
 
@@ -26,8 +28,6 @@ To send to multiple channels, you can set the following value (in appsettings.ym
 """;
 
     private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
-
-    private static readonly JsonSerializerOptions _serializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
@@ -108,7 +108,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
             ]
         };
 
-        var json = JsonSerializer.Serialize(card, _serializerOptions);
+        var json = CoreSerializer.Serialize(card);
         return json;
     }
 
@@ -138,7 +138,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
                 ]
         };
 
-        var json = JsonSerializer.Serialize(card, _serializerOptions);
+        var json = CoreSerializer.Serialize(card);
         return json;
     }
 
