@@ -103,7 +103,7 @@ namespace Planar.Job
         {
             lock (Locker)
             {
-                if (_exceptions == null || !_exceptions.Any())
+                if (_exceptions == null || _exceptions.Count == 0)
                 {
                     return;
                 }

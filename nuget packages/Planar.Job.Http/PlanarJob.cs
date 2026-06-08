@@ -22,7 +22,7 @@ namespace Planar.Job
 
         public async static Task StartAsync(HttpJobStartProperties properties)
         {
-            if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
+            ArgumentNullException.ThrowIfNull(properties);
             InitWebApplication(properties);
             _logger = GetLogger(properties);
 
@@ -36,6 +36,10 @@ namespace Planar.Job
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Fail to start http planar hosted job");
+            }
+            finally
+            {
+                _mainCancellationTokenSource?.Dispose();
             }
         }
 
@@ -117,7 +121,11 @@ namespace Planar.Job
                 if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.NotFound(); }
 
                 jobInstanceInfo.Cancel();
-                _logger?.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
+                if(_logger?.IsEnabled(LogLevel.Information) == true)
+                {
+                    _logger?.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
+                }
+
                 return Results.Accepted();
             }
             catch (Exception ex)

@@ -26,7 +26,7 @@ namespace Planar.Job.Http
 
         public HttpJobStartPropertiesBuilder WithPlanarPort(int port)
         {
-            if (port > 0 || port < 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
+            if (port < 0 || port > 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
             _properties.PlanarPort = port;
             return this;
         }

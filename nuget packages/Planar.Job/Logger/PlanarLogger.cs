@@ -18,7 +18,9 @@ namespace Planar.Job.Logger
 
 #pragma warning disable IDE0060 // Remove unused parameter
 
+#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
         public bool IsEnabled(LogLevel logLevel) => true;
+#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
 
 #pragma warning restore IDE0060 // Remove unused parameter
 
@@ -31,7 +33,9 @@ namespace Planar.Job.Logger
             LogToConsole(entity.ToString());
         }
 
+#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
         protected void LogToConsole(string message)
+#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
         {
             lock (_locker)
             {

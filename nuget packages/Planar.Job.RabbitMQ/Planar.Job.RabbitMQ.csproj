@@ -89,6 +89,10 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="YamlDotNet" Version="18.0.0" />
 	</ItemGroup>
 	<ItemGroup>

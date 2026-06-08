@@ -62,7 +62,7 @@ namespace Planar.Job
             int? selectedIndex;
 
             var profiles = Debugger.Profiles.Where(p => !p.Value.JobTypes.Any() || p.Value.JobTypes.Contains(JobType)).ToList();
-            var hasProfiles = profiles.Any();
+            var hasProfiles = profiles.Count > 0;
             if (hasProfiles)
             {
                 Console.Write("> Please select the profile code to start executing ");
@@ -129,7 +129,9 @@ namespace Planar.Job
                 {
                     item1.Value = item2.Key;
                     item2.Key = null;
+#pragma warning disable S127 // "for" loop stop conditions should be invariant
                     i++;
+#pragma warning restore S127 // "for" loop stop conditions should be invariant
                 }
             }
         }
@@ -229,7 +231,7 @@ namespace Planar.Job
             Console.ResetColor();
         }
 
-        private static async Task<bool> Debug(IHostedJobProperties properties, CancellationToken cancellationToken)
+        public static async Task<bool> Debug(IHostedJobProperties properties, CancellationToken cancellationToken)
         {
             if (Mode != RunningMode.Debug) { return false; }
             var type = ShowJobMenu(properties);
@@ -278,7 +280,7 @@ namespace Planar.Job
             return (await instance.Execute(json, hostedProperties, cancellationToken), instance);
         }
 
-        private async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
+        public async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
         {
             await Task.Delay(10_000);
             await ExecuteHealthCheck(properties, logger);

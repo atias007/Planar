@@ -135,21 +135,26 @@ namespace Planar.Job
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
                 SetContextTimeoutCancellationToken(timeout.Value, cancellationToken);
 
-                Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
-                    _context.FireInstanceId,
-                    _context.JobDetails.Key,
-                    _context.TriggerDetails.Key.Name);
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                        _context.FireInstanceId,
+                        _context.JobDetails.Key,
+                        _context.TriggerDetails.Key.Name);
+                }
 
                 _baseJobFactory.StartTiming();
-                var task = ExecuteJob(_context);
-                await Task.WhenAll(task);
+                await ExecuteJob(_context);
                 _timeoutTimer?.Stop();
                 _baseJobFactory.StopTiming();
 
-                Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
                     _context.FireInstanceId,
                     _context.JobDetails.Key,
                     _context.TriggerDetails.Key.Name);
+                }
 
                 return true;
             }
@@ -617,22 +622,22 @@ namespace Planar.Job
             }
         }
 
-        private void InitializeBaseJobFactory(string json)
+        private readonly static JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
         {
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    Converters =
+            Converters =
                     {
                         new TypeMappingConverter<IJobDetail, JobDetail>(),
                         new TypeMappingConverter<ITriggerDetail, TriggerDetail>(),
                         new TypeMappingConverter<IKey, Key>(),
                         new DataMapConvertor()
                     }
-                };
+        };
 
-                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(json, options) ??
+        private void InitializeBaseJobFactory(string json)
+        {
+            try
+            {
+                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(json, _jsonSerializerOptions) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from json (error 7379)");
 
                 _baseJobFactory = new BaseJobFactory(ctx);
@@ -662,7 +667,7 @@ namespace Planar.Job
             }
         }
 
-        private void ValidateJobExecutionContext(JobExecutionContext ctx)
+        private static void ValidateJobExecutionContext(JobExecutionContext ctx)
         {
             if (string.IsNullOrWhiteSpace(ctx.FireInstanceId))
             {
@@ -745,7 +750,10 @@ namespace Planar.Job
         private void LogVersion()
         {
             if (Version == null) { return; }
-            Logger.LogInformation("job version: {Version}", Version);
+            if(Logger.IsEnabled(LogLevel.Information))
+            {
+                Logger.LogInformation("job version: {Version}", Version);
+            }
         }
 
         private async Task TimerElapsed()

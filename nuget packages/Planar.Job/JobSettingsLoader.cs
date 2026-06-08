@@ -35,7 +35,7 @@ namespace Planar.Job
 
             // Merge settings yml file
             var fullpath = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
-            if (fullpath == null) { throw new ArgumentNullException(nameof(fullpath)); }
+            if (fullpath == null) { throw new InvalidDataException("fullpath is null"); }
             var location = new DirectoryInfo(fullpath);
             if (!location.Exists) { return final; }
 

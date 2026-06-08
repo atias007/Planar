@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using Serilog;
 
 namespace HttpJob
 {
@@ -13,14 +14,22 @@ namespace HttpJob
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
-            var dal = ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = ServiceProvider.GetRequiredService<IDataLayer>();
             var currencies = dal.GetCurrency();
-            Logger.LogDebug("Currency count: {Count}", currencies.Count());
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("Currency count: {Count}", currencies.Count());
+            }
+            
             var total = currencies.Count();
             var current = 0;
             foreach (var item in currencies)
             {
-                Logger.LogInformation($"{item.Name}: {item.Rate:N4}");
+                if (Logger.IsEnabled(LogLevel.Information))
+                {
+                    Logger.LogInformation("{Name}: {Rate:N4}", item.Name, item.Rate);
+                }
+
                 await IncreaseEffectedRowsAsync();
                 current++;
                 await base.UpdateProgressAsync(current, total);
@@ -30,11 +39,16 @@ namespace HttpJob
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
-            services.AddScoped<DataLayer>();
+            services.AddScoped<IDataLayer, DataLayer>();
         }
     }
 
-    internal class DataLayer
+    internal interface IDataLayer
+    {
+        IEnumerable<Currency> GetCurrency();
+    }
+
+    internal class DataLayer : IDataLayer
     {
         public IEnumerable<Currency> GetCurrency()
         {

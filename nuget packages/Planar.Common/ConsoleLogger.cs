@@ -78,7 +78,7 @@ namespace Planar
                     color = ConsoleColor.White;
                     break;
             }
-            ;
+            
 #else
   var color = logLevel switch
             {
@@ -124,7 +124,6 @@ namespace Planar
                     level = "UNK";
                     break;
             }
-            ;
 #else
   var level = logLevel switch
             {
@@ -140,7 +139,8 @@ namespace Planar
 
             var message = formatter(state, exception);
             var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-            var shortCategory = _categoryName.Split('.').Last(); // avoid long namespaces
+            var parts = _categoryName.Split('.');
+            var shortCategory = parts[parts.Length - 1]; // avoid long namespaces
 
             Console.ForegroundColor = color;
             Console.WriteLine($"[{timestamp}] [{level}] [{shortCategory}] {message}");

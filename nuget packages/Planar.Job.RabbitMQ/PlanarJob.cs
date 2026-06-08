@@ -4,6 +4,7 @@ using Planar.Common;
 using Planar.Job.RabbitMq;
 using RabbitMQ.Client.Events;
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,6 +44,10 @@ namespace Planar.Job
             {
                 _logger.LogCritical(ex, "Fail to start rabbitmq planar hosted job");
             }
+            finally
+            {
+                _mainCancellationTokenSource?.Dispose();
+            }
         }
 
         private static ILogger GetLogger(RabbitMqJobStartProperties properties)
@@ -58,7 +63,7 @@ namespace Planar.Job
 
         private async static Task SafeStartAsync(RabbitMqJobStartProperties properties)
         {
-            if (_logger == null) { throw new ArgumentNullException(nameof(_logger)); }
+            if (_logger == null) { throw new InvalidDataException("_logger is null"); }
             Properties = properties;
             _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, _mainCancellationTokenSource.Token);
 

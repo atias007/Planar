@@ -13,7 +13,6 @@ namespace Planar.Job.RabbitMq
 {
     internal sealed class RabbitMqFactory
     {
-        private bool _isConsuming = false;
         private readonly SemaphoreSlim _reconnectSemaphore = new SemaphoreSlim(1, 1);
         private readonly Timer _healthCheckTimer;
         private readonly IConnectionFactory connectionFactory;
@@ -105,10 +104,9 @@ namespace Planar.Job.RabbitMq
         /// <returns>Task representing the consumer operation</returns>
         public async Task StartConsumeAsync(Func<BasicDeliverEventArgs, Task> messageHandler)
         {
-            _isConsuming = true;
             _messageHandler = messageHandler;
 
-            while (_isConsuming && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
@@ -127,7 +125,6 @@ namespace Planar.Job.RabbitMq
                 }
                 catch (OperationCanceledException)
                 {
-                    _isConsuming = false;
                     break;
                 }
                 catch (Exception)
@@ -186,7 +183,10 @@ namespace Planar.Job.RabbitMq
                 _channel?.Dispose();
                 _channel = null;
             }
-            catch { }
+            catch 
+            {
+                // *** DO NOTHING *** ///
+            }
 
             try
             {
@@ -194,7 +194,10 @@ namespace Planar.Job.RabbitMq
                 _connection?.Dispose();
                 _connection = null;
             }
-            catch { }
+            catch
+            {
+                // *** DO NOTHING *** ///
+            }
         }
 
         private async Task SafeHealthCheck()

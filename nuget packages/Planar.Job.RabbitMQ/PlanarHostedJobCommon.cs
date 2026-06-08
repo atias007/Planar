@@ -26,16 +26,23 @@ namespace Planar.Job
                         item.Value.Cancel();
                     }
                 }
-                catch { }
+                catch
+                {
+                    // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
 
                 for (int i = 0; i < 30; i++)
                 {
-                    if (_jobInstances.Count == 0) { break; }
-                    _logger?.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
+                    if (_jobInstances.IsEmpty) { break; }
+                    if(_logger?.IsEnabled(LogLevel.Information) == true)
+                    {
+                        _logger?.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
+                    }
+
                     await Task.Delay(1_000);
                 }
 
-                if (_jobInstances.Count > 0)
+                if (!_jobInstances.IsEmpty)
                 {
                     _logger?.LogError("{Count} jobs to is running after waiting 30 seconds", _jobInstances.Count);
                 }
@@ -68,18 +75,34 @@ namespace Planar.Job
         {
             if (_jobInstances.TryRemove(fireInstanceId, out var info))
             {
-                try { info.Dispose(); } catch { }
+                try { info.Dispose(); } 
+                catch 
+                {
+                    // *** DO NOTHING, just try best effort to dispose the instance info *** //
+                }
             }
 
-            if (_jobInstances.Count == 0)
+            if (_jobInstances.IsEmpty)
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } 
+                    catch 
+                    {
+                        // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
+                    }
                     await Task.Delay(50);
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
+                    catch
+                    {
+                        // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
+                    }
                     await Task.Delay(50);
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } catch { }
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
+                    catch
+                    {
+                        // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
+                    }
                 }
             }
         }

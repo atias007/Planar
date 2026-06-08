@@ -30,7 +30,7 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartPropertiesBuilder WithPlanarPort(int port)
         {
-            if (port > 0 || port < 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
+            if (port < 0 || port > 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
             _properties.PlanarPort = port;
             return this;
         }
@@ -183,9 +183,9 @@ namespace Planar.Job.RabbitMq
 
 #if NETSTANDARD2_0
 
-        private JobQueueNameAttribute ValidateJobQueueNameAttribute(Type jobType)
+        private static JobQueueNameAttribute ValidateJobQueueNameAttribute(Type jobType)
 #else
-        private JobQueueNameAttribute? ValidateJobQueueNameAttribute(Type jobType)
+        private static JobQueueNameAttribute? ValidateJobQueueNameAttribute(Type jobType)
 #endif
         {
             var attribute = Attribute.GetCustomAttribute(jobType, typeof(JobQueueNameAttribute));
