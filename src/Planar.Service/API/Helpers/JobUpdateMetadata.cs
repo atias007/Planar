@@ -16,6 +16,7 @@ namespace Planar.Service.API.Helpers
         public IReadOnlyCollection<ITrigger> OldTriggers { get; set; } = null!;
 
         public string? OldJobProperties { get; set; }
+        public string? GlobalConfigKeys { get; set; }
 
         public JobKey JobKey { get; set; } = null!;
 

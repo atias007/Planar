@@ -12,7 +12,7 @@ public class GlobalConfigDataValidator : AbstractValidator<GlobalConfigModelAddR
 
     public GlobalConfigDataValidator()
     {
-        RuleFor(f => f.Key).NotEmpty().MaximumLength(100);
+        RuleFor(f => f.Key).NotEmpty().MaximumLength(50);
         RuleFor(f => f.Value).MaximumLength(4000);
         RuleFor(f => f.SourceUrl).MaximumLength(1000).IsUri();
         RuleFor(f => f.Type)

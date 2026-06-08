@@ -1,0 +1,1 @@
+ alter table [dbo].[JobProperties] add [GlobalConfigKeys] nvarchar(2000) null

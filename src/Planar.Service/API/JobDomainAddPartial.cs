@@ -414,6 +414,17 @@ public partial class JobDomain
         var yml = YmlUtil.Serialize(request.Properties);
         return yml;
     }
+    
+    private static string? GetJobGlobalConfigKeysYml(SetJobDynamicRequest request)
+    {
+        if (request.GlobalConfigKeys == null)
+        {
+            return null;
+        }
+
+        var yml = YmlUtil.Serialize(request.GlobalConfigKeys);
+        return yml;
+    }
 
     private static bool IsRegexMatch(Regex regex, string? value)
     {
@@ -768,6 +779,7 @@ public partial class JobDomain
         // Validation
         ValidateRequestNoNull(request);
         await ValidateRequestProperties(request);
+        ValidateGlobalConfigKeys(request);
         var scheduler = await GetScheduler();
         var jobKey = ValidateJobMetadata(request, scheduler);
         await ValidateJobNotExists(jobKey);
@@ -791,8 +803,16 @@ public partial class JobDomain
 
         // Save Job Properties
         var jobPropertiesYml = GetJopPropertiesYml(request);
+        var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
         var jobType = SchedulerUtil.GetJobTypeName(job);
-        var property = new JobProperty { JobId = id, Properties = jobPropertiesYml, JobType = jobType };
+        var property = new JobProperty 
+        { 
+            JobId = id, 
+            Properties = jobPropertiesYml,  
+            GlobalConfigKeys = jobGlobalConfigKeysYml, 
+            JobType = jobType 
+        };
+
         await DataLayer.AddJobProperty(property);
 
         try
@@ -894,6 +914,36 @@ public partial class JobDomain
         }
     }
 
+    private static void ValidateGlobalConfigKeysInner(SetJobDynamicRequest request)
+    {
+        if (request.GlobalConfigKeys == null) { return; }
+        if (request.GlobalConfigKeys.Count == 0) { return; }
+        if (request.GlobalConfigKeys.Count > 40)
+        {
+            throw new RestValidationException("global config keys", $"total count of global config keys ({request.GlobalConfigKeys.Count}) must be up to 40 items");
+        }
+
+        var longKeys = request.GlobalConfigKeys
+            .Where(k => k.Length > 50);
+
+        if(longKeys.Any())
+        {
+            var longKeysTitle = string.Join(',', longKeys);
+            throw new RestValidationException("global config keys", $"global config key(s) {longKeysTitle} has more the 50 chars");
+        }
+
+        var duplicates = request.GlobalConfigKeys
+            .GroupBy(r => r)
+            .Where(r => r.Count() > 1)
+            .Select(r => r.Key);
+
+        if (longKeys.Any())
+        {
+            var duplicatesTitle = string.Join(',', duplicates);
+            throw new RestValidationException("global config keys", $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
+        }
+    }
+
     private async Task ValidatePropertiesInner(SetJobDynamicRequest request)
     {
         var yml = GetJopPropertiesYml(request);
@@ -939,6 +989,18 @@ public partial class JobDomain
         catch (Exception ex)
         {
             throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
+        }
+    }
+    
+    private static void ValidateGlobalConfigKeys(SetJobDynamicRequest request)
+    {
+        try
+        {
+            ValidateGlobalConfigKeysInner(request);
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("properties", $"fail to read/validate global config keys section. error: {ex.Message}");
         }
     }
 

@@ -207,7 +207,10 @@ public partial class JobDomain
         target.Durable = source.Durable;
         target.RequestsRecovery = source.RequestsRecovery;
         target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
-        target.Properties = await DataLayer.GetJobProperty(target.Id) ?? string.Empty;
+
+        var props = await DataLayer.GetJobProperty(target.Id);
+        target.Properties = props.Properties ?? string.Empty;
+        target.GlobalConfigKeys = props.GlobalConfigKeys ?? string.Empty;
 
         var cbm = JobHelper.GetJobCircuitBreaker(source);
         if (cbm == null) { return target; }

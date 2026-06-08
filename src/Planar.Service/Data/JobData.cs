@@ -71,11 +71,11 @@ public class JobData(PlanarContext context) : BaseDataLayer(context)
         return properties;
     }
 
-    public async Task<string?> GetJobProperty(string jobId)
+    public async Task<(string? Properties, string? GlobalConfigKeys)> GetJobProperty(string jobId)
     {
         var properties = await _context.JobProperties
             .Where(j => j.JobId == jobId)
-            .Select(j => j.Properties)
+            .Select(j => new ValueTuple<string?, string?>(j.Properties, j.GlobalConfigKeys))
             .FirstOrDefaultAsync();
 
         return properties;

@@ -440,11 +440,6 @@ namespace Planar.CLI.Actions
             Util.SetLastJobOrTriggerId(response);
         }
 
-        protected static void AssertJobDataUpdated(RestResponse response, string id)
-        {
-            if (!response.IsSuccessful) { return; }
-        }
-
         protected static void AssertTriggerUpdated(RestResponse response, string id)
         {
             if (!response.IsSuccessful) { return; }

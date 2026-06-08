@@ -15,6 +15,7 @@ namespace Planar.API.Common.Entities
         public bool Concurrent { get; set; }
 
         public string Properties { get; set; } = string.Empty;
+        public string GlobalConfigKeys { get; set; } = string.Empty;
 
         public SortedDictionary<string, string?> DataMap { get; set; } = [];
 

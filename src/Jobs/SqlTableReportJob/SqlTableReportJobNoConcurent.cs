@@ -9,7 +9,7 @@ namespace Planar;
 [DisallowConcurrentExecution]
 [PersistJobDataAfterExecution]
 public class SqlTableReportJobNoConcurrent(
-    ILogger<SqlTableReportJob> logger,
+    ILogger<SqlTableReportJobNoConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
     IGroupDataLayer groupData,
     JobMonitorUtil jobMonitorUtil,

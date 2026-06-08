@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Twilio.Rest.Messaging.V1;
 
 namespace Planar.Hooks.Enities;
 
@@ -6,14 +7,19 @@ namespace Planar.Hooks.Enities;
 
 internal class TeamsMessageCard
 {
+    private const string SummaryText = "Planar monitor notification";
+
     [JsonPropertyName("@type")]
     public string Type => "MessageCard";
 
     [JsonPropertyName("@context")]
     public string Context => "https://schema.org/extensions";
 
-    public string Summary => "Planar monitor notification";
+#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
+    public string Summary => SummaryText;
     public string ThemeColor => "0078D7";
+#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
+
 
     public string? Title { get; set; }
 

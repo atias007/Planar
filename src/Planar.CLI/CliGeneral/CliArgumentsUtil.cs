@@ -181,7 +181,6 @@ public class CliArgumentsUtil
         {
             args.Insert(0, "history");
             args.Insert(1, "get");
-            return;
         }
     }
 

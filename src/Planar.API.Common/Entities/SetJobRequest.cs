@@ -26,6 +26,9 @@ namespace Planar.API.Common.Entities
 
         [YamlMember(Alias = "job data")]
         public Dictionary<string, string?> JobData { get; set; } = [];
+        
+        [YamlMember(Alias = "global config keys")]
+        public List<string> GlobalConfigKeys { get; set; } = [];
 
         [YamlMember(Alias = "simple triggers")]
         public List<JobSimpleTriggerMetadata> SimpleTriggers { get; set; } = [];

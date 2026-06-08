@@ -496,7 +496,8 @@ public partial class JobDomain(
         var key = await JobKeyHelper.GetJobKey(id);
         var jobId = await JobKeyHelper.GetJobId(key);
         if (string.IsNullOrWhiteSpace(jobId)) { throw NotFound(id); }
-        var properties = await DataLayer.GetJobProperty(jobId);
+        var p = await DataLayer.GetJobProperty(jobId);
+        var properties = p.Properties;
         if (string.IsNullOrWhiteSpace(properties))
         {
             throw NotFound(id);
@@ -774,9 +775,9 @@ public partial class JobDomain(
     {
         var result = new List<KeyValueItem>();
         var jobId = await JobKeyHelper.GetJobId(id) ?? string.Empty;
-        var properties = await DataLayer.GetJobProperty(jobId);
+        var p = await DataLayer.GetJobProperty(jobId);
 
-        if (string.IsNullOrEmpty(properties))
+        if (string.IsNullOrWhiteSpace(p.Properties))
         {
             return result;
         }
@@ -784,7 +785,7 @@ public partial class JobDomain(
         string jobPath;
         try
         {
-            var pathObj = YmlUtil.Deserialize<JobPropertiesWithPath>(properties);
+            var pathObj = YmlUtil.Deserialize<JobPropertiesWithPath>(p.Properties);
             jobPath = pathObj.Path ?? string.Empty;
         }
         catch (Exception)
@@ -792,7 +793,21 @@ public partial class JobDomain(
             return result;
         }
 
-        var settings = JobSettingsLoader.LoadJobSettings(jobPath, Global.GlobalConfig);
+        IEnumerable<string>? globalConfigKeys = null;
+        if (p.GlobalConfigKeys == null)
+        {
+            globalConfigKeys = null;
+        }
+        else if (string.IsNullOrWhiteSpace(p.GlobalConfigKeys))
+        {
+            globalConfigKeys = [];
+        }
+        else
+        {
+            globalConfigKeys = YmlUtil.Deserialize<IEnumerable<string>>(p.GlobalConfigKeys);
+        }
+
+        var settings = JobSettingsLoader.LoadJobSettings(jobPath, Global.GlobalConfig, globalConfigKeys);
         result = settings.Select(d => new KeyValueItem(d.Key, d.Value)).ToList();
 
         return result;
