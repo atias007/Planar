@@ -7,11 +7,6 @@ durable: true                         # Boolean [true/false]. The nondurable job
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 
-job data:                             # Key/Value pairs used by job code
-  key1: value1                        # --------------------------------
-  key2: value2                        # key --> [1 to 100 characters]
-  key3: value3                        # value --> [up to 1000 characters]
-
 properties:                           # Job Properties
   invoke method: process              # The invoke method of job [process | rabbitmq | redis | http ]
   process:
@@ -28,6 +23,16 @@ properties:                           # Job Properties
   http:                               # HTTP properties (relevant only if host type is http)
     base url: http://example.com      # The URL to send the HTTP request to [mandatory, up to 1000 characters]
     route: hello-world
+
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2                        # key --> [1 to 100 characters]
+  key3: value3                        # value --> [up to 1000 characters]
+
+global config keys:                   # List of global config keys that can be used in job code
+  - param1                            # -------------------------------------------------------
+  - param2                            # key --> [1 to 50 characters]
+  - param3
 
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker

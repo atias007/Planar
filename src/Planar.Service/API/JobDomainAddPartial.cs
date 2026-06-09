@@ -15,7 +15,6 @@ using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -414,13 +413,15 @@ public partial class JobDomain
         var yml = YmlUtil.Serialize(request.Properties);
         return yml;
     }
-    
+
     private static string? GetJobGlobalConfigKeysYml(SetJobDynamicRequest request)
     {
         if (request.GlobalConfigKeys == null)
         {
             return null;
         }
+
+        if (request.GlobalConfigKeys.Count == 0) { return string.Empty; }
 
         var yml = YmlUtil.Serialize(request.GlobalConfigKeys);
         return yml;
@@ -805,12 +806,12 @@ public partial class JobDomain
         var jobPropertiesYml = GetJopPropertiesYml(request);
         var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
         var jobType = SchedulerUtil.GetJobTypeName(job);
-        var property = new JobProperty 
-        { 
-            JobId = id, 
-            Properties = jobPropertiesYml,  
-            GlobalConfigKeys = jobGlobalConfigKeysYml, 
-            JobType = jobType 
+        var property = new JobProperty
+        {
+            JobId = id,
+            Properties = jobPropertiesYml,
+            GlobalConfigKeys = jobGlobalConfigKeysYml,
+            JobType = jobType
         };
 
         await DataLayer.AddJobProperty(property);
@@ -822,10 +823,11 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            ValidateTriggerNeverFire(ex);
-
             // roll back
             await DataLayer.DeleteJobProperty(id);
+
+            ValidateTriggerNeverFire(ex);
+
             throw;
         }
 
@@ -926,7 +928,7 @@ public partial class JobDomain
         var longKeys = request.GlobalConfigKeys
             .Where(k => k.Length > 50);
 
-        if(longKeys.Any())
+        if (longKeys.Any())
         {
             var longKeysTitle = string.Join(',', longKeys);
             throw new RestValidationException("global config keys", $"global config key(s) {longKeysTitle} has more the 50 chars");
@@ -991,7 +993,7 @@ public partial class JobDomain
             throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
         }
     }
-    
+
     private static void ValidateGlobalConfigKeys(SetJobDynamicRequest request)
     {
         try

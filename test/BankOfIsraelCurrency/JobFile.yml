@@ -8,7 +8,10 @@ author: israel israeli (sales)
 log retention days: 4
 
 properties:
-  filename: BankOfIsraelCurrency.exe
+  invoke method: process
+  process:
+    filename: BOI\BankOfIsraelCurrency.exe
+
 simple triggers:
   - name: every_10_minutes
     interval: 00:10:00

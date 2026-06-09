@@ -6,9 +6,11 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
+using Quartz.Util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,7 +18,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Planar.Service.MapperProfiles;
 
 namespace Planar.Service.API;
 
@@ -208,9 +209,12 @@ public partial class JobDomain
         target.RequestsRecovery = source.RequestsRecovery;
         target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
 
-        var props = await DataLayer.GetJobProperty(target.Id);
-        target.Properties = props.Properties ?? string.Empty;
-        target.GlobalConfigKeys = props.GlobalConfigKeys ?? string.Empty;
+        var (properties, globalConfigKeys) = await DataLayer.GetJobProperty(target.Id);
+        target.Properties = properties ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(globalConfigKeys))
+        {
+            target.GlobalConfigKeys = YmlUtil.Deserialize<string[]>(globalConfigKeys) ?? [];
+        }
 
         var cbm = JobHelper.GetJobCircuitBreaker(source);
         if (cbm == null) { return target; }

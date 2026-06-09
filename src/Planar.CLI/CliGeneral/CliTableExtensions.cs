@@ -589,9 +589,11 @@ internal static class CliTableExtensions
         }
 
         var dataMap = SerializeJobDetailsData(response);
+        var globalKeys = response.GlobalConfigKeys.Any() ? YmlUtil.Serialize(response.GlobalConfigKeys) : string.Empty;
 
         table.Table.AddRow("Data", dataMap.EscapeMarkup() ?? string.Empty);
         table.Table.AddRow(nameof(response.Properties), response.Properties.EscapeMarkup());
+        table.Table.AddRow(nameof(response.GlobalConfigKeys).SplitWords(), globalKeys.EscapeMarkup());
 
         var response2 = new TriggerRowDetails
         {

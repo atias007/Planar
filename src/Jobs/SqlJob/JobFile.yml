@@ -7,11 +7,6 @@ durable: true                         # Boolean [true/false]. The nondurable job
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 
-job data:                             # Key/Value pairs used by job code
-  key1: value1                        # --------------------------------
-  key2: value2                        # key --> [1 to 100 characters]
-  key3: value3                        # value --> [up to 1000 characters]
-
 properties:                                   # Job Properties
   default connection name: <name>             # Default configuration key for connection string to sql server database [mandatory if any step has no connection string, 1 to 50 characters]
   transaction: false                          # Use transaction for all steps
@@ -30,6 +25,16 @@ properties:                                   # Job Properties
       timeout: 00:00:30
       effected rows source: default
       log result set: false
+
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2                        # key --> [1 to 100 characters]
+  key3: value3                        # value --> [up to 1000 characters]
+
+global config keys:                   # List of global config keys that can be used in job code
+  - param1                            # -------------------------------------------------------
+  - param2                            # key --> [1 to 50 characters]
+  - param3
 
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker
