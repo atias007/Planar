@@ -80,7 +80,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="16.1.1" />
-		<PackageReference Include="CronExpressionDescriptor" Version="2.48.0" />
+		<PackageReference Include="CronExpressionDescriptor" Version="2.50.0" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="Google.Protobuf" Version="3.35.0" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.80.0" />
