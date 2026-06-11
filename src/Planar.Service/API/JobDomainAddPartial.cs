@@ -25,6 +25,81 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
+    public async Task<bool> Equals(SetJobDynamicRequest request)
+    {
+        var jobKey = JobKeyHelper.GetJobKey(request);
+        if (jobKey == null) { return false; }
+        
+        var scheduler = await GetScheduler();
+        var details = await scheduler.GetJobDetail(jobKey);
+        if(details == null) { return false; }
+
+        var currentCb = JobHelper.GetJobCircuitBreaker(details);
+        var current = new SetJobDynamicRequest
+        {
+            Name = jobKey.Name,
+            Group = string.IsNullOrWhiteSpace(jobKey.Group) ? JobKey.DefaultGroup : jobKey.Group,
+            JobType = details.JobType.Name,
+            Description = details.Description,
+            Durable = details.Durable,
+            Author = JobHelper.GetJobAuthor(details),
+            LogRetentionDays = JobHelper.GetLogRetentionDays(details),
+            CircuitBreaker =
+                 currentCb == null ?
+                 new JobCircuitBreakerMetadata() :
+                 new JobCircuitBreakerMetadata
+                 {
+                     Enabled = currentCb.Enabled,
+                     FailCounter = currentCb.FailCounter,
+                     FailureThreshold = currentCb.FailureThreshold,
+                     PauseSpan = currentCb.PauseSpan,
+                     SuccessCounter = currentCb.SuccessCounter,
+                     SuccessThreshold = currentCb.SuccessThreshold,
+                 }
+        };
+        
+        FillJobTypeAndConcurrent(details.JobType, current);
+
+        foreach (var item in request.JobData)
+        {
+            current.JobData.Add(item.Key, item.Value);
+        }
+
+        foreach (var item in request.GlobalConfigKeys)
+        {
+            current.GlobalConfigKeys.Add(item);
+        }
+
+
+        // TODO: Triggers
+        // TODO: Proerties
+    }
+
+    // *********************** ANY CHANGE TO THIS FUNCTION MUST BE REFLECTED IN JobDomainUpdatePartial.GetJobType FUNCTION ***********************
+    private static void FillJobTypeAndConcurrent(Type type, SetJobDynamicRequest job)
+    {
+        const string concurrent = "Concurrent";
+        const string noConcurrent = "NoConcurrent";
+        var name = type.Name;
+        name = name[name.IndexOf('.')..];
+        if (name.EndsWith(concurrent)) 
+        {
+            job.JobType = name[..^(concurrent.Length)];
+            job.Concurrent = true;
+        }
+        
+        if (name.EndsWith(noConcurrent)) 
+        { 
+            job.JobType = name[..^(noConcurrent.Length)];
+            job.Concurrent = false;
+        }
+    }
+    // *********************** ANY CHANGE TO THIS FUNCTION MUST BE REFLECTED IN JobDomainUpdatePartial.GetJobType FUNCTION ***********************
+
+}
+
+public partial class JobDomain
+{
     private const int MaxNameLength = 50;
 
     private const int MinNameLength = 3;
@@ -368,6 +443,7 @@ public partial class JobDomain
         return filename;
     }
 
+    // *********************** ANY CHANGE TO THIS FUNCTION MUST BE REFLECTED IN JobDomainComparePartial.ParseJobType FUNCTION ***********************
     private static Type GetJobType(SetJobRequest job)
     {
         string typeName;
@@ -402,6 +478,8 @@ public partial class JobDomain
             throw new RestGeneralException($"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
         }
     }
+
+    // *********************** ANY CHANGE TO THIS FUNCTION MUST BE REFLECTED IN JobDomainComparePartial.ParseJobType FUNCTION ***********************
 
     private static string? GetJopPropertiesYml(SetJobDynamicRequest request)
     {
