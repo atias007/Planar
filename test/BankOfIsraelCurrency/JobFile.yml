@@ -12,6 +12,10 @@ properties:
   process:
     filename: BOI\BankOfIsraelCurrency.exe
 
+global config keys:
+  - Demo1
+  - Demo2
+
 simple triggers:
   - name: every_10_minutes
     interval: 00:10:00

@@ -282,7 +282,6 @@ where TProperties : class, new()
     {
         try
         {
-            if (string.IsNullOrEmpty(path)) { return new Dictionary<string, string?>(); }
             var jobSettings = JobSettingsLoader.LoadJobSettings(path, Global.GlobalConfig, _globalConfigKeys);
             return jobSettings;
         }
