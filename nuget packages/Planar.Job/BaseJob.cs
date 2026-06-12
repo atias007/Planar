@@ -701,6 +701,14 @@ namespace Planar.Job
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
 
+            if (_isHosted) // load configuration from jobsettings.yml file in hosted mode
+            {
+                const string settingsFilename = "JobSettings.yml";
+                var environmntSettingsFilename = $"JobSettings.{context.Environment}.yml";
+                builder.AddYamlFile(settingsFilename, optional: false, reloadOnChange: false);
+                builder.AddYamlFile(environmntSettingsFilename, optional: false, reloadOnChange: false);
+            }
+
             try
             {
                 configureAction.Invoke(builder, context);
@@ -750,7 +758,7 @@ namespace Planar.Job
         private void LogVersion()
         {
             if (Version == null) { return; }
-            if(Logger.IsEnabled(LogLevel.Information))
+            if (Logger.IsEnabled(LogLevel.Information))
             {
                 Logger.LogInformation("job version: {Version}", Version);
             }

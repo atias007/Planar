@@ -92,6 +92,11 @@ internal static class RestProxy
         return InvokeInner(request, cancellationToken);
     }
 
+    internal static string GetSchema(bool secureProtocol)
+    {
+        return secureProtocol ? "https" : "http";
+    }
+
     public static async Task<RestResponse> InvokeInner(RestRequest request, CancellationToken cancellationToken)
     {
         SetDefaultRequestTimeout(request);
@@ -102,11 +107,6 @@ internal static class RestProxy
         }
 
         return response;
-    }
-
-    internal static string GetSchema(bool secureProtocol)
-    {
-        return secureProtocol ? "https" : "http";
     }
 
     public static async Task<RestResponse<TResponse>> InvokeInner<TResponse>(RestRequest request, CancellationToken cancellationToken)

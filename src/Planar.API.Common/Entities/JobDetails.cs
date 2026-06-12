@@ -16,6 +16,8 @@ namespace Planar.API.Common.Entities
 
         public string Properties { get; set; } = string.Empty;
 
+        public IEnumerable<string> GlobalConfigKeys { get; set; } = [];
+
         public SortedDictionary<string, string?> DataMap { get; set; } = [];
 
         public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = [];

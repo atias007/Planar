@@ -4,6 +4,6 @@ namespace Planar.Common
 {
     public interface IJobPropertyDataLayer
     {
-        Task<string?> GetJobProperty(string jobId);
+        Task<(string? Properties, string? GlobalConfigKeys)> GetJobProperty(string jobId);
     }
 }

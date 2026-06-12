@@ -86,7 +86,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         }
     }
 
-    private async Task CreateRedisStreamIfNotExists(IDatabase db, string streamName)
+    private static async Task CreateRedisStreamIfNotExists(IDatabase db, string streamName)
     {
         var exists = await db.KeyExistsAsync(streamName);
         if (!exists)

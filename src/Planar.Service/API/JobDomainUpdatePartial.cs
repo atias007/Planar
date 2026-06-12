@@ -141,7 +141,9 @@ public partial class JobDomain
         metadata.OldTriggers = await scheduler.GetTriggersOfJob(metadata.JobKey);
         await scheduler.DeleteJob(metadata.JobKey);
         metadata.EnableRollback();
-        metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
+        var (properties, globalConfigKeys) = await DataLayer.GetJobProperty(metadata.JobId);
+        metadata.OldJobProperties = properties;
+        metadata.GlobalConfigKeys = globalConfigKeys;
         metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
         metadata.LogRetentionDays = JobHelper.GetLogRetentionDays(metadata.OldJobDetails);
     }
@@ -153,7 +155,14 @@ public partial class JobDomain
         if (!metadata.RollbackEnabled) { return; }
 
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.OldJobDetails);
-        var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties, JobType = jobType };
+        var property = new JobProperty 
+        { 
+            JobId = metadata.JobId, 
+            Properties = metadata.OldJobProperties, 
+            GlobalConfigKeys = metadata.GlobalConfigKeys, 
+            JobType = jobType 
+        };
+
         var scheduler = await GetScheduler();
         await scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
         await scheduler.PauseJob(metadata.JobKey);
@@ -264,8 +273,14 @@ public partial class JobDomain
     private async Task UpdateJobProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
     {
         var jobPropertiesYml = GetJopPropertiesYml(request);
+        var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.JobDetails);
-        var property = new JobProperty { JobId = metadata.JobId, Properties = jobPropertiesYml, JobType = jobType };
+        var property = new JobProperty 
+        { 
+            JobId = metadata.JobId, 
+            Properties = jobPropertiesYml, 
+            GlobalConfigKeys = jobGlobalConfigKeysYml,
+            JobType = jobType };
 
         if (string.IsNullOrEmpty(metadata.OldJobProperties))
         {
@@ -294,6 +309,7 @@ public partial class JobDomain
         ValidateRequestNoNull(request);
         ValidateUpdateJobOptions(options);
         await ValidateRequestProperties(request);
+        ValidateGlobalConfigKeys(request);
         var scheduler = await GetScheduler();
         metadata.JobKey = ValidateJobMetadata(request, scheduler);
         ValidateSystemJob(metadata.JobKey);

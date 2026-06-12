@@ -25,6 +25,8 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
     protected JobFinishStatus FinishStatus { get; set; } = JobFinishStatus.Unknown;
     protected JobLogBroker MessageBroker => _messageBroker;
     protected IMonitorUtil MonitorUtil => jobMonitorUtil.MonitorUtil;
+    protected IEnumerable<string>? _globalConfigKeys;
+
     protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
 
     public void Dispose()
@@ -33,7 +35,7 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         GC.SuppressFinalize(this);
     }
 
-    internal void FillSettings(IDictionary<string, string?> settings)
+    internal void SetSettings(IDictionary<string, string?> settings)
     {
         Settings = settings;
     }
@@ -258,8 +260,11 @@ where TProperties : class, new()
             path = pathProperties.Path;
         }
 
-        FillSettings(LoadJobSettings(path));
-        SetMessageBroker(new JobLogBroker(context, Settings, MonitorUtil));
+        var settings = LoadJobSettings(path);
+        SetSettings(settings);
+
+        var broker = new JobLogBroker(context, Settings, MonitorUtil);
+        SetMessageBroker(broker);
 
         context.CancellationToken.Register(() =>
         {
@@ -277,8 +282,7 @@ where TProperties : class, new()
     {
         try
         {
-            if (string.IsNullOrEmpty(path)) { return new Dictionary<string, string?>(); }
-            var jobSettings = JobSettingsLoader.LoadJobSettings(path, Global.GlobalConfig);
+            var jobSettings = JobSettingsLoader.LoadJobSettings(path, Global.GlobalConfig, _globalConfigKeys);
             return jobSettings;
         }
         catch (Exception ex)
@@ -369,14 +373,28 @@ where TProperties : class, new()
             throw new PlanarException($"fail to get job id while execute job {title}");
         }
 
-        var properties = await dataLayer.GetJobProperty(jobId);
-        if (string.IsNullOrEmpty(properties))
+        var p = await dataLayer.GetJobProperty(jobId);
+        if (string.IsNullOrEmpty(p.Properties))
         {
             var title = JobHelper.GetKeyTitle(context.JobDetail);
             throw new PlanarException($"fail to get job properties while execute job {title} (id: {jobId})");
         }
 
-        Properties = YmlUtil.Deserialize<TProperties>(properties);
+        Properties = YmlUtil.Deserialize<TProperties>(p.Properties);
+
+        if (p.GlobalConfigKeys == null)
+        {
+            _globalConfigKeys = null;
+        }
+        else if(string.IsNullOrWhiteSpace(p.GlobalConfigKeys))
+        {
+            _globalConfigKeys = [];
+        }
+        else
+        {
+            _globalConfigKeys = YmlUtil.Deserialize<IEnumerable<string>>(p.GlobalConfigKeys);
+        }
+
         FireInstanceId = context.FireInstanceId;
     }
 }

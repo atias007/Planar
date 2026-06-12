@@ -612,7 +612,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 throw new CliValidationException($"action {request.Action} is not supported for this command");
         }
 
-        AssertJobDataUpdated(result, request.Id);
         return new CliActionResponse(result);
     }
 

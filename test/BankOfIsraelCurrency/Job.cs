@@ -14,7 +14,7 @@ namespace BankOfIsraelCurrency
 
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
-            Version = new Version("3.1.0");
+            Version = new Version("3.1.1");
 
             //// Do Nothig ////
         }
@@ -22,6 +22,12 @@ namespace BankOfIsraelCurrency
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
             Logger.LogWarning("Sample Warning Log");
+            var demo1 = Configuration["Demo1"];
+            var demo2 = Configuration["Demo2"];
+            var demo3 = Configuration["Demo3"];
+            Logger.LogInformation("Demo1={Demo1}", demo1);
+            Logger.LogInformation("Demo2={Demo2}", demo2);
+            Logger.LogInformation("Demo3={Demo3}", demo3);
             await SaveCurrency();
         }
 

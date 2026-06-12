@@ -1,6 +1,10 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
+
+* test 'global config keys' in jobfile.yml with json config value
+* test hosted job reading jobfile.yml or only appsettings.json
+
 - add mcp command to cli
 - validate on startup that instance id not exists in nodes table
 - Security report
@@ -411,3 +415,4 @@ V 1.8.2
 - BUG: load jobfile with simple trigger without interval
 - BUG: cli manual run job when service is halted
 - add stream max length to settings of hooks
+- add 'global config keys' to jobfile.yml to inject only specific global config keys to the job context
