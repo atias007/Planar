@@ -155,12 +155,12 @@ public partial class JobDomain
         if (!metadata.RollbackEnabled) { return; }
 
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.OldJobDetails);
-        var property = new JobProperty 
-        { 
-            JobId = metadata.JobId, 
-            Properties = metadata.OldJobProperties, 
-            GlobalConfigKeys = metadata.GlobalConfigKeys, 
-            JobType = jobType 
+        var property = new JobProperty
+        {
+            JobId = metadata.JobId,
+            Properties = metadata.OldJobProperties,
+            GlobalConfigKeys = metadata.GlobalConfigKeys,
+            JobType = jobType
         };
 
         var scheduler = await GetScheduler();
@@ -202,6 +202,9 @@ public partial class JobDomain
     {
         // Validation
         await ValidateUpdateJob(request, options, metadata);
+
+        var hasChanges = await HasChanges(request);
+        if (!hasChanges) { return new PlanarIdResponse { Id = string.Empty }; }
 
         // save paused triggers before pause job
         metadata.PausedTriggers = await GetPausedTriggers(metadata.JobKey);
@@ -275,12 +278,13 @@ public partial class JobDomain
         var jobPropertiesYml = GetJopPropertiesYml(request);
         var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.JobDetails);
-        var property = new JobProperty 
-        { 
-            JobId = metadata.JobId, 
-            Properties = jobPropertiesYml, 
+        var property = new JobProperty
+        {
+            JobId = metadata.JobId,
+            Properties = jobPropertiesYml,
             GlobalConfigKeys = jobGlobalConfigKeysYml,
-            JobType = jobType };
+            JobType = jobType
+        };
 
         if (string.IsNullOrEmpty(metadata.OldJobProperties))
         {
