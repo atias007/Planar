@@ -44,6 +44,11 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     public async Task<ActionResult<PlanarIdResponse>> Apply()
     {
         var result = await BusinesLayer.ApplyRoute(HttpContext);
+        if (string.IsNullOrWhiteSpace(result.Id))
+        {
+            return Created();
+        }
+
         return CreatedAtAction(nameof(Get), result, result);
     }
 
@@ -74,6 +79,11 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     public async Task<ActionResult<PlanarIdResponse>> Update()
     {
         var result = await BusinesLayer.UpdateRoute(HttpContext);
+        if(string.IsNullOrWhiteSpace(result.Id))
+        {
+            return Created();
+        }
+
         return CreatedAtAction(nameof(Get), result, result);
     }
 

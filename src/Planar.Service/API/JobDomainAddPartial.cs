@@ -368,7 +368,6 @@ public partial class JobDomain
         return filename;
     }
 
-    // *********************** ANY CHANGE TO THIS FUNCTION MUST BE REFLECTED IN JobDomainComparePartial.ParseJobType FUNCTION ***********************
     private static Type GetJobType(SetJobRequest job)
     {
         string typeName;
@@ -403,8 +402,6 @@ public partial class JobDomain
             throw new RestGeneralException($"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
         }
     }
-
-    // *********************** ANY CHANGE TO THIS FUNCTION MUST BE REFLECTED IN JobDomainComparePartial.ParseJobType FUNCTION ***********************
 
     private static string? GetJopPropertiesYml(SetJobDynamicRequest request)
     {
