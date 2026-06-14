@@ -5,14 +5,22 @@ namespace Planar;
 
 public class SqlTableReportJobProperties : IPathJobProperties, IJobPropertiesWithFiles
 {
+    [YamlMember(Alias = "path", Order = 0)]
     public string Path { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "connection name")]
+    [YamlMember(Alias = "connection name", Order = 1)]
     public string? ConnectionName { get; set; }
 
+    [YamlMember(Alias = "filename", Order = 2)]
     public string Filename { get; set; } = null!;
+
+    [YamlMember(Alias = "group", Order = 3)]
     public string Group { get; set; } = null!;
+
+    [YamlMember(Alias = "timeout", Order = 4)]
     public TimeSpan? Timeout { get; set; }
+
+    [YamlMember(Alias = "title", Order = 5)]
     public string? Title { get; set; }
 
     [YamlIgnore]

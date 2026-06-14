@@ -87,7 +87,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             await AddUpdateApplyLocalFolderInner(restRequest, item, cancellationToken);
         }
 
-        AnsiConsole.MarkupLine($"[grey]  > {files.Count().ToString("N0")} file(s)[/]");
+        AnsiConsole.MarkupLine($"[grey]  > {files.Count():N0} file(s)[/]");
         return CliActionResponse.Empty;
     }
 
@@ -101,7 +101,14 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
         if (res.IsSuccessStatusCode)
         {
-            AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
+            if (string.IsNullOrWhiteSpace(res.Data?.Id))
+            {
+                AnsiConsole.MarkupLine($"[grey]   no change[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
+            }
         }
         else
         {
