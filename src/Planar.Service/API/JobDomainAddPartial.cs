@@ -423,7 +423,7 @@ public partial class JobDomain
 
         if (request.GlobalConfigKeys.Count == 0) { return string.Empty; }
 
-        var yml = YmlUtil.Serialize(request.GlobalConfigKeys);
+        var yml = YmlUtil.Serialize(request.GlobalConfigKeys.OrderBy(g => g));
         return yml;
     }
 

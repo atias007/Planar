@@ -431,7 +431,14 @@ namespace Planar.CLI.Actions
         {
             if (!response.IsSuccessful) { return; }
             Util.SetLastJobOrTriggerId(response);
-            Console.WriteLine(response.Data?.Id);
+            if (string.IsNullOrWhiteSpace(response.Data?.Id))
+            {
+                AnsiConsole.MarkupLine("no change");
+            }
+            else
+            {
+                Console.WriteLine(response.Data?.Id);
+            }
         }
 
         protected static void AssertJobUpdated(RestResponse<PlanarIdResponse> response)
