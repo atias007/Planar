@@ -21,24 +21,7 @@ namespace Planar.Service.Validation
             return any;
         }
 
-        public static async Task<bool> PathExists<T>(string? path, ClusterUtil clusterUtil, ValidationContext<T> context)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(path)) { return false; }
-
-                ServiceUtil.ValidateJobFolderExists(path);
-                await clusterUtil.ValidateJobFolderExists(path);
-                return true;
-            }
-            catch (PlanarException ex)
-            {
-                context.AddFailure("path", ex.Message);
-                return false;
-            }
-        }
-
-        public static async Task<bool> FilenameExists<T>(IPathJobProperties properties, string propertyName, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
+        public static async Task<bool> FilenameExists<T>(string propertyName, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
         {
             try
             {
@@ -48,8 +31,8 @@ namespace Planar.Service.Validation
                     return false;
                 }
 
-                ServiceUtil.ValidateJobFileExists(properties.Path, filename);
-                await clusterUtil.ValidateJobFileExists(properties.Path, filename);
+                ServiceUtil.ValidateJobFileExists(filename);
+                await clusterUtil.ValidateJobFileExists(filename);
                 return true;
             }
             catch (PlanarException ex)

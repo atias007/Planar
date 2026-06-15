@@ -71,7 +71,7 @@ namespace Planar.Service.Validation
         private async Task<bool> FilenameExists(RestJobProperties properties, string? filename, ValidationContext<RestJobProperties> context, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(filename)) { return true; }
-            return await CommonValidations.FilenameExists(properties, "body file", filename, _cluster, context);
+            return await CommonValidations.FilenameExists("body file", filename, _cluster, context);
         }
 
         private static bool RestListKeyNotEmpty(KeyValuePair<string, string>? kvp)

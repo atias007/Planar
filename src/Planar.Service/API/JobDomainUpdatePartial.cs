@@ -193,7 +193,6 @@ public partial class JobDomain
     private async Task<PlanarIdResponse> Update(UpdateJobRequest request)
     {
         var dynamicRequest = await GetDynamicRequest(request);
-        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
         var response = await Update(dynamicRequest, request.Options);
         return response;
     }

@@ -136,7 +136,7 @@ public abstract class PlanarJob(
             SafeLogInvokeJobDetails(context);
             context.CancellationToken.Register(OnProcessCancel);
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
-            var startInfo = GetProcessStartInfo();
+            var startInfo = await GetProcessStartInfo();
             _ = SafeStartMonitorDuration(context);
             var success = StartProcess(startInfo, timeout);
             StopMonitorDuration();
@@ -307,7 +307,7 @@ public abstract class PlanarJob(
 
         try
         {
-            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, Consts.PlanarJobArgumentContextFolder);
+            var path = Path.Combine(FileProperties.Path, Consts.PlanarJobArgumentContextFolder);
             var files = Directory.GetFiles(path, "*.ctx").Select(f => new FileInfo(f));
             foreach (var file in files)
             {
@@ -547,10 +547,10 @@ public abstract class PlanarJob(
         MqttBrokerService.UnRegisterInterceptingPublish(fireInstanceId);
     }
 
-    protected override ProcessStartInfo GetProcessStartInfo()
+    protected override async Task<ProcessStartInfo> GetProcessStartInfo()
     {
-        var startInfo = base.GetProcessStartInfo();
-        var base64String = GetContextArgument(MessageBroker.Details);
+        var startInfo = await base.GetProcessStartInfo();
+        var base64String = await GetContextArgument(MessageBroker.Details);
         startInfo.Arguments = $"--planar-service-mode --context {base64String}";
         startInfo.StandardErrorEncoding = Encoding.UTF8;
         startInfo.StandardOutputEncoding = Encoding.UTF8;
@@ -558,7 +558,7 @@ public abstract class PlanarJob(
         return startInfo;
     }
 
-    private string GetContextArgument(string details)
+    private async Task<string> GetContextArgument(string details)
     {
         const int lengthLimit = 30_000;
 
@@ -568,7 +568,7 @@ public abstract class PlanarJob(
 
         try
         {
-            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, Consts.PlanarJobArgumentContextFolder);
+            var path = Path.Combine(FileProperties.Path, Consts.PlanarJobArgumentContextFolder);
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -576,7 +576,7 @@ public abstract class PlanarJob(
 
             var identifier = Guid.NewGuid().ToString("N");
             var filename = Path.Combine(path, $"{identifier}.ctx");
-            File.WriteAllText(filename, base64String);
+            await File.WriteAllTextAsync(filename, base64String);
             _contextFilename = filename;
             var result = $"[{identifier}]";
             bytes = Encoding.UTF8.GetBytes(result);

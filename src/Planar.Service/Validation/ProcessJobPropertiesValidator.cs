@@ -1,24 +1,14 @@
 ﻿using FluentValidation;
 using Planar.Service.General;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Planar.Service.Validation;
 
 public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobProperties>
 {
-    private readonly ClusterUtil _cluster;
-
     public ProcessJobPropertiesValidator(ClusterUtil cluster)
     {
-        _cluster = cluster;
-        Include(new BaseProcessJobPropertiesValidator());
-        RuleFor(e => e.Path).MustAsync(PathExists).When(e => !string.IsNullOrEmpty(e.Path))
-            .WithMessage("fail to validate path property");
-        RuleFor(e => e.Filename).NotEmpty().MaximumLength(500);
-        RuleFor(e => e.Filename).MustAsync(FilenameExists).When(e => !string.IsNullOrEmpty(e.Path) && !string.IsNullOrEmpty(e.Filename))
-            .WithMessage("fail to validate filename property");
+        Include(new BaseProcessJobPropertiesValidator(cluster));
         RuleFor(e => e.Arguments).MaximumLength(1000);
         RuleFor(e => e.OutputEncoding).Must(EncodingExists)
             .WithMessage("fail to validate encoding property");
@@ -53,15 +43,5 @@ public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobPropert
     {
         if (outputEncoding == null) { return true; }
         return CommonValidations.EncodingExists(outputEncoding, context);
-    }
-
-    private async Task<bool> PathExists(ProcessJobProperties properties, string path, ValidationContext<ProcessJobProperties> context, CancellationToken cancellationToken = default)
-    {
-        return await CommonValidations.PathExists(path, _cluster, context);
-    }
-
-    private async Task<bool> FilenameExists(ProcessJobProperties properties, string filename, ValidationContext<ProcessJobProperties> context, CancellationToken cancellationToken = default)
-    {
-        return await CommonValidations.FilenameExists(properties, "filename", filename, _cluster, context);
     }
 }

@@ -271,15 +271,6 @@ public partial class JobDomain
         return result;
     }
 
-    private static string ConvertRelativeJobFileToRelativeJobPath(string jobPath)
-    {
-        var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-        var fullname = Path.Combine(jobsPath, jobPath);
-        var jobDir = new FileInfo(fullname).Directory?.FullName;
-        var path = ServiceUtil.GetJobRelativePath(jobDir);
-        return path;
-    }
-
     private static string CreateJobId(IJobDetail job)
     {
         // job id
@@ -765,7 +756,6 @@ public partial class JobDomain
     private async Task<PlanarIdResponse> Add(SetJobPathRequest request)
     {
         var dynamicRequest = await GetDynamicRequest(request);
-        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
         return await Add(dynamicRequest);
     }
 
@@ -867,7 +857,7 @@ public partial class JobDomain
         {
             ServiceUtil.ValidateJobFileExists(filename);
             var util = ServiceProvider.GetRequiredService<ClusterUtil>();
-            await util.ValidateJobFileExists(null, filename);
+            await util.ValidateJobFileExists(filename);
         }
         catch (PlanarException ex)
         {

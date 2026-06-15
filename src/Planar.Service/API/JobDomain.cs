@@ -203,7 +203,6 @@ public partial class JobDomain(
     {
         var dynamicRequest = await GetDynamicRequest(request);
         var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
-        SetDynamicRequestPath(dynamicRequest, request.JobFilePath);
 
         try
         {
@@ -244,13 +243,6 @@ public partial class JobDomain(
     {
         var dynamicRequest = GetJobDynamicRequest(yml);
         return dynamicRequest;
-    }
-
-    private static void SetDynamicRequestPath(SetJobDynamicRequest dynamicRequest, string jobPath)
-    {
-        dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-        var path = ConvertRelativeJobFileToRelativeJobPath(jobPath);
-        properties["path"] = path;
     }
 
     public void FailOverPublish(CloudEvent request)

@@ -67,27 +67,6 @@ public class PlanarJobRabbitMqProperties
     public string RoutingKey { get; set; } = null!;
 }
 
-public class PlanarJobProcessProperties : BaseProcessJobProperties, IFileJobProperties
+public class PlanarJobProcessProperties : BaseProcessJobProperties
 {
-    public string Path { get; set; } = string.Empty;
-
-    [YamlMember(Alias = "filename", Order = 0)]
-    public string Filename { get; set; } = null!;
-
-    [YamlIgnore]
-    public IEnumerable<string> Files
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(Filename) && string.IsNullOrWhiteSpace(Path))
-            {
-                return [];
-            }
-
-            return
-            [
-                string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
-            ];
-        }
-    }
 }

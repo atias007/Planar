@@ -20,11 +20,37 @@ public class RestJobJwtAuthentication
 
 public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
 {
-    [YamlMember(Alias = "basic authentication", Order = 0)]
-    public RestJobBasicAuthentication? BasicAuthentication { get; set; }
+    [YamlIgnore]
+    public string Path { get; private set; } = null!;
 
-    [YamlMember(Alias = "body file", Order = 1)]
-    public string? BodyFile { get; set; }
+    [YamlMember(Alias = "body file", Order = 0)]
+#pragma warning disable CS9264 // Non-nullable property must contain a non-null value when exiting constructor. Consider adding the 'required' modifier, or declaring the property as nullable, or safely handling the case where 'field' is null in the 'get' accessor.
+    public string? BodyFile
+#pragma warning restore CS9264 // Non-nullable property must contain a non-null value when exiting constructor. Consider adding the 'required' modifier, or declaring the property as nullable, or safely handling the case where 'field' is null in the 'get' accessor.
+    {
+        get;
+        set
+        {
+            field = value;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                Path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+            }
+            else
+            {
+                var fullname =
+                    System.IO.Path.IsPathFullyQualified(value) ?
+                    value :
+                    FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, value);
+
+                var fi = new FileInfo(fullname);
+                Path = fi.DirectoryName ?? string.Empty;
+            }
+        }
+    }
+
+    [YamlMember(Alias = "basic authentication", Order = 1)]
+    public RestJobBasicAuthentication? BasicAuthentication { get; set; }
 
     [YamlMember(Alias = "expect 100 continue", Order = 2)]
     public bool Expect100Continue { get; set; }
@@ -33,10 +59,10 @@ public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
     public bool FollowRedirects { get; set; }
 
     [YamlMember(Alias = "form data", Order = 4)]
-    public Dictionary<string, string>? FormData { get; set; } = new();
+    public Dictionary<string, string>? FormData { get; set; } = [];
 
     [YamlMember(Alias = "headers", Order = 5)]
-    public Dictionary<string, string>? Headers { get; set; } = new();
+    public Dictionary<string, string>? Headers { get; set; } = [];
 
     [YamlMember(Alias = "ignore ssl errors", Order = 6)]
     public bool IgnoreSslErrors { get; set; }
@@ -50,21 +76,20 @@ public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
     [YamlMember(Alias = "method", Order = 9)]
     public string Method { get; set; } = null!;
 
-    [YamlMember(Alias = "path", Order = 10)]
-    public string Path { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "proxy", Order = 11)]
+    [YamlMember(Alias = "proxy", Order = 10)]
     public RestJobPropertiesProxy? Proxy { get; set; }
     
-    [YamlMember(Alias = "url", Order = 12)]
+    [YamlMember(Alias = "url", Order = 11)]
     public string Url { get; set; } = null!;
 
-    [YamlMember(Alias = "user agent", Order = 13)]
+    [YamlMember(Alias = "user agent", Order = 12)]
     public string? UserAgent { get; set; }
 
-    [YamlMember(Alias = "log response content", Order = 14)]
+    [YamlMember(Alias = "log response content", Order = 13)]
     public bool LogResponseContent { get; set; }
-
+    
+    [YamlIgnore]
     public IEnumerable<string> Files
     {
         get

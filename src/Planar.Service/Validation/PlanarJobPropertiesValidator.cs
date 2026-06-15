@@ -97,38 +97,8 @@ public class PlanarJobHttpPropertiesValidator : AbstractValidator<PlanarJobHttpP
 
 public class PlanarJobProcessPropertiesValidator : AbstractValidator<PlanarJobProcessProperties>
 {
-    private readonly ClusterUtil _cluster;
-
     public PlanarJobProcessPropertiesValidator(ClusterUtil cluster)
     {
-        _cluster = cluster;
-        Include(new BaseProcessJobPropertiesValidator());
-        RuleFor(e => e.Path).MustAsync(PathExists)
-            .When(e => !string.IsNullOrEmpty(e.Path));
-
-        RuleFor(e => e.Filename).NotEmpty().MaximumLength(500);
-        RuleFor(e => e.Filename).MustAsync(FilenameExists)
-            .When(e => !string.IsNullOrEmpty(e.Path) && !string.IsNullOrEmpty(e.Filename));
-
-        RuleFor(e => e.Filename).Must(FileExtentionIsExe)
-            .When(e => !string.IsNullOrEmpty(e.Filename))
-            .WithMessage("property '{PropertyName}' with value '{PropertyValue}' must have 'exe' extention");
-    }
-
-    private async Task<bool> PathExists(PlanarJobProcessProperties properties, string? path, ValidationContext<PlanarJobProcessProperties> context, CancellationToken cancellationToken = default)
-    {
-        return await CommonValidations.PathExists(path, _cluster, context);
-    }
-
-    private async Task<bool> FilenameExists(PlanarJobProcessProperties properties, string? filename, ValidationContext<PlanarJobProcessProperties> context, CancellationToken cancellationToken = default)
-    {
-        return await CommonValidations.FilenameExists(properties, "filename", filename, _cluster, context);
-    }
-
-    private static bool FileExtentionIsExe(string filename)
-    {
-        const string exe = ".exe";
-        var fi = new FileInfo(filename);
-        return string.Equals(fi.Extension, exe);
+        Include(new BaseProcessJobPropertiesValidator(cluster));
     }
 }

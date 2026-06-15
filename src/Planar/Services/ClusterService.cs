@@ -205,24 +205,11 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
     }
 
     // OK
-    public override async Task<IsJobAssestsExistReply> IsJobFolderExist(IsJobAssestsExistRequest request, ServerCallContext context)
-    {
-        var result = new IsJobAssestsExistReply
-        {
-            Exists = ServiceUtil.IsJobFolderExists(request.Folder),
-            Path = ServiceUtil.GetJobFolder(request.Folder)
-        };
-
-        return await Task.FromResult(result);
-    }
-
-    // OK
     public override async Task<IsJobAssestsExistReply> IsJobFileExist(IsJobAssestsExistRequest request, ServerCallContext context)
     {
         var result = new IsJobAssestsExistReply
         {
-            Exists = ServiceUtil.IsFileExists(request.Folder, request.Filename),
-            Path = string.IsNullOrWhiteSpace(request.Folder) ? string.Empty : ServiceUtil.GetJobFolder(request.Folder)
+            Exists = ServiceUtil.IsFileExists(request.Filename),
         };
 
         return await Task.FromResult(result);

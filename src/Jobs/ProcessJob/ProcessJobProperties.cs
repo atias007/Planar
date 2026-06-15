@@ -6,35 +6,26 @@ namespace Planar;
 /// <summary>
 /// https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0
 /// </summary>
-public class ProcessJobProperties : BaseProcessJobProperties, IFileJobProperties
+public class ProcessJobProperties : BaseProcessJobProperties
 {
-    [YamlMember(Alias = "path", Order = 0)]
-    public string Path { get; set; } = string.Empty;
-    [YamlMember(Alias = "filename", Order = 1)]
-    public string Filename { get; set; } = string.Empty;
-    [YamlMember(Alias = "arguments", Order = 2)]
+    [YamlMember(Alias = "arguments", Order = 10)]
     public string? Arguments { get; set; }
 
-    [YamlMember(Alias = "output encoding", Order = 3)]
+    [YamlMember(Alias = "output encoding", Order = 11)]
     public string? OutputEncoding { get; set; }
 
-    [YamlMember(Alias = "log output", Order = 4)]
+    [YamlMember(Alias = "log output", Order = 12)]
     public bool LogOutput { get; set; } = true;
 
-    [YamlMember(Alias = "success exit codes", Order = 5)]
+    [YamlMember(Alias = "success exit codes", Order = 13)]
     public IEnumerable<int> SuccessExitCodes { get; set; } = [];
 
-    [YamlMember(Alias = "success output regex", Order = 6)]
+    [YamlMember(Alias = "success output regex", Order = 14)]
     public string? SuccessOutputRegex { get; set; }
 
-    [YamlMember(Alias = "fail exit codes", Order = 7)]
+    [YamlMember(Alias = "fail exit codes", Order = 15)]
     public IEnumerable<int> FailExitCodes { get; set; } = [];
 
-    [YamlMember(Alias = "fail output regex", Order = 8)]
+    [YamlMember(Alias = "fail output regex", Order = 16)]
     public string? FailOutputRegex { get; set; }
-
-    public IEnumerable<string> Files =>
-    [
-        string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
-    ];
 }

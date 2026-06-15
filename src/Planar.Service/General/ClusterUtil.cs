@@ -66,35 +66,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         return result;
     }
 
-    public async Task ValidateJobFolderExists(string? folder)
-    {
-        if (folder == null)
-        {
-            throw new PlanarException("job folder has invalid value of null");
-        }
-
-        var nodes = await GetAllNodes();
-        foreach (var node in nodes)
-        {
-            if (node.IsCurrentNode) { continue; }
-
-            try
-            {
-                var result = await _asyncRetry.ExecuteAsync(() => CallIsJobFolderExistsService(node, folder));
-
-                if (!result.Exists)
-                {
-                    throw new PlanarException($"folder {result.Path} is not exists. (node {Environment.MachineName})");
-                }
-            }
-            catch (RpcException ex)
-            {
-                _logger.LogError(ex, "fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
-            }
-        }
-    }
-
-    public async Task ValidateJobFileExists(string? folder, string filename)
+    public async Task ValidateJobFileExists(string filename)
     {
         var nodes = await GetAllNodes();
         foreach (var node in nodes)
@@ -103,7 +75,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
 
             try
             {
-                var result = await _asyncRetry.ExecuteAsync(() => CallIsJobFileExistsService(node, folder ?? string.Empty, filename));
+                var result = await _asyncRetry.ExecuteAsync(() => CallIsJobFileExistsService(node, filename));
 
                 if (!result.Exists)
                 {
@@ -576,18 +548,10 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
         await client.StopSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
     }
 
-    private static async Task<IsJobAssestsExistReply> CallIsJobFolderExistsService(ClusterNode node, string folder)
+    private static async Task<IsJobAssestsExistReply> CallIsJobFileExistsService(ClusterNode node, string filename)
     {
         var client = GetClient(node);
-        var request = new IsJobAssestsExistRequest { Folder = folder };
-        var result = await client.IsJobFolderExistAsync(request, deadline: GrpcDeadLine);
-        return result;
-    }
-
-    private static async Task<IsJobAssestsExistReply> CallIsJobFileExistsService(ClusterNode node, string folder, string filename)
-    {
-        var client = GetClient(node);
-        var request = new IsJobAssestsExistRequest { Folder = folder, Filename = filename };
+        var request = new IsJobAssestsExistRequest { Filename = filename };
         var result = await client.IsJobFileExistAsync(request, deadline: GrpcDeadLine);
         return result;
     }

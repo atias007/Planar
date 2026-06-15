@@ -20,6 +20,6 @@ public class SqlTableReportJobPropertiesValidator : AbstractValidator<SqlTableRe
 
     private async Task<bool> FilenameExists(SqlTableReportJobProperties properties, string filename, ValidationContext<SqlTableReportJobProperties> context, CancellationToken cancellationToken = default)
     {
-        return await CommonValidations.FilenameExists(properties, "filename", filename, _cluster, context);
+        return await CommonValidations.FilenameExists("filename", filename, _cluster, context);
     }
 }
