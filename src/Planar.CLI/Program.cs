@@ -210,7 +210,7 @@ internal static class Program
         return true;
     }
 
-    private async static Task<CliArgumentsUtil?> HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
+    private static async Task<CliArgumentsUtil?> HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
     {
         if (args == null || args.Length == 0)
         {
@@ -685,8 +685,8 @@ internal static class Program
     {
         const string defaultMessage = "server return conflict status";
         if (response.StatusCode != HttpStatusCode.Conflict) { return false; }
-        if(string.IsNullOrWhiteSpace(response.Content)) 
-        { 
+        if (string.IsNullOrWhiteSpace(response.Content))
+        {
             MarkupCliLine(CliFormat.GetConflictErrorMarkup(defaultMessage));
             return true;
         }
@@ -781,7 +781,7 @@ internal static class Program
         return false;
     }
 
-    private async static Task InteractiveMode(IEnumerable<CliActionMetadata> cliActions, bool showModules)
+    private static async Task InteractiveMode(IEnumerable<CliActionMetadata> cliActions, bool showModules)
     {
         BaseCliAction.InteractiveMode = true;
         var command = string.Empty;
@@ -853,7 +853,7 @@ internal static class Program
         //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
-        _ = ServiceCliActions.InitializeLogin();
+        ServiceCliActions.InitializeLogin();
 
         if (args.Length == 0)
         {
