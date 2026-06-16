@@ -3,7 +3,6 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Arenas;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
