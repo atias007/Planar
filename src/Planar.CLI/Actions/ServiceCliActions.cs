@@ -9,6 +9,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -147,6 +148,18 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         }
 
         return response;
+    }
+
+    [Action("save-login")]
+    public static async Task<CliActionResponse> SaveLogin(CliSaveLoginRequest request, CancellationToken cancellationToken = default)
+    {
+        request = FillSaveLoginRequest(request);
+        if (string.IsNullOrWhiteSpace(request.DisplayName)) { throw new CliException("display name is required"); }
+        request.DisplayName = request.DisplayName.Trim();
+        if (request.DisplayName.Length < 3) { throw new CliException("display name must be at least 3 characters long"); }
+        if (request.DisplayName.Length > 50) { throw new CliException("display name must be at most 50 characters long"); }
+        if (request.Expire < DateTime.Now.AddMinutes(10)) { throw new CliException("expire must be at least 10 minutes from now"); }
+        return CliActionResponse.Empty;
     }
 
     [Action("logout")]
@@ -368,6 +381,51 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             ConnectUtil.Current.Color = savedItem.Color;
             ConnectUtil.Current.SecureProtocol = savedItem.SecureProtocol;
         }
+    }
+
+    private static CliSaveLoginRequest FillSaveLoginRequest(CliSaveLoginRequest? request)
+    {
+        request ??= new CliSaveLoginRequest();
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            request.DisplayName = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "display name",
+                Required = true,
+                MinLength = 3,
+                MaxLength = 50
+            }) ?? string.Empty;
+        }
+
+        if (request.Expire == null)
+        {
+            string? expireText;
+            do
+            {
+                expireText = CollectCliValue(new CollectCliValueParameters
+                {
+                    Field = "expire",
+                    Required = false,
+                    MinLength = 1,
+                    MaxLength = 50,
+                    DefaultValue = string.Empty
+                });
+
+                if (string.IsNullOrWhiteSpace(expireText)) { break; }
+
+                if (!DateTime.TryParse(expireText, CultureInfo.CurrentCulture, DateTimeStyles.None, out var expire))
+                {
+                    AnsiConsole.MarkupLine($"[red]invalid expire value {expireText.EscapeMarkup()}[/]");
+                }
+                else
+                {
+                    request.Expire = expire;
+                    break;
+                }
+            } while (true);
+        }
+
+        return request;
     }
 
     private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)

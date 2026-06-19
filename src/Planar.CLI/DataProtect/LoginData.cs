@@ -17,18 +17,14 @@ namespace Planar.CLI.DataProtect
 
         public string? Token { get; set; }
 
-        public int? RememberDays { get; set; }
-
-        public bool Remember { get; set; }
+        public DateTime Expire { get; set; }
 
         public CliColors Color { get; set; }
 
-        public DateTimeOffset ConnectDate { get; set; }
-
         public string Key => $"{Host}:{Port}";
 
-        public bool Deprecated => Remember && RememberDays.HasValue && ConnectDate.Date.AddDays(RememberDays.Value + 1) < DateTimeOffset.Now.Date;
+        public bool Deprecated => Expire < DateTime.Now;
 
-        public bool HasCredentials => Remember && !(string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password));
+        public bool HasCredentials => !(string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password));
     }
 }

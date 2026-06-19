@@ -1,17 +1,17 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Planar.CLI.DataProtect;
 
 public static class ConnectUtil
 {
+    // if (!File.Exists(MetadataFilename)) { return; }
+
     public const string DefaultHost = "localhost";
     private const int DefaultPort = 2306;
     private const int DefaultSecurePort = 2610;
@@ -19,7 +19,6 @@ public static class ConnectUtil
     static ConnectUtil()
     {
         InitializeMetadataFolder();
-        Load();
     }
 
     public static int GetDefaultPort()
@@ -36,84 +35,24 @@ public static class ConnectUtil
 
     public static CliLoginRequest Current { get; private set; } = new CliLoginRequest();
 
-    private static UserMetadata Data { get; set; } = new();
-
     private static string MetadataFilename { get; set; } = string.Empty;
-
-    public static CliLoginRequest? GetLastLoginRequestWithRemember()
-    {
-        try
-        {
-            LogoutOldItems();
-            var last = Data.Logins
-                .Where(l => l.Remember)
-                .OrderByDescending(l => l.ConnectDate)
-                .FirstOrDefault();
-
-            if (last == null) { return null; }
-
-            var result = Map(last);
-            Current = result;
-            return result;
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            return null;
-        }
-    }
 
     public static LoginData? GetSavedLogin(string key)
     {
         try
         {
-            LogoutOldItems();
-            var last = Data.Logins
-                .Where(l => string.Equals(l.Key, key, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(l => l.ConnectDate)
-                .FirstOrDefault();
-
-            return last;
         }
         catch (Exception ex)
         {
             HandleException(ex);
             return null;
         }
-    }
-
-    public static void SetColor(CliColors color)
-    {
-        Current.Color = color;
-        var login = Data.Logins.Find(l => l.Key == Current.Key);
-        if (login != null)
-        {
-            login.Color = color;
-        }
-
-        Save();
-    }
-
-    public static void Flush()
-    {
-        Data.Logins.Clear();
-        Save();
     }
 
     public static void Logout()
     {
         Current.Username = null;
         Current.Password = null;
-
-        var login = Data.Logins.Find(l => l.Key == Current.Key);
-        if (login != null)
-        {
-            login.Token = null;
-            login.Username = null;
-            login.Password = null;
-        }
-
-        Save();
     }
 
     public static void Logout(LoginData login)
@@ -125,80 +64,38 @@ public static class ConnectUtil
 
     public static void SaveLoginRequest(CliLoginRequest request, string? token)
     {
-        try
-        {
-            if (!request.Remember)
-            {
-                request.Username = null;
-                request.Password = null;
-            }
+        ////try
+        ////{
+        ////    if (!request.Remember)
+        ////    {
+        ////        request.Username = null;
+        ////        request.Password = null;
+        ////    }
 
-            Current = request;
+        ////    Current = request;
 
-            var login = ReverseMap(request);
-            login.Token = token;
-            Data.Logins.RemoveAll(l => l.Key == request.Key);
+        ////    var login = ReverseMap(request);
+        ////    login.Token = token;
+        ////    Data.Logins.RemoveAll(l => l.Key == request.Key);
 
-            if (request.Remember)
-            {
-                var clear = Data.Logins.Where(l => l.Remember).ToList();
-                clear.ForEach(l =>
-                {
-                    l.Remember = false;
-                    l.RememberDays = null;
-                });
-            }
+        ////    if (request.Remember)
+        ////    {
+        ////        var clear = Data.Logins.Where(l => l.Remember).ToList();
+        ////        clear.ForEach(l =>
+        ////        {
+        ////            l.Remember = false;
+        ////            l.RememberDays = null;
+        ////        });
+        ////    }
 
-            Data.Logins.Add(login);
+        ////    Data.Logins.Add(login);
 
-            Save();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
-
-    private static void LogoutOldItems()
-    {
-        var old = Data.Logins.Where(l => l.Deprecated).ToList();
-        old.ForEach(Logout);
-        Save();
-    }
-
-    private static CliLoginRequest Map(LoginData data)
-    {
-        var result = new CliLoginRequest
-        {
-            Color = data.Color,
-            Host = data.Host,
-            Password = data.Password,
-            Port = data.Port,
-            Username = data.Username,
-            Remember = data.Remember,
-            RememberDays = data.RememberDays.GetValueOrDefault(),
-            SecureProtocol = data.SecureProtocol
-        };
-
-        return result;
-    }
-
-    private static LoginData ReverseMap(CliLoginRequest data)
-    {
-        var result = new LoginData
-        {
-            Color = data.Color,
-            Host = data.Host,
-            Password = data.Password,
-            Port = data.Port,
-            Username = data.Username,
-            Remember = data.Remember,
-            RememberDays = data.RememberDays,
-            SecureProtocol = data.SecureProtocol,
-            ConnectDate = DateTimeOffset.Now.DateTime
-        };
-
-        return result;
+        ////    Save();
+        ////}
+        ////catch (Exception ex)
+        ////{
+        ////    HandleException(ex);
+        ////}
     }
 
     private static IDataProtector GetProtector()
@@ -217,24 +114,6 @@ public static class ConnectUtil
         AnsiConsole.MarkupLine($"[{CliFormat.WarningColor}]exception message: {ex.Message.EscapeMarkup()}[/]");
         AnsiConsole.WriteLine(string.Empty.PadLeft(80, '-'));
         AnsiConsole.WriteException(ex);
-    }
-
-    private static void Load()
-    {
-        try
-        {
-            if (!File.Exists(MetadataFilename)) { return; }
-            var text = File.ReadAllText(MetadataFilename);
-            var protector = GetProtector();
-            text = protector.Unprotect(text);
-            Data = JsonConvert.DeserializeObject<UserMetadata>(text) ?? new UserMetadata();
-            if (Data.Logins == null) { Data.Logins = []; }
-            LogoutOldItems();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
     }
 
     private static void InitializeMetadataFolder()
@@ -256,20 +135,5 @@ public static class ConnectUtil
         }
 
         MetadataFilename = Path.Combine(folder, filename);
-    }
-
-    private static void Save()
-    {
-        try
-        {
-            var text = JsonConvert.SerializeObject(Data);
-            var protector = GetProtector();
-            text = protector.Protect(text);
-            File.WriteAllText(MetadataFilename, text);
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
     }
 }
