@@ -240,7 +240,7 @@ public static class ConnectUtil
     private static void InitializeMetadataFolder()
     {
         const string filename = "metadata.dat";
-        var dataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var dataFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var folder = Path.Combine(dataFolder, nameof(Planar));
 
         try

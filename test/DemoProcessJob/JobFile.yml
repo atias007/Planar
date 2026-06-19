@@ -7,7 +7,7 @@ concurrent: false
 
 properties:
   path: DemoProcessJob
-  filename: DemoProcessJob.exe
+  filename: DemoProcessJob\DemoProcessJob.exe
   timeout: 00:05:00
   success exit codes:
     - 0

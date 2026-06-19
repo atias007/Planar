@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
@@ -55,7 +56,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
     {
         get
         {
-            _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, FileProperties.Filename);
+            _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Filename);
 
             return _filename;
         }
@@ -88,24 +89,25 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
     {
         SafeInvoke(() => _process?.CancelErrorRead());
         SafeInvoke(() => _process?.CancelOutputRead());
-        SafeInvoke(() => { if (_process != null) { _process.EnableRaisingEvents = false; } });
+        SafeInvoke(() => { _process?.EnableRaisingEvents = false; });
         SafeUnsubscribeOutput();
         SafeInvoke(() => _process?.Close());
         SafeInvoke(() => _process?.Dispose());
-        SafeInvoke(() => { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } });
+        SafeInvoke(() => { _processMetricsTimer?.Elapsed -= MetricsTimerElapsed; });
     }
 
-    protected virtual ProcessStartInfo GetProcessStartInfo()
+    protected virtual async Task<ProcessStartInfo> GetProcessStartInfo()
     {
+        var fi = new FileInfo(Filename);
         var startInfo = new ProcessStartInfo
         {
             CreateNoWindow = true,
             ErrorDialog = false,
-            FileName = Filename,
+            FileName = fi.FullName,
             UserName = FileProperties.UserName,
             UseShellExecute = false,
             WindowStyle = ProcessWindowStyle.Hidden,
-            WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path),
+            WorkingDirectory = FileProperties.Path,
             RedirectStandardError = true,
             RedirectStandardOutput = true
         };
@@ -192,12 +194,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         }
         catch (Exception ex)
         {
-            var filename =
-                string.IsNullOrWhiteSpace(FileProperties.Path) ?
-                FileProperties.Filename :
-                Path.Combine(FileProperties.Path, FileProperties.Filename);
-
-            throw new PlanarException($"could not start process {filename}", ex);
+            throw new PlanarException($"could not start process {FileProperties.Filename}\r\n", ex);
         }
 
         _processMetricsTimer.Elapsed += MetricsTimerElapsed;
@@ -233,7 +230,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
             if (!File.Exists(Filename))
             {
-                throw new PlanarException($"process filename '{Filename}' could not be found");
+                throw new PlanarException($"process filename '{FileProperties.Filename}' could not be found");
             }
         }
         catch (Exception ex)

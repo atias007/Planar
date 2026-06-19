@@ -27,7 +27,7 @@ public abstract class ProcessJob(
             context.CancellationToken.Register(OnProcessCancel);
 
             var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
-            var startInfo = GetProcessStartInfo();
+            var startInfo = await GetProcessStartInfo();
             _ = SafeStartMonitorDuration(context);
             var success = StartProcess(startInfo, timeout);
             StopMonitorDuration();
@@ -141,9 +141,9 @@ public abstract class ProcessJob(
         }
     }
 
-    protected override ProcessStartInfo GetProcessStartInfo()
+    protected override async Task<ProcessStartInfo> GetProcessStartInfo()
     {
-        var startInfo = base.GetProcessStartInfo();
+        var startInfo = await base.GetProcessStartInfo();
         startInfo.Arguments = Properties.Arguments;
 
         if (!string.IsNullOrEmpty(Properties.OutputEncoding))

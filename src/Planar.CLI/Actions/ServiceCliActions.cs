@@ -330,7 +330,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return key;
     }
 
-    public static async Task InitializeLogin()
+    public static void InitializeLogin()
     {
         var request = ConnectUtil.GetLastLoginRequestWithRemember();
         if (request == null)
@@ -340,14 +340,14 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         }
         else
         {
-            var response = await InnerLogin(request);
-            if (!response.Response.IsSuccessful && response.Response.StatusCode != HttpStatusCode.Conflict)
-            {
-                RestProxy.Host = request.Host;
-                RestProxy.Port = request.Port;
-                RestProxy.SecureProtocol = request.SecureProtocol;
-                RestProxy.Flush();
-            }
+            ////var response = await InnerLogin(request);
+            ////if (!response.Response.IsSuccessful && response.Response.StatusCode != HttpStatusCode.Conflict)
+            ////{
+            RestProxy.Host = request.Host;
+            RestProxy.Port = request.Port;
+            RestProxy.SecureProtocol = request.SecureProtocol;
+            RestProxy.Flush();
+            ////}
         }
     }
 

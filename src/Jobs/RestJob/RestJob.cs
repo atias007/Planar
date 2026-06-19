@@ -48,7 +48,7 @@ public class RestJob(
         RestRequest request = InitializeRequest();
         SetHeaders(request);
         SetFormData(request);
-        SetBody(context, request);
+        await SetBody(context, request);
 
         // Execute Rest
         var stopwatch = new Stopwatch();
@@ -106,26 +106,24 @@ public class RestJob(
         }
     }
 
-    private void SetBody(Quartz.IJobExecutionContext context, RestRequest request)
+    private async Task SetBody(Quartz.IJobExecutionContext context, RestRequest request)
     {
-        if (!string.IsNullOrEmpty(Properties.BodyFile))
+        if (string.IsNullOrWhiteSpace(Properties.BodyFile)) { return; }
+        var filename = Path.Combine(Properties.Path, Properties.BodyFile);
+        var body = await File.ReadAllTextAsync(filename);
+
+        foreach (var item in context.MergedJobDataMap)
         {
-            var filename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.BodyFile);
-            var body = File.ReadAllText(filename);
-
-            foreach (var item in context.MergedJobDataMap)
+            var key = $"{{{{{item.Key}}}}}";
+            var value = Convert.ToString(item.Value);
+            if (body.Contains(key))
             {
-                var key = $"{{{{{item.Key}}}}}";
-                var value = Convert.ToString(item.Value);
-                if (body.Contains(key))
-                {
-                    body = body.Replace(key, value);
-                    MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
-                }
+                body = body.Replace(key, value);
+                MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
             }
-
-            request.AddJsonBody(body);
         }
+
+        request.AddJsonBody(body);
     }
 
     private void SetFormData(RestRequest request)
@@ -210,11 +208,7 @@ public class RestJob(
     {
         try
         {
-            var bodyFullname = FolderConsts.GetSpecialFilePath(
-                PlanarSpecialFolder.Jobs,
-                Properties.Path ?? string.Empty,
-                Properties.BodyFile ?? string.Empty);
-
+            var bodyFullname = Path.Combine(Properties.Path ?? string.Empty, Properties.BodyFile ?? string.Empty);
             if (!string.IsNullOrEmpty(Properties.BodyFile) && !File.Exists(bodyFullname))
             {
                 throw new RestJobException($"body file '{bodyFullname}' could not be found");

@@ -13,9 +13,6 @@ namespace Planar.Service.Validation
         {
             _cluster = cluster;
 
-            RuleFor(e => e.Path).MustAsync(PathExists)
-                .When(e => !string.IsNullOrEmpty(e.Path));
-
             RuleFor(j => j.DefaultConnectionName).Length(1, 50);
             RuleFor(j => j.DefaultConnectionName)
                 .NotEmpty()
@@ -42,14 +39,9 @@ namespace Planar.Service.Validation
             RuleForEach(j => j.Steps).MustAsync(FilenameExists);
         }
 
-        private async Task<bool> PathExists(SqlJobProperties properties, string? path, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
-        {
-            return await CommonValidations.PathExists(path, _cluster, context);
-        }
-
         private async Task<bool> FilenameExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
         {
-            return await CommonValidations.FilenameExists(properties, "filename", step.Filename, _cluster, context);
+            return await CommonValidations.FilenameExists("filename", step.Filename, _cluster, context);
         }
     }
 }
