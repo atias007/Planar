@@ -159,6 +159,22 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         if (request.DisplayName.Length < 3) { throw new CliException("display name must be at least 3 characters long"); }
         if (request.DisplayName.Length > 50) { throw new CliException("display name must be at most 50 characters long"); }
         if (request.Expire < DateTime.Now.AddMinutes(10)) { throw new CliException("expire must be at least 10 minutes from now"); }
+
+        var loginData = new DataProtect.LoginData
+        {
+            DisplayName = request.DisplayName,
+            Expire = request.Expire,
+            Color = ConnectUtil.Current.Color,
+            Host = ConnectUtil.Current.Host,
+            Port = ConnectUtil.Current.Port,
+            SecureProtocol = ConnectUtil.Current.SecureProtocol,
+            Username = ConnectUtil.Current.Username,
+            Password = ConnectUtil.Current.Password,
+            Token = LoginProxy.Token,
+        };
+
+        await ConnectUtil.Save(loginData);
+
         return CliActionResponse.Empty;
     }
 

@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.DataProtect;
 
@@ -35,7 +39,7 @@ public static class ConnectUtil
 
     public static CliLoginRequest Current { get; private set; } = new CliLoginRequest();
 
-    private static string MetadataFilename { get; set; } = string.Empty;
+    private static string MetadataPath { get; set; } = string.Empty;
 
     public static LoginData? GetSavedLogin(string key)
     {
@@ -62,40 +66,50 @@ public static class ConnectUtil
         login.Token = null;
     }
 
-    public static void SaveLoginRequest(CliLoginRequest request, string? token)
+    public static void SaveLoginRequest(CliLoginRequest request)
     {
-        ////try
-        ////{
-        ////    if (!request.Remember)
-        ////    {
-        ////        request.Username = null;
-        ////        request.Password = null;
-        ////    }
+        try
+        {
+            Current = request;
 
-        ////    Current = request;
+            var login = ReverseMap(request);
+            ////    login.Token = token;
+            ////    Data.Logins.RemoveAll(l => l.Key == request.Key);
 
-        ////    var login = ReverseMap(request);
-        ////    login.Token = token;
-        ////    Data.Logins.RemoveAll(l => l.Key == request.Key);
+            ////    if (request.Remember)
+            ////    {
+            ////        var clear = Data.Logins.Where(l => l.Remember).ToList();
+            ////        clear.ForEach(l =>
+            ////        {
+            ////            l.Remember = false;
+            ////            l.RememberDays = null;
+            ////        });
+            ////    }
 
-        ////    if (request.Remember)
-        ////    {
-        ////        var clear = Data.Logins.Where(l => l.Remember).ToList();
-        ////        clear.ForEach(l =>
-        ////        {
-        ////            l.Remember = false;
-        ////            l.RememberDays = null;
-        ////        });
-        ////    }
+            ////    Data.Logins.Add(login);
 
-        ////    Data.Logins.Add(login);
+            ////    Save();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
 
-        ////    Save();
-        ////}
-        ////catch (Exception ex)
-        ////{
-        ////    HandleException(ex);
-        ////}
+    private static LoginData ReverseMap(CliLoginRequest data)
+    {
+        var result = new LoginData
+        {
+            Color = data.Color,
+            Host = data.Host,
+            Password = data.Password,
+            Port = data.Port,
+            Username = data.Username,
+            SecureProtocol = data.SecureProtocol,
+            ConnectDate = DateTimeOffset.Now.DateTime
+        };
+
+        return result;
     }
 
     private static IDataProtector GetProtector()
@@ -118,7 +132,6 @@ public static class ConnectUtil
 
     private static void InitializeMetadataFolder()
     {
-        const string filename = "metadata.dat";
         var dataFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var folder = Path.Combine(dataFolder, nameof(Planar));
 
@@ -134,6 +147,23 @@ public static class ConnectUtil
             HandleException(ex);
         }
 
-        MetadataFilename = Path.Combine(folder, filename);
+        MetadataPath = folder;
+    }
+
+    public static async Task Save(LoginData loginData)
+    {
+        try
+        {
+            var name = DateTime.UtcNow.Ticks.ToString();
+            var filename = Path.Combine(MetadataPath, $"{name}.hash");
+            var text = JsonConvert.SerializeObject(loginData);
+            var protector = GetProtector();
+            text = protector.Protect(text);
+            await File.WriteAllTextAsync(filename, text);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 }
