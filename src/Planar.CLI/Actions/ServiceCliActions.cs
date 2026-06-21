@@ -368,44 +368,45 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return key;
     }
 
-    public static void InitializeLogin()
+    public static async Task AutoLogin(bool interactive)
     {
-        var request = ConnectUtil.GetLastLoginRequestWithRemember();
-        if (request == null)
+        var savedLogins = await ConnectUtil.GetLogins();
+        DataProtect.LoginData login;
+
+        if (savedLogins.Count == 0)
         {
-            SetDefaultAnonymousLogin();
-            Console.Title = $"{CliConsts.Title} ({CliConsts.Anonymous})";
+            login = DataProtect.LoginData.Default;
+        }
+        else if (savedLogins.Count == 1)
+        {
+            login = savedLogins[0];
+        }
+        else if (!interactive)
+        {
+            login = DataProtect.LoginData.Default;
         }
         else
         {
-            ////var response = await InnerLogin(request);
-            ////if (!response.Response.IsSuccessful && response.Response.StatusCode != HttpStatusCode.Conflict)
-            ////{
-            RestProxy.Host = request.Host;
-            RestProxy.Port = request.Port;
-            RestProxy.SecureProtocol = request.SecureProtocol;
-            RestProxy.Flush();
-            ////}
-        }
-    }
+            var menu = new List<DataProtect.LoginData>
+            {
+                DataProtect.LoginData.Default
+            };
+            menu.AddRange(savedLogins);
 
-    private static void SetDefaultAnonymousLogin()
-    {
-        ConnectUtil.Current.Host = RestProxy.Host;
-        ConnectUtil.Current.Port = RestProxy.Port;
+            var selectedLogin = await AnsiConsole.PromptAsync(
+                new SelectionPrompt<DataProtect.LoginData>()
+                    .Title("Select a saved login:")
+                    .PageSize(10)
+                    .AddChoices(menu)
+                    .AddCancelResult(DataProtect.LoginData.Default)
+                    .EnableSearch()
+                    .UseConverter(login => $"{login.DisplayName.EscapeMarkup()} [gray]({login.Key.EscapeMarkup()})[/]"));
 
-        var savedItem = ConnectUtil.GetSavedLogin(ConnectUtil.Current.Key);
+            login = selectedLogin;
+        }
 
-        if (savedItem == null)
-        {
-            ConnectUtil.SaveLoginRequest(ConnectUtil.Current, token: null);
-        }
-        else
-        {
-            RestProxy.SecureProtocol = savedItem.SecureProtocol;
-            ConnectUtil.Current.Color = savedItem.Color;
-            ConnectUtil.Current.SecureProtocol = savedItem.SecureProtocol;
-        }
+        LoginProxy.SetLoginData(login);
+        ConnectUtil.Current = login;
     }
 
     private static CliSaveLoginRequest FillSaveLoginRequest(CliSaveLoginRequest? request)

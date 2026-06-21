@@ -105,11 +105,33 @@ public static class ConnectUtil
         return login?.Color ?? CliColors.Default;
     }
 
+    private static async Task<LoginData?> GetLogin(string key)
+    {
+        var files = Directory.GetFiles(MetadataPath, "*.hash");
+
+        foreach (var file in files)
+        {
+            var data = await GetLoginData(file);
+            if (data == null) { continue; }
+            if (string.Equals(data.Key, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return data;
+            }
+        }
+
+        return null;
+    }
+
     public static async Task Save(LoginData loginData)
     {
         try
         {
-            var name = DateTime.UtcNow.Ticks.ToString();
+            var login = await GetLogin(loginData.Key);
+            var name =
+                login == null ?
+                DateTime.UtcNow.Ticks.ToString() :
+                login.Filename;
+
             var filename = Path.Combine(MetadataPath, $"{name}.hash");
             var text = JsonConvert.SerializeObject(loginData);
             var protector = GetProtector();
@@ -130,6 +152,7 @@ public static class ConnectUtil
             var protector = GetProtector();
             text = protector.Unprotect(text);
             var data = JsonConvert.DeserializeObject<LoginData>(text);
+            data.Filename = filename;
             return data;
         }
         catch (Exception ex)

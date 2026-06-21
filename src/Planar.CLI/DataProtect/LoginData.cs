@@ -16,6 +16,7 @@ public class LoginData
     public DateTime? Expire { get; set; }
     public CliColors Color { get; set; }
     public string Key => $"{Host}:{Port}";
+    public string? Filename { get; set; }
     public bool Deprecated => Expire < DateTime.Now;
     public bool HasCredentials => !(string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password));
 

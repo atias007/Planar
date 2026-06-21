@@ -795,7 +795,6 @@ internal static class Program
         }
 
         _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
-        await InitCurrentLogin();
 
         while (true)
         {
@@ -820,43 +819,6 @@ internal static class Program
         }
 
         await _timer.DisposeAsync();
-    }
-
-    private static async Task InitCurrentLogin()
-    {
-        var savedLogins = await ConnectUtil.GetLogins();
-        DataProtect.LoginData login;
-
-        if (savedLogins.Count == 0)
-        {
-            login = DataProtect.LoginData.Default;
-        }
-        else if (savedLogins.Count == 1)
-        {
-            login = savedLogins[0];
-        }
-        else
-        {
-            var menu = new List<DataProtect.LoginData>
-            {
-                DataProtect.LoginData.Default
-            };
-            menu.AddRange(savedLogins);
-
-            var selectedLogin = await AnsiConsole.PromptAsync(
-                new SelectionPrompt<DataProtect.LoginData>()
-                    .Title("Select a saved login:")
-                    .PageSize(10)
-                    .AddChoices(menu)
-                    .AddCancelResult(DataProtect.LoginData.Default)
-                    .EnableSearch()
-                    .UseConverter(login => $"{login.DisplayName.EscapeMarkup()} [gray]({login.Key.EscapeMarkup()})[/]"));
-
-            login = selectedLogin;
-        }
-
-        LoginProxy.SetLoginData(login);
-        ConnectUtil.Current = login;
     }
 
     private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object? param = null, bool noParameters = false)
@@ -891,9 +853,10 @@ internal static class Program
         //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
-        ServiceCliActions.InitializeLogin();
+        var interactive = args.Length == 0;
+        await ServiceCliActions.AutoLogin(interactive);
 
-        if (args.Length == 0)
+        if (interactive)
         {
             await InteractiveMode(cliActions, showModules: true);
         }
