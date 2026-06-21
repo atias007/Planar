@@ -77,6 +77,18 @@ internal static class LoginProxy
         return result;
     }
 
+    public static void SetLoginData(DataProtect.LoginData login)
+    {
+        RestProxy.Host = login.Host;
+        RestProxy.Port = login.Port;
+        RestProxy.SecureProtocol = login.SecureProtocol;
+        RestProxy.Flush();
+
+        Username = login.Username;
+        Password = login.Password;
+        Token = login.Token;
+    }
+
     public static void Logout()
     {
         Username = null;

@@ -16,7 +16,7 @@ internal static class RestProxy
     private static readonly Lock _lock = new();
     private static RestClient? _client;
     public static string Host { get; set; } = ConnectUtil.DefaultHost;
-    public static int Port { get; set; } = ConnectUtil.GetDefaultPort();
+    public static int Port { get; set; } = ConnectUtil.DefaultPort;
     public static bool SecureProtocol { get; set; }
     internal static Uri BaseUri => new UriBuilder(Schema, Host, Port).Uri;
 

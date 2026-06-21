@@ -26,24 +26,4 @@ public class CliLoginRequest
     ////public bool Iterative { get; set; }
 
     internal string Key => $"{Host}:{Port}";
-
-    public string GetCliMarkupColor()
-    {
-        return Color switch
-        {
-            CliColors.Yellow => "yellow",
-            CliColors.Red => "red",
-            CliColors.Lime => "lime",
-            CliColors.Aqua => "aqua",
-            CliColors.Blue => "deepskyblue1",
-            CliColors.Green => "springgreen1",
-            CliColors.InvertWhite => "black on white",
-            CliColors.InvertYellow => "black on yellow",
-            CliColors.InvertRed => "black on red",
-            CliColors.InvertPurple => "black on fuchsia",
-            CliColors.InvertAqua => "black on aqua",
-            CliColors.InvertGreen => "black on springgreen1",
-            _ => "white",
-        };
-    }
 }

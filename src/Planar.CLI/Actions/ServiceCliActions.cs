@@ -139,12 +139,21 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("login")]
     public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
     {
-        var notnullRequest = FillLoginRequest(request);
-        if (request.Port == 0) { request.Port = ConnectUtil.GetDefaultPort(); }
+        var notnullRequest = await FillLoginRequest(request);
         var response = await InnerLogin(notnullRequest, cancellationToken);
         if (response.Response.IsSuccessful)
         {
-            ConnectUtil.SaveLoginRequest(request, LoginProxy.Token);
+            ConnectUtil.Current = new DataProtect.LoginData
+            {
+                DisplayName = notnullRequest.Key,
+                Color = notnullRequest.Color,
+                Host = notnullRequest.Host,
+                Port = notnullRequest.Port,
+                SecureProtocol = notnullRequest.SecureProtocol,
+                Username = notnullRequest.Username,
+                Password = notnullRequest.Password,
+                Token = LoginProxy.Token
+            };
         }
 
         return response;
@@ -153,6 +162,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("save-login")]
     public static async Task<CliActionResponse> SaveLogin(CliSaveLoginRequest request, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         request = FillSaveLoginRequest(request);
         if (string.IsNullOrWhiteSpace(request.DisplayName)) { throw new CliException("display name is required"); }
         request.DisplayName = request.DisplayName.Trim();
@@ -184,7 +194,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         cancellationToken.ThrowIfCancellationRequested();
 
         LoginProxy.Logout();
-        ConnectUtil.Logout();
+        ConnectUtil.Current = DataProtect.LoginData.Default;
         RestProxy.Flush();
         return await Task.FromResult(CliActionResponse.Empty);
     }
@@ -193,8 +203,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     public static async Task<CliActionResponse> FlushLogins(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        ConnectUtil.Flush();
-        ConnectUtil.SetColor(CliColors.Default);
+        await ConnectUtil.DeleteAllLogins();
         return await Task.FromResult(CliActionResponse.Empty);
     }
 
@@ -215,7 +224,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             }
         }
 
-        ConnectUtil.SetColor(request.Color.GetValueOrDefault());
+        ConnectUtil.Current.Color = request.Color.GetValueOrDefault();
         return await Task.FromResult(CliActionResponse.Empty);
     }
 
@@ -444,23 +453,15 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return request;
     }
 
-    private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)
+    private static async Task<CliLoginRequest> FillLoginRequest(CliLoginRequest? request)
     {
         const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
 
         request ??= new CliLoginRequest();
-        if (!InteractiveMode)
+        Task<CliColors>? cliColorTask = null;
+        if (request.Color == CliColors.Default)
         {
-            if (request.Color == CliColors.Default)
-            {
-                var savedLogin = ConnectUtil.GetSavedLogin(request.Key);
-                if (savedLogin != null)
-                {
-                    request.Color = savedLogin.Color;
-                }
-            }
-
-            return request;
+            cliColorTask = ConnectUtil.GetLoginColor(request.Key);
         }
 
         if (string.IsNullOrEmpty(request.Host))
@@ -485,8 +486,8 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
                 MaxLength = 5,
                 Regex = regexTepmplate,
                 RegexErrorMessage = "invalid port",
-                DefaultValue = ConnectUtil.GetDefaultPort().ToString()
-            }) ?? ConnectUtil.GetDefaultPort().ToString());
+                DefaultValue = ConnectUtil.DefaultPort.ToString()
+            }) ?? ConnectUtil.DefaultPort.ToString());
         }
 
         if (string.IsNullOrEmpty(request.Username))
@@ -512,11 +513,9 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             });
         }
 
-        var savedItem = ConnectUtil.GetSavedLogin(request.Key);
-        if (savedItem != null)
+        if (request.Color == CliColors.Default && cliColorTask != null)
         {
-            request.Color = savedItem.Color;
-            request.SecureProtocol = savedItem.SecureProtocol;
+            request.Color = await cliColorTask;
         }
 
         return request;
