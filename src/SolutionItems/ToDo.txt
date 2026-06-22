@@ -1,8 +1,9 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
+* cli login command show first saved logins menu
+* cli add "list logins" command to show saved logins
 
-* cli apply / update write info message if no response id (no changes was made)
 * test 'global config keys' in jobfile.yml with json config value
 * test hosted job reading jobfile.yml or only appsettings.json
 * test apply + update yml (no changes or with changes to yml file)
@@ -421,3 +422,4 @@ V 1.8.2
 - add 'global config keys' to jobfile.yml to inject only specific global config keys to the job context
 - add the option to cancel cli select prompt by pressing ESC
 - add the option to save cli login
+- cli apply / update detect and write message if no changes was made

@@ -19,6 +19,7 @@ public class LoginData
     public string? Filename { get; set; }
     public bool Deprecated => Expire < DateTime.Now;
     public bool HasCredentials => !(string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password));
+    public string DisplayMarkup => $"{DisplayName.EscapeMarkup()} [gray]({Key.EscapeMarkup()})[/]";
 
     public static LoginData Default => new()
     {

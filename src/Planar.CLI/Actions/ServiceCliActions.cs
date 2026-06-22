@@ -158,11 +158,24 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return response;
     }
 
-    [Action("save-login")]
-    public static async Task<CliActionResponse> SaveLogin(CliSaveLoginRequest request, CancellationToken cancellationToken = default)
+    [Action("delete-login")]
+    public static async Task<CliActionResponse> DeleteLogin(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        request = FillSaveLoginRequest(request);
+        var login = await SelectLogin();
+        if (login != null)
+        {
+            await ConnectUtil.DeleteLogin(login);
+        }
+
+        return await Task.FromResult(CliActionResponse.Empty);
+    }
+
+    [Action("save-login")]
+    public static async Task<CliActionResponse> SaveLogin(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var request = FillSaveLoginRequest();
         if (string.IsNullOrWhiteSpace(request.DisplayName)) { throw new CliException("display name is required"); }
         request.DisplayName = request.DisplayName.Trim();
         if (request.DisplayName.Length < 3) { throw new CliException("display name must be at least 3 characters long"); }
@@ -367,9 +380,30 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return key;
     }
 
-    public static async Task AutoLogin(bool interactive)
+    private static async Task<DataProtect.LoginData?> SelectLogin()
     {
         var savedLogins = await ConnectUtil.GetLogins();
+        if (savedLogins.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]no saved logins found[/]");
+            return null;
+        }
+
+        var menu =
+            savedLogins.Select(l =>
+            new CliSelectItem<DataProtect.LoginData>
+            {
+                DisplayName = l.DisplayMarkup,
+                Value = l
+            });
+
+        var selectedLogin = CliPromptUtil.PromptSelection(menu, "select a saved login", writeSelection: true, throwWarning: true);
+        return selectedLogin?.Value;
+    }
+
+    public static async Task AutoLogin(bool interactive, Task<IReadOnlyList<DataProtect.LoginData>> savedLoginsTask)
+    {
+        var savedLogins = await savedLoginsTask;
         DataProtect.LoginData login;
 
         if (savedLogins.Count == 0)
@@ -390,7 +424,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
                 savedLogins.Select(l =>
                 new CliSelectItem<DataProtect.LoginData>
                 {
-                    DisplayName = $"{l.DisplayName.EscapeMarkup()} [gray]({l.Key.EscapeMarkup()})[/]",
+                    DisplayName = l.DisplayMarkup,
                     Value = l
                 });
 
@@ -412,24 +446,18 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         ConnectUtil.Current = login;
     }
 
-    private static CliSaveLoginRequest FillSaveLoginRequest(CliSaveLoginRequest? request)
+    private static CliSaveLoginRequest FillSaveLoginRequest()
     {
-        request ??= new CliSaveLoginRequest();
-        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        var request = new CliSaveLoginRequest();
+        request.DisplayName = CollectCliValue(new CollectCliValueParameters
         {
-            request.DisplayName = CollectCliValue(new CollectCliValueParameters
-            {
-                Field = "display name",
-                Required = true,
-                MinLength = 3,
-                MaxLength = 50
-            }) ?? string.Empty;
-        }
+            Field = "display name",
+            Required = true,
+            MinLength = 3,
+            MaxLength = 50
+        }) ?? string.Empty;
 
-        if (request.Expire == null)
-        {
-            request.Expire = CliPromptUtil.PromptForDate("expire");
-        }
+        request.Expire = CliPromptUtil.PromptForDate("expire");
 
         return request;
     }
