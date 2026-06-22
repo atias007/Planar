@@ -419,3 +419,5 @@ V 1.8.2
 - BUG: cli manual run job when service is halted
 - add stream max length to settings of hooks
 - add 'global config keys' to jobfile.yml to inject only specific global config keys to the job context
+- add the option to cancel cli select prompt by pressing ESC
+- add the option to save cli login

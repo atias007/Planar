@@ -1,4 +1,5 @@
 ﻿using AsciiChart.Sharp;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
@@ -796,6 +797,8 @@ internal static class Program
 
         _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
 
+        await ServiceCliActions.AutoLogin(interactive: true);
+
         while (true)
         {
             var color = ConnectUtil.Current.GetCliMarkupColor();
@@ -854,7 +857,6 @@ internal static class Program
 #endif
 
         var interactive = args.Length == 0;
-        await ServiceCliActions.AutoLogin(interactive);
 
         if (interactive)
         {
@@ -862,15 +864,16 @@ internal static class Program
         }
         else
         {
-            var cliUtil = await HandleCliCommand(args, cliActions);
-            if (cliUtil != null)
-            {
-                var command = $"{cliUtil.Module}.{cliUtil.Command}";
-                if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
-                {
-                    await InteractiveMode(cliActions, showModules: false);
-                }
-            }
+            await ServiceCliActions.AutoLogin(interactive: false);  
+            await HandleCliCommand(args, cliActions);
+            ////if (cliUtil != null)
+            ////{
+            ////    var command = $"{cliUtil.Module}.{cliUtil.Command}";
+            ////    if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
+            ////    {
+            ////        await InteractiveMode(cliActions, showModules: false);
+            ////    }
+            ////}
         }
     }
 

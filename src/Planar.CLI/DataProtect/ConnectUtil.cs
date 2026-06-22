@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
-using Planar.CLI.Proxy;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -52,24 +51,41 @@ public static class ConnectUtil
     {
         try
         {
-            var files = Directory.GetFiles(MetadataPath, "*.hash");
-            var protector = GetProtector();
-            foreach (var file in files)
-            {
-                var text = await File.ReadAllTextAsync(file);
-                text = protector.Unprotect(text);
-                var data = JsonConvert.DeserializeObject<LoginData>(text);
-                if (data == null) { continue; }
-                if (data.Key.Equals(loginData.Key))
-                {
-                    File.Delete(file);
-                    break;
-                }
-            }
+            await DeleteLoginInner(loginData);
         }
         catch (Exception ex)
         {
             HandleException(ex);
+        }
+    }
+
+    private static async Task SafeDeleteLogin(LoginData loginData)
+    {
+        try
+        {
+            await DeleteLoginInner(loginData);
+        }
+        catch
+        {
+            // Do nothing, just ignore the exception and continue to the next file
+        }
+    }
+
+    private static async Task DeleteLoginInner(LoginData loginData)
+    {
+        var files = Directory.GetFiles(MetadataPath, "*.hash");
+        var protector = GetProtector();
+        foreach (var file in files)
+        {
+            var text = await File.ReadAllTextAsync(file);
+            text = protector.Unprotect(text);
+            var data = JsonConvert.DeserializeObject<LoginData>(text);
+            if (data == null) { continue; }
+            if (data.Key.Equals(loginData.Key))
+            {
+                File.Delete(file);
+                break;
+            }
         }
     }
 
@@ -83,10 +99,13 @@ public static class ConnectUtil
             foreach (var file in files)
             {
                 var data = await GetLoginData(file);
-                if (data != null)
+                if (data == null) { continue; }
+                if (data.Deprecated)
                 {
-                    loginData.Add(data);
+                    await SafeDeleteLogin(data);
+                    continue;
                 }
+                loginData.Add(data);
             }
 
             return loginData;
@@ -128,11 +147,11 @@ public static class ConnectUtil
         {
             var login = await GetLogin(loginData.Key);
             var name =
-                login == null ?
-                DateTime.UtcNow.Ticks.ToString() :
+                login == null || string.IsNullOrWhiteSpace(login.Filename) ?
+                $"{DateTime.UtcNow.Ticks}.hash" :
                 login.Filename;
 
-            var filename = Path.Combine(MetadataPath, $"{name}.hash");
+            var filename = Path.Combine(MetadataPath, name);
             var text = JsonConvert.SerializeObject(loginData);
             var protector = GetProtector();
             text = protector.Protect(text);
@@ -152,6 +171,7 @@ public static class ConnectUtil
             var protector = GetProtector();
             text = protector.Unprotect(text);
             var data = JsonConvert.DeserializeObject<LoginData>(text);
+            if (data == null) { return null; }
             data.Filename = filename;
             return data;
         }

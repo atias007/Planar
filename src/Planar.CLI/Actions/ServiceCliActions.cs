@@ -9,7 +9,6 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -387,22 +386,26 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         }
         else
         {
-            var menu = new List<DataProtect.LoginData>
-            {
-                DataProtect.LoginData.Default
-            };
-            menu.AddRange(savedLogins);
+            var menu =
+                savedLogins.Select(l =>
+                new CliSelectItem<DataProtect.LoginData>
+                {
+                    DisplayName = $"{l.DisplayName.EscapeMarkup()} [gray]({l.Key.EscapeMarkup()})[/]",
+                    Value = l
+                });
 
-            var selectedLogin = await AnsiConsole.PromptAsync(
-                new SelectionPrompt<DataProtect.LoginData>()
-                    .Title("Select a saved login:")
-                    .PageSize(10)
-                    .AddChoices(menu)
-                    .AddCancelResult(DataProtect.LoginData.Default)
-                    .EnableSearch()
-                    .UseConverter(login => $"{login.DisplayName.EscapeMarkup()} [gray]({login.Key.EscapeMarkup()})[/]"));
+            var selectedLogin = CliPromptUtil.PromptSelection(menu, "select a saved login", writeSelection: false, throwWarning: false);
+            var selected =
+                selectedLogin != null &&
+                !selectedLogin.IsCancelItem &&
+                selectedLogin.Value != null;
 
-            login = selectedLogin;
+            var value =
+                selected ?
+                selectedLogin!.Value! :
+                DataProtect.LoginData.Default;
+
+            login = value;
         }
 
         LoginProxy.SetLoginData(login);
@@ -425,30 +428,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
         if (request.Expire == null)
         {
-            string? expireText;
-            do
-            {
-                expireText = CollectCliValue(new CollectCliValueParameters
-                {
-                    Field = "expire",
-                    Required = false,
-                    MinLength = 1,
-                    MaxLength = 50,
-                    DefaultValue = string.Empty
-                });
-
-                if (string.IsNullOrWhiteSpace(expireText)) { break; }
-
-                if (!DateTime.TryParse(expireText, CultureInfo.CurrentCulture, DateTimeStyles.None, out var expire))
-                {
-                    AnsiConsole.MarkupLine($"[red]invalid expire value {expireText.EscapeMarkup()}[/]");
-                }
-                else
-                {
-                    request.Expire = expire;
-                    break;
-                }
-            } while (true);
+            request.Expire = CliPromptUtil.PromptForDate("expire");
         }
 
         return request;
