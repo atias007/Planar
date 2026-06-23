@@ -9,6 +9,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -151,7 +152,8 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
                 SecureProtocol = notnullRequest.SecureProtocol,
                 Username = notnullRequest.Username,
                 Password = notnullRequest.Password,
-                Token = LoginProxy.Token
+                Token = LoginProxy.Token,
+                Role = LoginProxy.Role
             };
         }
 
@@ -169,6 +171,15 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         }
 
         return await Task.FromResult(CliActionResponse.Empty);
+    }
+
+    [Action("list-logins")]
+    public static async Task<CliActionResponse> ListLogins(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var logins = await ConnectUtil.GetLogins();
+        var table = CliTableExtensions.GetTable(logins);
+        return new CliActionResponse(CliActionResponse.Empty.Response, table);
     }
 
     [Action("save-login")]
@@ -193,6 +204,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             Username = ConnectUtil.Current.Username,
             Password = ConnectUtil.Current.Password,
             Token = LoginProxy.Token,
+            Role = LoginProxy.Role
         };
 
         await ConnectUtil.Save(loginData);
@@ -442,6 +454,14 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             login = value;
         }
 
+        _ = LoginProxy.Login(new Proxy.LoginData
+        {
+            Host = login.Host,
+            Port = login.Port,
+            SecureProtocol = login.SecureProtocol,
+            Username = login.Username,
+            Password = login.Password,
+        }, cancellationToken: CancellationToken.None);
         LoginProxy.SetLoginData(login);
         ConnectUtil.Current = login;
     }
@@ -537,12 +557,14 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         // Success authorize
         if (result.IsSuccessStatusCode)
         {
-            Console.Title = $"{CliConsts.Title} ({request.Username})";
+            Console.Title = $"{CliConsts.Title} ({LoginProxy.Role?.ToLower()})";
             _ = JobTriggerIdResolver.Refresh();
             return new CliActionResponse(result, message: $"login success ({LoginProxy.Role?.ToLower()})");
         }
         else if (result.StatusCode == HttpStatusCode.Conflict)
         {
+            Console.Title = $"{CliConsts.Title} ({Roles.Anonymous.ToString().ToLower(CultureInfo.CurrentCulture)})";
+
             // No need to authorize
             RestProxy.Host = request.Host;
             RestProxy.Port = request.Port;

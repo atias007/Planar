@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using Planar.Common;
 using RestSharp;
@@ -75,6 +76,27 @@ internal static class CliTableExtensions
             var type = p.PropertyType.IsGenericType ? p.PropertyType.GenericTypeArguments[0].Name : p.PropertyType.Name;
             if (type == nameof(DateTime)) { type = nameof(DateTimeOffset); }
             table.Table.AddRow(p.Name, type);
+        }
+
+        return table;
+    }
+
+    public static CliTable GetTable(IReadOnlyList<LoginData>? response)
+    {
+        var table = new CliTable();
+        table.Table.AddColumns("Display Name", "Host:Port", "Secure Protocol", "Username", "Role");
+
+        if (response == null || !response.Any()) { return table; }
+
+        foreach (var item in response)
+        {
+            table.Table.AddRow(
+                SafeCliString(item.DisplayName),
+                $"[{item.GetCliMarkupColor()}]{SafeCliString(item.Host + ":" + item.Port)}[/]",
+                SafeCliString(item.SecureProtocol.ToString()),
+                SafeCliString(item.Username),
+                SafeCliString(item.Role)
+            );
         }
 
         return table;
@@ -201,7 +223,7 @@ internal static class CliTableExtensions
                 item.IpAddress.EscapeMarkup(),
                 CliTableFormat.FormatDateTime(item.LastSeen),
                 $"[{statusColor}]{item.StatusTitle.EscapeMarkup()}[/]");
-    }
+        }
         return table;
     }
 

@@ -141,6 +141,26 @@ public static class ConnectUtil
         return null;
     }
 
+    public static async Task SafeSave()
+    {
+        try
+        {
+            await Save();
+        }
+        catch
+        {
+            //// *** DO NOTHING *** //;
+        }
+    }
+
+    public static async Task Save()
+    {
+        if (Current == null) { return; }
+        if (string.IsNullOrWhiteSpace(Current.Filename)) { return; }
+        if (Current.Deprecated) { return; }
+        await Save(Current);
+    }
+
     public static async Task Save(LoginData loginData)
     {
         try

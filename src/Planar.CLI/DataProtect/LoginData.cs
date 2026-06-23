@@ -1,6 +1,8 @@
-﻿using Planar.CLI.Entities;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
+using System.Globalization;
 
 namespace Planar.CLI.DataProtect;
 
@@ -17,6 +19,7 @@ public class LoginData
     public CliColors Color { get; set; }
     public string Key => $"{Host}:{Port}";
     public string? Filename { get; set; }
+    public string? Role { get; set; }
     public bool Deprecated => Expire < DateTime.Now;
     public bool HasCredentials => !(string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password));
     public string DisplayMarkup => $"{DisplayName.EscapeMarkup()} [gray]({Key.EscapeMarkup()})[/]";
@@ -26,7 +29,8 @@ public class LoginData
         DisplayName = nameof(Default).ToLower(),
         Host = ConnectUtil.DefaultHost,
         Port = ConnectUtil.DefaultPort,
-        Color = CliColors.Default
+        Color = CliColors.Default,
+        Role = Roles.Anonymous.ToString().ToLower(CultureInfo.CurrentCulture),
     };
 
     public string GetCliMarkupColor()

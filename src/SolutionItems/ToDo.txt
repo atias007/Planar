@@ -3,6 +3,7 @@ PLAN FOR V 1.8.*
 ----------------
 * cli login command show first saved logins menu
 * cli add "list logins" command to show saved logins
+* each manual login or relogin (refresh token) should update the token and the role of user in the saved logins
 
 * test 'global config keys' in jobfile.yml with json config value
 * test hosted job reading jobfile.yml or only appsettings.json
