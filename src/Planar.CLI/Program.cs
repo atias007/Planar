@@ -46,6 +46,7 @@ internal static class Program
 
     public static async Task Main(string[] args)
     {
+        var loginsTask = ConnectUtil.GetLogins();
         ReadLine.HistoryEnabled = true;
         Console.OutputEncoding = Encoding.UTF8;
         Console.CancelKeyPress += Console_CancelKeyPress;
@@ -60,7 +61,7 @@ internal static class Program
 
         try
         {
-            await Start(args, cliActions);
+            await Start(args, cliActions, loginsTask);
         }
         catch (Exception ex)
         {
@@ -781,7 +782,10 @@ internal static class Program
         return false;
     }
 
-    private static async Task InteractiveMode(IEnumerable<CliActionMetadata> cliActions, bool showModules)
+    private static async Task InteractiveMode(
+        IEnumerable<CliActionMetadata> cliActions,
+        bool showModules,
+        Task<IReadOnlyList<DataProtect.LoginData>> loginsTask)
     {
         BaseCliAction.InteractiveMode = true;
         var command = string.Empty;
@@ -795,6 +799,8 @@ internal static class Program
         }
 
         _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
+
+        await ServiceCliActions.AutoLogin(interactive: true, loginsTask);
 
         while (true)
         {
@@ -847,29 +853,33 @@ internal static class Program
         return response;
     }
 
-    private static async Task Start(string[] args, IEnumerable<CliActionMetadata> cliActions)
+    private static async Task Start(
+        string[] args,
+        IEnumerable<CliActionMetadata> cliActions,
+        Task<IReadOnlyList<DataProtect.LoginData>> loginsTask)
     {
 #if DEBUG
         //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
-        ServiceCliActions.InitializeLogin();
+        var interactive = args.Length == 0;
 
-        if (args.Length == 0)
+        if (interactive)
         {
-            await InteractiveMode(cliActions, showModules: true);
+            await InteractiveMode(cliActions, showModules: true, loginsTask);
         }
         else
         {
-            var cliUtil = await HandleCliCommand(args, cliActions);
-            if (cliUtil != null)
-            {
-                var command = $"{cliUtil.Module}.{cliUtil.Command}";
-                if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
-                {
-                    await InteractiveMode(cliActions, showModules: false);
-                }
-            }
+            await ServiceCliActions.AutoLogin(interactive: false, loginsTask);
+            await HandleCliCommand(args, cliActions);
+            ////if (cliUtil != null)
+            ////{
+            ////    var command = $"{cliUtil.Module}.{cliUtil.Command}";
+            ////    if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
+            ////    {
+            ////        await InteractiveMode(cliActions, showModules: false);
+            ////    }
+            ////}
         }
     }
 

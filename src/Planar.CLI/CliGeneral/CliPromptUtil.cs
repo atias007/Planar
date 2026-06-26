@@ -27,19 +27,25 @@ internal static class CliPromptUtil
         return PromptSelection(finalItems, title, writeSelection)?.Value;
     }
 
-    internal static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool writeSelection = true)
+    internal static CliSelectItem<T>? PromptSelection<T>(
+        IEnumerable<CliSelectItem<T>>? items, 
+        string title, bool 
+        writeSelection = true,
+        bool throwWarning = true)
     {
         if (items == null) { return null; }
         var finalItems = items.ToList();
         var addSearch = finalItems.Count > 5;
-        finalItems.Add(CliSelectItem<T>.CancelItem);
+        var cancelItem = CliSelectItem<T>.CancelItem;
+        finalItems.Insert(0, cancelItem);
 
         using var _ = new TokenBlockerScope();
         var prompt = new SelectionPrompt<CliSelectItem<T>>()
                  .Title($"[underline][gray]select [/][white]{title?.EscapeMarkup()}[/][gray] from the following list (press [/][blue]enter[/][gray] to select):[/][/]")
                  .PageSize(20)
                  .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
-                 .AddChoices(finalItems);
+                 .AddChoices(finalItems)
+                 .AddCancelResult(cancelItem);
         if (addSearch)
         {
             prompt.EnableSearch();
@@ -52,7 +58,10 @@ internal static class CliPromptUtil
             AnsiConsole.MarkupLine($"[grey]  > selected: {selectedItem.DisplayName}[/]");
         }
 
-        CheckForCancelOption(selectedItem);
+        if (throwWarning)
+        {
+            CheckForCancelOption(selectedItem);
+        }
 
         return selectedItem;
     }

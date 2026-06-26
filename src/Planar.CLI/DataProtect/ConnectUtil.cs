@@ -5,153 +5,177 @@ using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Planar.CLI.DataProtect;
 
 public static class ConnectUtil
 {
     public const string DefaultHost = "localhost";
-    private const int DefaultPort = 2306;
-    private const int DefaultSecurePort = 2610;
+    public const int DefaultPort = 2306;
+    public const int DefaultSecurePort = 2610;
 
     static ConnectUtil()
     {
         InitializeMetadataFolder();
-        Load();
     }
 
-    public static int GetDefaultPort()
-    {
-        if (Current.SecureProtocol)
-        {
-            return DefaultSecurePort;
-        }
-        else
-        {
-            return DefaultPort;
-        }
-    }
+    public static DataProtect.LoginData Current { get; set; } = null!;
+    private static string MetadataPath { get; set; } = string.Empty;
 
-    public static CliLoginRequest Current { get; private set; } = new CliLoginRequest();
-
-    private static UserMetadata Data { get; set; } = new();
-
-    private static string MetadataFilename { get; set; } = string.Empty;
-
-    public static CliLoginRequest? GetLastLoginRequestWithRemember()
+    public static async Task DeleteAllLogins()
     {
         try
         {
-            LogoutOldItems();
-            var last = Data.Logins
-                .Where(l => l.Remember)
-                .OrderByDescending(l => l.ConnectDate)
-                .FirstOrDefault();
-
-            if (last == null) { return null; }
-
-            var result = Map(last);
-            Current = result;
-            return result;
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            return null;
-        }
-    }
-
-    public static LoginData? GetSavedLogin(string key)
-    {
-        try
-        {
-            LogoutOldItems();
-            var last = Data.Logins
-                .Where(l => string.Equals(l.Key, key, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(l => l.ConnectDate)
-                .FirstOrDefault();
-
-            return last;
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            return null;
-        }
-    }
-
-    public static void SetColor(CliColors color)
-    {
-        Current.Color = color;
-        var login = Data.Logins.Find(l => l.Key == Current.Key);
-        if (login != null)
-        {
-            login.Color = color;
-        }
-
-        Save();
-    }
-
-    public static void Flush()
-    {
-        Data.Logins.Clear();
-        Save();
-    }
-
-    public static void Logout()
-    {
-        Current.Username = null;
-        Current.Password = null;
-
-        var login = Data.Logins.Find(l => l.Key == Current.Key);
-        if (login != null)
-        {
-            login.Token = null;
-            login.Username = null;
-            login.Password = null;
-        }
-
-        Save();
-    }
-
-    public static void Logout(LoginData login)
-    {
-        login.Username = null;
-        login.Password = null;
-        login.Token = null;
-    }
-
-    public static void SaveLoginRequest(CliLoginRequest request, string? token)
-    {
-        try
-        {
-            if (!request.Remember)
+            var files = Directory.GetFiles(MetadataPath, "*.hash");
+            var protector = GetProtector();
+            foreach (var file in files)
             {
-                request.Username = null;
-                request.Password = null;
+                var text = await File.ReadAllTextAsync(file);
+                text = protector.Unprotect(text);
+                var data = JsonConvert.DeserializeObject<LoginData>(text);
+                if (data == null) { continue; }
+                File.Delete(file);
             }
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
 
-            Current = request;
+    public static async Task DeleteLogin(LoginData loginData)
+    {
+        try
+        {
+            await DeleteLoginInner(loginData);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
 
-            var login = ReverseMap(request);
-            login.Token = token;
-            Data.Logins.RemoveAll(l => l.Key == request.Key);
+    private static async Task SafeDeleteLogin(LoginData loginData)
+    {
+        try
+        {
+            await DeleteLoginInner(loginData);
+        }
+        catch
+        {
+            // Do nothing, just ignore the exception and continue to the next file
+        }
+    }
 
-            if (request.Remember)
+    private static async Task DeleteLoginInner(LoginData loginData)
+    {
+        var files = Directory.GetFiles(MetadataPath, "*.hash");
+        var protector = GetProtector();
+        foreach (var file in files)
+        {
+            var text = await File.ReadAllTextAsync(file);
+            text = protector.Unprotect(text);
+            var data = JsonConvert.DeserializeObject<LoginData>(text);
+            if (data == null) { continue; }
+            if (data.Key.Equals(loginData.Key))
             {
-                var clear = Data.Logins.Where(l => l.Remember).ToList();
-                clear.ForEach(l =>
+                File.Delete(file);
+                break;
+            }
+        }
+    }
+
+    public static async Task<IReadOnlyList<LoginData>> GetLogins()
+    {
+        try
+        {
+            var files = Directory.GetFiles(MetadataPath, "*.hash");
+            var loginData = new List<LoginData>();
+
+            foreach (var file in files)
+            {
+                var data = await GetLoginData(file);
+                if (data == null) { continue; }
+                if (data.Deprecated)
                 {
-                    l.Remember = false;
-                    l.RememberDays = null;
-                });
+                    await SafeDeleteLogin(data);
+                    continue;
+                }
+                loginData.Add(data);
             }
 
-            Data.Logins.Add(login);
+            return loginData;
+        }
+        catch (Exception ex)
+        {
+            if (CliTrace.Enable) { HandleException(ex); }
+            return [];
+        }
+    }
 
-            Save();
+    public static async Task<CliColors> GetLoginColor(string key)
+    {
+        var logins = await GetLogins();
+        var login = logins.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+        return login?.Color ?? CliColors.Default;
+    }
+
+    private static async Task<LoginData?> GetLogin(string key)
+    {
+        var files = Directory.GetFiles(MetadataPath, "*.hash");
+
+        foreach (var file in files)
+        {
+            var data = await GetLoginData(file);
+            if (data == null) { continue; }
+            if (string.Equals(data.Key, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return data;
+            }
+        }
+
+        return null;
+    }
+
+    public static async Task SafeSave()
+    {
+        try
+        {
+            await Save();
+        }
+        catch
+        {
+            //// *** DO NOTHING *** //;
+        }
+    }
+
+    public static async Task Save()
+    {
+        if (Current == null) { return; }
+        if (string.IsNullOrWhiteSpace(Current.Filename)) { return; }
+        if (Current.Deprecated) { return; }
+        await Save(Current);
+    }
+
+    public static async Task Save(LoginData loginData)
+    {
+        try
+        {
+            var login = await GetLogin(loginData.Key);
+            var name =
+                login == null || string.IsNullOrWhiteSpace(login.Filename) ?
+                $"{DateTime.UtcNow.Ticks}.hash" :
+                login.Filename;
+
+            var filename = Path.Combine(MetadataPath, name);
+            var text = JsonConvert.SerializeObject(loginData);
+            var protector = GetProtector();
+            text = protector.Protect(text);
+            await File.WriteAllTextAsync(filename, text);
         }
         catch (Exception ex)
         {
@@ -159,46 +183,24 @@ public static class ConnectUtil
         }
     }
 
-    private static void LogoutOldItems()
+    private static async Task<LoginData?> GetLoginData(string filename)
     {
-        var old = Data.Logins.Where(l => l.Deprecated).ToList();
-        old.ForEach(Logout);
-        Save();
-    }
-
-    private static CliLoginRequest Map(LoginData data)
-    {
-        var result = new CliLoginRequest
+        try
         {
-            Color = data.Color,
-            Host = data.Host,
-            Password = data.Password,
-            Port = data.Port,
-            Username = data.Username,
-            Remember = data.Remember,
-            RememberDays = data.RememberDays.GetValueOrDefault(),
-            SecureProtocol = data.SecureProtocol
-        };
-
-        return result;
-    }
-
-    private static LoginData ReverseMap(CliLoginRequest data)
-    {
-        var result = new LoginData
+            var text = await File.ReadAllTextAsync(filename);
+            var protector = GetProtector();
+            text = protector.Unprotect(text);
+            var data = JsonConvert.DeserializeObject<LoginData>(text);
+            if (data == null) { return null; }
+            data.Filename = filename;
+            return data;
+        }
+        catch (Exception ex)
         {
-            Color = data.Color,
-            Host = data.Host,
-            Password = data.Password,
-            Port = data.Port,
-            Username = data.Username,
-            Remember = data.Remember,
-            RememberDays = data.RememberDays,
-            SecureProtocol = data.SecureProtocol,
-            ConnectDate = DateTimeOffset.Now.DateTime
-        };
-
-        return result;
+            // Do nothing, just ignore the exception and continue to the next file
+            if (CliTrace.Enable) { HandleException(ex); }
+            return null;
+        }
     }
 
     private static IDataProtector GetProtector()
@@ -219,27 +221,8 @@ public static class ConnectUtil
         AnsiConsole.WriteException(ex);
     }
 
-    private static void Load()
-    {
-        try
-        {
-            if (!File.Exists(MetadataFilename)) { return; }
-            var text = File.ReadAllText(MetadataFilename);
-            var protector = GetProtector();
-            text = protector.Unprotect(text);
-            Data = JsonConvert.DeserializeObject<UserMetadata>(text) ?? new UserMetadata();
-            if (Data.Logins == null) { Data.Logins = []; }
-            LogoutOldItems();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
-
     private static void InitializeMetadataFolder()
     {
-        const string filename = "metadata.dat";
         var dataFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var folder = Path.Combine(dataFolder, nameof(Planar));
 
@@ -255,21 +238,6 @@ public static class ConnectUtil
             HandleException(ex);
         }
 
-        MetadataFilename = Path.Combine(folder, filename);
-    }
-
-    private static void Save()
-    {
-        try
-        {
-            var text = JsonConvert.SerializeObject(Data);
-            var protector = GetProtector();
-            text = protector.Protect(text);
-            File.WriteAllText(MetadataFilename, text);
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
+        MetadataPath = folder;
     }
 }

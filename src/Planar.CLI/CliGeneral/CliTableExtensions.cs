@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using Planar.Common;
 using RestSharp;
@@ -21,6 +22,28 @@ internal static class CliTableExtensions
         nameof(JobHistory.Log),
         nameof(JobHistory.Exception)
         ];
+
+    // Column name constants
+    private const string ColumnId = "Id";
+
+    private const string ColumnJobId = "Job Id";
+    private const string ColumnJobKey = "Job Key";
+    private const string ColumnJobType = "Job Type";
+    private const string ColumnTriggerId = "Trigger Id";
+    private const string ColumnStatus = "Status";
+    private const string ColumnStartDate = "Start Date";
+    private const string ColumnDuration = "Duration";
+    private const string ColumnEffectedRows = "Effected Rows";
+    private const string ColumnDescription = "Description";
+    private const string ColumnUsername = "Username";
+    private const string ColumnActive = "Active";
+    private const string ColumnValue = "Value";
+
+    // Other constants
+    private const string JsonValueSelector = "$.value";
+
+    private const string NullDisplayText = "[null]";
+    private const string TabReplacement = "    ";
 
     public static CliTable GetCalendarsTable(IEnumerable<string>? items)
     {
@@ -75,6 +98,26 @@ internal static class CliTableExtensions
             var type = p.PropertyType.IsGenericType ? p.PropertyType.GenericTypeArguments[0].Name : p.PropertyType.Name;
             if (type == nameof(DateTime)) { type = nameof(DateTimeOffset); }
             table.Table.AddRow(p.Name, type);
+        }
+
+        return table;
+    }
+
+    public static CliTable GetTable(IReadOnlyList<LoginData>? response)
+    {
+        var table = new CliTable();
+        table.Table.AddColumns("Display Name", "Host:Port", ColumnUsername, "Expire");
+
+        if (response == null || !response.Any()) { return table; }
+
+        foreach (var item in response)
+        {
+            table.Table.AddRow(
+                SafeCliString(item.DisplayName),
+                $"[{item.GetCliMarkupColor()}]{SafeCliString(item.Host + ":" + item.Port)}[/]",
+                SafeCliString(item.Username),
+                CliTableFormat.FormatDateTime(item.Expire)
+            );
         }
 
         return table;
@@ -136,7 +179,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(JobMetrics? response)
     {
         var table = new CliTable();
-        table.Table.AddColumns("Key", "Value");
+        table.Table.AddColumns("Key", ColumnValue);
         if (response == null) { return table; }
 
         table.Table.AddRow("Average Duration", CliTableFormat.FormatTimeSpan(response.AvgDuration));
@@ -156,11 +199,11 @@ internal static class CliTableExtensions
 
         if (withJobId)
         {
-            table.Table.AddColumns("Id", "Job Id", "Job Key", "Date Created", "Username", "User Title", "Description");
+            table.Table.AddColumns(ColumnId, ColumnJobId, ColumnJobKey, "Date Created", ColumnUsername, "User Title", ColumnDescription);
         }
         else
         {
-            table.Table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
+            table.Table.AddColumns(ColumnId, "Date Created", ColumnUsername, "User Title", ColumnDescription);
         }
 
         if (response == null || response.Data == null) { return table; }
@@ -184,7 +227,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(IEnumerable<AgentModel>? response)
     {
         var table = new CliTable(showCount: true, entityName: "agent");
-        table.Table.AddColumns("Client Id", "Ip Address", "Last Seen", "Status");
+        table.Table.AddColumns("Client Id", "Ip Address", "Last Seen", ColumnStatus);
         if (response == null) { return table; }
         foreach (var item in response)
         {
@@ -201,7 +244,7 @@ internal static class CliTableExtensions
                 item.IpAddress.EscapeMarkup(),
                 CliTableFormat.FormatDateTime(item.LastSeen),
                 $"[{statusColor}]{item.StatusTitle.EscapeMarkup()}[/]");
-    }
+        }
         return table;
     }
 
@@ -228,7 +271,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(showCount: true);
         if (response == null) { return table; }
-        table.Table.AddColumns("Key", "Value");
+        table.Table.AddColumns("Key", ColumnValue);
         foreach (var item in response)
         {
             if (item == null) { continue; }
@@ -241,7 +284,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(IEnumerable<MuteItem>? response)
     {
         var table = new CliTable(showCount: true);
-        table.Table.AddColumns("Job Id", "Job Key", "Monitor Id", "Monitor Title", "Due Date");
+        table.Table.AddColumns(ColumnJobId, ColumnJobKey, "Monitor Id", "Monitor Title", "Due Date");
         if (response == null) { return table; }
 
         foreach (var item in response)
@@ -258,7 +301,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(IEnumerable<HookInfo>? response)
     {
         var table = new CliTable(showCount: true);
-        table.Table.AddColumns("Name", "Type", "Description");
+        table.Table.AddColumns("Name", "Type", ColumnDescription);
         if (response == null) { return table; }
 
         foreach (var item in response)
@@ -274,7 +317,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(showCount: true);
         if (response == null) { return table; }
-        table.Table.AddColumns("Name", "Description");
+        table.Table.AddColumns("Name", ColumnDescription);
         table.Table.AddRow(SafeCliString(response.Name), SafeCliString(response.Description));
 
         return table;
@@ -283,7 +326,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(IEnumerable<LovItem>? response, string entityName)
     {
         var table = new CliTable(showCount: true, entityName);
-        table.Table.AddColumns("Id", "Name");
+        table.Table.AddColumns(ColumnId, "Name");
         if (response == null) { return table; }
 
         foreach (LovItem item in response)
@@ -297,7 +340,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(List<MonitorEventModel>? response)
     {
         var table = new CliTable(showCount: true, entityName: "event");
-        table.Table.AddColumns("Id", "Title", "Type");
+        table.Table.AddColumns(ColumnId, "Title", "Type");
 
         if (response == null) { return table; }
         response.ForEach(r => table.Table.AddRow($"{r.EventId}", r.EventTitle, r.EventType));
@@ -307,7 +350,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(PagingResponse<JobBasicDetails>? response)
     {
         var table = new CliTable(paging: response, entityName: "job");
-        table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
+        table.Table.AddColumns(ColumnJobId, ColumnJobKey, ColumnJobType, ColumnDescription);
         if (response == null || response.Data == null) { return table; }
         var hasInactive = response.Data.Exists(d => d.Active != JobActiveMembers.Active);
         response.Data.ForEach(r => table.Table.AddRow(
@@ -321,7 +364,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(List<RunningJobDetails>? response)
     {
         var table = new CliTable(showCount: true, "job");
-        table.Table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Ex. Count", "Run Time", "End Time");
+        table.Table.AddColumns("Fire Instance Id", ColumnJobId, ColumnJobKey, "Progress", ColumnEffectedRows, "Ex. Count", "Run Time", "End Time");
         if (response == null) { return table; }
 
         response.ForEach(r => table.Table.AddRow(
@@ -344,7 +387,7 @@ internal static class CliTableExtensions
         if (response == null) { return table; }
         if (!response.IsSuccessStatusCode) { return table; }
         if (string.IsNullOrWhiteSpace(response.Content)) { return table; }
-        var token = JToken.Parse(response.Content).SelectToken("$.value")?.ToString();
+        var token = JToken.Parse(response.Content).SelectToken(JsonValueSelector)?.ToString();
         if (string.IsNullOrWhiteSpace(token)) { return table; }
         dynamic? jsonObject = JsonConvert.DeserializeObject(token);
         if (jsonObject == null) { return table; }
@@ -396,7 +439,7 @@ internal static class CliTableExtensions
 
         if (singleJob)
         {
-            table.Table.AddColumns("Id", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+            table.Table.AddColumns(ColumnId, ColumnTriggerId, ColumnStatus, ColumnStartDate, ColumnDuration, ColumnEffectedRows);
             if (response == null || response.Data == null) { return table; }
 
             response.Data.ForEach(r => table.Table.AddRow(
@@ -409,7 +452,7 @@ internal static class CliTableExtensions
         }
         else
         {
-            table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+            table.Table.AddColumns(ColumnId, ColumnJobId, ColumnJobKey, ColumnJobType, ColumnTriggerId, ColumnStatus, ColumnStartDate, ColumnDuration, ColumnEffectedRows);
             if (response == null || response.Data == null) { return table; }
 
             response.Data.ForEach(r => table.Table.AddRow(
@@ -430,7 +473,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(PagingResponse<JobLastRun>? response)
     {
         var table = new CliTable(paging: response);
-        table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+        table.Table.AddColumns(ColumnId, ColumnJobId, ColumnJobKey, ColumnJobType, ColumnTriggerId, ColumnStatus, ColumnStartDate, ColumnDuration, ColumnEffectedRows);
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -450,7 +493,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(PagingResponse<HistorySummary>? response)
     {
         var table = new CliTable(paging: response);
-        table.Table.AddColumns("Job Id", "Job Key", "Total", "Success", "Fail", "Running", "Retries", "Effected Rows");
+        table.Table.AddColumns(ColumnJobId, ColumnJobKey, "Total", "Success", "Fail", "Running", "Retries", "Effected Rows");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -484,7 +527,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(PagingResponse<SecurityAuditModel>? response)
     {
         var table = new CliTable(paging: response);
-        table.Table.AddColumns("Title", "Username", "User Title", "Date Created", "Is Warning");
+        table.Table.AddColumns("Title", ColumnUsername, "User Title", "Date Created", "Is Warning");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -500,7 +543,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(PagingResponse<LogDetails>? response)
     {
         var table = new CliTable(paging: response);
-        table.Table.AddColumns("Id", "Message", "Level", "Time Stamp");
+        table.Table.AddColumns(ColumnId, "Message", "Level", "Time Stamp");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -536,7 +579,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(TriggerRowDetails? response)
     {
         var table = new CliTable(showCount: true, entityName: "trigger");
-        table.Table.AddColumns("Trigger Id", "Trigger Name", "State", "Next Fire Time", "Interval/Cron");
+        table.Table.AddColumns(ColumnTriggerId, "Trigger Name", "State", "Next Fire Time", "Interval/Cron");
         if (response == null) { return table; }
 
         var allActive = response.SimpleTriggers.TrueForAll(t => t.Active) && response.CronTriggers.TrueForAll(t => t.Active);
@@ -562,7 +605,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable();
 
-        table.Table.AddColumns("Property Name", "Value");
+        table.Table.AddColumns("Property Name", ColumnValue);
         if (response == null)
         {
             return [table, table];
@@ -630,7 +673,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(paging: response, entityName: "monitor");
 
-        table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hooks", "Active");
+        table.Table.AddColumns(ColumnId, "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Groups", "Hooks", ColumnActive);
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -651,7 +694,7 @@ internal static class CliTableExtensions
     {
         var table = new CliTable(paging: response, entityName: "alert");
 
-        table.Table.AddColumns("Id", "Monitor Title", "Event Title", "Event Arguments", "Alert Date", "JobId", "Job Key", "Dist. Group", "Hook", "Has Error");
+        table.Table.AddColumns(ColumnId, "Monitor Title", "Event Title", "Event Arguments", "Alert Date", "JobId", ColumnJobKey, "Dist. Group", "Hook", "Has Error");
         if (response == null || response.Data == null) { return table; }
 
         response.Data.ForEach(r => table.Table.AddRow(
@@ -682,7 +725,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(PagingResponse<UserRowModel>? data)
     {
         var table = new CliTable(paging: data, entityName: "user");
-        table.Table.AddColumns("Username", "First Name", "Last Name", "Email Address 1", "Phone Number 1");
+        table.Table.AddColumns(ColumnUsername, "First Name", "Last Name", "Email Address 1", "Phone Number 1");
         if (data == null || data.Data == null) { return table; }
 
         data.Data.ForEach(r => table.Table.AddRow(r.Username.EscapeMarkup(), r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
@@ -692,7 +735,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(List<PausedTriggerDetails>? response)
     {
         var table = new CliTable(showCount: true, entityName: "trigger");
-        table.Table.AddColumns("Trigger Id", "Trigger Name", "Job Id", "Job Key");
+        table.Table.AddColumns(ColumnTriggerId, "Trigger Name", ColumnJobId, ColumnJobKey);
         if (response == null) { return table; }
 
         response.ForEach(r => table.Table.AddRow(r.Id.EscapeMarkup(), r.TriggerName.EscapeMarkup(), r.JobId.EscapeMarkup(), CliTableFormat.FormatJobKey(r.JobGroup, r.JobName)));
@@ -702,7 +745,7 @@ internal static class CliTableExtensions
     internal static CliTable GetTable(List<CliGlobalConfig>? response)
     {
         var table = new CliTable(showCount: true);
-        table.Table.AddColumns("Key", "Value", "Type", "Source Url", "Last Update");
+        table.Table.AddColumns("Key", ColumnValue, "Type", "Source Url", "Last Update");
 
         if (response == null) { return table; }
         response.ForEach(r => table.Table.AddRow(
@@ -769,7 +812,7 @@ internal static class CliTableExtensions
 
     private static string LimitValue(string? value, int limit = 100, bool displayNull = false)
     {
-        if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
+        if (displayNull && value == null) { return NullDisplayText.EscapeMarkup(); }
         if (string.IsNullOrEmpty(value)) { return string.Empty; }
 
         value = SafeCliString(value);
@@ -780,10 +823,9 @@ internal static class CliTableExtensions
 
     private static string SafeCliString(string? value, bool displayNull = false)
     {
-        const string tab = "    ";
-        if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
+        if (displayNull && value == null) { return NullDisplayText.EscapeMarkup(); }
         if (string.IsNullOrWhiteSpace(value)) { return string.Empty; }
-        value = value.Replace("\t", tab);
+        value = value.Replace("\t", TabReplacement);
         return value.Trim().EscapeMarkup();
     }
 

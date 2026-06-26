@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using RestSharp;
 using System;
@@ -72,9 +73,26 @@ internal static class LoginProxy
             Password = login.Password;
             Token = result.Data.Token;
             Role = result.Data.Role;
+
+            ConnectUtil.Current.Token = Token;
+            ConnectUtil.Current.Role = Role;
+            await ConnectUtil.SafeSave();
         }
 
         return result;
+    }
+
+    public static void SetLoginData(DataProtect.LoginData login)
+    {
+        RestProxy.Host = login.Host;
+        RestProxy.Port = login.Port;
+        RestProxy.SecureProtocol = login.SecureProtocol;
+        RestProxy.Flush();
+
+        Username = login.Username;
+        Password = login.Password;
+        Token = login.Token;
+        Role = login.Role;
     }
 
     public static void Logout()

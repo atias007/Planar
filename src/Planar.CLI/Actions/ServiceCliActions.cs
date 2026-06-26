@@ -9,6 +9,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -136,17 +137,81 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     }
 
     [Action("login")]
-    public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> Login(CancellationToken cancellationToken = default)
     {
-        var notnullRequest = FillLoginRequest(request);
-        if (request.Port == 0) { request.Port = ConnectUtil.GetDefaultPort(); }
-        var response = await InnerLogin(notnullRequest, cancellationToken);
+        var request = await FillLoginRequest();
+        var response = await InnerLogin(request, cancellationToken);
         if (response.Response.IsSuccessful)
         {
-            ConnectUtil.SaveLoginRequest(request, LoginProxy.Token);
+            ConnectUtil.Current = new DataProtect.LoginData
+            {
+                DisplayName = request.Key,
+                Color = request.Color,
+                Host = request.Host,
+                Port = request.Port,
+                SecureProtocol = request.SecureProtocol,
+                Username = request.Username,
+                Password = request.Password,
+                Token = LoginProxy.Token,
+                Role = LoginProxy.Role
+            };
         }
 
         return response;
+    }
+
+    [Action("delete-login")]
+    public static async Task<CliActionResponse> DeleteLogin(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var login = await SelectLoginForDelete();
+        if (login != null)
+        {
+            if (!ConfirmAction($"delete login '{login.DisplayName.EscapeMarkup()}'")) { return CliActionResponse.Empty; }
+
+            await ConnectUtil.DeleteLogin(login);
+        }
+
+        return await Task.FromResult(CliActionResponse.Empty);
+    }
+
+    [Action("list-logins")]
+    public static async Task<CliActionResponse> ListLogins(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var logins = await ConnectUtil.GetLogins();
+        var table = CliTableExtensions.GetTable(logins);
+        return new CliActionResponse(CliActionResponse.Empty.Response, table);
+    }
+
+    [Action("save-login")]
+    public static async Task<CliActionResponse> SaveLogin(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var request = FillSaveLoginRequest();
+        if (string.IsNullOrWhiteSpace(request.DisplayName)) { throw new CliException("display name is required"); }
+        request.DisplayName = request.DisplayName.Trim();
+        if (request.DisplayName.Length < 3) { throw new CliException("display name must be at least 3 characters long"); }
+        if (request.DisplayName.Length > 50) { throw new CliException("display name must be at most 50 characters long"); }
+        if (request.Expire < DateTime.Now.AddMinutes(10)) { throw new CliException("expire must be at least 10 minutes from now"); }
+
+        var loginData = new DataProtect.LoginData
+        {
+            DisplayName = request.DisplayName,
+            Expire = request.Expire,
+            Color = ConnectUtil.Current.Color,
+            Host = ConnectUtil.Current.Host,
+            Port = ConnectUtil.Current.Port,
+            SecureProtocol = ConnectUtil.Current.SecureProtocol,
+            Username = ConnectUtil.Current.Username,
+            Password = ConnectUtil.Current.Password,
+            Token = LoginProxy.Token,
+            Role = LoginProxy.Role
+        };
+
+        await ConnectUtil.Save(loginData);
+
+        return CliActionResponse.Empty;
     }
 
     [Action("logout")]
@@ -155,7 +220,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         cancellationToken.ThrowIfCancellationRequested();
 
         LoginProxy.Logout();
-        ConnectUtil.Logout();
+        ConnectUtil.Current = DataProtect.LoginData.Default;
         RestProxy.Flush();
         return await Task.FromResult(CliActionResponse.Empty);
     }
@@ -163,9 +228,10 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("flush-logins")]
     public static async Task<CliActionResponse> FlushLogins(CancellationToken cancellationToken = default)
     {
+        if (!ConfirmAction("flush (delete) all logins")) { return CliActionResponse.Empty; }
+
         cancellationToken.ThrowIfCancellationRequested();
-        ConnectUtil.Flush();
-        ConnectUtil.SetColor(CliColors.Default);
+        await ConnectUtil.DeleteAllLogins();
         return await Task.FromResult(CliActionResponse.Empty);
     }
 
@@ -186,7 +252,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             }
         }
 
-        ConnectUtil.SetColor(request.Color.GetValueOrDefault());
+        ConnectUtil.Current.Color = request.Color.GetValueOrDefault();
         return await Task.FromResult(CliActionResponse.Empty);
     }
 
@@ -330,76 +396,148 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return key;
     }
 
-    public static void InitializeLogin()
+    private static async Task<DataProtect.LoginData?> SelectLogin()
     {
-        var request = ConnectUtil.GetLastLoginRequestWithRemember();
-        if (request == null)
+        var savedLogins = await ConnectUtil.GetLogins();
+        if (savedLogins.Count == 0) { return null; }
+
+        var menu =
+            savedLogins.Select(l =>
+                new CliSelectItem<DataProtect.LoginData>
+                {
+                    DisplayName = l.DisplayMarkup,
+                    Value = l
+                })
+            .ToList();
+
+        menu.Add(new CliSelectItem<DataProtect.LoginData>
         {
-            SetDefaultAnonymousLogin();
-            Console.Title = $"{CliConsts.Title} ({CliConsts.Anonymous})";
+            DisplayName = $"[{CliFormat.WarningColor}]<other...>[/]",
+            Value = null
+        });
+
+        var selectedLogin = CliPromptUtil.PromptSelection(menu, "a saved login or <other...>", writeSelection: true, throwWarning: true);
+        return selectedLogin?.Value;
+    }
+
+    private static async Task<DataProtect.LoginData?> SelectLoginForDelete()
+    {
+        var savedLogins = await ConnectUtil.GetLogins();
+        if (savedLogins.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]no saved logins found[/]");
+            return null;
+        }
+
+        var menu =
+            savedLogins.Select(l =>
+                new CliSelectItem<DataProtect.LoginData>
+                {
+                    DisplayName = l.DisplayMarkup,
+                    Value = l
+                });
+
+        var selectedLogin = CliPromptUtil.PromptSelection(menu, "a saved login", writeSelection: true, throwWarning: true);
+        return selectedLogin?.Value;
+    }
+
+    public static async Task AutoLogin(bool interactive, Task<IReadOnlyList<DataProtect.LoginData>> savedLoginsTask)
+    {
+        var savedLogins = await savedLoginsTask;
+        DataProtect.LoginData login;
+
+        if (savedLogins.Count == 0)
+        {
+            login = DataProtect.LoginData.Default;
+        }
+        else if (savedLogins.Count == 1)
+        {
+            login = savedLogins[0];
+        }
+        else if (!interactive)
+        {
+            login = DataProtect.LoginData.Default;
         }
         else
         {
-            ////var response = await InnerLogin(request);
-            ////if (!response.Response.IsSuccessful && response.Response.StatusCode != HttpStatusCode.Conflict)
-            ////{
-            RestProxy.Host = request.Host;
-            RestProxy.Port = request.Port;
-            RestProxy.SecureProtocol = request.SecureProtocol;
-            RestProxy.Flush();
-            ////}
+            var menu =
+                savedLogins.Select(l =>
+                new CliSelectItem<DataProtect.LoginData>
+                {
+                    DisplayName = l.DisplayMarkup,
+                    Value = l
+                });
+
+            var selectedLogin = CliPromptUtil.PromptSelection(menu, "select a saved login", writeSelection: false, throwWarning: false);
+            var selected =
+                selectedLogin != null &&
+                !selectedLogin.IsCancelItem &&
+                selectedLogin.Value != null;
+
+            var value =
+                selected ?
+                selectedLogin!.Value! :
+                DataProtect.LoginData.Default;
+
+            login = value;
         }
+
+        _ = LoginProxy.Login(new Proxy.LoginData
+        {
+            Host = login.Host,
+            Port = login.Port,
+            SecureProtocol = login.SecureProtocol,
+            Username = login.Username,
+            Password = login.Password,
+        }, cancellationToken: CancellationToken.None);
+        LoginProxy.SetLoginData(login);
+        ConnectUtil.Current = login;
     }
 
-    private static void SetDefaultAnonymousLogin()
+    private static CliSaveLoginRequest FillSaveLoginRequest()
     {
-        ConnectUtil.Current.Host = RestProxy.Host;
-        ConnectUtil.Current.Port = RestProxy.Port;
-
-        var savedItem = ConnectUtil.GetSavedLogin(ConnectUtil.Current.Key);
-
-        if (savedItem == null)
+        var request = new CliSaveLoginRequest();
+        request.DisplayName = CollectCliValue(new CollectCliValueParameters
         {
-            ConnectUtil.SaveLoginRequest(ConnectUtil.Current, token: null);
-        }
-        else
-        {
-            RestProxy.SecureProtocol = savedItem.SecureProtocol;
-            ConnectUtil.Current.Color = savedItem.Color;
-            ConnectUtil.Current.SecureProtocol = savedItem.SecureProtocol;
-        }
+            Field = "display name",
+            Required = true,
+            MinLength = 3,
+            MaxLength = 50
+        }) ?? string.Empty;
+
+        request.Expire = CliPromptUtil.PromptForDate("expire");
+
+        return request;
     }
 
-    private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)
+    private static async Task<CliLoginRequest> FillLoginRequest()
     {
         const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
 
-        request ??= new CliLoginRequest();
-        if (!InteractiveMode)
+        var request = new CliLoginRequest();
+        var savedLogin = await SelectLogin();
+        if (savedLogin != null)
         {
-            if (request.Color == CliColors.Default)
+            return new CliLoginRequest
             {
-                var savedLogin = ConnectUtil.GetSavedLogin(request.Key);
-                if (savedLogin != null)
-                {
-                    request.Color = savedLogin.Color;
-                }
-            }
-
-            return request;
+                Color = savedLogin.Color,
+                Host = savedLogin.Host,
+                Password = savedLogin.Password,
+                Port = savedLogin.Port,
+                SecureProtocol = savedLogin.SecureProtocol,
+                Username = savedLogin.Username
+            };
         }
 
-        if (string.IsNullOrEmpty(request.Host))
+        var cliColorTask = ConnectUtil.GetLoginColor(request.Key);
+        request.Host = CollectCliValue(new CollectCliValueParameters
         {
-            request.Host = CollectCliValue(new CollectCliValueParameters
-            {
-                Field = "host",
-                Required = true,
-                MinLength = 1,
-                MaxLength = 50,
-                DefaultValue = ConnectUtil.DefaultHost
-            }) ?? string.Empty;
-        }
+            Field = "host",
+            Required = true,
+            MinLength = 1,
+            MaxLength = 50,
+            DefaultValue = ConnectUtil.DefaultHost
+        }) ?? string.Empty;
 
         if (request.Port == 0)
         {
@@ -411,8 +549,8 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
                 MaxLength = 5,
                 Regex = regexTepmplate,
                 RegexErrorMessage = "invalid port",
-                DefaultValue = ConnectUtil.GetDefaultPort().ToString()
-            }) ?? ConnectUtil.GetDefaultPort().ToString());
+                DefaultValue = ConnectUtil.DefaultPort.ToString()
+            }) ?? ConnectUtil.DefaultPort.ToString());
         }
 
         if (string.IsNullOrEmpty(request.Username))
@@ -438,11 +576,9 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             });
         }
 
-        var savedItem = ConnectUtil.GetSavedLogin(request.Key);
-        if (savedItem != null)
+        if (request.Color == CliColors.Default && cliColorTask != null)
         {
-            request.Color = savedItem.Color;
-            request.SecureProtocol = savedItem.SecureProtocol;
+            request.Color = await cliColorTask;
         }
 
         return request;
@@ -455,12 +591,14 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         // Success authorize
         if (result.IsSuccessStatusCode)
         {
-            Console.Title = $"{CliConsts.Title} ({request.Username})";
+            Console.Title = $"{CliConsts.Title} ({LoginProxy.Role?.ToLower()})";
             _ = JobTriggerIdResolver.Refresh();
             return new CliActionResponse(result, message: $"login success ({LoginProxy.Role?.ToLower()})");
         }
         else if (result.StatusCode == HttpStatusCode.Conflict)
         {
+            Console.Title = $"{CliConsts.Title} ({Roles.Anonymous.ToString().ToLower(CultureInfo.CurrentCulture)})";
+
             // No need to authorize
             RestProxy.Host = request.Host;
             RestProxy.Port = request.Port;
