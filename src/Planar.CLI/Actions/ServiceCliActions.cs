@@ -137,21 +137,21 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     }
 
     [Action("login")]
-    public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> Login(CancellationToken cancellationToken = default)
     {
-        var notnullRequest = await FillLoginRequest(request);
-        var response = await InnerLogin(notnullRequest, cancellationToken);
+        var request = await FillLoginRequest();
+        var response = await InnerLogin(request, cancellationToken);
         if (response.Response.IsSuccessful)
         {
             ConnectUtil.Current = new DataProtect.LoginData
             {
-                DisplayName = notnullRequest.Key,
-                Color = notnullRequest.Color,
-                Host = notnullRequest.Host,
-                Port = notnullRequest.Port,
-                SecureProtocol = notnullRequest.SecureProtocol,
-                Username = notnullRequest.Username,
-                Password = notnullRequest.Password,
+                DisplayName = request.Key,
+                Color = request.Color,
+                Host = request.Host,
+                Port = request.Port,
+                SecureProtocol = request.SecureProtocol,
+                Username = request.Username,
+                Password = request.Password,
                 Token = LoginProxy.Token,
                 Role = LoginProxy.Role
             };
@@ -164,9 +164,11 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     public static async Task<CliActionResponse> DeleteLogin(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var login = await SelectLogin();
+        var login = await SelectLoginForDelete();
         if (login != null)
         {
+            if (!ConfirmAction($"delete login '{login.DisplayName.EscapeMarkup()}'")) { return CliActionResponse.Empty; }
+
             await ConnectUtil.DeleteLogin(login);
         }
 
@@ -226,6 +228,8 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("flush-logins")]
     public static async Task<CliActionResponse> FlushLogins(CancellationToken cancellationToken = default)
     {
+        if (!ConfirmAction("flush (delete) all logins")) { return CliActionResponse.Empty; }
+
         cancellationToken.ThrowIfCancellationRequested();
         await ConnectUtil.DeleteAllLogins();
         return await Task.FromResult(CliActionResponse.Empty);
@@ -395,6 +399,30 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     private static async Task<DataProtect.LoginData?> SelectLogin()
     {
         var savedLogins = await ConnectUtil.GetLogins();
+        if (savedLogins.Count == 0) { return null; }
+
+        var menu =
+            savedLogins.Select(l =>
+                new CliSelectItem<DataProtect.LoginData>
+                {
+                    DisplayName = l.DisplayMarkup,
+                    Value = l
+                })
+            .ToList();
+
+        menu.Add(new CliSelectItem<DataProtect.LoginData>
+        {
+            DisplayName = $"[{CliFormat.WarningColor}]<other...>[/]",
+            Value = null
+        });
+
+        var selectedLogin = CliPromptUtil.PromptSelection(menu, "a saved login or <other...>", writeSelection: true, throwWarning: true);
+        return selectedLogin?.Value;
+    }
+
+    private static async Task<DataProtect.LoginData?> SelectLoginForDelete()
+    {
+        var savedLogins = await ConnectUtil.GetLogins();
         if (savedLogins.Count == 0)
         {
             AnsiConsole.MarkupLine("[yellow]no saved logins found[/]");
@@ -403,13 +431,13 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
         var menu =
             savedLogins.Select(l =>
-            new CliSelectItem<DataProtect.LoginData>
-            {
-                DisplayName = l.DisplayMarkup,
-                Value = l
-            });
+                new CliSelectItem<DataProtect.LoginData>
+                {
+                    DisplayName = l.DisplayMarkup,
+                    Value = l
+                });
 
-        var selectedLogin = CliPromptUtil.PromptSelection(menu, "select a saved login", writeSelection: true, throwWarning: true);
+        var selectedLogin = CliPromptUtil.PromptSelection(menu, "a saved login", writeSelection: true, throwWarning: true);
         return selectedLogin?.Value;
     }
 
@@ -482,28 +510,34 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return request;
     }
 
-    private static async Task<CliLoginRequest> FillLoginRequest(CliLoginRequest? request)
+    private static async Task<CliLoginRequest> FillLoginRequest()
     {
         const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
 
-        request ??= new CliLoginRequest();
-        Task<CliColors>? cliColorTask = null;
-        if (request.Color == CliColors.Default)
+        var request = new CliLoginRequest();
+        var savedLogin = await SelectLogin();
+        if (savedLogin != null)
         {
-            cliColorTask = ConnectUtil.GetLoginColor(request.Key);
+            return new CliLoginRequest
+            {
+                Color = savedLogin.Color,
+                Host = savedLogin.Host,
+                Password = savedLogin.Password,
+                Port = savedLogin.Port,
+                SecureProtocol = savedLogin.SecureProtocol,
+                Username = savedLogin.Username
+            };
         }
 
-        if (string.IsNullOrEmpty(request.Host))
+        var cliColorTask = ConnectUtil.GetLoginColor(request.Key);
+        request.Host = CollectCliValue(new CollectCliValueParameters
         {
-            request.Host = CollectCliValue(new CollectCliValueParameters
-            {
-                Field = "host",
-                Required = true,
-                MinLength = 1,
-                MaxLength = 50,
-                DefaultValue = ConnectUtil.DefaultHost
-            }) ?? string.Empty;
-        }
+            Field = "host",
+            Required = true,
+            MinLength = 1,
+            MaxLength = 50,
+            DefaultValue = ConnectUtil.DefaultHost
+        }) ?? string.Empty;
 
         if (request.Port == 0)
         {

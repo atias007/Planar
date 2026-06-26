@@ -84,7 +84,7 @@ internal static class CliTableExtensions
     public static CliTable GetTable(IReadOnlyList<LoginData>? response)
     {
         var table = new CliTable();
-        table.Table.AddColumns("Display Name", "Host:Port", "Secure Protocol", "Username", "Role");
+        table.Table.AddColumns("Display Name", "Host:Port", "Username", "Expire");
 
         if (response == null || !response.Any()) { return table; }
 
@@ -93,9 +93,8 @@ internal static class CliTableExtensions
             table.Table.AddRow(
                 SafeCliString(item.DisplayName),
                 $"[{item.GetCliMarkupColor()}]{SafeCliString(item.Host + ":" + item.Port)}[/]",
-                SafeCliString(item.SecureProtocol.ToString()),
                 SafeCliString(item.Username),
-                SafeCliString(item.Role)
+                CliTableFormat.FormatDateTime(item.Expire)
             );
         }
 
