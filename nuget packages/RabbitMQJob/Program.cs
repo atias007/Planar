@@ -8,6 +8,7 @@ var builder = new HostApplicationBuilder();
 builder.Services.AddSingleton<DemoSignleton>();
 var app = builder.Build();
 
+#pragma warning disable S2068 // Credentials should not be hard-coded
 var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .WithPlanarHostName("localhost")
         .WithHost(app)
@@ -25,6 +26,7 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .AddJob<JobA>()
         .AddJob<JobB>()
         .Build();
+#pragma warning restore S2068 // Credentials should not be hard-coded
 
 PlanarJob.Debugger.AddProfile("Test Profile", builder =>
 {

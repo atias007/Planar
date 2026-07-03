@@ -29,10 +29,9 @@ namespace Planar.Job.Test.Assert
         public AssertPlanarConstraint OfType<TException>()
             where TException : Exception
         {
-            if (_result.Exception is AggregateException)
+            if (_result.Exception is AggregateException aggEx && HasExceptionType<TException>(aggEx))
             {
-                var aggEx = _result.Exception as AggregateException;
-                if (HasExceptionType<TException>(aggEx)) { return Assert; }
+                return Assert;
             }
 
             if (HasExceptionType<TException>(_result.Exception)) { return Assert; }

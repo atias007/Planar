@@ -1,13 +1,15 @@
 ﻿using Planar.CLI.Attributes;
 
-namespace Planar.CLI.Entities
-{
-    public class CliConfigRequest : CliConfigKeyRequest
-    {
-        [ActionProperty(DefaultOrder = 1)]
-        public string? Value { get; set; }
+namespace Planar.CLI.Entities;
 
-        [ActionProperty("u", "url", Name = "source url")]
-        public string? SourceUrl { get; set; }
-    }
+public class CliConfigRequest : CliConfigKeyRequest
+{
+    [ActionProperty(DefaultOrder = 1)]
+    public string? Value { get; set; }
+
+    [ActionProperty("u", "url", Name = "source url")]
+    public string? SourceUrl { get; set; }
+
+    [ActionProperty("s", "secret", Name = "is secret")]
+    public bool IsSecret { get; set; }
 }

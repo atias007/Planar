@@ -129,13 +129,18 @@ namespace Planar.Common
             for (var i = 0; i < 18; i++)
             {
 #if NETSTANDARD2_0
-                Random random = new Random(); // The using statement ensures proper disposal.
-                var num = random.Next(offset, offset + 10);
-                var @char = (char)num;
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    var bytes = new byte[4];
+                    rng.GetBytes(bytes);
+                    var randomValue = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 10;
+                    var @char = (char)(offset + randomValue);
+                    result.Append(@char);
+                }
 #else
                 var @char = (char)RandomNumberGenerator.GetInt32(offset, offset + 10);
-#endif
                 result.Append(@char);
+#endif
             }
 
             return result.ToString();

@@ -125,7 +125,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     [NullRequest]
     public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
     {
-        var uoa = await FillUpdateJobRequest(request, cancellationToken);
+        var uoa = await FillUpdateJobRequest(request, apply: false, cancellationToken);
         if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
         ArgumentNullException.ThrowIfNull(uoa.Body);
         var result = await UpdateOrApply(uoa.Body, apply: false, cancellationToken);
@@ -136,7 +136,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     [NullRequest]
     public static async Task<CliActionResponse> ApplyJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
     {
-        var uoa = await FillUpdateJobRequest(request, cancellationToken);
+        var uoa = await FillUpdateJobRequest(request, apply: true, cancellationToken);
         if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
         ArgumentNullException.ThrowIfNull(uoa.Body);
         var result = await UpdateOrApply(uoa.Body, apply: true, cancellationToken);
@@ -867,7 +867,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return (resultData, restResponse);
     }
 
-    private static async Task<(UpdateJobRequest? Body, CliActionResponse? CliActionResponse)> FillUpdateJobRequest(CliUpdateJobRequest request, CancellationToken cancellationToken)
+    private static async Task<(UpdateJobRequest? Body, CliActionResponse? CliActionResponse)> FillUpdateJobRequest(CliUpdateJobRequest request, bool apply, CancellationToken cancellationToken)
     {
         request ??= new CliUpdateJobRequest();
         var body = new UpdateJobRequest { JobFilePath = request.Filename };
@@ -898,8 +898,24 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 return (null, new CliActionResponse(jobsResult));
             }
 
-            var filename = SelectJobFilename(jobsResult.Data);
-            body.JobFilePath = filename;
+            var items = jobsResult.Data ?? [];
+            if(apply)
+            {
+                jobsRequest = new RestRequest("job/available-jobs", Method.Get);
+                jobsResult = await RestProxy.Invoke<List<AvailableJob>>(jobsRequest, cancellationToken);
+                if (!jobsResult.IsSuccessful)
+                {
+                    return (null, new CliActionResponse(jobsResult));
+                }
+
+                items.AddRange(jobsResult.Data ?? []);
+            }
+
+            if (items.Count > 0)
+            {
+                var filename = SelectJobFilename(items);
+                body.JobFilePath = filename;
+            }
         }
 
         if (request.Options == null)

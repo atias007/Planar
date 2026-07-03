@@ -5,7 +5,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public abstract class BaseProcessJobProperties : IFileJobProperties
+public abstract class BaseProcessJobProperties : BaseProperties, IFileJobProperties
 {
     protected BaseProcessJobProperties()
     {
@@ -51,4 +51,11 @@ public abstract class BaseProcessJobProperties : IFileJobProperties
 
     [YamlIgnore]
     public IEnumerable<string> Files => string.IsNullOrWhiteSpace(Filename) ? [] : [Filename];
+
+    public virtual void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    {
+        Domain = GetGlobalConfigPropertyPlaceholder(() => Domain, parameters) ?? Domain;
+        Password = GetGlobalConfigPropertyPlaceholder(() => Password, parameters) ?? Password;
+        UserName = GetGlobalConfigPropertyPlaceholder(() => UserName, parameters) ?? UserName;
+    }
 }

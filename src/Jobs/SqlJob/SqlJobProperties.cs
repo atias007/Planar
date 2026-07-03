@@ -4,7 +4,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class SqlJobProperties : IPathJobProperties, IJobPropertiesWithFiles
+public class SqlJobProperties : IJobProperties, IPathJobProperties, IJobPropertiesWithFiles
 {
     [YamlMember(Alias = "path", Order = 0)]
     public string Path { get; set; } = string.Empty;
@@ -44,5 +44,10 @@ public class SqlJobProperties : IPathJobProperties, IJobPropertiesWithFiles
 
             return result;
         }
+    }
+
+    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    {
+        // No global config placeholder to set for SqlJobProperties //
     }
 }

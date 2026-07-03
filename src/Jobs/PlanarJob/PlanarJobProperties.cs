@@ -38,6 +38,11 @@ public class PlanarJobProperties : IFileJobProperties
 
     [YamlIgnore]
     public IEnumerable<string> Files => Process?.Files ?? [];
+
+    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    {
+        Process?.SetGlobalConfigPlaceholder(parameters);
+    }
 }
 
 public class PlanarJobHttpProperties

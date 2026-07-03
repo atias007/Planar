@@ -424,7 +424,7 @@ public static class AppSettings
 
         if (Authentication.Mode == AuthMode.AllAnonymous) { return; }
 
-        if (string.IsNullOrEmpty(Authentication.Secret))
+        if (string.IsNullOrWhiteSpace(Authentication.Secret))
         {
             throw new AppSettingsException($"authentication secret must have value when authentication mode is {Authentication.Mode}");
         }

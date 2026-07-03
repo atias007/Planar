@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
@@ -212,7 +213,7 @@ public abstract class BaseCommonJob<TProperties>(
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil,
     IClusterUtil clusterUtil) : BaseCommonJob(jobMonitorUtil, logger), IJob
-where TProperties : class, new()
+where TProperties : class, IJobProperties, new()
 {
     private const string errorMessage = "fail at {Source} with job {Group}.{Name}";
 
@@ -381,12 +382,13 @@ where TProperties : class, new()
         }
 
         Properties = YmlUtil.Deserialize<TProperties>(p.Properties);
+        Properties.SetGlobalConfigPlaceholder(Global.GlobalConfig);
 
         if (p.GlobalConfigKeys == null)
         {
             _globalConfigKeys = null;
         }
-        else if(string.IsNullOrWhiteSpace(p.GlobalConfigKeys))
+        else if (string.IsNullOrWhiteSpace(p.GlobalConfigKeys))
         {
             _globalConfigKeys = [];
         }

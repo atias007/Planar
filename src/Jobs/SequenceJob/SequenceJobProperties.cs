@@ -1,14 +1,20 @@
-﻿using YamlDotNet.Serialization;
+﻿using CommonJob;
+using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class SequenceJobProperties
+public class SequenceJobProperties : IJobProperties
 {
     [YamlMember(Alias = "stop running on fail", Order = 0)]
     public bool StopRunningOnFail { get; set; } = true;
 
     [YamlMember(Alias = "steps", Order = 1)]
     public List<SequenceJobStep> Steps { get; set; } = [];
+
+    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    {
+        // No global config placeholder to set for SequenceJobProperties //
+    }
 }
 
 public class SequenceJobStep

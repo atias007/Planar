@@ -745,7 +745,7 @@ internal static class CliTableExtensions
     internal static CliTable GetTable(List<CliGlobalConfig>? response)
     {
         var table = new CliTable(showCount: true);
-        table.Table.AddColumns("Key", ColumnValue, "Type", "Source Url", "Last Update");
+        table.Table.AddColumns("Key", ColumnValue, "Type", "Source Url", "Is Secret", "Last Update");
 
         if (response == null) { return table; }
         response.ForEach(r => table.Table.AddRow(
@@ -753,6 +753,7 @@ internal static class CliTableExtensions
             SafeCliString(LimitValue(r.Value)),
             r.Type?.EscapeMarkup() ?? string.Empty,
             SafeCliString(LimitValue(r.SourceUrl)),
+            CliTableFormat.GetBooleanYesNoMarkup(r.IsSecret),
             CliTableFormat.FormatDateTime(r.LastUpdate)));
 
         return table;

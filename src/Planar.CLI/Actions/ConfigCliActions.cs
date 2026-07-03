@@ -50,8 +50,9 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
+        FillBool(request, nameof(request.IsSecret));
 
-        var data = new { request.Key, request.Value, request.SourceUrl };
+        var data = new { request.Key, request.Value, request.SourceUrl, request.IsSecret };
         var restRequest = new RestRequest("config", Method.Post)
             .AddBody(data);
 
@@ -83,8 +84,9 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         FillRequiredString(request, nameof(request.Key));
         FillOptionalString(request, nameof(request.Value));
         FillOptionalString(request, nameof(request.SourceUrl));
+        FillBool(request, nameof(request.IsSecret));
 
-        var data = new { request.Key, request.Value, request.SourceUrl };
+        var data = new { request.Key, request.Value, request.SourceUrl, request.IsSecret };
         var restRequest = new RestRequest("config", Method.Put)
             .AddBody(data);
 

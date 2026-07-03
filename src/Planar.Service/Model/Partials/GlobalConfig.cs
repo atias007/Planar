@@ -15,6 +15,7 @@ public partial class GlobalConfig
             Value = entity.Value,
             Type = string.IsNullOrWhiteSpace(entity.Type) ? nameof(GlobalConfigTypes.String).ToLower() : entity.Type,
             SourceUrl = entity.SourceUrl,
+            IsSecret = entity.IsSecret,
             LastUpdate = DateTime.Now
         };
     }
@@ -27,6 +28,7 @@ public partial class GlobalConfig
             Value = entity.Value,
             Type = entity.Type,
             SourceUrl = entity.SourceUrl,
+            IsSecret = entity.IsSecret,
             LastUpdate = entity.LastUpdate
         };
     }

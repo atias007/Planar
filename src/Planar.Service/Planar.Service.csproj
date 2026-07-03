@@ -53,6 +53,7 @@
 		<Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
 		<Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
 		<Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
+		<Compile Include="..\Planar\Startup\Aes256Cipher.cs" Link="General\Aes256Cipher.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -79,7 +80,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AutoMapper" Version="16.1.1" />
+		<PackageReference Include="AutoMapper" Version="16.2.0" />
 		<PackageReference Include="CronExpressionDescriptor" Version="2.50.0" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="Google.Protobuf" Version="3.35.1" />
@@ -88,7 +89,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Mapster" Version="10.0.9" />
+		<PackageReference Include="Mapster" Version="10.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
@@ -96,14 +97,14 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.18.1" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.18.1" />
-		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.18.1" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.18.1" />
-		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.13.1" />
-		<PackageReference Include="RepoDb.SqlServer" Version="1.13.1" />
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.18.2" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.18.2" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.18.2" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.18.2" />
+		<PackageReference Include="RepoDb.Sqlite.Microsoft" Version="1.14.0" />
+		<PackageReference Include="RepoDb.SqlServer" Version="1.14.0" />
 		<PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.28.0.143324">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

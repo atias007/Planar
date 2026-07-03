@@ -28,6 +28,21 @@ namespace Planar.Client.Api
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
+#if NETSTANDARD2_0
+
+        public async Task AddSecretAsync(string key, string value, string sourceUrl = null, ConfigType? configType = null, CancellationToken cancellationToken = default)
+#else
+        public async Task AddSecretAsync(string key, string? value, string? sourceUrl = null, ConfigType? configType = null, CancellationToken cancellationToken = default)
+#endif
+        {
+            ValidateMandatory(key, nameof(key));
+
+            var data = new { key, value, sourceUrl, Type = configType?.ToString().ToLower(), IsSecret = true };
+            var restRequest = new RestRequest("config", HttpMethod.Post)
+                    .AddBody(data);
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
         public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(key, nameof(key));

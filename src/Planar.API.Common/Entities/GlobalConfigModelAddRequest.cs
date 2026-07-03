@@ -6,4 +6,5 @@ public class GlobalConfigModelAddRequest
     public string? Value { get; set; }
     public string? Type { get; set; }
     public string? SourceUrl { get; set; }
+    public bool IsSecret { get; set; }
 }
