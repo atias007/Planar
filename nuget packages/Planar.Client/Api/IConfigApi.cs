@@ -26,6 +26,12 @@ namespace Planar.Client.Api
             string key,
             string value,
             string sourceUrl = null,
+            CancellationToken cancellationToken = default);
+
+        Task AddSecretAsync(
+            string key,
+            string value,
+            string sourceUrl = null,
             ConfigType? configType = null,
             CancellationToken cancellationToken = default);
 
@@ -38,6 +44,12 @@ namespace Planar.Client.Api
             CancellationToken cancellationToken = default);
 
         Task UpdateAsync(
+            string key,
+            string? value,
+            string? sourceUrl = null,
+            CancellationToken cancellationToken = default);
+
+        Task AddSecretAsync(
             string key,
             string? value,
             string? sourceUrl = null,
