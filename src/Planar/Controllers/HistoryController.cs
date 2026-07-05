@@ -88,6 +88,7 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
     [NotFoundResponse]
     public async Task<IActionResult> GetHistoryDataByInstanceId([FromRoute][Required] string instanceid)
     {
+        instanceid = WebUtility.UrlDecode(instanceid);
         var result = await BusinesLayer.GetHistoryDataByInstanceId(instanceid);
         return new FileStreamResult(result, MediaTypeNames.Text.Plain)
         {
@@ -122,6 +123,7 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
     [NotFoundResponse]
     public async Task<IActionResult> GetHistoryLogByInstanceId([FromRoute][Required] string instanceid)
     {
+        instanceid = WebUtility.UrlDecode(instanceid);
         var result = await BusinesLayer.GetHistoryLogByInstanceId(instanceid);
         return new FileStreamResult(result, MediaTypeNames.Text.Plain)
         {
@@ -156,6 +158,7 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
     [NotFoundResponse]
     public async Task<IActionResult> GetHistoryExceptionByInstanceId([FromRoute][Required] string instanceid)
     {
+        instanceid = WebUtility.UrlDecode(instanceid);
         var result = await BusinesLayer.GetHistoryExceptionByInstanceId(instanceid);
         return new FileStreamResult(result, MediaTypeNames.Text.Plain)
         {
