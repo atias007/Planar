@@ -5,7 +5,9 @@
       "Bash(cloc:*)",
       "Bash(git add:*)",
       "Bash(gh pr *)",
-      "PowerShell(gh pr list --head 1.8.2_SaveLogin --state all --json url,state,number)"
+      "PowerShell(gh pr list --head 1.8.2_SaveLogin --state all --json url,state,number)",
+      "PowerShell(Get-ChildItem Env: | Where-Object { $_.Name -match 'GITHUB|GH_TOKEN' } | Select-Object Name)",
+      "Bash(git add *)"
     ]
   }
 }
