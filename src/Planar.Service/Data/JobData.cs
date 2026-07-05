@@ -173,9 +173,9 @@ public class JobData(PlanarContext context) : BaseDataLayer(context)
             .AsNoTracking()
             .Where(a => a.DateCreated >= dateScope.From && a.DateCreated < dateScope.To)
             .Where(a => !a.JobKey.StartsWith(Consts.PlanarSystemGroup))
-            .Take(1000)
             .OrderByDescending(a => a.DateCreated)
-            .ThenByDescending(a => a.Id);
+            .ThenByDescending(a => a.Id)
+            .Take(1000);
     }
 
     public IQueryable<JobAudit> GetJobAudit(int id)

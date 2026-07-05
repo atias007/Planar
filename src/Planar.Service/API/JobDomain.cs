@@ -263,6 +263,9 @@ public partial class JobDomain(
     {
         var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
 
+        var existsTypeName = GetJobTypes().FirstOrDefault(t => string.Equals(t, typeName, StringComparison.OrdinalIgnoreCase));
+        if(string.IsNullOrWhiteSpace(existsTypeName)) { throw notFoundException.Value; }
+
         Assembly assembly;
 
         try
@@ -714,7 +717,7 @@ public partial class JobDomain(
 
             try
             {
-                await Task.Delay(500, cancellationToken);
+                await Task.Delay(500, cts.Token);
             }
             catch (TaskCanceledException)
             {
@@ -1009,10 +1012,10 @@ public partial class JobDomain(
         await scheduler.DeleteJob(jobKey);
         AuditJobSafe(jobKey, "job deleted", null, jobId);
         SafeRemoveJobDetailsCache(jobKey);
-        _ = ClearJobInfo(jobId, jobKey, id);
+        _ = SafeClearJobInfo(jobId, jobKey, id);
     }
 
-    private async Task ClearJobInfo(string jobId, JobKey jobKey, string id)
+    private async Task SafeClearJobInfo(string jobId, JobKey jobKey, string id)
     {
         // Delete property
         try

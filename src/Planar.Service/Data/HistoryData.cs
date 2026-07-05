@@ -58,7 +58,7 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<DbDataReader> GetHistoryLogByInstanceId(string instanceid);
 
-    Task<int?> GetHistoryStatusById(long id);
+    Task<int> GetHistoryStatusById(long id);
 
     Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(GetSummaryRequest request);
 
@@ -306,6 +306,33 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         var result = await _context.JobInstanceLogs
             .AsNoTracking()
             .Where(l => l.InstanceId == instanceid)
+            .Select(h => new JobInstanceLog
+            {
+                Id = h.Id,
+                JobId = h.JobId,
+                JobName = h.JobName,
+                JobGroup = h.JobGroup,
+                JobType = h.JobType,
+                InstanceId = h.InstanceId,
+                StartDate = h.StartDate,
+                EndDate = h.EndDate,
+                Duration = h.Duration,
+                Status = h.Status,
+                StatusTitle = h.StatusTitle,
+                Data = h.Data == null ? null : h.Data.Substring(0, JobHistory.DataMaximumLength + 1),
+                Log = h.Log == null ? null : h.Log.Substring(0, JobHistory.LogMaximumLength + 1),
+                Exception = h.Exception == null ? null : h.Exception.Substring(0, JobHistory.LogMaximumLength + 1),
+                ExceptionCount = h.ExceptionCount,
+                EffectedRows = h.EffectedRows,
+                IsCanceled = h.IsCanceled,
+                Anomaly = h.Anomaly,
+                HasWarnings = h.HasWarnings,
+                TriggerId = h.TriggerId,
+                TriggerName = h.TriggerName,
+                TriggerGroup = h.TriggerGroup,
+                ServerName = h.ServerName,
+                Retry = h.Retry
+            })
             .FirstOrDefaultAsync();
 
         return result;
@@ -430,7 +457,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return reader;
     }
 
-    public async Task<int?> GetHistoryStatusById(long id)
+    public async Task<int> GetHistoryStatusById(long id)
     {
         var result = await _context.JobInstanceLogs
             .AsNoTracking()

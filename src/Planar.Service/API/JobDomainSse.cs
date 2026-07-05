@@ -88,7 +88,6 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
     {
         if (e.MonitorEvent != MonitorEvents.ExecutionEnd) { return; }
         if (e.ExecutionContext.FireInstanceId != _fireInstanceId) { return; }
-        Thread.Sleep(2000);
         _finish = true;
         _autoResetEvent.Set();
     }

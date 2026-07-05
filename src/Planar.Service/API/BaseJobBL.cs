@@ -290,7 +290,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
         if (AppSettings.Cluster.Clustering)
         {
-            isRunning = isRunning && await ClusterUtil.IsJobRunning(jobKey);
+            isRunning = isRunning || await ClusterUtil.IsJobRunning(jobKey);
         }
 
         if (isRunning)

@@ -492,12 +492,14 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             Console.Clear();
             using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var reader = new StreamReader(body);
+            const string data = "data: ";
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var value = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
                 if (value == null) { break; }
                 if (string.IsNullOrWhiteSpace(value)) { continue; }
+                if (value.StartsWith(data, StringComparison.OrdinalIgnoreCase)) { value = value[data.Length..]; }
                 var log = CliFormat.GetLogMarkup(value) ?? string.Empty;
                 AnsiConsole.Markup(log);
             }
@@ -899,7 +901,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             }
 
             var items = jobsResult.Data ?? [];
-            if(apply)
+            if (apply)
             {
                 jobsRequest = new RestRequest("job/available-jobs", Method.Get);
                 jobsResult = await RestProxy.Invoke<List<AvailableJob>>(jobsRequest, cancellationToken);

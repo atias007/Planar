@@ -771,9 +771,20 @@ internal static class Program
     {
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            var message = string.IsNullOrEmpty(response.Content) ?
-                "server return not found status" :
-                JsonConvert.DeserializeObject<string>(response.Content);
+            var message = response.Content;
+
+            if (string.IsNullOrEmpty(response.Content)) { message = "server return not found status"; }
+            else
+            {
+                try
+                {
+                    message = JsonConvert.DeserializeObject<string>(response.Content);
+                }
+                catch 
+                {
+                    // DO NOTHING //
+                }
+            }
 
             MarkupCliLine(CliFormat.GetValidationErrorMarkup(message));
             return true;

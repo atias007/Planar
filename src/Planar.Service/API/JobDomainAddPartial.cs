@@ -928,7 +928,7 @@ public partial class JobDomain
             .Where(r => r.Count() > 1)
             .Select(r => r.Key);
 
-        if (longKeys.Any())
+        if (duplicates.Any())
         {
             var duplicatesTitle = string.Join(',', duplicates);
             throw new RestValidationException("global config keys", $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");

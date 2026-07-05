@@ -41,7 +41,7 @@ public class CommonSseContext
 
         if (_httpContext != null)
         {
-            await _httpContext.Response.WriteAsync($"{text}\n", cancellationToken: cancellationToken);
+            await _httpContext.Response.WriteAsync($"data: {text}\n\n", cancellationToken: cancellationToken);
             await _httpContext.Response.Body.FlushAsync(cancellationToken);
         }
 

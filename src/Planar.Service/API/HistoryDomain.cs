@@ -88,19 +88,19 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
 
         if (log.Exception?.Length > JobHistory.LogMaximumLength)
         {
-            log.Exception = log.Exception[0..JobHistory.DataMaximumLength] + $"\r\n…\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+            log.Exception = log.Exception[0..JobHistory.LogMaximumLength] + $"\r\n…\r\n('exception' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
         }
 
         if (log.Log?.Length > JobHistory.LogMaximumLength)
         {
-            log.Log = log.Log[0..JobHistory.DataMaximumLength] + $"\r\n…\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
+            log.Log = log.Log[0..JobHistory.LogMaximumLength] + $"\r\n…\r\n('log' property return only top {JobHistory.LogMaximumLength:N0} charecters)";
         }
     }
 
     public async Task<int> GetHistoryStatusById(long id)
     {
         var data = await DataLayer.GetHistoryStatusById(id);
-        return data == null ? throw new RestNotFoundException($"history id {id} could not be found") : data.GetValueOrDefault();
+        return data == 0 ? throw new RestNotFoundException($"history id {id} could not be found") : data;
     }
 
     public async Task<JobInstanceLog> GetHistoryByInstanceId(string instanceid)
