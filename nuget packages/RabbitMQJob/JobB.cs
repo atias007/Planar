@@ -15,12 +15,12 @@ internal class JobB : BaseJob
     {
         for (var i = 0; i < 50; i++)
         {
-            if (context.CancellationToken.IsCancellationRequested) 
+            if (context.CancellationToken.IsCancellationRequested)
             {
                 Logger.LogCritical("Cancel!!!!");
-                break; 
+                break;
             }
-            Logger.LogInformation($"N: {i}");
+            Logger.LogInformation("N: {I}", i);
             await Task.Delay(500);
         }
     }

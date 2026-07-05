@@ -17,8 +17,8 @@ var logStream = await client.History.GetLogAsync(281);
 
 byte[] buffer = new byte[logStream.Length];
 // Read the entire stream into the byte array
-logStream.ReadExactly(buffer, 0, (int)logStream.Length);
-await File.WriteAllBytesAsync(@"C:\temp\log_281.txt", buffer);
+await logStream.ReadExactlyAsync(buffer, 0, (int)logStream.Length);
+////await File.WriteAllBytesAsync(@"C:\temp\log_281.txt", buffer);
 
 var odata = await client.History.ODataAsync(new ODataFilter { Filter = "triggerid eq 'manual'", Select = "jobname,jobid" });
 Console.WriteLine(odata);
@@ -49,7 +49,7 @@ await client.Trigger.ClearTimeoutAsync("g2otp1mody4");
 trigger = await client.Trigger.GetAsync("g2otp1mody4");
 Console.WriteLine(trigger.SimpleTriggers[0].Timeout);
 
-var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
+////var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
 
 ////await TestGroup(client);
 
@@ -58,7 +58,7 @@ var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, 
 ////await client.Jobs.TestAsync(jobid1, DoIt);
 
 //////var metrics = await client.Metrics.ListMetricsAsync();
-var summ = await client.Report.GetAsync(ReportNames.Summary);
+////var summ = await client.Report.GetAsync(ReportNames.Summary);
 
 var res0 = await client.Monitor.ListAsync();
 var res1 = await client.Trigger.ListAsync(jobid1);

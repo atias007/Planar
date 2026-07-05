@@ -37,7 +37,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
     public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetAllFlat()
     {
-        var result = await Task.FromResult(ConfigDomain.GetAllFlat());
+        var result = await BusinesLayer.GetAllFlat();
         return Ok(result);
     }
 
@@ -80,7 +80,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult> Update([FromBody] GlobalConfigModelAddRequest request)
+    public async Task<ActionResult> Update([FromBody] GlobalConfigModelUpdateRequest request)
     {
         await BusinesLayer.Update(request);
         return NoContent();

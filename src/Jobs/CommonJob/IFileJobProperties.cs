@@ -1,6 +1,6 @@
 ﻿namespace CommonJob;
 
-public interface IFileJobProperties : IPathJobProperties, IJobPropertiesWithFiles
+public interface IFileJobProperties : IJobProperties, IPathJobProperties, IJobPropertiesWithFiles
 {
     public string Filename { get; }
     public string? Domain { get; }

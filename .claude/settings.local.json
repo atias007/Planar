@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git push:*)",
       "Bash(cloc:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(gh pr *)",
+      "PowerShell(gh pr list --head 1.8.2_SaveLogin --state all --json url,state,number)"
     ]
   }
 }

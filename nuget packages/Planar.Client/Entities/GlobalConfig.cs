@@ -18,5 +18,6 @@ namespace Planar.Client.Entities
 
 #endif
         public DateTime? LastUpdate { get; set; }
+        public bool IsSecret { get; set; }
     }
 }

@@ -93,12 +93,24 @@ namespace Planar.CLI.Actions
             }
         }
 
+        protected static void FillBool<T>(T entity, string propertyName, bool defaultValue = false)
+            where T : class
+        {
+            var info = ReflectionHelper.GetPropertyInfo<T>(propertyName);
+            var attribute = ReflectionHelper.GetActionPropertyAttribute<T>(propertyName);
+            var displayName = attribute.DisplayName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(displayName)) { displayName = propertyName; }
+            var result = CollectBoolCliValue(displayName, defaultValue);
+            info.SetValue(entity, result);
+        }
+
         protected static void FillOptionalString<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
             where T : class
         {
             var tuple = CollectText(entity, propertyName, false, -1, defaultValue, secret);
             if (tuple.Item1)
             {
+                if (string.IsNullOrWhiteSpace(tuple.Item2)) { tuple.Item2 = null; }
                 tuple.Item3.SetValue(entity, tuple.Item2);
             }
         }
@@ -263,6 +275,23 @@ namespace Planar.CLI.Actions
 
             var result = AnsiConsole.Prompt(prompt);
             return int.Parse(result);
+        }
+
+        protected static bool ConfirmCliValue(CollectCliValueParameters parameters)
+        {
+            var prompt = new ConfirmationPrompt($"[turquoise2]  > {parameters.Field.EscapeMarkup()?.Trim()}:[/]");
+            var result = AnsiConsole.Prompt(prompt);
+            return result;
+        }
+
+        protected static bool CollectBoolCliValue(string field, bool defaultValue = false)
+        {
+            var prompt = new ConfirmationPrompt($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}:[/]")
+            {
+                DefaultValue = defaultValue
+            };
+            var result = AnsiConsole.Prompt(prompt);
+            return result;
         }
 
         protected static string? CollectCliValue(CollectCliValueParameters parameters)

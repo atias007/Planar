@@ -252,6 +252,11 @@ public static class CliTableFormat
         }
     }
 
+    public static string GetBooleanYesNoMarkup(bool value)
+    {
+        return value ? $"[black on white]Yes[/]" : $"No";
+    }
+
     public static string GetBooleanMarkup(bool value, object? display = null)
     {
         display ??= value;

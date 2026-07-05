@@ -27,7 +27,7 @@ namespace Planar.Job.Test
             return ExecuteJob<T>(props);
         }
 
-        protected IExecuteJobPropertiesBuilder CreateJobPropertiesBuilder()
+        protected static IExecuteJobPropertiesBuilder CreateJobPropertiesBuilder()
         {
             return new ExecuteJobPropertiesBuilder();
         }

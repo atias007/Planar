@@ -18,7 +18,7 @@ using Timer = System.Timers.Timer;
 namespace CommonJob;
 
 public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
-    where TProperties : class, new()
+    where TProperties : class, IJobProperties, new()
 {
     protected Process? _process;
     protected bool _processKilled;

@@ -12,24 +12,24 @@ properties:                           # Job Properties
   method: GET                         # The http method: POST, GET, PUT, DELETE, PATCH, HEAD [mandatory]
   body file: body.json                # The body text file for the request (only for POST, PUT, PATCH methods)
   ignore ssl errors: false            # Ignore certificate error
-  user agent: my.agent                # Initialize the user agent header [up to 100 characters]
+  user agent: my.agent                # (*) Initialize the user agent header [up to 100 characters]
   follow redirects: false             # Allow client redirection 
   max redirects: 100                  # The maximum redirections when follow redirects enabled
   expect 100 continue: true           # Create excpect : 100-continue header and receive a 100 Continue status code in response before sending the body
   log response content: false         # Log the content payload of the response
   proxy: 
-    address: http://proxy.example.com    # proxy address [up to 100 characters]
+    address: http://proxy.example.com    # (*) proxy address [up to 100 characters]
     bypass on local: false               # by pass proxy for local addresses
     use default credentials: true
     credentials:
-      domain: some.domain
-      username: some.user
-      password: some.password
+      domain: some.domain                # (*) 
+      username: some.user                # (*)
+      password: some.password            # (*)
   basic authentication:
-    username: admin
-    password: strong.pass
+    username: admin                      # (*)
+    password: strong.pass                # (*)
   jwt authentication:
-    token: some.token
+    token: some.token                    # (*)
   form data:                          # Key/Value pairs of http form data list
     data_key_1: value a               # --------------------------------------
     data_key_2: value b               # key --> [mandatory, up to 100 characters]
@@ -85,3 +85,7 @@ cron triggers:                               # List of cron triggers
       key7: value7                           # -------------------------------------------------------
       key8: value8                           # key --> [1 to 100 characters]
       key9: value9                           # value --> [up to 1000 characters]
+
+##############################################################################################################################
+# (*) Can have placeholder value with global config key. e.g. username: {{param2}} or password: {{param3}}
+##############################################################################################################################

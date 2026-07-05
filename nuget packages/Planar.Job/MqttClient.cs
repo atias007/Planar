@@ -15,7 +15,7 @@ namespace Planar
 {
     internal static class MqttClient
     {
-        private const string Source = "http://planar.me";
+        private const string Source = "https://planar.me";
         private const int _autoReconnectDelay = 1;
         private const int _keepAlivePeriod = 1;
         private const int _defaultMqttPort = 206;
@@ -79,7 +79,6 @@ namespace Planar
             {
                 var cloudEvent = CreateCloudEvent(fireInstanceId, MessageBrokerChannels.HealthCheck);
                 await _failOverProxy.PingAsync(fireInstanceId, cloudEvent);
-                return;
             }
         }
 
@@ -98,7 +97,6 @@ namespace Planar
             if (_failOverProxy != null)
             {
                 await _failOverProxy.PublishAsync(fireInstanceId, cloudEvent);
-                return;
             }
         }
 
@@ -214,7 +212,6 @@ namespace Planar
             {
                 _failOverProxy.Dispose();
                 _failOverProxy = null;
-                return;
             }
         }
 

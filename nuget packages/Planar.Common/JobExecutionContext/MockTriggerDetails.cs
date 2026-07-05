@@ -1,6 +1,7 @@
 ﻿using Planar.Job;
 using Planar.Job.Test.JobExecutionContext;
 using System;
+using System.Security.Cryptography;
 
 namespace Planar.Common
 {
@@ -18,10 +19,26 @@ namespace Planar.Common
             _jobKey = new MockKey(properties);
             _triggerDataMap = DataMapUtils.Convert(properties.TriggerData);
             Timeout = properties.TriggerTimeout;
-            FinalFireTime = _now.AddDays(new Random().Next(1, 30));
+#if NETSTANDARD2_0
+            FinalFireTime = _now.AddDays(GetSecureRandomNumber(1, 30));
+#else
+            FinalFireTime = _now.AddDays(RandomNumberGenerator.GetInt32(1, 30));
+#endif
         }
 
-        public int MisfireInstruction => 0;
+#if NETSTANDARD2_0
+        private static int GetSecureRandomNumber(int minValue, int maxValue)
+        {
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                byte[] randomNumber = new byte[4];
+                rng.GetBytes(randomNumber);
+                int value = BitConverter.ToInt32(randomNumber, 0);
+                return Math.Abs(value % (maxValue - minValue)) + minValue;
+            }
+        }
+#endif
+
         public int Priority { get; set; } = 5;
         public bool HasMillisecondPrecision => true;
         public DateTimeOffset? EndTimeUtc => _now;

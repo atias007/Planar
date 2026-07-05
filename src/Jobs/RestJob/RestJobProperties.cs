@@ -18,7 +18,7 @@ public class RestJobJwtAuthentication
     public string Token { get; set; } = null!;
 }
 
-public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
+public class RestJobProperties : BaseProperties, IJobProperties, IPathJobProperties, IJobPropertiesWithFiles
 {
     [YamlIgnore]
     public string Path { get; private set; } = null!;
@@ -76,10 +76,9 @@ public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
     [YamlMember(Alias = "method", Order = 9)]
     public string Method { get; set; } = null!;
 
-
     [YamlMember(Alias = "proxy", Order = 10)]
     public RestJobPropertiesProxy? Proxy { get; set; }
-    
+
     [YamlMember(Alias = "url", Order = 11)]
     public string Url { get; set; } = null!;
 
@@ -88,7 +87,7 @@ public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
 
     [YamlMember(Alias = "log response content", Order = 13)]
     public bool LogResponseContent { get; set; }
-    
+
     [YamlIgnore]
     public IEnumerable<string> Files
     {
@@ -99,6 +98,32 @@ public class RestJobProperties : IPathJobProperties, IJobPropertiesWithFiles
             [
                 string.IsNullOrWhiteSpace(Path) ? BodyFile : System.IO.Path.Combine(Path, BodyFile)
             ];
+        }
+    }
+
+    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    {
+        UserAgent = GetGlobalConfigPropertyPlaceholder(() => UserAgent, parameters) ?? UserAgent;
+
+        if (Proxy != null)
+        {
+            Proxy.Address = GetGlobalConfigPropertyPlaceholder(() => Proxy.Address, parameters) ?? Proxy.Address;
+            if (Proxy.Credentials != null)
+            {
+                Proxy.Credentials.Domain = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Domain, parameters) ?? Proxy.Credentials.Domain;
+                Proxy.Credentials.Password = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Password, parameters) ?? Proxy.Credentials.Password;
+                Proxy.Credentials.Username = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Username, parameters) ?? Proxy.Credentials.Username;
+            }
+        }
+        if (BasicAuthentication != null)
+        {
+            BasicAuthentication.Password = GetGlobalConfigPropertyPlaceholder(() => BasicAuthentication.Password, parameters) ?? BasicAuthentication.Password;
+            BasicAuthentication.Username = GetGlobalConfigPropertyPlaceholder(() => BasicAuthentication.Username, parameters) ?? BasicAuthentication.Username;
+        }
+
+        if (JwtAuthentication != null)
+        {
+            JwtAuthentication.Token = GetGlobalConfigPropertyPlaceholder(() => JwtAuthentication.Token, parameters) ?? JwtAuthentication.Token;
         }
     }
 }

@@ -3,7 +3,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class SqlTableReportJobProperties : IPathJobProperties, IJobPropertiesWithFiles
+public class SqlTableReportJobProperties : IJobProperties, IPathJobProperties, IJobPropertiesWithFiles
 {
     [YamlMember(Alias = "path", Order = 0)]
     public string Path { get; set; } = string.Empty;
@@ -36,4 +36,9 @@ public class SqlTableReportJobProperties : IPathJobProperties, IJobPropertiesWit
     [
         string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
     ];
+
+    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    {
+        // No global config placeholder to set for SqlTableReportJobProperties //
+    }
 }

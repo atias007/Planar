@@ -11,7 +11,7 @@ namespace Planar.Common
 
         public AuthMode Mode { get; set; }
 
-        public string? Secret { get; set; }
+        public string Secret { get; set; } = string.Empty;
 
         public TimeSpan TokenExpire { get; set; }
 

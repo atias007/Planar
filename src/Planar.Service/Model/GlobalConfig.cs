@@ -23,6 +23,12 @@ public partial class GlobalConfig
     [StringLength(1000)]
     public string? SourceUrl { get; set; }
 
+    public bool IsSecret { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? SecretKey { get; set; }
+
     [Column(TypeName = "datetime")]
     public DateTime? LastUpdate { get; set; }
 }

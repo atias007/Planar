@@ -81,7 +81,9 @@ namespace Planar.Startup
 
             if (AppSettings.General.DeveloperExceptionPage && !app.Environment.IsProduction())
             {
+#pragma warning disable S4507 // Debugging features should not be enabled in production
                 app.UseDeveloperExceptionPage();
+#pragma warning restore S4507 // Debugging features should not be enabled in production
             }
 
             OpenApiInitializer.SetOpenApi(app);
