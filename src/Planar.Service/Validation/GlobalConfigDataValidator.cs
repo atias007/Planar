@@ -12,22 +12,25 @@ public class GlobalConfigDataValidator : AbstractValidator<GlobalConfigModelAddR
 
     public GlobalConfigDataValidator()
     {
-        RuleFor(f => f.Key).NotEmpty().MaximumLength(50);
-        RuleFor(f => f.Value).MaximumLength(4000);
-        RuleFor(f => f.SourceUrl).MaximumLength(1000).IsUri();
+        Include(new GlobalConfigDataUpdateValidator());
+
         RuleFor(f => f.Type)
-            .MaximumLength(10)
-            .Must(IsValidType)
-            .When(f => !string.IsNullOrWhiteSpace(f.Type))
-            .WithMessage("{PropertyName} has invalid value '{PropertyValue}'. valid values are: " + string.Join(',', _types));
+           .MaximumLength(10)
+           .Must(IsValidType)
+           .When(f => !string.IsNullOrWhiteSpace(f.Type))
+           .WithMessage("{PropertyName} has invalid value '{PropertyValue}'. valid values are: " + string.Join(',', _types));
 
         RuleFor(f => f.Value)
             .NotEmpty()
-            .When(f => string.IsNullOrWhiteSpace(f.SourceUrl))
             .When(f =>
                 string.Equals(f.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(f.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase))
             .WithMessage(f => "{PropertyName} is required when config type is " + f.Type?.ToLower());
+
+        RuleFor(f => f.Value)
+           .Empty()
+           .When(f => !string.IsNullOrWhiteSpace(f.SourceUrl))
+           .WithMessage(f => "{PropertyName} must be empty when SourceUrl is provided");
 
         RuleFor(f => f.Value)
             .Must(ValidationUtil.IsYmlValid)

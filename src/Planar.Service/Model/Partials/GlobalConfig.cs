@@ -7,6 +7,8 @@ namespace Planar.Service.Model;
 
 public partial class GlobalConfig
 {
+    public bool IsEncrypted => IsSecret && !string.IsNullOrWhiteSpace(SecretKey);
+
     public static GlobalConfig FromGlobalConfigModelAddRequest(GlobalConfigModelAddRequest entity)
     {
         return new GlobalConfig
@@ -15,7 +17,7 @@ public partial class GlobalConfig
             Value = entity.Value,
             Type = string.IsNullOrWhiteSpace(entity.Type) ? nameof(GlobalConfigTypes.String).ToLower() : entity.Type,
             SourceUrl = entity.SourceUrl,
-            IsSecret = entity.IsSecret,
+            IsSecret = entity.IsSecret.GetValueOrDefault(),
             LastUpdate = DateTime.Now
         };
     }

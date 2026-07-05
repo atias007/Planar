@@ -105,13 +105,26 @@ public class RestJobProperties : BaseProperties, IJobProperties, IPathJobPropert
     {
         UserAgent = GetGlobalConfigPropertyPlaceholder(() => UserAgent, parameters) ?? UserAgent;
 
-        Proxy?.Address = GetGlobalConfigPropertyPlaceholder(() => Proxy.Address, parameters) ?? Proxy.Address;
-        Proxy?.Credentials?.Domain = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Domain, parameters) ?? Proxy.Credentials.Domain;
-        Proxy?.Credentials?.Password = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Password, parameters) ?? Proxy.Credentials.Password;
-        Proxy?.Credentials?.Username = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Username, parameters) ?? Proxy.Credentials.Username;
-        BasicAuthentication?.Password = GetGlobalConfigPropertyPlaceholder(() => BasicAuthentication.Password, parameters) ?? BasicAuthentication.Password;
-        BasicAuthentication?.Username = GetGlobalConfigPropertyPlaceholder(() => BasicAuthentication.Username, parameters) ?? BasicAuthentication.Username;
-        JwtAuthentication?.Token = GetGlobalConfigPropertyPlaceholder(() => JwtAuthentication.Token, parameters) ?? JwtAuthentication.Token;
+        if (Proxy != null)
+        {
+            Proxy.Address = GetGlobalConfigPropertyPlaceholder(() => Proxy.Address, parameters) ?? Proxy.Address;
+            if (Proxy.Credentials != null)
+            {
+                Proxy.Credentials.Domain = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Domain, parameters) ?? Proxy.Credentials.Domain;
+                Proxy.Credentials.Password = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Password, parameters) ?? Proxy.Credentials.Password;
+                Proxy.Credentials.Username = GetGlobalConfigPropertyPlaceholder(() => Proxy.Credentials.Username, parameters) ?? Proxy.Credentials.Username;
+            }
+        }
+        if (BasicAuthentication != null)
+        {
+            BasicAuthentication.Password = GetGlobalConfigPropertyPlaceholder(() => BasicAuthentication.Password, parameters) ?? BasicAuthentication.Password;
+            BasicAuthentication.Username = GetGlobalConfigPropertyPlaceholder(() => BasicAuthentication.Username, parameters) ?? BasicAuthentication.Username;
+        }
+
+        if (JwtAuthentication != null)
+        {
+            JwtAuthentication.Token = GetGlobalConfigPropertyPlaceholder(() => JwtAuthentication.Token, parameters) ?? JwtAuthentication.Token;
+        }
     }
 }
 

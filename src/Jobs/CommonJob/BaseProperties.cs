@@ -13,8 +13,8 @@ public abstract class BaseProperties
         var value = func();
         if (string.IsNullOrWhiteSpace(value)) { return null; }
         if (!value.StartsWith(ph1) || !value.EndsWith(ph2)) { return null; }
-        var key = value[ph1.Length..^ph2.Length];
-        if (!parameters.TryGetValue(key, out string? newValue)) { return string.Empty; }
+        var key = value[ph1.Length..^ph2.Length].Trim();
+        if (!parameters.TryGetValue(key, out string? newValue)) { return null; }
 
         return newValue ?? string.Empty;
     }
