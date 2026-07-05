@@ -36,7 +36,7 @@
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="CloudNative.CloudEvents" Version="2.8.0" />
+		<PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
