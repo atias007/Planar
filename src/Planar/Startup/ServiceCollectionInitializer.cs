@@ -73,6 +73,17 @@ public static class ServiceCollectionInitializer
                 config.QueueLimit = AppSettings.General.ConcurrencyRateLimiting;
                 config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             });
+
+            options.AddPolicy("login", httpContext =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 6,
+                        QueueLimit = 0
+                    }));
         });
 
         services.AddHooks();

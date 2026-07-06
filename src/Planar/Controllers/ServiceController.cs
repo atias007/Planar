@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
@@ -105,6 +106,7 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [EndpointName("post_service_login")]
     [EndpointDescription("Login service")]
     [EndpointSummary("Login Service")]
