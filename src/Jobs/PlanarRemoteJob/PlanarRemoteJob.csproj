@@ -18,7 +18,7 @@
 		<ProjectReference Include="..\CommonJob\CommonJob.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
+		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.6" />
 		<PackageReference Include="MQTTnet.Server" Version="5.2.0.1603" />
