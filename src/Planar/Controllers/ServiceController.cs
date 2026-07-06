@@ -140,7 +140,6 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
     [NotFoundResponse]
     public ActionResult<WorkingHoursModel> GetWorkingHours([FromRoute][Required][MaxLength(20)] string calendar)
     {
-        calendar = WebUtility.UrlDecode(calendar);
         var result = BusinesLayer.GetWorkingHours(calendar);
         return Ok(result);
     }

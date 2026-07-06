@@ -6,8 +6,8 @@
         public required string Username { get; set; }
         public string Role { get; set; } = null!;
 
-        public required string Surename { get; set; } = null!;
-        public required string? GivenName { get; set; } = null!;
+        public required string? Surename { get; set; } = null!;
+        public required string GivenName { get; set; } = null!;
 
         public required byte[] Password { get; set; } = null!;
 

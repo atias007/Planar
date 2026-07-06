@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -106,8 +107,9 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
         catch (Exception ex)
         {
-            serviceUnavaliable = false;
-            result.AppendLine($"database: unhealthy: {ex.Message}");
+            serviceUnavaliable = true;
+            Logger.LogError(ex, "database health check failed");
+            result.AppendLine("database: unhealthy");
         }
 
         if (AppSettings.Cluster.Clustering)
@@ -209,14 +211,14 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         {
             Role = role,
             Token = token,
-            FirstName = user.Surename,
-            LastName = user.GivenName,
+            FirstName = user.GivenName,
+            LastName = user.Surename,
         };
 
         return result;
     }
 
-    public async Task<PagingResponse<SecurityAuditModel>> GetSecurityAudits([FromQuery] SecurityAuditsFilter request)
+    public async Task<PagingResponse<SecurityAuditModel>> GetSecurityAudits(SecurityAuditsFilter request)
     {
         var query = DataLayer.GetSecurityAudits(request);
         var data = await query.ProjectToWithPagingAsyc<SecurityAudit, SecurityAuditModel>(Mapper, request);
@@ -248,7 +250,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             WorkingHours.GetCalendar(calendar) ??
             throw new RestNotFoundException($"working hours for calendar '{calendar}' not defined. planar will use default working hours");
 
-        var result = MapWorkingHours(cal!);
+        var result = MapWorkingHours(cal);
         return result;
     }
 

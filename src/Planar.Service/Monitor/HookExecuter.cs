@@ -158,7 +158,9 @@ internal sealed class HookExecuter : IDisposable
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             var filename = GetFilenameFoLinux(startInfo.FileName);
+#pragma warning disable S4036 // OS commands should not rely on PATH resolution
             startInfo.FileName = "dotnet";
+#pragma warning restore S4036 // OS commands should not rely on PATH resolution
             startInfo.Arguments = $"\"{filename}\" {startInfo.Arguments}";
         }
     }
@@ -180,12 +182,7 @@ internal sealed class HookExecuter : IDisposable
 
     private bool StartProcess(ProcessStartInfo startInfo, TimeSpan timeout)
     {
-        _process = Process.Start(startInfo);
-        if (_process == null)
-        {
-            throw new PlanarException($"could not start process {_filename}");
-        }
-
+        _process = Process.Start(startInfo) ?? throw new PlanarException($"could not start process {_filename}");
         _process.EnableRaisingEvents = true;
         _process.BeginOutputReadLine();
         _process.BeginErrorReadLine();
@@ -246,7 +243,7 @@ internal sealed class HookExecuter : IDisposable
         try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
         try { _process?.Close(); } catch { DoNothingMethod(); }
         try { _process?.Dispose(); } catch { DoNothingMethod(); }
-        try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
+        try { _process?.EnableRaisingEvents = false; } catch { DoNothingMethod(); }
         UnsubscribeOutput();
     }
 

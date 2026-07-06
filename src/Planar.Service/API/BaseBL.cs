@@ -22,6 +22,14 @@ public abstract class BaseBL<TBusinesLayer, TDataLayer>(IServiceProvider service
     where TDataLayer : IBaseDataLayer
 {
     private readonly TDataLayer _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
+    protected TDataLayer DataLayer => _dataLayer;
+}
+
+public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
+{
+    private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
+    private readonly ILogger<TBusinesLayer> _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
+    private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private readonly IHttpContextAccessor _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
 
     protected int? UserId
@@ -48,26 +56,17 @@ public abstract class BaseBL<TBusinesLayer, TDataLayer>(IServiceProvider service
         }
     }
 
-    private int? GetClaimIntValue(string claimType)
+    protected int? GetClaimIntValue(string claimType)
     {
         var context = _contextAccessor.HttpContext;
         if (context?.User?.Claims == null) { return null; }
         var claim = context.User.Claims.FirstOrDefault(c => c.Type == claimType);
         if (claim == null) { return null; }
         var strValue = claim.Value;
-        if (string.IsNullOrEmpty(strValue)) { return null; }
-        if (!int.TryParse(strValue, out int value)) { return null; }
-        return value;
+        if (string.IsNullOrWhiteSpace(strValue)) { return null; }
+        if (int.TryParse(strValue, out int value)) { return value; }
+        return RoleHelper.GetRoleValue(strValue);
     }
-
-    protected TDataLayer DataLayer => _dataLayer;
-}
-
-public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
-{
-    private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
-    private readonly ILogger<TBusinesLayer> _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
-    private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
 
     protected IServiceProvider ServiceProvider => _serviceProvider;
 

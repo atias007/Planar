@@ -43,8 +43,8 @@ namespace Planar.Service.General.Hash
                 new (ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new (ClaimTypes.Role, user.Role),
                 new (ClaimTypes.Name, user.Username),
-                new (ClaimTypes.Surname, user.Surename),
-                new (ClaimTypes.GivenName, user.GivenName ?? string.Empty),
+                new (ClaimTypes.Surname, user.Surename ?? string.Empty),
+                new (ClaimTypes.GivenName, user.GivenName),
             };
 
             var signingCredentials = new SigningCredentials(AppSettings.Authentication.Key, SecurityAlgorithms.HmacSha256);
