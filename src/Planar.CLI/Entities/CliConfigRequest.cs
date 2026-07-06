@@ -2,13 +2,7 @@
 
 namespace Planar.CLI.Entities;
 
-public class CliAddConfigRequest : CliUpdateConfigRequest
-{
-    [ActionProperty("s", "secret", Name = "secret")]
-    public bool IsSecret { get; set; }
-}
-
-public class CliUpdateConfigRequest : CliConfigKeyRequest
+public class CliAddConfigRequest : CliConfigKeyRequest
 {
     [ActionProperty(DefaultOrder = 1)]
     public string? Value { get; set; }

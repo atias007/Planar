@@ -82,8 +82,8 @@
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="CloudNative.CloudEvents" Version="2.8.0" />
-		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.8.0" />
+		<PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
+		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />

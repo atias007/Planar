@@ -162,14 +162,17 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         var exists = await DataLayer.GetGlobalConfig(request.Key) ?? throw new RestNotFoundException();
         if (!string.IsNullOrWhiteSpace(exists.SourceUrl))
         {
-            if (!string.IsNullOrWhiteSpace(request.Value)) { throw new RestValidationException("value", $"config key '{request.Key}' has source url '{exists.SourceUrl}' and cannot be updated with value"); }
-            var content = await SafeGetSourceUrlContent(exists.SourceUrl);
+            if (!string.IsNullOrWhiteSpace(request.Value)) { throw new RestValidationException(nameof(request.Value), $"config key '{request.Key}' has source url '{exists.SourceUrl}' and cannot be updated with value"); }
+            if (string.IsNullOrWhiteSpace(request.SourceUrl)) { throw new RestValidationException(nameof(request.SourceUrl), $"config key '{request.Key}' has source url '{exists.SourceUrl} and your update request must have source url value"); }
+            var content = await SafeGetSourceUrlContent(request.SourceUrl);
             exists.SourceUrl = request.SourceUrl;
             exists.Value = content;
         }
         else
         {
+            if (!string.IsNullOrWhiteSpace(request.SourceUrl)) { throw new RestValidationException(nameof(request.SourceUrl), $"config key '{request.Key}' has no source url and cannot be updated with new source url"); }
             exists.Value = request.Value;
+            exists.SourceUrl = null;
         }
 
         EncryptConfigValueIfNeeded(exists);
@@ -192,6 +195,12 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     private static void EncryptConfigValueIfNeeded(GlobalConfig globalConfig)
     {
         if (string.IsNullOrWhiteSpace(globalConfig.Value)) { return; }
+        if (!globalConfig.IsSecret)
+        {
+            globalConfig.SecretKey = null;
+            return;
+        }
+
         var key = Aes256Cipher.GenerateKey();
         var aes = new Aes256Cipher(key);
         globalConfig.Value = aes.Encrypt(globalConfig.Value);

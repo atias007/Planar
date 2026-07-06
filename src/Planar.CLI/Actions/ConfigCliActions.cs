@@ -48,18 +48,41 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     [Action("add")]
     public static async Task<CliActionResponse> Add(CliAddConfigRequest request, CancellationToken cancellationToken = default)
     {
+        FillCliAddConfigRequest(request);
+
+        var data = new { request.Key, request.Value, request.SourceUrl, IsSecret = false };
+        var restRequest = new RestRequest("config", Method.Post)
+            .AddBody(data);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    private static void FillCliAddConfigRequest(CliAddConfigRequest request)
+    {
         FillRequiredString(request, nameof(request.Key));
-        FillOptionalString(request, nameof(request.Value));
-       
-        if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
-        if (request.Value == null)
+
+        if (string.IsNullOrWhiteSpace(request.SourceUrl))
+        {
+            FillOptionalString(request, nameof(request.Value));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SourceUrl)) { request.SourceUrl = null; }
+
+        if (string.IsNullOrWhiteSpace(request.Value))
         {
             FillOptionalString(request, nameof(request.SourceUrl));
         }
 
-        FillBool(request, nameof(request.IsSecret));
+        if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
+    }
 
-        var data = new { request.Key, request.Value, request.SourceUrl, request.IsSecret };
+    [Action("add-secret")]
+    public static async Task<CliActionResponse> AddSecret(CliAddConfigRequest request, CancellationToken cancellationToken = default)
+    {
+        FillCliAddConfigRequest(request);
+
+        var data = new { request.Key, request.Value, request.SourceUrl, IsSecret = true };
         var restRequest = new RestRequest("config", Method.Post)
             .AddBody(data);
 
@@ -86,16 +109,9 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     }
 
     [Action("update")]
-    public static async Task<CliActionResponse> Update(CliUpdateConfigRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> Update(CliAddConfigRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Key));
-        FillOptionalString(request, nameof(request.Value));
-
-        if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
-        if (request.Value == null)
-        {
-            FillOptionalString(request, nameof(request.SourceUrl));
-        }
+        FillCliAddConfigRequest(request);
 
         var data = new { request.Key, request.Value, request.SourceUrl };
         var restRequest = new RestRequest("config", Method.Put)
