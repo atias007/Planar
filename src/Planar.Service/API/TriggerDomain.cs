@@ -242,10 +242,10 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         var scheduler = await GetScheduler();
         var keys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        var ids = keys.Select(async k => await scheduler.GetTrigger(k));
-        await Task.WhenAll(ids);
-        var triggers = ids.Select(t => t.Result).Where(t => t != null);
+        var tasks = keys.Select(k => scheduler.GetTrigger(k)).ToList();
+        var triggers = await Task.WhenAll(tasks);
         var triggersIds = triggers
+            .Where(t => t != null)
             .Select(t => TriggerHelper.GetTriggerId(t) ?? string.Empty)
             .Where(id => !string.IsNullOrWhiteSpace(id));
         return triggersIds;
@@ -255,7 +255,9 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         var scheduler = await GetScheduler();
         var triggers = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && scheduler.GetTriggerState(t).Result == TriggerState.Paused);
+        var states = await Task.WhenAll(triggers.Select(async key => (Key: key, State: await scheduler.GetTriggerState(key))));
+        var pausedKeys = states.Where(x => x.State == TriggerState.Paused).Select(x => x.Key).ToList();
+
         var tasks = new List<Task<ITrigger?>>();
         foreach (var k in pausedKeys)
         {
@@ -457,25 +459,17 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
         var scheduler = await GetScheduler();
         var keys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+
         foreach (var k in keys)
         {
             var triggerDetails = await scheduler.GetTrigger(k);
-            var id = GetTriggerId(triggerDetails);
-            if (id == triggerId)
+            if (triggerDetails != null && GetTriggerId(triggerDetails) == triggerId)
             {
-                key = k;
-                break;
+                return triggerDetails;
             }
         }
 
-        if (key == null)
-        {
-            throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
-        }
-
-        var result = await scheduler.GetTrigger(key);
-
-        return result ?? throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
+        throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
     }
 
     private async Task<TriggerRowDetails> GetTriggerDetails(ITrigger trigger)

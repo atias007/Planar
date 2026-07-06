@@ -175,7 +175,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
     {
         var options = new TransactionOptions
         {
-            IsolationLevel = IsolationLevel.ReadUncommitted,
+            IsolationLevel = IsolationLevel.ReadCommitted,
             Timeout = TimeSpan.FromSeconds(10)
         };
 
@@ -239,9 +239,11 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         var scheduler = await GetScheduler();
 
         var triggers = await scheduler.GetTriggersOfJob(jobKey);
-        var paused = triggers
-            .Where(t => scheduler.GetTriggerState(t.Key).Result == TriggerState.Paused)
-            .Select(t => t.Key)
+        var states = await Task.WhenAll(triggers.Select(async t => (Trigger: t, State: await scheduler.GetTriggerState(t.Key))));
+
+        var paused = states
+            .Where(t => t.State == TriggerState.Paused)
+            .Select(t => t.Trigger.Key)
             .ToList();
 
         return paused;
@@ -251,9 +253,11 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
     {
         var scheduler = await GetScheduler();
         var triggers = await scheduler.GetTriggersOfJob(jobKey);
-        var notPaused = triggers
-            .Where(t => scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
-            .Select(TriggerHelper.GetKeyTitle)
+        var states = await Task.WhenAll(triggers.Select(async t => (Trigger: t, State: await scheduler.GetTriggerState(t.Key))));
+
+        var notPaused = states
+            .Where(t => t.State != TriggerState.Paused)
+            .Select(t => TriggerHelper.GetKeyTitle(t.Trigger))
             .ToList();
 
         if (notPaused.Count != 0)
@@ -305,7 +309,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         var isRunning = await SchedulerUtil.IsTriggerRunning(triggerKey);
         if (AppSettings.Cluster.Clustering)
         {
-            isRunning = isRunning && await ClusterUtil.IsTriggerRunning(triggerKey);
+            isRunning = isRunning || await ClusterUtil.IsTriggerRunning(triggerKey);
         }
 
         if (isRunning)

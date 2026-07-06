@@ -19,7 +19,7 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.GroupName)
                 .NotEmpty()
-                .Must(n => groupData.IsGroupNameExists(n).Result)
+                .MustAsync(async (n, _) => await groupData.IsGroupNameExists(n))
                 .WithMessage("distribution group name '{PropertyValue}' is not exists");
 
             RuleFor(r => r.Hook)

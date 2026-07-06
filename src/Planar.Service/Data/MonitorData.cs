@@ -128,7 +128,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
             var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
@@ -158,7 +158,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             await _context.MonitorMutes.Where(m => m.JobId == request.JobId && m.MonitorId == request.MonitorId).ExecuteDeleteAsync();
             _context.MonitorMutes.Add(request);
             await _context.SaveChangesAsync();
@@ -385,7 +385,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .ThenBy(d => d.Title);
     }
 
-    public IQueryable<MonitorAlert?> GetMonitorAlert(int id)
+    public IQueryable<MonitorAlert> GetMonitorAlert(int id)
     {
         return _context.MonitorAlerts
             .AsNoTracking()
@@ -470,12 +470,14 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<int> GetMonitorCounter(string jobId, int monitorId, TimeSpan maxAlertsPeriod)
     {
+        var since = DateTime.Now.AddMinutes(-maxAlertsPeriod.TotalMinutes);
+
         var count = await _context.MonitorCounters
             .AsNoTracking()
             .Where(m =>
                 m.JobId == jobId &&
                 m.MonitorId == monitorId &&
-                EF.Functions.DateDiffMinute(m.LastUpdate, DateTime.Now) <= maxAlertsPeriod.TotalMinutes)
+                m.LastUpdate >= since)
             .Select(m => m.Counter)
             .FirstOrDefaultAsync();
 
@@ -664,7 +666,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             await _context.MonitorMutes.Where(m => m.JobId == jobId && m.MonitorId == monitorId).ExecuteDeleteAsync();
             await _context.MonitorCounters.Where(m => m.JobId == jobId && m.MonitorId == monitorId).ExecuteDeleteAsync();
             await tran.CommitAsync();
@@ -676,7 +678,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             await _context.MonitorMutes.Where(m => m.JobId == jobId).ExecuteDeleteAsync();
             await _context.MonitorCounters.Where(m => m.JobId == jobId).ExecuteDeleteAsync();
             await tran.CommitAsync();
@@ -688,7 +690,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             await _context.MonitorMutes.Where(m => m.MonitorId == monitorId).ExecuteDeleteAsync();
             await _context.MonitorCounters.Where(m => m.MonitorId == monitorId).ExecuteDeleteAsync();
             await tran.CommitAsync();
@@ -700,7 +702,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             await _context.MonitorMutes.ExecuteDeleteAsync();
             await _context.MonitorCounters.ExecuteDeleteAsync();
             await tran.CommitAsync();

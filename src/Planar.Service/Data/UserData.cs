@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
+using StackExchange.Redis;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -104,11 +106,12 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
     {
         var result = await _context.Groups
             .Where(g => g.Users.Any(u => u.Id == id))
-            .Select(g => g.Role.ToLower())
-            .OrderByDescending(g => g)
-            .FirstOrDefaultAsync();
+            .Select(g => g.Role)
+            .ToListAsync();
 
-        return result;
+        return result
+            .OrderByDescending(r => RoleHelper.GetRoleValue(r) ?? -1)
+            .FirstOrDefault();
     }
 
     public async Task<string?> GetUserRole(string username)
@@ -116,10 +119,11 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
         var result = await _context.Groups
             .Where(g => g.Users.Any(u => u.Username == username))
             .Select(g => g.Role)
-            .OrderByDescending(g => g)
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        return result;
+        return result
+            .OrderByDescending(r => RoleHelper.GetRoleValue(r) ?? -1)
+            .FirstOrDefault();
     }
 
     public async Task<List<EntityTitle>> GetGroupsForUser(int id)
@@ -152,25 +156,12 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<int> RemoveUser(string username)
     {
-        const string deleteQuery = "DELETE FROM UsersToGroups WHERE UserId = @Id";
-        var id = await GetUserId(username);
-        var result = 0;
-        var strategy = _context.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
-        {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
-            var definition = new CommandDefinition(
-                commandText: deleteQuery,
-                parameters: new { Id = id },
-                commandType: CommandType.Text,
-                transaction: tran.GetDbTransaction());
-
-            await DbConnection.ExecuteAsync(definition);
-            result = await _context.Users.Where(u => u.Username == username).ExecuteDeleteAsync();
-            await tran.CommitAsync();
-        });
-
-        return result;
+        var user = await _context.Users.Include(u => u.Groups)
+            .FirstOrDefaultAsync(u => u.Username == username);
+        if (user == null) { return 0; }
+        user.Groups.Clear();          // clears join rows
+        _context.Users.Remove(user);
+        return await _context.SaveChangesAsync();
     }
 
     public async Task<bool> IsUserExists(int userId)

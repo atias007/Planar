@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -23,13 +24,8 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
     public async Task<EntityIdResponse> AddGroup(AddGroupRequest request)
     {
-        if (await DataLayer.IsGroupNameExists(request.Name, 0))
-        {
-            throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
-        }
-
         var group = Mapper.Map<Group>(request);
-        var groupRoleValue = RoleHelper.GetRoleValue(group.Role);
+        var groupRoleValue = RoleHelper.GetRoleValue(group.Role) ?? throw new RestValidationException("role", $"role '{request.Role}' is not supported");
         if (AppSettings.Authentication.HasAuthontication && (int)UserRole < groupRoleValue)
         {
             AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
@@ -37,8 +33,25 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         group.Role = group.Role.ToLower();
+        if (await DataLayer.IsGroupNameExists(request.Name, 0))
+        {
+            throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
+        }
 
-        await DataLayer.AddGroup(group);
+        try
+        {
+            await DataLayer.AddGroup(group);
+        }
+        catch (DbUpdateException)
+        {
+            if (await DataLayer.IsGroupNameExists(request.Name, 0))
+            {
+                throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
+            }
+
+            throw;
+        }
+
         AuditSecuritySafe($"group '{group.Name}' was created with role '{request.Role?.ToLower()}'");
         return new EntityIdResponse(group.Id);
     }
@@ -159,7 +172,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         var currentUserRoleValue = RoleHelper.GetRoleValue(UserRole);
-        var targetRoleValue = RoleHelper.GetRoleValue(cleanTargetRole);
+        var targetRoleValue = RoleHelper.GetRoleValue(cleanTargetRole) ?? throw new RestValidationException("role", $"role '{role}' is not supported");
 
         if (AppSettings.Authentication.HasAuthontication && targetRoleValue > currentUserRoleValue)
         {
@@ -186,14 +199,33 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         var id = await DataLayer.GetGroupId(request.CurrentName);
         if (id == 0) { throw new RestNotFoundException($"group '{request.CurrentName}' could not be found"); }
 
+        var group = Mapper.Map<Group>(request);
+        var groupRoleValue = RoleHelper.GetRoleValue(group.Role);
+        if (AppSettings.Authentication.HasAuthontication && (int)UserRole < groupRoleValue)
+        {
+            AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
+            throw new RestForbiddenException();
+        }
+
+        group.Id = id;
         if (await DataLayer.IsGroupNameExists(request.Name, id))
         {
             throw new RestConflictException($"group '{request.Name}' already exists");
         }
 
-        var group = Mapper.Map<Group>(request);
-        group.Id = id;
-        await DataLayer.UpdateGroup(group);
+        try
+        {
+            await DataLayer.UpdateGroup(group);
+        }
+        catch (DbUpdateException)
+        {
+            if (await DataLayer.IsGroupNameExists(request.Name, id))
+            {
+                throw new RestConflictException($"group '{request.Name}' already exists");
+            }
+
+            throw;
+        }
     }
 
     private async Task ValidateMonitorForGroup(int groupId)

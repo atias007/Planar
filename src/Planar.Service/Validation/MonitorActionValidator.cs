@@ -102,7 +102,14 @@ public class MonitorActionValidator
             throw new RestValidationException("Event Argument", $"event argument '{arguments}' is not valid numeric integer value");
         }
 
-        return int.Parse(arguments);
+        // use TryParse and translate to a validation error
+        if (!int.TryParse(arguments, out var value))
+        {
+            throw new RestValidationException("Event Argument",
+                $"event argument '{arguments}' is not a valid integer");
+        }
+
+        return value;
     }
 
     private void ValidateRange(int value, int min, int max)

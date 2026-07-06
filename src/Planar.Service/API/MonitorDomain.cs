@@ -12,6 +12,7 @@ using Planar.Service.Monitor;
 using Planar.Service.Monitor.Test;
 using Planar.Service.Services;
 using Planar.Service.Validation;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -89,6 +90,13 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         var path = request.Filename.Trim();
         if (path.StartsWith('/') || path.StartsWith('\\')) { path = path[1..]; }
         var filename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks, path);
+
+        var root = Path.GetFullPath(FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks));
+        var full = Path.GetFullPath(filename);
+        if (!full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new RestValidationException("filename", $"invalid hook path '{path}'");
+        }
 
         if (!File.Exists(filename))
         {
@@ -232,7 +240,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         };
 
         await DataLayer.AddMonitorMute(entity);
-        var message = $"monitor {entity.JobId ?? "[all monitors]"} with job {entity.JobId ?? "[all jobs]"}  was muted by user";
+        var message = $"monitor {entity.MonitorId?.ToString() ?? "[all monitors]"} with job {entity.JobId ?? "[all jobs]"}  was muted by user";
         AuditSecuritySafe(message, true);
     }
 
@@ -258,10 +266,14 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             .Take(1000)
             .ToList();
 
-        foreach (var r in result)
+        var keys = new Dictionary<string, JobKey?>();
+        foreach (var r in result.Where(r => !string.IsNullOrWhiteSpace(r.JobId)))
         {
-            if (string.IsNullOrEmpty(r.JobId)) { continue; }
-            var key = await JobKeyHelper.GetJobKeyById(r.JobId);
+            if (!keys.TryGetValue(r.JobId!, out var key))
+            {
+                keys[r.JobId!] = key = await JobKeyHelper.GetJobKeyById(r.JobId!);
+            }
+
             r.JobName = key?.Name;
             r.JobGroup = key?.Group;
         }

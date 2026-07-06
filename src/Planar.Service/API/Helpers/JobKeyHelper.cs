@@ -83,24 +83,18 @@ public class JobKeyHelper(ISchedulerFactory schedulerFactory)
 
     public async Task<JobKey?> GetJobKeyById(string jobId)
     {
-        JobKey? result = null;
         var scheduler = await schedulerFactory.GetScheduler();
         var keys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
         foreach (var k in keys)
         {
             var jobDetails = await scheduler.GetJobDetail(k);
-            if (jobDetails != null)
+            if (jobDetails != null && jobId == GetJobId(jobDetails))
             {
-                var id = GetJobId(jobDetails);
-                if (id == jobId)
-                {
-                    result = k;
-                    break;
-                }
+                return k;
             }
         }
 
-        return result;
+        return null;
     }
 
     public async Task<bool> IsJobGroupExists(string group)

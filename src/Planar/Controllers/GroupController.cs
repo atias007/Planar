@@ -130,6 +130,7 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
     public async Task<IActionResult> AddUserToGroup([FromRoute][Name] string name, [FromRoute][Name] string username)
     {
         name = WebUtility.UrlDecode(name);
+        username = WebUtility.UrlDecode(username);
         await BusinesLayer.AddUserToGroup(name, username);
         return NoContent();
     }

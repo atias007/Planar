@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -96,6 +97,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
     public async Task<string> ResetPassword(string username)
     {
+        await EnsureCanManage(username);
         var existsUser = await DataLayer.GetUser(username, withTracking: true);
         ValidateExistingEntity(existsUser, "user");
         if (existsUser == null) { return string.Empty; }
@@ -149,5 +151,16 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
         var hash = HashUtil.CreateHash(password);
         return hash;
+    }
+
+    private async Task EnsureCanManage(string username)
+    {
+        if (!AppSettings.Authentication.HasAuthontication) { return; }
+        var targetRole = RoleHelper.GetRoleValue(await DataLayer.GetUserRole(username)) ?? 0;
+        if (targetRole > (int)UserRole)
+        {
+            AuditSecuritySafe($"trying to set/reset password by user '{username}' blocked because the target role outranks current user '{UserRole}'", isWarning: true);
+            throw new RestForbiddenException();
+        }
     }
 }
