@@ -101,7 +101,7 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
 
     protected void HandleSuccess()
     {
-        FinishStatus = JobFinishStatus.Failure;
+        FinishStatus = JobFinishStatus.Success;
     }
 
     protected void SafeScan(MonitorEvents @event, IJobExecutionContext context)
@@ -153,7 +153,7 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
                 try
                 {
                     await Task.Delay(min * 60_000, _durationTokenSource.Token);
-                    if (_durationTokenSource.IsCancellationRequested) { return; }
+                    if (_durationTokenSource?.IsCancellationRequested ?? true) { return; }
                     SafeScan(MonitorEvents.ExecutionDurationGreaterThanxMinutes, context);
                 }
                 catch (TaskCanceledException)

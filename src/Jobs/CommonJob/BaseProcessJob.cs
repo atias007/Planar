@@ -87,6 +87,13 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
     protected void FinalizeProcess()
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+#pragma warning disable CA1416 // Validate platform compatibility
+            SafeInvoke(() => _process?.StartInfo.Password?.Dispose());
+#pragma warning restore CA1416 // Validate platform compatibility
+        }
+
         SafeInvoke(() => _process?.CancelErrorRead());
         SafeInvoke(() => _process?.CancelOutputRead());
         SafeInvoke(() => { _process?.EnableRaisingEvents = false; });
@@ -94,6 +101,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         SafeInvoke(() => _process?.Close());
         SafeInvoke(() => _process?.Dispose());
         SafeInvoke(() => { _processMetricsTimer?.Elapsed -= MetricsTimerElapsed; });
+        SafeInvoke(() => { _processMetricsTimer?.Dispose(); });
     }
 
     protected virtual async Task<ProcessStartInfo> GetProcessStartInfo()
@@ -123,25 +131,11 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
     private static SecureString? ToSecureString(string? plainText)
     {
-        if (string.IsNullOrWhiteSpace(plainText))
-        {
-            return null;
-        }
-
+        if (string.IsNullOrWhiteSpace(plainText)) { return null; }
         var secureString = new SecureString();
-        try
-        {
-            foreach (char c in plainText)
-            {
-                secureString.AppendChar(c);
-            }
-            secureString.MakeReadOnly(); // Make the string read-only for security
-            return secureString;
-        }
-        finally
-        {
-            secureString.Dispose();
-        }
+        foreach (char c in plainText) { secureString.AppendChar(c); }
+        secureString.MakeReadOnly();
+        return secureString;
     }
 
     protected void LogProcessInformation()
@@ -202,13 +196,13 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
         _process.BeginOutputReadLine();
         _process.BeginErrorReadLine();
-        _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
 
-        if (!_process.HasExited)
+        if (!_process.WaitForExit(timeout))
         {
             MessageBroker.AppendLog(LogLevel.Error, $"process execution timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
             return false;
         }
+        _process.WaitForExit(); // ensures async stdout/stderr handlers reach EOF
 
         return true;
     }

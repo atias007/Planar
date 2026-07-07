@@ -148,11 +148,27 @@ public abstract class ProcessJob(
 
         if (!string.IsNullOrEmpty(Properties.OutputEncoding))
         {
-            var encoding = Encoding.GetEncoding(Properties.OutputEncoding);
+            var encoding = GetEncoding(Properties.OutputEncoding);
             startInfo.StandardErrorEncoding = encoding;
             startInfo.StandardOutputEncoding = encoding;
         }
 
         return startInfo;
+    }
+
+    private Encoding GetEncoding(string encodingName)
+    {
+        if (string.IsNullOrWhiteSpace(encodingName))
+        {
+            return Encoding.UTF8;
+        }
+        try
+        {
+            return Encoding.GetEncoding(encodingName);
+        }
+        catch
+        {
+            throw new ProcessJobException($"invalid encoding name '{encodingName}'");
+        }
     }
 }

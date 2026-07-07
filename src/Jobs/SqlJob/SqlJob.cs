@@ -10,7 +10,6 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Planar;
 
@@ -43,9 +42,26 @@ public abstract class SqlJob(
         }
     }
 
+    private static List<string> GetConnectionNames(List<SqlStep> steps, string? defaultConnectionName)
+    {
+        var items = new List<string>();
+        items.AddRange(steps.Select(p => p.ConnectionName ?? string.Empty));
+        if (!string.IsNullOrWhiteSpace(defaultConnectionName))
+        {
+            items.Add(defaultConnectionName);
+        }
+
+        var connections = items
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct()
+                .ToList();
+
+        return connections;
+    }
+
     private async Task ExecuteSql(IJobExecutionContext context)
     {
-        if (Properties.Steps == null) { Properties.Steps = []; }
+        Properties.Steps ??= [];
 
         var total = Properties.Steps.Count;
         MessageBroker.AppendLog(LogLevel.Information, $"start sql job with {total} steps");
@@ -53,9 +69,36 @@ public abstract class SqlJob(
         DbConnection? defaultConnection = null;
         DbTransaction? transaction = null;
 
+        var connections = GetConnectionNames(Properties.Steps, Properties.DefaultConnectionName);
+        var singleConnection = connections.Count == 1;
+
         try
         {
+            if (singleConnection)
+            {
+                defaultConnection = new SqlConnection(connections[0]);
+                await defaultConnection.OpenAsync(ExecutionCancellationToken);
+                if (Properties.Transaction)
+                {
+                    var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
+                    transaction = await defaultConnection.BeginTransactionAsync(isolation, ExecutionCancellationToken);
+                }
+            }
+            else
+            {
+                if (Properties.Transaction)
+                {
+                    MessageBroker.AppendLog(LogLevel.Warning, "transaction is not allowed when using multiple connections. no transaction will be used.");
+                }
+            }
+
             await ExecuteSqlInner(context, defaultConnection, transaction, total);
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(ExecutionCancellationToken);
+                MessageBroker.AppendLog(LogLevel.Information, "commit transaction");
+            }
         }
         catch
         {
@@ -82,22 +125,6 @@ public abstract class SqlJob(
     {
         if (Properties.Steps == null) { Properties.Steps = []; }
 
-        var isOnlyDefaultConnection =
-            !string.IsNullOrWhiteSpace(Properties.DefaultConnectionName) &&
-            Properties.Steps.Exists(s => string.IsNullOrWhiteSpace(s.ConnectionName));
-
-        if (isOnlyDefaultConnection)
-        {
-            defaultConnection = new SqlConnection(Properties.DefaultConnectionString);
-            MessageBroker.AppendLog(LogLevel.Information, $"open default sql connection with connection name: {Properties.DefaultConnectionName}");
-            await defaultConnection.OpenAsync(ExecutionCancellationToken);
-            if (Properties.Transaction)
-            {
-                var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
-                transaction = await defaultConnection.BeginTransactionAsync(isolation, ExecutionCancellationToken);
-                MessageBroker.AppendLog(LogLevel.Information, $"begin transaction with isolation level {isolation}");
-            }
-        }
         var counter = 0;
 
         foreach (var step in Properties.Steps)
@@ -118,13 +145,8 @@ public abstract class SqlJob(
 
         if (_exceptions.Count != 0)
         {
+            _exceptions.Clear();
             throw new AggregateException("there is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
-        }
-
-        if (transaction != null)
-        {
-            await transaction.CommitAsync(ExecutionCancellationToken);
-            MessageBroker.AppendLog(LogLevel.Information, "commit transaction");
         }
     }
 
@@ -138,7 +160,7 @@ public abstract class SqlJob(
         {
             MessageBroker.AppendLog(LogLevel.Information, $"start execute step name '{step.Name}'...");
 
-            var cmd = connection.CreateCommand();
+            using var cmd = connection.CreateCommand();
             var script = GetScript(context, step);
             cmd.CommandText = script;
             cmd.CommandType = CommandType.Text;
@@ -159,7 +181,7 @@ public abstract class SqlJob(
             if (rows == -1) { rows = null; }
             var elapsedTitle =
                 timer.ElapsedMilliseconds < 60000 ?
-                $"{timer.Elapsed.Seconds}.{timer.Elapsed.Milliseconds:000}ms" :
+                $"{timer.Elapsed.Seconds}.{timer.Elapsed.Milliseconds:000} seconds" :
                 $"{timer.Elapsed:hh\\:mm\\:ss}";
 
             var strRows = rows == null ? "no" : rows.GetValueOrDefault().ToString(CultureInfo.CurrentCulture);

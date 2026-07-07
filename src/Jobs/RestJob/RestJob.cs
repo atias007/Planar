@@ -7,10 +7,12 @@ using RestSharp;
 using RestSharp.Authenticators;
 using System.Diagnostics;
 using System.Net;
+using System.Text.RegularExpressions;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar;
 
-public class RestJob(
+public partial class RestJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil
@@ -44,7 +46,7 @@ public class RestJob(
         var options = InitializeOptions(context);
         SetProxy(options);
         SetAuthentication(options);
-        var client = new RestClient(options);
+        using var client = new RestClient(options);
         RestRequest request = InitializeRequest();
         SetHeaders(request);
         SetFormData(request);
@@ -67,8 +69,7 @@ public class RestJob(
             var authenticator = new HttpBasicAuthenticator(Properties.BasicAuthentication.Username, Properties.BasicAuthentication.Password);
             options.Authenticator = authenticator;
         }
-
-        if (Properties.JwtAuthentication != null)
+        else if (Properties.JwtAuthentication != null)
         {
             var authenticator = new JwtAuthenticator(Properties.JwtAuthentication.Token);
             options.Authenticator = authenticator;
@@ -111,17 +112,16 @@ public class RestJob(
         if (string.IsNullOrWhiteSpace(Properties.BodyFile)) { return; }
         var filename = Path.Combine(Properties.Path, Properties.BodyFile);
         var body = await File.ReadAllTextAsync(filename);
-
-        foreach (var item in context.MergedJobDataMap)
+        body = BodyPlaceHolders().Replace(body, m =>
         {
-            var key = $"{{{{{item.Key}}}}}";
-            var value = Convert.ToString(item.Value);
-            if (body.Contains(key))
-            {
-                body = body.Replace(key, value);
-                MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
-            }
-        }
+            var k = m.Groups[1].Value;
+            var result = context.MergedJobDataMap.TryGetValue(k, out var v)
+                ? Convert.ToString(v) ?? string.Empty
+                : m.Value;
+
+            MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{k}' was replaced by value '{result}'");
+            return result;
+        });
 
         request.AddJsonBody(body);
     }
@@ -208,6 +208,15 @@ public class RestJob(
     {
         try
         {
+            ValidateMandatoryString(Properties.Url, nameof(Properties.Url));
+            ValidateMandatoryString(Properties.Method, nameof(Properties.Method));
+
+            if (!Uri.TryCreate(Properties.Url, UriKind.Absolute, out _))
+                throw new RestJobException($"url '{Properties.Url}' is not a valid absolute uri");
+
+            if (!Enum.TryParse<Method>(Properties.Method, ignoreCase: true, out _))
+                throw new RestJobException($"method '{Properties.Method}' is not a valid http method");
+
             var bodyFullname = Path.Combine(Properties.Path ?? string.Empty, Properties.BodyFile ?? string.Empty);
             if (!string.IsNullOrEmpty(Properties.BodyFile) && !File.Exists(bodyFullname))
             {
@@ -232,4 +241,7 @@ public class RestJob(
 
         return $"{timeSpan:hh\\:mm\\:ss\\.fffffff}";
     }
+
+    [GeneratedRegex(@"\{\{(.+?)\}\}")]
+    private static partial Regex BodyPlaceHolders();
 }
