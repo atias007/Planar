@@ -133,10 +133,61 @@ public class UserCliActions : BaseCliAction<UserCliActions>
     }
 
     [Action("update")]
-    public static async Task<CliActionResponse> UpdateUser(CliUpdateEntityByNameRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> UpdateUser(CliUpdateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("user", Method.Patch)
-            .AddBody(request);
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            var p1 = await CliPromptUtil.Users(cancellationToken);
+            if (!p1.IsSuccessful) { return new CliActionResponse(p1.FailResponse); }
+            request.Username = p1.Value ?? string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Username)) { return CliActionResponse.Empty; }
+
+        var restRequest = new RestRequest("user/{username}", Method.Get)
+            .AddParameter("username", request.Username ?? string.Empty, ParameterType.UrlSegment);
+
+        var detailsResponse = await RestProxy.Invoke<UserDetails>(restRequest, cancellationToken);
+        var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new UserDetails();
+
+        FillOptionalString(request, nameof(request.FirstName), defaultValue: details.FirstName);
+        FillOptionalString(request, nameof(request.LastName), defaultValue: details.LastName);
+
+        FillOptionalString(request, nameof(request.PhoneNumber1), defaultValue: details.PhoneNumber1);
+        FillOptionalString(request, nameof(request.PhoneNumber2), defaultValue: details.PhoneNumber2);
+        FillOptionalString(request, nameof(request.PhoneNumber3), defaultValue: details.PhoneNumber3);
+
+        FillOptionalString(request, nameof(request.EmailAddress1), defaultValue: details.EmailAddress1);
+        FillOptionalString(request, nameof(request.EmailAddress2), defaultValue: details.EmailAddress2);
+        FillOptionalString(request, nameof(request.EmailAddress3), defaultValue: details.EmailAddress3);
+
+        FillOptionalString(request, nameof(request.AdditionalField1), defaultValue: details.AdditionalField1);
+        FillOptionalString(request, nameof(request.AdditionalField2), defaultValue: details.AdditionalField2);
+        FillOptionalString(request, nameof(request.AdditionalField3), defaultValue: details.AdditionalField3);
+        FillOptionalString(request, nameof(request.AdditionalField4), defaultValue: details.AdditionalField4);
+        FillOptionalString(request, nameof(request.AdditionalField5), defaultValue: details.AdditionalField5);
+
+        var body = new
+        {
+            request.FirstName,
+            request.Username,
+            CurrentUsername = request.Username,
+            request.LastName,
+            request.PhoneNumber1,
+            request.PhoneNumber2,
+            request.PhoneNumber3,
+            request.EmailAddress1,
+            request.EmailAddress2,
+            request.EmailAddress3,
+            request.AdditionalField1,
+            request.AdditionalField2,
+            request.AdditionalField3,
+            request.AdditionalField4,
+            request.AdditionalField5
+        };
+
+        restRequest = new RestRequest("user", Method.Put)
+            .AddBody(body);
 
         return await Execute(restRequest, cancellationToken);
     }

@@ -125,6 +125,12 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
             startInfo.Domain = FileProperties.Domain;
             startInfo.Password = ToSecureString(FileProperties.Password);
         }
+        else
+        {
+#pragma warning disable CA1416 // Validate platform compatibility
+            startInfo.PasswordInClearText = FileProperties.Password;
+#pragma warning restore CA1416 // Validate platform compatibility
+        }
 
         return startInfo;
     }
@@ -264,7 +270,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
     private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
     {
         if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-        _output.AppendLine(eventArgs.Data);
+        lock (Locker) { _output.AppendLine(eventArgs.Data); }
     }
 
     private void UpdatePeakVariables(Process? process)

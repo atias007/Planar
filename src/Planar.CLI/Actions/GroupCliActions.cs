@@ -26,6 +26,7 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
         var body = new { request.Name, Role = request.Role.ToString() };
         var restRequest = new RestRequest("group", Method.Post)
             .AddBody(body);
+
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
     }
@@ -91,19 +92,42 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
     }
 
     [Action("update")]
-    public static async Task<CliActionResponse> Update(CliUpdateEntityByNameRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> Update(CliUpdateGroupRequest request, CancellationToken cancellationToken = default)
     {
-        var wrapper = await FillGetRequest(request, cancellationToken);
-        if (!wrapper.IsSuccessful)
+        if (string.IsNullOrWhiteSpace(request.Name))
         {
-            return new CliActionResponse(wrapper.FailResponse);
+            var p1 = await CliPromptUtil.Groups(cancellationToken);
+            if (!p1.IsSuccessful) { return new CliActionResponse(p1.FailResponse); }
+            request.Name = p1.Value ?? string.Empty;
         }
 
-        FillRequiredString(request, nameof(request.PropertyName));
-        FillOptionalString(request, nameof(request.PropertyValue));
+        if (string.IsNullOrWhiteSpace(request.Name)) { return CliActionResponse.Empty; }
 
-        var restRequest = new RestRequest("group", Method.Patch)
-           .AddBody(request);
+        var restRequest = new RestRequest("group/{name}", Method.Get)
+            .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
+
+        var detailsResponse = await RestProxy.Invoke<GroupDetails>(restRequest, cancellationToken);
+        var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new GroupDetails();
+        FillOptionalString(request, nameof(request.AdditionalField1), defaultValue: details.AdditionalField1);
+        FillOptionalString(request, nameof(request.AdditionalField2), defaultValue: details.AdditionalField2);
+        FillOptionalString(request, nameof(request.AdditionalField3), defaultValue: details.AdditionalField3);
+        FillOptionalString(request, nameof(request.AdditionalField4), defaultValue: details.AdditionalField4);
+        FillOptionalString(request, nameof(request.AdditionalField5), defaultValue: details.AdditionalField5);
+
+        var body = new
+        {
+            request.Name,
+            CurrentName = request.Name,
+            details.Role,
+            request.AdditionalField1,
+            request.AdditionalField2,
+            request.AdditionalField3,
+            request.AdditionalField4,
+            request.AdditionalField5
+        };
+
+        restRequest = new RestRequest("group", Method.Put)
+           .AddBody(body);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);

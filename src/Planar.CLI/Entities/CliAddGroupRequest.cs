@@ -13,7 +13,3 @@ public class CliAddGroupRequest
     [Required("role argument is required")]
     public Roles? Role { get; set; }
 }
-
-public class CliUpdateGroupRequest : CliAddGroupRequest
-{
-}
