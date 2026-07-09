@@ -141,6 +141,16 @@ namespace Planar
                 .Build();
 
             await _locker.WaitAsync(_lockerTimeout);
+
+            try
+            {
+                _mqttClient?.Dispose();
+            }
+            catch
+            {
+                // DO NOTHING, just try to create a new mqtt client if dispose failed
+            }
+
             try
             {
                 _timer?.Stop();
@@ -177,8 +187,10 @@ namespace Planar
                 _timer = new System.Timers.Timer(delaySeconds * 1_000);
                 _timer.Elapsed += async (s, e) =>
                 {
-                    _timer.Stop();
-                    _timer.Dispose();
+                    var timer = s as System.Timers.Timer;
+                    if (timer == null) { return; }
+                    timer.Stop();
+                    timer.Dispose();
                     _timer = null;
                     await StopAsync(fireInstanceId);
                 };

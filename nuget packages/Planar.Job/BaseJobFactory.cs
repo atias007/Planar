@@ -183,7 +183,7 @@ namespace Planar.Job
             await _semaphoreSlim.WaitAsync();
             try
             {
-                _effectedRows += value;
+                _effectedRows = (_effectedRows ?? 0) + value;
                 await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.IncreaseEffectedRows, value);
             }
             finally
@@ -273,7 +273,6 @@ namespace Planar.Job
             catch
             {
                 return false;
-                throw;
             }
         }
 

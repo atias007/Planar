@@ -17,6 +17,11 @@ namespace Planar.Job
         {
             //// if (PlanarJob.Mode == RunningMode.Release) { return; }
 
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new PlanarJobException("Debug profile name is empty");
+            }
+
             if (_profiles.ContainsKey(name))
             {
                 throw new PlanarJobException($"Debug profile '{name}' already exists");

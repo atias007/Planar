@@ -76,8 +76,7 @@ namespace Planar.Job
         {
             var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
             var json = Encoding.UTF8.GetString(bytes.ToArray());
-            var restRequest = CreateRequest(json, fireInstanceId);
-            var response = await ExecuteRestWithRetryAsync(restRequest);
+            var response = await ExecuteRestWithRetryAsync(json, fireInstanceId);
             if (!response.IsSuccessStatusCode)
             {
                 throw new PlanarJobException($"Fail to ping failover proxy. Server status: {response.StatusCode}");
@@ -88,11 +87,10 @@ namespace Planar.Job
         {
             var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
             var json = Encoding.UTF8.GetString(bytes.ToArray());
-            var restRequest = CreateRequest(json, fireInstanceId);
-            await ExecuteRestWithRetryAsync(restRequest);
+            await ExecuteRestWithRetryAsync(json, fireInstanceId);
         }
 
-        private async Task<HttpResponseMessage> ExecuteRestWithRetryAsync(HttpRequestMessage request)
+        private async Task<HttpResponseMessage> ExecuteRestWithRetryAsync(string body, string fireInstanceId)
         {
             const int retryCount = 3;
             var counter = 0;
@@ -108,10 +106,13 @@ namespace Planar.Job
             {
                 try
                 {
-                    response = await _client.SendAsync(request);
+                    using (var request = CreateRequest(body: body, fireInstanceId: fireInstanceId))
+                    {
+                        response = await _client.SendAsync(request);
 
-                    if (response.IsSuccessStatusCode) { return response; }
-                    if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500) { return response; }
+                        if (response.IsSuccessStatusCode) { return response; }
+                        if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500) { return response; }
+                    }
                 }
                 catch (Exception ex)
                 {

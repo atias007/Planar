@@ -116,6 +116,8 @@ namespace Planar.Job
             try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 #endif
 
+            if (initializeException != null) { throw initializeException; }
+
             ValidateJobExecutionContext(_context);
 
             try
@@ -582,6 +584,11 @@ namespace Planar.Job
 
         private static void ValidateSystemDataKey(string key)
         {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new PlanarJobException("key is required");
+            }
+
             if (key.StartsWith(Consts.ConstPrefix))
             {
                 throw new PlanarJobException($"date '{key}' is system data key and it should not be modified");
@@ -593,11 +600,6 @@ namespace Planar.Job
             }
 
             ValidateRange(key, 1, 100, "key");
-
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                throw new PlanarJobException("key is required");
-            }
         }
 
         private static bool ContainsKey(string key, IDataMap data)

@@ -102,23 +102,23 @@ public abstract class ProcessJob(
             return;
         }
 
-        if (Properties.SuccessExitCodes.Any())
-        {
-            if (!Properties.SuccessExitCodes.Any(s => s == exitCode))
-            {
-                var codes = string.Join(',', Properties.SuccessExitCodes);
-                throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is not one of success exit codes ({codes})");
-            }
-
-            return;
-        }
-
         if (!string.IsNullOrEmpty(Properties.FailOutputRegex))
         {
             var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
             if (regex.IsMatch(FinalOutputText))
             {
                 throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.FailOutputRegex}'");
+            }
+
+            return;
+        }
+
+        if (Properties.SuccessExitCodes.Any())
+        {
+            if (!Properties.SuccessExitCodes.Any(s => s == exitCode))
+            {
+                var codes = string.Join(',', Properties.SuccessExitCodes);
+                throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is not one of success exit codes ({codes})");
             }
 
             return;
@@ -156,7 +156,7 @@ public abstract class ProcessJob(
         return startInfo;
     }
 
-    private Encoding GetEncoding(string encodingName)
+    private static Encoding GetEncoding(string encodingName)
     {
         if (string.IsNullOrWhiteSpace(encodingName))
         {
