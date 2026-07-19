@@ -156,7 +156,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     }
 
     [Action("update")]
-    public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityByIdRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> UpdateMonitor(CliUpdateMonitorRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Id == 0)
         {
@@ -169,8 +169,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             request.Id = monitorWrapper.Value.Id;
         }
 
-        FillRequiredString(request, nameof(request.PropertyName));
-        FillOptionalString(request, nameof(request.PropertyValue));
+        if (request.Id <= 0) { return CliActionResponse.Empty; }
+        var daat = await CollectUpdateMonitorRequestData(request.Id, cancellationToken);
 
         var restRequest = new RestRequest("monitor", Method.Patch)
             .AddBody(request);
@@ -622,6 +622,46 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             JobGroup = job.JobGroup,
             GroupName = groupName,
             Hook = hookName,
+            JobName = job.JobName,
+            Event = eventName,
+            Title = title
+        };
+
+        return new RequestBuilderWrapper<CliAddMonitorRequest> { Request = monitor };
+    }
+
+    private static async Task<RequestBuilderWrapper<CliUpdateMonitorRequest>> CollectUpdateMonitorRequestData(int id, CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("monitor/{id}", Method.Get)
+           .AddParameter("id", id, ParameterType.UrlSegment);
+        var detailsResponseTask = RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
+        var data = await GetMonitorData(cancellationToken);
+        if (!data.IsSuccessful)
+        {
+            return new RequestBuilderWrapper<CliUpdateMonitorRequest> { FailResponse = data.FailResponse };
+        }
+
+        var detailsResponse = await detailsResponseTask;
+        var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new MonitorItem();
+
+        // EVENT
+        var changeEvent = CollectBoolCliValue($"change event: ({details.Event})", false);
+        var eventName = changeEvent ? GetEvent(data.Events) : details.Event;
+
+        // JOB & GROUP
+        var groupName = details.JobGroup ?? "[null]";
+        var jobName = details.JobName ?? "[null]";
+        var changeJob = CollectBoolCliValue($"change job ({jobName}) / group ({groupName}): ", false);
+
+        var job = changeJob GetJob(data.Jobs, eventName);
+        var monitorEventArgs = GetEventArguments(eventName);
+        var title = GetTitle();
+
+        var monitor = new CliUpdateMonitorRequest
+        {
+            Id = id,
+            EventArgument = monitorEventArgs,
+            JobGroup = job.JobGroup,
             JobName = job.JobName,
             Event = eventName,
             Title = title
