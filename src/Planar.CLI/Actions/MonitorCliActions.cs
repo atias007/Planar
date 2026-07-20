@@ -691,9 +691,11 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
 
         var noArgs = string.IsNullOrWhiteSpace(sourceEventArgs);
-        if (sameEvent && noArgs) { return null; }
+        if (noArgs) { return null; }
 
-        var changeArgs = AskForUpdateField($"evet arguments", sourceEventArgs ?? string.Empty);
+#pragma warning disable CS8604 // Possible null reference argument.
+        var changeArgs = AskForUpdateField($"evet arguments", sourceEventArgs);
+#pragma warning restore CS8604 // Possible null reference argument.
         var monitorEventArgs = changeArgs ? GetEventArguments(currentEventName) : sourceEventArgs;
         return monitorEventArgs;
     }
