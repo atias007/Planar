@@ -75,9 +75,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestConflictException("monitor with same properties already exists");
         }
 
-        monitor.MonitorActionsHooks.Add(new MonitorActionsHook { Hook = request.Hook });
-
-        await DataLayer.AddMonitor(monitor, groupId);
+        await DataLayer.AddMonitor(monitor, groupId, request.Hook);
 
         _ = Resolve<MonitorDurationCache>().Flush();
         _ = SetMonitorActionsCache(clusterReload: true);

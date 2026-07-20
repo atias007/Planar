@@ -16,7 +16,7 @@ namespace Planar.Service.Data;
 
 public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
-    Task AddMonitor(MonitorAction request, int groupId);
+    Task AddMonitor(MonitorAction monitor, int groupId, string hookName);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
@@ -123,22 +123,19 @@ public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context),
 
 public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
-    public async Task AddMonitor(MonitorAction request, int groupId)
+    public async Task AddMonitor(MonitorAction monitor, int groupId, string hookName)
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
-        {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
-            _context.MonitorActions.Add(request);
-            await _context.SaveChangesAsync();
-            var monitorGroup = new MonitorActionsGroups { GroupId = groupId, MonitorId = request.Id };
-            await DbConnection.InsertAsync(monitorGroup, transaction: tran.GetDbTransaction());
+        var group = new Group { Id = groupId };
+        var hook = new MonitorActionsHook { Hook = hookName };
 
-            ////var monitorHook = new MonitorActionsHook { Hook = hook, MonitorId = request.Id };
-            ////await conn.InsertAsync(monitorHook, transaction: tran.GetDbTransaction());
+        _context.Attach(group);
+        _context.Attach(hook);
 
-            await tran.CommitAsync();
-        });
+        monitor.Groups.Add(group);
+        monitor.MonitorActionsHooks.Add(hook);
+
+        _context.MonitorActions.Add(monitor);
+        await _context.SaveChangesAsync();
     }
 
     public async Task AddMonitorCounter(MonitorCounter counter)
@@ -637,17 +634,11 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     public async Task ResetMonitorCounter(int delta)
     {
         var referenceDate = DateTime.Now.AddMinutes(-delta);
-        var strategy = _context.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
-        {
-            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-            await _context.MonitorCounters
-                .Where(m => m.LastUpdate < referenceDate)
-                .ExecuteUpdateAsync(u => u
-                    .SetProperty(p => p.Counter, 0)
-                    .SetProperty(p => p.LastUpdate, DateTime.Now));
-            await tran.CommitAsync();
-        });
+        await _context.MonitorCounters
+            .Where(m => m.LastUpdate < referenceDate)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(p => p.Counter, 0)
+                .SetProperty(p => p.LastUpdate, DateTime.Now));
     }
 
     public async Task<int> SumEffectedRowsForJob(string jobId, DateTime since)

@@ -451,7 +451,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     private async Task<ITrigger> GetTriggerById(string? triggerId)
     {
-        TriggerKey? key = null;
         if (string.IsNullOrWhiteSpace(triggerId))
         {
             throw new RestValidationException("triggerId", "triggerId is required");

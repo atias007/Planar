@@ -20,4 +20,7 @@ public class CliBaseMonitorRequest
 
     [ActionProperty("a", "arguments")]
     public string? EventArgument { get; set; }
+
+    [ActionProperty("v", "active")]
+    public bool Active { get; set; }
 }
