@@ -294,6 +294,16 @@ namespace Planar.CLI.Actions
             return result;
         }
 
+        protected static bool AskForUpdateField(string field, string currentValue, bool defaultValue = false)
+        {
+            var prompt = new ConfirmationPrompt($"[turquoise2] do you want to update: {field.EscapeMarkup()?.Trim()}?[/] [gray]({currentValue.EscapeMarkup()?.Trim()})[/]")
+            {
+                DefaultValue = defaultValue
+            };
+            var result = AnsiConsole.Prompt(prompt);
+            return result;
+        }
+
         protected static string? CollectCliValue(CollectCliValueParameters parameters)
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {parameters.Field.EscapeMarkup()?.Trim()}:[/]")

@@ -156,7 +156,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     }
 
     [Action("update")]
-    public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityByIdRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> UpdateMonitor(CliUpdateMonitorRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Id == 0)
         {
@@ -169,11 +169,14 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             request.Id = monitorWrapper.Value.Id;
         }
 
-        FillRequiredString(request, nameof(request.PropertyName));
-        FillOptionalString(request, nameof(request.PropertyValue));
-
-        var restRequest = new RestRequest("monitor", Method.Patch)
-            .AddBody(request);
+        if (request.Id <= 0) { return CliActionResponse.Empty; }
+        var wrapper = await CollectUpdateMonitorRequestData(request.Id, cancellationToken);
+        if (!wrapper.IsSuccessful || wrapper.Request == null)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+        var restRequest = new RestRequest("monitor", Method.Put)
+            .AddBody(wrapper.Request);
 
         return await Execute(restRequest, cancellationToken);
     }
@@ -630,6 +633,73 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return new RequestBuilderWrapper<CliAddMonitorRequest> { Request = monitor };
     }
 
+    private static async Task<RequestBuilderWrapper<CliUpdateMonitorRequest>> CollectUpdateMonitorRequestData(int id, CancellationToken cancellationToken)
+    {
+        // Get Data
+        var restRequest = new RestRequest("monitor/{id}", Method.Get)
+           .AddParameter("id", id, ParameterType.UrlSegment);
+        var detailsResponseTask = RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
+        var data = await GetMonitorData(cancellationToken);
+        if (!data.IsSuccessful)
+        {
+            return new RequestBuilderWrapper<CliUpdateMonitorRequest> { FailResponse = data.FailResponse };
+        }
+
+        var detailsResponse = await detailsResponseTask;
+        var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new MonitorItem();
+
+        // EVENT
+        var changeEvent = AskForUpdateField($"event", details.Event);
+        var eventName = changeEvent ? GetEvent(data.Events) : details.Event.Replace(" ", string.Empty);
+
+        // JOB & GROUP
+        var groupName = details.JobGroup ?? "[null]";
+        var jobName = details.JobName ?? "[null]";
+        var changeJob = AskForUpdateField("job group / job name", $"{groupName} / {jobName}");
+        var job = changeJob ? GetJob(data.Jobs, eventName) : new AddMonitorJobData { JobGroup = details.JobGroup, JobName = details.JobName };
+
+        // EVENT ARGUMENTS
+        var eventArgs = GetEventArgumentForUpdateMonitor(details.Event, details.EventArgument, eventName);
+
+        // TITLE
+        var title = GetTitle(details.Title);
+
+        // ACTIVE
+        var active = CollectBoolCliValue("active", details.Active);
+
+        var monitor = new CliUpdateMonitorRequest
+        {
+            Id = id,
+            EventArgument = eventArgs,
+            JobGroup = job.JobGroup,
+            JobName = job.JobName,
+            Event = eventName,
+            Title = title,
+            Active = active
+        };
+
+        return new RequestBuilderWrapper<CliUpdateMonitorRequest> { Request = monitor };
+    }
+
+    private static string? GetEventArgumentForUpdateMonitor(string sourceEventName, string? sourceEventArgs, string currentEventName)
+    {
+        var sameEvent = string.Equals(sourceEventName, currentEventName, StringComparison.OrdinalIgnoreCase);
+        if (!sameEvent)
+        {
+            var result = GetEventArguments(currentEventName);
+            return result;
+        }
+
+        var noArgs = string.IsNullOrWhiteSpace(sourceEventArgs);
+        if (noArgs) { return null; }
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        var changeArgs = AskForUpdateField($"evet arguments", sourceEventArgs);
+#pragma warning restore CS8604 // Possible null reference argument.
+        var monitorEventArgs = changeArgs ? GetEventArguments(currentEventName) : sourceEventArgs;
+        return monitorEventArgs;
+    }
+
     private static string GetDistributionGroup(IEnumerable<GroupInfo> groups)
     {
         var groupsNames = groups.Select(group => group.Name ?? string.Empty);
@@ -806,10 +876,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         var data = new MonitorRequestData();
         var eventsRequest = new RestRequest("monitor/events", Method.Get);
-        var eventsTask = RestProxy.Invoke<List<MonitorEventModel>>(eventsRequest, cancellationToken);
+        var eventsTask = RestProxy.InvokeWithoutSpinner<List<MonitorEventModel>>(eventsRequest, cancellationToken);
 
         var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
-        var hooksTask = RestProxy.Invoke<List<HookInfo>>(hooksRequest, cancellationToken);
+        var hooksTask = RestProxy.InvokeWithoutSpinner<List<HookInfo>>(hooksRequest, cancellationToken);
 
         var jobsRequest = new RestRequest("job", Method.Get)
             .AddQueryParameter("jobCategory", (int)AllJobsMembers.AllUserJobs)
@@ -818,7 +888,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         var groupsRequest = new RestRequest("group", Method.Get)
             .AddQueryPagingParameter(1000);
-        var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
+        var groupsTask = RestProxy.InvokeWithoutSpinner<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
         var events = await eventsTask;
         data.Events = events.Data ?? [];
@@ -870,10 +940,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return data;
     }
 
-    private static string GetTitle()
+    private static string GetTitle(string? defaultValue = null)
     {
         // === Title ===
-        var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > title:[/]")
+        var prompt = new TextPrompt<string>("[turquoise2]  > title:[/]")
             .Validate(title =>
             {
                 if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]title is required field[/]"); }
@@ -881,8 +951,14 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
                 if (title.Length > 50) { return ValidationResult.Error("[red]title limited to 50 chars maximum[/]"); }
                 if (title.Length < 5) { return ValidationResult.Error("[red]title must have at least 5 chars[/]"); }
                 return ValidationResult.Success();
-            }));
+            });
 
+        if (!string.IsNullOrWhiteSpace(defaultValue))
+        {
+            prompt.DefaultValue(defaultValue);
+        }
+
+        var title = AnsiConsole.Prompt(prompt);
         return title;
     }
 
@@ -924,7 +1000,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
     private struct AddMonitorJobData
     {
-        public string JobGroup { get; set; }
-        public string JobName { get; set; }
+        public string? JobGroup { get; set; }
+        public string? JobName { get; set; }
     }
 }

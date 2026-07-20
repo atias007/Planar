@@ -105,9 +105,10 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
 
         var restRequest = new RestRequest("group/{name}", Method.Get)
             .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
-
         var detailsResponse = await RestProxy.Invoke<GroupDetails>(restRequest, cancellationToken);
         var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new GroupDetails();
+
+        FillOptionalString(request, nameof(request.Name), defaultValue: details.Name);
         FillOptionalString(request, nameof(request.AdditionalField1), defaultValue: details.AdditionalField1);
         FillOptionalString(request, nameof(request.AdditionalField2), defaultValue: details.AdditionalField2);
         FillOptionalString(request, nameof(request.AdditionalField3), defaultValue: details.AdditionalField3);
@@ -117,7 +118,7 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
         var body = new
         {
             request.Name,
-            CurrentName = request.Name,
+            CurrentName = details.Name,
             details.Role,
             request.AdditionalField1,
             request.AdditionalField2,

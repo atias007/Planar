@@ -150,6 +150,8 @@ public class UserCliActions : BaseCliAction<UserCliActions>
         var detailsResponse = await RestProxy.Invoke<UserDetails>(restRequest, cancellationToken);
         var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new UserDetails();
 
+        FillOptionalString(request, nameof(request.Username), defaultValue: details.Username);
+
         FillOptionalString(request, nameof(request.FirstName), defaultValue: details.FirstName);
         FillOptionalString(request, nameof(request.LastName), defaultValue: details.LastName);
 
@@ -169,9 +171,9 @@ public class UserCliActions : BaseCliAction<UserCliActions>
 
         var body = new
         {
-            request.FirstName,
             request.Username,
-            CurrentUsername = request.Username,
+            CurrentUsername = details.Username,
+            request.FirstName,
             request.LastName,
             request.PhoneNumber1,
             request.PhoneNumber2,
