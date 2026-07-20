@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:2306/group
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \    \"name\": \"Test3\",\r
+
+    \    \"currentName\": \"Test3\",\r
+
+    \    \"role\": \"viewerxxxxx\",\r
+
+    \    \"additionalField1\": \"xxx\"\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 12000

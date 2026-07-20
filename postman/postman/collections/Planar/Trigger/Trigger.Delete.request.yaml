@@ -1,0 +1,19 @@
+$kind: http-request
+url: http://localhost:2306/trigger/{{queueTriggerId}}
+method: DELETE
+body:
+  type: formdata
+  content:
+    - type: text
+      key: ""
+      value: ""
+      disabled: true
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 204\", function () {\r
+
+      \    pm.response.to.have.status(204);\r
+
+      });"
+    language: text/javascript
+order: 1000

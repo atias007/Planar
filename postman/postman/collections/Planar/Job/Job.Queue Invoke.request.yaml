@@ -1,0 +1,39 @@
+$kind: http-request
+url: http://localhost:2306/job/queue-invoke
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"id\":\"Infrastructure.BankOfIsraelCurrency\",\r
+
+    \    \"DueDate\": \"2025-01-01\"\r
+
+    }"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 201\", function () {\r
+
+      \    pm.response.to.have.status(201);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check id\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    var value = jsonData.id;\r
+
+      \    pm.collectionVariables.set(\"queueTriggerId\", value);\r
+
+      \    pm.expect(value).to.not.empty;\r
+
+      });\r
+
+      \r\n"
+    language: text/javascript
+order: 25000

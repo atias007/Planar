@@ -1,0 +1,32 @@
+$kind: http-request
+url: http://localhost:2306/monitor/{{monitorId}}
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"group 0 is admins\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.distributionGroups[0]).to.eql(\"Admins\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"group 1 is devops\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.distributionGroups[1]).to.eql(\"DevOps\");\r
+
+      });"
+    language: text/javascript
+order: 20000

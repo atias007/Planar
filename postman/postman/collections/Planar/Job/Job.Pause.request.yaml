@@ -1,0 +1,21 @@
+$kind: http-request
+url: http://localhost:2306/job/pause
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"id\":\"Infrastructure.BankOfIsraelCurrency\"\r
+
+    }"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 202\", function () {\r
+
+      \    pm.response.to.have.status(202);\r
+
+      });"
+    language: text/javascript
+order: 13000

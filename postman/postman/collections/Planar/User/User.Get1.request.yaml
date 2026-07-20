@@ -1,0 +1,196 @@
+$kind: http-request
+url: http://localhost:2306/user/tsahi_aa
+method: GET
+body:
+  type: json
+  content: ""
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      /*************************************/\r
+
+      \r
+
+      pm.test(\"Check phoneNumber1\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.phoneNumber1).to.eql(\"0525805608\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check phoneNumber2\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.phoneNumber2).to.eql(\"0525805607\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check phoneNumber3\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.phoneNumber3).to.eql(\"0525805668\");\r
+
+      });\r
+
+      /*************************************/\r
+
+      \r
+
+      pm.test(\"Check additionalField1\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField1).to.eql(\"a\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField2\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField2).to.eql(\"b\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField3\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField3).to.eql(\"c\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField4\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField4).to.eql(\"d\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField5\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField5).to.eql(\"e\");\r
+
+      });\r
+
+      \r
+
+      /*************************************/\r
+
+      \r
+
+      pm.test(\"Check username\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.username).to.eql(\"tsahi_aa\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check firstName\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.firstName).to.eql(\"tsahi\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check lastName\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.lastName).to.eql(\"atias\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check role\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.role).to.eql(\"anonymous\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check firstName\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.firstName).to.eql(\"tsahi\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check groups\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.groups.length).to.eql(0);\r
+
+      });\r
+
+      \r
+
+      /*************************************/\r
+
+      \r
+
+      pm.test(\"Check emailAddress1\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.emailAddress1).to.eql(\"tsahi_a@malam.com\");\r
+
+      });\r
+
+      pm.test(\"Check emailAddress2\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.emailAddress2).to.eql(\"tsahi_a2@malam.com\");\r
+
+      });\r
+
+      pm.test(\"Check emailAddress3\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.emailAddress3).to.eql(\"tsahi_a3@malam.com\");\r
+
+      });"
+    language: text/javascript
+settings: {}
+order: 2000

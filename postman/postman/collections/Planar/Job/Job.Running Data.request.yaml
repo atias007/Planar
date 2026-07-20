@@ -1,0 +1,30 @@
+$kind: http-request
+url: http://localhost:2306/job/running-data/{{fireInstanceId}}
+method: GET
+body:
+  type: json
+  content: ""
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      \r
+
+      pm.test(\"Check fireInstanceId\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.log).to.not.empty;\r
+
+      });"
+    language: text/javascript
+settings: {}
+order: 29000

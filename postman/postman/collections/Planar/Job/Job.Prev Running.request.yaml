@@ -1,0 +1,23 @@
+$kind: http-request
+url: http://localhost:2306/job/Demo.HelloWorld/prev-running
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      pm.test(\"Body matches string\", function () {\r
+
+      \    pm.expect(pm.response.text()).to.include(\"T\");\r
+
+      });"
+    language: text/javascript
+  - type: beforeRequest
+    code: setTimeout(function(){}, 15000);
+    language: text/javascript
+order: 12000

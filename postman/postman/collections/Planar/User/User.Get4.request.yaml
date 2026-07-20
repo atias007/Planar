@@ -1,0 +1,16 @@
+$kind: http-request
+url: http://localhost:2306/user/tsahi_aa
+method: GET
+body:
+  type: json
+  content: ""
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 404\", function () {\r
+
+      \    pm.response.to.have.status(404);\r
+
+      });\r\n"
+    language: text/javascript
+settings: {}
+order: 13000

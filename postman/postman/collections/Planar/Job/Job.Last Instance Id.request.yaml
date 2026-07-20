@@ -1,0 +1,40 @@
+$kind: http-request
+url: http://localhost:2306/job/Demo.HelloWorld/last-instance-id/long-polling?invokeDate=2023-10-01
+method: GET
+queryParams:
+  invokeDate: 2023-10-01
+body:
+  type: json
+  content: ""
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      \r
+
+      pm.test(\"Check fireInstanceId\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.instanceId).to.not.empty;\r
+
+      \r
+
+      \    var id = jsonData.logId;\r
+
+      \    pm.collectionVariables.set(\"lastLogId\", id);\r
+
+      \    pm.collectionVariables.set(\"fireInstanceId\", jsonData.instanceId);\r
+
+      });"
+    language: text/javascript
+settings: {}
+order: 30000

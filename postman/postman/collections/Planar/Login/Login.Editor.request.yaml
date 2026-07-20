@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:2306/service/login
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"username\": \"developer\",\r
+
+    \  \"password\": \"lXqG03lTSPH!\"\r
+
+    }"
+auth:
+  type: noauth
+order: 2000

@@ -1,0 +1,38 @@
+$kind: http-request
+url: http://localhost:2306/job
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \    \"JobFilePath\":\"BankOfIsraelCurrency\\\\JobFile.yml\",\r
+
+    \    \"updateJobData\": false,\r
+
+    \    \"updateTriggersData\": false\r
+
+    }"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 201\", function () {\r
+
+      \    pm.response.to.have.status(201);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Return Id\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.id).to.not.empty;\r
+
+      });"
+    language: text/javascript
+  - type: beforeRequest
+    code: setTimeout(function(){}, 40000);
+    language: text/javascript
+order: 21000

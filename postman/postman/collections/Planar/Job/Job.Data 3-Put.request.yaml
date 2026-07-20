@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:2306/job/data
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \    \"id\":\"Demo.HelloWorld\",\r
+
+    \    \"dataKey\": \"xxx\",\r
+
+    \    \"dataValue\": \"{{$randomCity}}\"\r
+
+    }"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 201\", function () {\r
+
+      \    pm.response.to.have.status(201);\r
+
+      });"
+    language: text/javascript
+order: 19000

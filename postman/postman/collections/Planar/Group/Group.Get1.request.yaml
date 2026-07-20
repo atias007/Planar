@@ -1,0 +1,82 @@
+$kind: http-request
+url: http://localhost:2306/group/Admins
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField1\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField1).to.eql(\"a\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField2\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField2).to.eql(\"b\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField3\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField3).to.eql(\"c\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField4\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField4).to.eql(\"d\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check additionalField5\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.additionalField5).to.eql(\"e\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check name\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.name).to.eql(\"Admins\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Check role\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.role).to.eql(\"Administrator\");\r
+
+      });"
+    language: text/javascript
+order: 3000

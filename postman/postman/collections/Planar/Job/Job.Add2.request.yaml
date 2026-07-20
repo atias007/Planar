@@ -1,0 +1,62 @@
+$kind: http-request
+url: http://localhost:2306/job/apply
+method: POST
+headers:
+  Content-Type: application/yaml
+body:
+  type: text
+  content: "job type: PlanarJob\r
+
+    name: HelloWorld2\r
+
+    group: Demo\r
+
+    description: Demo Hello World Job hij\r
+
+    durable: true\r
+
+    concurrent: false\r
+
+    properties:\r
+
+    \  filename: HelloWorld\\HelloWorld.exe\r
+
+    simple triggers:\r
+
+    \  - name: default_trigger2\r
+
+    \    interval: 00:20:00\r
+
+    \    misfire behaviour: FireNow\r
+
+    \  - name: default_trigger3\r
+
+    \    interval: 5:00:00\r
+
+    \    misfire behaviour: FireNow\r
+
+    \    "
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(201);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Return Id\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.id).to.not.empty;\r
+
+      });"
+    language: text/javascript
+settings:
+  disabledSystemHeaders:
+    - content-type
+order: 2000

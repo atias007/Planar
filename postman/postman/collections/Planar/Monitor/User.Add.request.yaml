@@ -1,0 +1,57 @@
+$kind: http-request
+url: http://localhost:2306/user
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"username\": \"tsahi_aa\",\r
+
+    \    \"firstName\": \"tsahi\",\r
+
+    \    \"lastName\": \"atias\",\r
+
+    \    \"emailAddress1\": \"tsahi_a@malam.com\",\r
+
+    \    \"emailAddress2\": \"tsahi_a2@malam.com\",\r
+
+    \    \"emailAddress3\": \"tsahi_a3@malam.com\",\r
+
+    \    \"phoneNumber1\": \"0525805608\",\r
+
+    \    \"phoneNumber2\": \"0525805607\",\r
+
+    \    \"phoneNumber3\": \"0525805668\",\r
+
+    \    \"additionalField1\": \"a\",\r
+
+    \    \"additionalField2\": \"b\",\r
+
+    \    \"additionalField3\": \"c\",\r
+
+    \    \"additionalField4\": \"d\",\r
+
+    \    \"additionalField5\": \"e\"\r
+
+    \r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 201\", function () {\r
+
+      \    pm.response.to.have.status(201);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Your test name\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.password).to.not.empty;\r
+
+      });"
+    language: text/javascript
+order: 1000

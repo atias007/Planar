@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:2306/monitor
+method: PATCH
+body:
+  type: json
+  content: "{\r
+
+    \  \"propertyName\": \"title\",\r
+
+    \  \"propertyValue\": \"PostMan Demo2\",\r
+
+    \  \"id\": {{monitorId}}\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 204\", function () {\r
+
+      \    pm.response.to.have.status(204);\r
+
+      });\r
+
+      \r\n"
+    language: text/javascript
+order: 9000

@@ -1,0 +1,23 @@
+$kind: http-request
+url: http://localhost:2306/group
+method: PATCH
+body:
+  type: json
+  content: "{\r
+
+    \    \"name\": \"Test\",\r
+
+    \    \"PropertyName\": \"name\",\r
+
+    \    \"PropertyValue\": \"Test2\"\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 204\", function () {\r
+
+      \    pm.response.to.have.status(204);\r
+
+      });"
+    language: text/javascript
+order: 8000

@@ -1,0 +1,30 @@
+$kind: http-request
+url: http://localhost:2306/job/types
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Correct Value\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData[0]).to.be.eq(\"PlanarJob\")\r
+
+      \    pm.expect(jsonData[1]).to.be.eq(\"ProcessJob\")\r
+
+      \    pm.expect(jsonData[2]).to.be.eq(\"SqlJob\")\r
+
+      \    pm.expect(jsonData[3]).to.be.eq(\"RestJob\")\r
+
+      });"
+    language: text/javascript
+order: 6000

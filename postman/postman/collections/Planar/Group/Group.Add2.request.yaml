@@ -1,0 +1,31 @@
+$kind: http-request
+url: http://localhost:2306/group
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"name\": \"Test\",\r
+
+    \    \"role\": \"Editor\",\r
+
+    \    \"additionalField1\": \"aa\",\r
+
+    \    \"additionalField2\": \"bb\",\r
+
+    \    \"additionalField3\": \"cc\",\r
+
+    \    \"additionalField4\": \"dd\",\r
+
+    \    \"additionalField5\": \"ee\"\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 201\", function () {\r
+
+      \    pm.response.to.have.status(201);\r
+
+      });"
+    language: text/javascript
+order: 6000

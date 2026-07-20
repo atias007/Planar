@@ -1,0 +1,64 @@
+$kind: http-request
+url: http://localhost:2306/job/apply
+method: POST
+headers:
+  Content-Type: application/yaml
+body:
+  type: text
+  content: "job type: PlanarJob\r
+
+    name: HelloWorld2\r
+
+    group: Demo\r
+
+    description: Demo Hello World Job hij\r
+
+    durable: true\r
+
+    concurrent: false\r
+
+    properties:\r
+
+    \  filename: HelloWorld\\HelloWorld.exe\r
+
+    simple triggers:\r
+
+    \  - name: default_trigger2\r
+
+    \    cron expression: 0 15 10 ? * MON-FRI\r
+
+    \    misfire behaviour: auto "
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"title\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.title).to.be.equals(\"interval\")\r
+
+      });\r
+
+      \r
+
+      pm.test(\"errorCode\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.errorCode).to.be.equals(\"T0001\")\r
+
+      });"
+    language: text/javascript
+settings:
+  disabledSystemHeaders:
+    - content-type
+order: 3000

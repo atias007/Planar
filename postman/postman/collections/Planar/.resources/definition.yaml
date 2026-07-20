@@ -1,0 +1,15 @@
+$kind: collection
+description: ""
+variables:
+  fireInstanceId: ""
+  lastLogId: "0"
+  queueTriggerId: ""
+  monitorId: "0"
+  newhook: ""
+  deleteHook: ""
+auth:
+  - id: 9be26d30-1b75-4fd2-aad6-ee42456614f9
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI1Iiwicm9sZSI6IjMiLCJ1bmlxdWVfbmFtZSI6ImRldmVsb3BlciIsIm5iZiI6MTY4MTY1MzY4NSwiZXhwIjoxNjgxNjU0ODg1LCJpYXQiOjE2ODE2NTM2ODV9.fT0dez9kO2WfoJvNqDrWmZzp3sjlPrOeWGSupMrPOYOxwc87cyqH-taXfSTzCkuI6PU7pGBnP_b4_34iGLr7Uw

@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: b71f000a-5c03-414d-89d6-40a970661e18
+
+localResources:
+  collections:
+    - ../Planar.postman_collection.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Planar: 3949669-f1ba70e0-71f8-4e7e-ad51-8715bb9faef9

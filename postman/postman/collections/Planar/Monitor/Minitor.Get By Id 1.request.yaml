@@ -1,0 +1,26 @@
+$kind: http-request
+url: http://localhost:2306/monitor/{{monitorId}}
+method: GET
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Active=true\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.active).to.eql(true);\r
+
+      });"
+    language: text/javascript
+settings: {}
+order: 6000

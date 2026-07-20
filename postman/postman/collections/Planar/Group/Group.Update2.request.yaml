@@ -1,0 +1,35 @@
+$kind: http-request
+url: http://localhost:2306/group
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \    \"name\": \"Test3\",\r
+
+    \    \"currentName\": \"Test2\",\r
+
+    \    \"role\": \"viewer\",\r
+
+    \    \"additionalField1\": \"a3\",\r
+
+    \    \"additionalField2\": \"b3\",\r
+
+    \    \"additionalField3\": \"c3\",\r
+
+    \    \"additionalField4\": \"d3\",\r
+
+    \    \"additionalField5\": \"e3\"\r
+
+    \r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 204\", function () {\r
+
+      \    pm.response.to.have.status(204);\r
+
+      });"
+    language: text/javascript
+order: 10000

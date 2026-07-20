@@ -1,0 +1,52 @@
+$kind: http-request
+url: http://localhost:2306/job/Infrastructure.BankOfIsraelCurrency/info
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      pm.test(\"Has value in details.id\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.details.id).to.not.empty;\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Has value in metrics.totalRuns\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.metrics.totalRuns).to.be.equals(0);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Has value in monitors.count\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.monitors.count).to.be.equals(0);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Has value in audits.count\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.audits.count).to.be.greaterThan(0);\r
+
+      });"
+    language: text/javascript
+order: 16000
