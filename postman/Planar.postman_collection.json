@@ -1,0 +1,5134 @@
+{
+  "info": {
+    "_postman_id": "f1ba70e0-71f8-4e7e-ad51-8715bb9faef9",
+    "name": "Planar",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "3949669"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "item": [
+        {
+          "name": "Login.Administrator",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"atias007\",\r\n  \"password\": \"6lf58Y9lRZmM\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/service/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "service",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login.Editor",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"developer\",\r\n  \"password\": \"lXqG03lTSPH!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/service/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "service",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "OData",
+      "item": [
+        {
+          "name": "Odata.Trace All",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/odata/TraceData",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "odata",
+                "TraceData"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Odata,History All",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/odata/HistoryData",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "odata",
+                "HistoryData"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Odata.Metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/odata/$metadata",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "odata",
+                "$metadata"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Job",
+      "item": [
+        {
+          "name": "Job.Add1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Return Id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.id).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"JobFilePath\":\"HelloWorldWithData\\\\JobFile.yml\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Add2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Return Id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.id).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "content-type": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/yaml",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "job type: PlanarJob\r\nname: HelloWorld2\r\ngroup: Demo\r\ndescription: Demo Hello World Job hij\r\ndurable: true\r\nconcurrent: false\r\nproperties:\r\n  filename: HelloWorld\\HelloWorld.exe\r\nsimple triggers:\r\n  - name: default_trigger2\r\n    interval: 00:20:00\r\n    misfire behaviour: FireNow\r\n  - name: default_trigger3\r\n    interval: 5:00:00\r\n    misfire behaviour: FireNow\r\n    ",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/apply",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "apply"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Apply Error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"title\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.title).to.be.equals(\"interval\")\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"errorCode\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.errorCode).to.be.equals(\"T0001\")\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "content-type": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/yaml",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "job type: PlanarJob\r\nname: HelloWorld2\r\ngroup: Demo\r\ndescription: Demo Hello World Job hij\r\ndurable: true\r\nconcurrent: false\r\nproperties:\r\n  filename: HelloWorld\\HelloWorld.exe\r\nsimple triggers:\r\n  - name: default_trigger2\r\n    cron expression: 0 15 10 ? * MON-FRI\r\n    misfire behaviour: auto ",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/apply",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "apply"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Add3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Return Id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.id).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"JobFilePath\":\"BankOfIsraelCurrency\\\\JobFile.yml\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Available Jobs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/available-jobs",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "available-jobs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Types",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Correct Value\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[0]).to.be.eq(\"PlanarJob\")\r",
+                  "    pm.expect(jsonData[1]).to.be.eq(\"ProcessJob\")\r",
+                  "    pm.expect(jsonData[2]).to.be.eq(\"SqlJob\")\r",
+                  "    pm.expect(jsonData[3]).to.be.eq(\"RestJob\")\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/types",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "types"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Jobfile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Body matches string\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"job type: PlanarJob\");\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Jobfile/PlanarJob",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Jobfile",
+                "PlanarJob"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Has value\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[0].value).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Infrastructure.BankOfIsraelCurrency/settings",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Infrastructure.BankOfIsraelCurrency",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.GetAll",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Total Rows Greater then 0\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.totalRows).to.greaterThan(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Get",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Has value in id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.id).to.not.empty\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Infrastructure.BankOfIsraelCurrency",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Infrastructure.BankOfIsraelCurrency"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Next Running",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Body matches string\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"T\");\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Demo.HelloWorld/next-running",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Demo.HelloWorld",
+                "next-running"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Prev Running",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Body matches string\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"T\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "setTimeout(function(){}, 15000);"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Demo.HelloWorld/prev-running",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Demo.HelloWorld",
+                "prev-running"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Pause",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {\r",
+                  "    pm.response.to.have.status(202);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Infrastructure.BankOfIsraelCurrency\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/pause",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "pause"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Pause2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {\r",
+                  "    pm.response.to.have.status(202);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Demo.HelloWorld\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/pause",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "pause"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Next Running Empty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Infrastructure.BankOfIsraelCurrency/next-running",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Infrastructure.BankOfIsraelCurrency",
+                "next-running"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Describe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Has value in details.id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.details.id).to.not.empty;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Has value in metrics.totalRuns\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.metrics.totalRuns).to.be.equals(0);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Has value in monitors.count\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.monitors.count).to.be.equals(0);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Has value in audits.count\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.audits.count).to.be.greaterThan(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/job/Infrastructure.BankOfIsraelCurrency/info",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Infrastructure.BankOfIsraelCurrency",
+                "info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Data 1-Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Demo.HelloWorld\",\r\n    \"dataKey\": \"xxx\",\r\n    \"dataValue\": \"yyy\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/data",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "data"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Data 2-Add Conflict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {\r",
+                  "    pm.response.to.have.status(409);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Demo.HelloWorld\",\r\n    \"dataKey\": \"xxx\",\r\n    \"dataValue\": \"yyy\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/data",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "data"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Data 3-Put",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Demo.HelloWorld\",\r\n    \"dataKey\": \"xxx\",\r\n    \"dataValue\": \"{{$randomCity}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/data",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "data"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Data 4-Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/Demo.HelloWorld/data/xxx",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Demo.HelloWorld",
+                "data",
+                "xxx"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Return Id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.id).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "setTimeout(function(){}, 40000);"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"JobFilePath\":\"BankOfIsraelCurrency\\\\JobFile.yml\",\r\n    \"updateJobData\": false,\r\n    \"updateTriggersData\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "setTimeout(function(){}, 1000)"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/Demo.HelloWorld With Data",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Demo.HelloWorld With Data"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Invoke",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {\r",
+                  "    pm.response.to.have.status(202);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Infrastructure.BankOfIsraelCurrency\",\r\n    \"nowOverrideValue\": \"2023-10-01T09:00:00\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/invoke",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "invoke"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Invoke2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {\r",
+                  "    pm.response.to.have.status(202);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Demo.HelloWorld\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/invoke",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "invoke"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Queue Invoke",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check id\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    var value = jsonData.id;\r",
+                  "    pm.collectionVariables.set(\"queueTriggerId\", value);\r",
+                  "    pm.expect(value).to.not.empty;\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\":\"Infrastructure.BankOfIsraelCurrency\",\r\n    \"DueDate\": \"2025-01-01\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/queue-invoke",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "queue-invoke"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Running",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Has fireInstanceId\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    var value = jsonData[0].fireInstanceId;\r",
+                  "    pm.collectionVariables.set(\"fireInstanceId\", value);\r",
+                  "    pm.expect(value).to.not.empty;\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/running",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "running"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Running Instance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check fireInstanceId\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    var id = pm.collectionVariables.get(\"fireInstanceId\");\r",
+                  "    pm.expect(jsonData.fireInstanceId).to.eql(id);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/running-instance/{{fireInstanceId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "running-instance",
+                "{{fireInstanceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Running Instance LP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check fireInstanceId\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    var id = pm.collectionVariables.get(\"fireInstanceId\");\r",
+                  "    pm.expect(jsonData.fireInstanceId).to.eql(id);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/running-instance/{{fireInstanceId}}/long-polling?progress=0&effectedRows=0&exceptionsCount=0",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "running-instance",
+                "{{fireInstanceId}}",
+                "long-polling"
+              ],
+              "query": [
+                {
+                  "key": "progress",
+                  "value": "0"
+                },
+                {
+                  "key": "effectedRows",
+                  "value": "0"
+                },
+                {
+                  "key": "exceptionsCount",
+                  "value": "0",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Running Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  "pm.test(\"Check fireInstanceId\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.log).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/running-data/{{fireInstanceId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "running-data",
+                "{{fireInstanceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Last Instance Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  "pm.test(\"Check fireInstanceId\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.instanceId).to.not.empty;\r",
+                  "\r",
+                  "    var id = jsonData.logId;\r",
+                  "    pm.collectionVariables.set(\"lastLogId\", id);\r",
+                  "    pm.collectionVariables.set(\"fireInstanceId\", jsonData.instanceId);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/Demo.HelloWorld/last-instance-id/long-polling?invokeDate=2023-10-01",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "Demo.HelloWorld",
+                "last-instance-id",
+                "long-polling"
+              ],
+              "query": [
+                {
+                  "key": "invokeDate",
+                  "value": "2023-10-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Job.Cancel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {\r",
+                  "    pm.response.to.have.status(202);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"fireInstanceId\":\"{{fireInstanceId}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/job/cancel",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "job",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "User.Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Your test name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.password).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"tsahi_aa\",\r\n    \"firstName\": \"tsahi\",\r\n    \"lastName\": \"atias\",\r\n    \"emailAddress1\": \"tsahi_a@malam.com\",\r\n    \"emailAddress2\": \"tsahi_a2@malam.com\",\r\n    \"emailAddress3\": \"tsahi_a3@malam.com\",\r\n    \"phoneNumber1\": \"0525805608\",\r\n    \"phoneNumber2\": \"0525805607\",\r\n    \"phoneNumber3\": \"0525805668\",\r\n    \"additionalField1\": \"a\",\r\n    \"additionalField2\": \"b\",\r\n    \"additionalField3\": \"c\",\r\n    \"additionalField4\": \"d\",\r\n    \"additionalField5\": \"e\"\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Get1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check phoneNumber1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.phoneNumber1).to.eql(\"0525805608\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check phoneNumber2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.phoneNumber2).to.eql(\"0525805607\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check phoneNumber3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.phoneNumber3).to.eql(\"0525805668\");\r",
+                  "});\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"a\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"b\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"c\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"d\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"e\");\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check username\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.username).to.eql(\"tsahi_aa\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check firstName\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.firstName).to.eql(\"tsahi\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check lastName\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.lastName).to.eql(\"atias\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"anonymous\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check firstName\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.firstName).to.eql(\"tsahi\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check groups\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.groups.length).to.eql(0);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check emailAddress1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress1).to.eql(\"tsahi_a@malam.com\");\r",
+                  "});\r",
+                  "pm.test(\"Check emailAddress2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress2).to.eql(\"tsahi_a2@malam.com\");\r",
+                  "});\r",
+                  "pm.test(\"Check emailAddress3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress3).to.eql(\"tsahi_a3@malam.com\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"CurrentUsername\": \"tsahi_aa\",\r\n    \"username\": \"tsahi_aaa\",\r\n    \"firstName\": \"tsahi1\",\r\n    \"lastName\": \"atias2\",\r\n    \"emailAddress1\": \"tsahi_a3@malam.com\",\r\n    \"emailAddress2\": \"tsahi_a4@malam.com\",\r\n    \"emailAddress3\": \"tsahi_a5@malam.com\",\r\n    \"phoneNumber1\": \"0525805606\",\r\n    \"phoneNumber2\": \"0525805607\",\r\n    \"phoneNumber3\": \"0525805669\",\r\n    \"additionalField1\": \"aa\",\r\n    \"additionalField2\": \"bb\",\r\n    \"additionalField3\": \"cc\",\r\n    \"additionalField4\": \"dd\",\r\n    \"additionalField5\": \"ee\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Get2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"aa\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"bb\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"cc\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"dd\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"ee\");\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check username\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.username).to.eql(\"tsahi_aaa\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check firstName\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.firstName).to.eql(\"tsahi1\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check lastName\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.lastName).to.eql(\"atias2\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"anonymous\");\r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  "pm.test(\"Check groups\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.groups.length).to.eql(0);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check phoneNumber1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.phoneNumber1).to.eql(\"0525805606\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check phoneNumber2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.phoneNumber2).to.eql(\"0525805607\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check phoneNumber3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.phoneNumber3).to.eql(\"0525805669\");\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Check emailAddress1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress1).to.eql(\"tsahi_a3@malam.com\");\r",
+                  "});\r",
+                  "pm.test(\"Check emailAddress2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress2).to.eql(\"tsahi_a4@malam.com\");\r",
+                  "});\r",
+                  "pm.test(\"Check emailAddress3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress3).to.eql(\"tsahi_a5@malam.com\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aaa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aaa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.GetRole",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Body is correct\", function () {\r",
+                  "    pm.response.to.have.body(\"anonymous\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aaa/role",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aaa",
+                "role"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.GetAll",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "\r",
+                  "pm.test(\"Test data\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.data.length).to.be.greaterThan(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.PartialUpdate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"tsahi_aaa\",\r\n    \"propertyName\": \"emailAddress1\",\r\n    \"propertyValue\": \"tsahiatias@gmail.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.PartialUpdate2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"tsahi_aaa\",\r\n    \"propertyName\": \"username\",\r\n    \"propertyValue\": \"tsahi_aa\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Get3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "/*************************************/\r",
+                  "pm.test(\"Check emailAddress1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.emailAddress1).to.eql(\"tsahiatias@gmail.com\");\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.ResetPassword",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Body is correct\", function () {\r",
+                  "    pm.response.text.length > 0\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa/reset-password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa",
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.SetPassword",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"password\": \"AqswDefr123!@#\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Get4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Group",
+      "item": [
+        {
+          "name": "User.Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Your test name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.password).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"tsahi_aa\",\r\n    \"firstName\": \"tsahi\",\r\n    \"lastName\": \"atias\",\r\n    \"emailAddress1\": \"tsahi_a@malam.com\",\r\n    \"emailAddress2\": \"tsahi_a2@malam.com\",\r\n    \"emailAddress3\": \"tsahi_a3@malam.com\",\r\n    \"phoneNumber1\": \"0525805608\",\r\n    \"phoneNumber2\": \"0525805607\",\r\n    \"phoneNumber3\": \"0525805668\",\r\n    \"additionalField1\": \"a\",\r\n    \"additionalField2\": \"b\",\r\n    \"additionalField3\": \"c\",\r\n    \"additionalField4\": \"d\",\r\n    \"additionalField5\": \"e\"\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Admins\",\r\n    \"role\": \"Administrator\",\r\n    \"additionalField1\": \"a\",\r\n    \"additionalField2\": \"b\",\r\n    \"additionalField3\": \"c\",\r\n    \"additionalField4\": \"d\",\r\n    \"additionalField5\": \"e\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"a\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"b\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"c\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"d\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"e\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.name).to.eql(\"Admins\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"Administrator\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Admins",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Admins"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.GetAll",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check count\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.count).to.eql(1);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group?pageSize=10&pageNumber=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check total\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length).to.eql(5);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/roles",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Add2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test\",\r\n    \"role\": \"Editor\",\r\n    \"additionalField1\": \"aa\",\r\n    \"additionalField2\": \"bb\",\r\n    \"additionalField3\": \"cc\",\r\n    \"additionalField4\": \"dd\",\r\n    \"additionalField5\": \"ee\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"aa\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"bb\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"cc\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"dd\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"ee\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.name).to.eql(\"Test\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"Editor\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.UpdatePartial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test\",\r\n    \"PropertyName\": \"name\",\r\n    \"PropertyValue\": \"Test2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"aa\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"bb\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"cc\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"dd\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"ee\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.name).to.eql(\"Test2\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"Editor\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Update2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test3\",\r\n    \"currentName\": \"Test2\",\r\n    \"role\": \"viewer\",\r\n    \"additionalField1\": \"a3\",\r\n    \"additionalField2\": \"b3\",\r\n    \"additionalField3\": \"c3\",\r\n    \"additionalField4\": \"d3\",\r\n    \"additionalField5\": \"e3\"\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"a3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"b3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"c3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"d3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"e3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.name).to.eql(\"Test3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"viewer\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Update3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test3\",\r\n    \"currentName\": \"Test3\",\r\n    \"role\": \"viewerxxxxx\",\r\n    \"additionalField1\": \"xxx\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.SetRole",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test3/role/Administrator",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3",
+                "role",
+                "Administrator"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.SetRole2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test3\",\r\n    \"PropertyName\": \"role\",\r\n    \"PropertyValue\": \"editor\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.AddUser",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test\",\r\n    \"PropertyName\": \"name\",\r\n    \"PropertyValue\": \"Test2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group/Test3/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3",
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get5",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"a3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"b3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"c3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"d3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"e3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.name).to.eql(\"Test3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"administrator\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check user\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.users[0].username).to.eql(\"tsahi_aa\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.RemoveUser",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test\",\r\n    \"PropertyName\": \"name\",\r\n    \"PropertyValue\": \"Test2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group/Test3/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3",
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get6",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField1).to.eql(\"a3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField2\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField2).to.eql(\"b3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField3).to.eql(\"c3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField4\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField4).to.eql(\"d3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check additionalField5\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.additionalField5).to.eql(\"e3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.name).to.eql(\"Test3\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check role\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.role).to.eql(\"administrator\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Check user\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.users.length).to.eql(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Delete1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Delete2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Admins",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Admins"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User.Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Get7",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/group/Test3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Test3"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Monitor",
+      "item": [
+        {
+          "name": "User.Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Your test name\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.password).to.not.empty;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"tsahi_aa\",\r\n    \"firstName\": \"tsahi\",\r\n    \"lastName\": \"atias\",\r\n    \"emailAddress1\": \"tsahi_a@malam.com\",\r\n    \"emailAddress2\": \"tsahi_a2@malam.com\",\r\n    \"emailAddress3\": \"tsahi_a3@malam.com\",\r\n    \"phoneNumber1\": \"0525805608\",\r\n    \"phoneNumber2\": \"0525805607\",\r\n    \"phoneNumber3\": \"0525805668\",\r\n    \"additionalField1\": \"a\",\r\n    \"additionalField2\": \"b\",\r\n    \"additionalField3\": \"c\",\r\n    \"additionalField4\": \"d\",\r\n    \"additionalField5\": \"e\"\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Admins\",\r\n    \"role\": \"Administrator\",\r\n    \"additionalField1\": \"a\",\r\n    \"additionalField2\": \"b\",\r\n    \"additionalField3\": \"c\",\r\n    \"additionalField4\": \"d\",\r\n    \"additionalField5\": \"e\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.Add2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"DevOps\",\r\n    \"role\": \"Editor\",\r\n    \"additionalField1\": \"a\",\r\n    \"additionalField2\": \"b\",\r\n    \"additionalField3\": \"c\",\r\n    \"additionalField4\": \"d\",\r\n    \"additionalField5\": \"e\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Group.AddUser",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test\",\r\n    \"PropertyName\": \"name\",\r\n    \"PropertyValue\": \"Test2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/group/Admins/user/tsahi_aa",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "group",
+                "Admins",
+                "user",
+                "tsahi_aa"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.collectionVariables.set(\"monitorId\", jsonData.id);\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"PostMan Demo\",\r\n  \"jobName\": \"BankOfIsraelCurrency\",\r\n  \"jobGroup\": \"Infrastructure\",\r\n  \"event\": \"ExecutionEnd\",\r\n  \"groupName\": \"Admins\",\r\n  \"hook\": \"Planar.Log\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Active=true\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.active).to.eql(true);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"PostMan Demo\",\r\n  \"jobName\": \"BankOfIsraelCurrency\",\r\n  \"jobGroup\": \"Infrastructure\",\r\n  \"event\": \"ExecutionEnd\",\r\n  \"groupName\": \"Admins\",\r\n  \"hook\": \"Planar.Log\",\r\n  \"id\": {{monitorId}},\r\n  \"active\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Active=false\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.active).to.eql(false);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Partial Update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"propertyName\": \"title\",\r\n  \"propertyValue\": \"PostMan Demo2\",\r\n  \"id\": {{monitorId}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Active=false\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.title).to.eql(\"PostMan Demo2\");\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Result Length\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/by-Job/Infrastructure.BankOfIsraelCurrency",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "by-Job",
+                "Infrastructure.BankOfIsraelCurrency"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Result length\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/by-group/Infrastructure",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "by-group",
+                "Infrastructure"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Monitor.AddHookToMonitor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"hook\": \"Planar.Smtp\",\r\n    \"monitorId\": {{monitorId}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/add-monitor-hook",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "add-monitor-hook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"hook 0 is log\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.hooks[0]).to.eql(\"Planar.Log\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"hook 1 is smtp\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.hooks[1]).to.eql(\"Planar.Smtp\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Monitor.RemoveHookFromMonitor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"hook\": \"Planar.Smtp\",\r\n    \"monitorId\": {{monitorId}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/remove-monitor-hook",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "remove-monitor-hook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 5",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"hook 0 is log\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.hooks[0]).to.eql(\"Planar.Log\");\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Monitor.RemoveHookFromMonitor - Validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"hook\": \"Planar.Log\",\r\n    \"monitorId\": {{monitorId}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/remove-monitor-hook",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "remove-monitor-hook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Monitor.AddDistributionGroup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"groupName\": \"DevOps\",\r\n    \"monitorId\": {{monitorId}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/add-distribution-group",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "add-distribution-group"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 6",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"group 0 is admins\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.distributionGroups[0]).to.eql(\"Admins\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"group 1 is devops\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.distributionGroups[1]).to.eql(\"DevOps\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Monitor.RemoveDistributionGroup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"hook\": \"Planar.Smtp\",\r\n    \"monitorId\": {{monitorId}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/add-monitor-hook",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "add-monitor-hook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Get By Id 7",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"group 0 is devops\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.distributionGroups[0]).to.eql(\"DevOps\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/{{monitorId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "{{monitorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Hooks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Result Length greater then 3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(3)\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/hooks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "hooks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.New Hooks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Result Length greater then 1\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    var value = jsonData[0].replace(\"\\\\\", \"\\\\\\\\\");\r",
+                  "    pm.collectionVariables.set(\"newhook\", value);\r",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(1)\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/new-hooks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "new-hooks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Add Hook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"filename\":\"{{newhook}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:2306/monitor/hook",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "hook"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Hooks 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Result Length greater then 3\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.collectionVariables.set(\"deleteHook\", jsonData[0].name);\r",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(3)\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/hooks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "hooks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Delete Hook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/hook/{{deleteHook}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "hook",
+                "{{deleteHook}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Minitor.Events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Results Length\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0)\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:2306/monitor/events",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "monitor",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "History",
+      "item": []
+    },
+    {
+      "name": "Trigger",
+      "item": [
+        {
+          "name": "Trigger.Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "",
+                  "type": "text",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:2306/trigger/{{queueTriggerId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "2306",
+              "path": [
+                "trigger",
+                "{{queueTriggerId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI1Iiwicm9sZSI6IjMiLCJ1bmlxdWVfbmFtZSI6ImRldmVsb3BlciIsIm5iZiI6MTY4MTY1MzY4NSwiZXhwIjoxNjgxNjU0ODg1LCJpYXQiOjE2ODE2NTM2ODV9.fT0dez9kO2WfoJvNqDrWmZzp3sjlPrOeWGSupMrPOYOxwc87cyqH-taXfSTzCkuI6PU7pGBnP_b4_34iGLr7Uw",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "fireInstanceId",
+      "value": ""
+    },
+    {
+      "key": "lastLogId",
+      "value": "0"
+    },
+    {
+      "key": "queueTriggerId",
+      "value": ""
+    },
+    {
+      "key": "monitorId",
+      "value": "0"
+    },
+    {
+      "key": "newhook",
+      "value": ""
+    },
+    {
+      "key": "deleteHook",
+      "value": ""
+    }
+  ]
+}

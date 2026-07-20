@@ -40,11 +40,11 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.28.0.143324">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.Text.Json" Version="10.0.9" />
+		<PackageReference Include="System.Text.Json" Version="10.0.10" />
 	</ItemGroup>
 
 </Project>

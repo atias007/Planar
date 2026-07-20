@@ -148,7 +148,8 @@ public class UserCliActions : BaseCliAction<UserCliActions>
             .AddParameter("username", request.Username ?? string.Empty, ParameterType.UrlSegment);
 
         var detailsResponse = await RestProxy.Invoke<UserDetails>(restRequest, cancellationToken);
-        var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new UserDetails();
+        var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : null;
+        if (details == null) { return new CliActionResponse(detailsResponse); }
 
         FillOptionalString(request, nameof(request.Username), defaultValue: details.Username);
 

@@ -5,7 +5,7 @@ namespace Common;
 public class HostsConfig(IConfigurationSection section)
 {
     public string GroupName { get; private set; } = section.GetValue<string>("group name") ?? string.Empty;
-    public IEnumerable<string> Hosts { get; private set; } = section.GetRequiredSection("hosts").Get<string[]>()?.ToList()?.Distinct() ?? [];
+    public IEnumerable<string> Hosts { get; private set; } = section.GetRequiredSection("hosts").Get<string[]>()?.Distinct() ?? [];
 
     public IEnumerable<Host> VetoHosts(Action<Host> veto)
     {
