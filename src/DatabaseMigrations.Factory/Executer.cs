@@ -37,7 +37,7 @@ public class Executer : IExecuter
                .WithScriptsEmbeddedInAssembly(ScriptAssembly)
                .LogToConsole()
                .LogScriptOutput()
-               .WithTransaction();
+               .WithTransactionPerScript();
 
         var upgrader = builder.Build();
         var result = upgrader.PerformUpgrade();
