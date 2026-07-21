@@ -4,8 +4,12 @@ group: Demo
 description: Demo Hello World Job With Data
 durable: true
 concurrent: false
+
 properties:
-  filename: HelloWorldWithData.exe
+  invoke method: process
+  process:
+    filename: HelloWorldWithData\HelloWorldWithData.exe
+  
 simple triggers:
   - name: default_trigger
     interval: 00:10:00

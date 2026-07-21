@@ -1,11 +1,12 @@
 $kind: http-request
-url: http://localhost:2306/monitor/add-monitor-hook
+name: Monitor.RemoveDistributionGroup
+url: http://localhost:2306/monitor/remove-distribution-group
 method: PATCH
 body:
   type: json
   content: "{\r
 
-    \    \"hook\": \"Planar.Smtp\",\r
+    \    \"groupName\": \"DevOps\",\r
 
     \    \"monitorId\": {{monitorId}}\r
 

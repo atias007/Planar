@@ -1,0 +1,27 @@
+$kind: http-request
+url: http://localhost:2306/config/flat
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Result is array with values", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an("array");
+          pm.expect(jsonData.length).to.be.greaterThan(0);
+      });
+
+      pm.test("Items have key and value properties", function () {
+          var jsonData = pm.response.json();
+          jsonData.forEach(function (item) {
+              pm.expect(item.key).to.not.be.empty;
+              pm.expect(item).to.have.property("value");
+          });
+      });
+    language: text/javascript
+order: 4000

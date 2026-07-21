@@ -1,0 +1,28 @@
+$kind: http-request
+url: http://localhost:2306/history/count
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has counter array", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.counter).to.be.an("array");
+          pm.expect(jsonData.counter.length).to.be.greaterThan(0);
+      });
+
+      pm.test("Counter items have label and count", function () {
+          var jsonData = pm.response.json();
+          jsonData.counter.forEach(function (item) {
+              pm.expect(item.label).to.not.be.empty;
+              pm.expect(item.count).to.be.a("number");
+              pm.expect(item.count).to.be.at.least(0);
+          });
+      });
+    language: text/javascript
+order: 12000

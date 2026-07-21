@@ -7,6 +7,10 @@ variables:
   monitorId: "0"
   newhook: ""
   deleteHook: ""
+  historyId: "0"
+  historyInstanceId: ""
+  triggerId: ""
+  triggerName: ""
 auth:
   - id: 9be26d30-1b75-4fd2-aad6-ee42456614f9
     type: bearer

@@ -1,0 +1,19 @@
+$kind: http-request
+url: http://localhost:2306/trigger/resume
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "id": "{{triggerId}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 204", function () {
+          pm.response.to.have.status(204);
+      });
+    language: text/javascript
+order: 11000

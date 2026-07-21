@@ -341,8 +341,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException("GroupName", $"could not add the distribution group '{request.GroupName}' because monitor have the maximum allowed of 20 groups");
         }
 
-        var entity = new MonitorActionGroup { GroupId = groupId, MonitorId = request.MonitorId };
-        await DataLayer.AddMonitorActionGroup(entity);
+        await DataLayer.AddMonitorActionGroup(dbMonitor!, groupId);
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 
@@ -368,8 +367,9 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException("GroupName", $"could not remove the distribution group '{request.GroupName}' because monitor must have at least one group");
         }
 
-        var entity = new MonitorActionGroup { GroupId = groupId, MonitorId = request.MonitorId };
-        await DataLayer.RemoveMonitorActionGroup(entity);
+        var group = dbMonitor.Groups.FirstOrDefault(g => g.Id == groupId);
+        if (group == null) { return; }
+        await DataLayer.RemoveMonitorActionGroup(dbMonitor!, group);
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 

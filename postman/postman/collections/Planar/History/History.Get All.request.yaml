@@ -1,0 +1,52 @@
+$kind: http-request
+url: http://localhost:2306/history?pageNumber=1&pageSize=25
+method: GET
+queryParams:
+  pageNumber: "1"
+  pageSize: "25"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has paging properties", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("count");
+          pm.expect(jsonData).to.have.property("pageNumber");
+          pm.expect(jsonData).to.have.property("pageSize");
+          pm.expect(jsonData).to.have.property("totalRows");
+          pm.expect(jsonData).to.have.property("totalPages");
+          pm.expect(jsonData.pageNumber).to.equal(1);
+          pm.expect(jsonData.pageSize).to.equal(25);
+      });
+
+      pm.test("Total rows greater then 0", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.totalRows).to.be.greaterThan(0);
+          pm.expect(jsonData.data).to.be.an("array");
+          pm.expect(jsonData.data.length).to.be.greaterThan(0);
+          pm.expect(jsonData.count).to.equal(jsonData.data.length);
+      });
+
+      pm.test("First row has valid history properties", function () {
+          var jsonData = pm.response.json();
+          var row = jsonData.data[0];
+          pm.expect(row.id).to.be.greaterThan(0);
+          pm.expect(row).to.have.property("jobId");
+          pm.expect(row).to.have.property("jobName");
+          pm.expect(row).to.have.property("jobGroup");
+          pm.expect(row).to.have.property("jobType");
+          pm.expect(row).to.have.property("triggerId");
+          pm.expect(row).to.have.property("status");
+          pm.expect(row).to.have.property("statusTitle");
+          pm.expect(row).to.have.property("startDate");
+          pm.expect(row).to.have.property("duration");
+          pm.expect(row).to.have.property("hasWarnings");
+          pm.collectionVariables.set("historyId", row.id);
+      });
+    language: text/javascript
+order: 1000

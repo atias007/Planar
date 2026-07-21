@@ -1,0 +1,36 @@
+$kind: http-request
+url: http://localhost:2306/trigger/Infrastructure.BankOfIsraelCurrency/by-job
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has simple triggers", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.simpleTriggers).to.be.an("array");
+          pm.expect(jsonData.cronTriggers).to.be.an("array");
+          pm.expect(jsonData.simpleTriggers.length).to.be.greaterThan(0);
+      });
+
+      pm.test("First trigger has valid properties", function () {
+          var jsonData = pm.response.json();
+          var trigger = jsonData.simpleTriggers[0];
+          pm.expect(trigger.id).to.not.be.empty;
+          pm.expect(trigger.triggerName).to.not.be.empty;
+          pm.expect(trigger.jobId).to.not.be.empty;
+          pm.expect(trigger.jobName).to.equal("BankOfIsraelCurrency");
+          pm.expect(trigger.jobGroup).to.equal("Infrastructure");
+          pm.expect(trigger).to.have.property("repeatInterval");
+          pm.expect(trigger).to.have.property("state");
+          pm.expect(trigger).to.have.property("start");
+          pm.expect(trigger).to.have.property("misfireBehaviour");
+          pm.collectionVariables.set("triggerId", trigger.id);
+          pm.collectionVariables.set("triggerName", trigger.triggerName);
+      });
+    language: text/javascript
+order: 2000

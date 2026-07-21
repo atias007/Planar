@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:2306/history/by-instanceid/{{historyInstanceId}}
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Instance id match request", function () {
+          var jsonData = pm.response.json();
+          var instanceId = pm.collectionVariables.get("historyInstanceId");
+          pm.expect(jsonData.instanceId).to.equal(instanceId);
+      });
+
+      pm.test("Id match historyId variable", function () {
+          var jsonData = pm.response.json();
+          var id = parseInt(pm.collectionVariables.get("historyId"));
+          pm.expect(jsonData.id).to.equal(id);
+      });
+    language: text/javascript
+order: 3000

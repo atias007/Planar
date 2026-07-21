@@ -1,4 +1,5 @@
 $kind: http-request
+name: Job.Add2
 url: http://localhost:2306/job/apply
 method: POST
 headers:
@@ -7,7 +8,7 @@ body:
   type: text
   content: "job type: PlanarJob\r
 
-    name: HelloWorld2\r
+    name: HelloWorld\r
 
     group: Demo\r
 
@@ -17,9 +18,17 @@ body:
 
     concurrent: false\r
 
+    \r
+
     properties:\r
 
-    \  filename: HelloWorld\\HelloWorld.exe\r
+    \  invoke method: process\r
+
+    \  process:\r
+
+    \    filename: HelloWorld\\HelloWorld.exe\r
+
+    \r
 
     simple triggers:\r
 

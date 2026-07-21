@@ -1,0 +1,35 @@
+$kind: http-request
+url: http://localhost:2306/history/{{historyId}}
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Id match request", function () {
+          var jsonData = pm.response.json();
+          var id = parseInt(pm.collectionVariables.get("historyId"));
+          pm.expect(jsonData.id).to.equal(id);
+      });
+
+      pm.test("Has valid history properties", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.instanceId).to.not.be.empty;
+          pm.expect(jsonData.jobId).to.not.be.empty;
+          pm.expect(jsonData.jobName).to.not.be.empty;
+          pm.expect(jsonData.jobGroup).to.not.be.empty;
+          pm.expect(jsonData.jobType).to.not.be.empty;
+          pm.expect(jsonData.triggerId).to.not.be.empty;
+          pm.expect(jsonData).to.have.property("status");
+          pm.expect(jsonData).to.have.property("statusTitle");
+          pm.expect(jsonData).to.have.property("startDate");
+          pm.expect(jsonData).to.have.property("retry");
+          pm.expect(jsonData).to.have.property("isCanceled");
+          pm.collectionVariables.set("historyInstanceId", jsonData.instanceId);
+      });
+    language: text/javascript
+order: 2000

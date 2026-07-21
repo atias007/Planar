@@ -1,5 +1,6 @@
 $kind: http-request
-url: http://localhost:2306/monitor/hook/{{deleteHook}}
+name: Minitor.Delete Hook
+url: http://localhost:2306/monitor/hook/Planar.DemoHook
 method: DELETE
 scripts:
   - type: afterResponse

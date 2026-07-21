@@ -1,11 +1,12 @@
 $kind: http-request
+name: Job.Update
 url: http://localhost:2306/job
 method: PUT
 body:
   type: json
   content: "{\r
 
-    \    \"JobFilePath\":\"BankOfIsraelCurrency\\\\JobFile.yml\",\r
+    \    \"JobFilePath\":\"BOI\\\\JobFile.yml\",\r
 
     \    \"updateJobData\": false,\r
 
@@ -35,4 +36,4 @@ scripts:
   - type: beforeRequest
     code: setTimeout(function(){}, 40000);
     language: text/javascript
-order: 21000
+order: 16484

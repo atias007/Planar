@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:2306/trigger/cron?expression=invalid-expression
+method: GET
+queryParams:
+  expression: invalid-expression
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+    language: text/javascript
+order: 18000

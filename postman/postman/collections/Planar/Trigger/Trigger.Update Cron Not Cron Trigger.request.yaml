@@ -1,0 +1,20 @@
+$kind: http-request
+url: http://localhost:2306/trigger/cron-expression
+method: PATCH
+body:
+  type: json
+  content: |-
+    {
+        "id": "{{triggerId}}",
+        "cronExpression": "0 0/5 * * * ?"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400 (simple trigger is not cron trigger)", function () {
+          pm.response.to.have.status(400);
+      });
+    language: text/javascript
+order: 8000

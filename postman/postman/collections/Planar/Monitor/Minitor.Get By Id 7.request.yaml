@@ -1,4 +1,5 @@
 $kind: http-request
+name: Minitor.Get By Id 7
 url: http://localhost:2306/monitor/{{monitorId}}
 method: GET
 scripts:
@@ -11,11 +12,11 @@ scripts:
 
       \r
 
-      pm.test(\"group 0 is devops\", function () {\r
+      pm.test(\"DevOps is not in distributionGroups\", function () {\r
 
       \    var jsonData = pm.response.json();\r
 
-      \    pm.expect(jsonData.distributionGroups[0]).to.eql(\"DevOps\");\r
+      \    pm.expect(jsonData.distributionGroups).to.not.include(\"DevOps\");\r
 
       });"
     language: text/javascript

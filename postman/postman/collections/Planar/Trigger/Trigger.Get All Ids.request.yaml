@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:2306/trigger/ids
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Result is array with values", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an("array");
+          pm.expect(jsonData.length).to.be.greaterThan(0);
+      });
+
+      pm.test("Contains current trigger id", function () {
+          var jsonData = pm.response.json();
+          var triggerId = pm.collectionVariables.get("triggerId");
+          pm.expect(jsonData).to.include(triggerId);
+      });
+    language: text/javascript
+order: 4000

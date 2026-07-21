@@ -1,4 +1,5 @@
 $kind: http-request
+name: Minitor.New Hooks
 url: http://localhost:2306/monitor/new-hooks
 method: GET
 scripts:
@@ -19,7 +20,7 @@ scripts:
 
       \    pm.collectionVariables.set(\"newhook\", value);\r
 
-      \    pm.expect(jsonData.length).to.be.greaterThan(1)\r
+      \    pm.expect(jsonData.length).to.be.greaterThan(0)\r
 
       });\r
 

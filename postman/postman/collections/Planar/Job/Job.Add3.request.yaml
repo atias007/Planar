@@ -1,11 +1,12 @@
 $kind: http-request
+name: Job.Add3
 url: http://localhost:2306/job
 method: POST
 body:
   type: json
   content: "{\r
 
-    \    \"JobFilePath\":\"BankOfIsraelCurrency\\\\JobFile.yml\"\r
+    \    \"JobFilePath\":\"BOI\\\\JobFile.yml\"\r
 
     }"
 auth:

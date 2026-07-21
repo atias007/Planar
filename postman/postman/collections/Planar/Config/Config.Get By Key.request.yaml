@@ -1,0 +1,24 @@
+$kind: http-request
+url: http://localhost:2306/config/PostmanTestConfig
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Key and value match", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.key).to.equal("PostmanTestConfig");
+          pm.expect(jsonData.value).to.equal("PostmanTestValue");
+      });
+
+      pm.test("Type is string", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.type.toLowerCase()).to.equal("string");
+      });
+    language: text/javascript
+order: 5000

@@ -1,0 +1,33 @@
+$kind: http-request
+url: http://localhost:2306/trigger/{{triggerId}}
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Id match request", function () {
+          var jsonData = pm.response.json();
+          var triggerId = pm.collectionVariables.get("triggerId");
+          pm.expect(jsonData.simpleTriggers.length).to.equal(1);
+          pm.expect(jsonData.simpleTriggers[0].id).to.equal(triggerId);
+      });
+
+      pm.test("Trigger has valid properties", function () {
+          var jsonData = pm.response.json();
+          var trigger = jsonData.simpleTriggers[0];
+          var triggerName = pm.collectionVariables.get("triggerName");
+          pm.expect(trigger.triggerName).to.equal(triggerName);
+          pm.expect(trigger).to.have.property("repeatCount");
+          pm.expect(trigger).to.have.property("repeatInterval");
+          pm.expect(trigger).to.have.property("timesTriggered");
+          pm.expect(trigger).to.have.property("priority");
+          pm.expect(trigger).to.have.property("mayFireAgain");
+          pm.expect(trigger).to.have.property("dataMap");
+      });
+    language: text/javascript
+order: 3000

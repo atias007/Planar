@@ -1,0 +1,19 @@
+$kind: http-request
+url: http://localhost:2306/history/{{historyId}}/status
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response is valid status number", function () {
+          var status = parseInt(pm.response.text());
+          pm.expect(status).to.be.a("number");
+          pm.expect(isNaN(status)).to.be.false;
+      });
+    language: text/javascript
+order: 13000

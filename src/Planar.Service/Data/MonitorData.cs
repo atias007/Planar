@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Planar.Service.Data;
 
@@ -104,11 +105,11 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task UpdateMonitorAction(MonitorAction monitor);
 
-    Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup);
+    Task AddMonitorActionGroup(MonitorAction monitorAction, int groupId);
 
     Task AddMonitorHook(MonitorActionsHook monitorActionsHook);
 
-    Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup);
+    Task RemoveMonitorActionGroup(MonitorAction monitorAction, Group group);
 
     Task RemoveMonitorHook(MonitorActionsHook monitorActionsHook);
 }
@@ -292,9 +293,15 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .FirstOrDefaultAsync();
     }
 
-    public async Task AddMonitorActionGroup(MonitorActionGroup monitorActionGroup)
+    public async Task AddMonitorActionGroup(MonitorAction monitorAction, int groupId)
     {
-        await DbConnection.InsertAsync(monitorActionGroup);
+        var group = new Group { Id = groupId };
+
+        _context.Attach(monitorAction);
+        _context.Attach(group);
+
+        monitorAction.Groups.Add(group);
+        await _context.SaveChangesAsync();
     }
 
     public async Task AddMonitorHook(MonitorActionsHook monitorActionsHook)
@@ -303,11 +310,11 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.SaveChangesAsync();
     }
 
-    public async Task RemoveMonitorActionGroup(MonitorActionGroup monitorActionGroup)
+    public async Task RemoveMonitorActionGroup(MonitorAction monitorAction, Group group)
     {
-        await DbConnection.DeleteAsync<MonitorActionGroup>(ag =>
-            ag.GroupId == monitorActionGroup.GroupId &&
-            ag.MonitorId == monitorActionGroup.MonitorId);
+        _context.Attach(monitorAction);
+        monitorAction.Groups.Remove(group);
+        await _context.SaveChangesAsync();
     }
 
     public async Task RemoveMonitorHook(MonitorActionsHook monitorActionsHook)
