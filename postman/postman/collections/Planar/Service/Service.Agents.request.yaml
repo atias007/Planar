@@ -1,0 +1,29 @@
+$kind: http-request
+url: http://localhost:2306/service/agents
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response is an array", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an("array");
+      });
+
+      pm.test("Agents have valid properties", function () {
+          var jsonData = pm.response.json();
+          jsonData.forEach(function (agent) {
+              pm.expect(agent.clientId).to.not.be.empty;
+              pm.expect(agent.ipAddress).to.not.be.empty;
+              pm.expect(agent).to.have.property("lastSeen");
+              pm.expect(agent).to.have.property("status");
+              pm.expect(agent.statusTitle).to.not.be.empty;
+          });
+      });
+    language: text/javascript
+order: 3000

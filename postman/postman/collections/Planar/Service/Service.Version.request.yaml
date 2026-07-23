@@ -1,0 +1,18 @@
+$kind: http-request
+url: http://localhost:2306/service/version
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response is a non-empty version string", function () {
+          var body = pm.response.text();
+          pm.expect(body).to.not.be.empty;
+      });
+    language: text/javascript
+order: 1000

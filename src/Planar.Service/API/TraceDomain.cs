@@ -29,26 +29,28 @@ public class TraceDomain(IServiceProvider serviceProvider) : BaseLazyBL<TraceDom
 
     public async Task<string?> GetException(int id)
     {
-        var result = await DataLayer.GetTraceException(id);
-
-        if (result == null && !await DataLayer.IsTraceExists(id))
+        try
+        {
+            var result = await DataLayer.GetTraceException(id);
+            return result;
+        }
+        catch (InvalidOperationException)
         {
             throw new RestNotFoundException($"trace with id {id} not found");
         }
-
-        return result;
     }
 
     public async Task<string?> GetProperties(int id)
     {
-        var result = await DataLayer.GetTraceProperties(id);
-
-        if (result == null && !await DataLayer.IsTraceExists(id))
+        try
+        {
+            var result = await DataLayer.GetTraceProperties(id);
+            return result;
+        }
+        catch (InvalidOperationException)
         {
             throw new RestNotFoundException($"trace with id {id} not found");
         }
-
-        return result;
     }
 
     public async Task<CounterResponse> GetTraceCounter(CounterRequest request)

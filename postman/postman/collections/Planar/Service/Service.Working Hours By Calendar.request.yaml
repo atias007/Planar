@@ -1,0 +1,28 @@
+$kind: http-request
+url: http://localhost:2306/service/working-hours/default
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has valid working hours properties", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.calendarName).to.equal("default");
+          pm.expect(jsonData.days).to.be.an("array");
+          pm.expect(jsonData.days.length).to.be.greaterThan(0);
+      });
+
+      pm.test("Days have day of week", function () {
+          var jsonData = pm.response.json();
+          jsonData.days.forEach(function (day) {
+              pm.expect(day).to.have.property("dayOfWeek");
+              pm.expect(day).to.have.property("scopes");
+          });
+      });
+    language: text/javascript
+order: 7000

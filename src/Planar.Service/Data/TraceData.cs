@@ -1,5 +1,4 @@
-﻿using Dapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
@@ -28,8 +27,6 @@ public interface ITraceData : IBaseDataLayer
     Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request);
 
     Task<string?> GetTraceProperties(int id);
-
-    Task<bool> IsTraceExists(int id);
 }
 
 public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context), ITraceData
@@ -118,7 +115,12 @@ public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context),
 
     public async Task<string?> GetTraceException(int id)
     {
-        var result = (await _context.Traces.FindAsync(id))?.Exception;
+        var result = await _context.Traces
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => t.Exception)
+            .FirstAsync();
+
         return result;
     }
 
@@ -157,13 +159,13 @@ public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context),
 
     public async Task<string?> GetTraceProperties(int id)
     {
-        var result = (await _context.Traces.FindAsync(id))?.LogEvent;
-        return result;
-    }
+        var result = await _context.Traces
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => t.LogEvent)
+            .FirstAsync();
 
-    public async Task<bool> IsTraceExists(int id)
-    {
-        return await _context.Traces.AnyAsync(t => t.Id == id);
+        return result;
     }
 }
 
@@ -218,11 +220,11 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
 
         if (request.Ascending)
         {
-            query = query.OrderBy(l => l.TimeStamp).ThenBy(l => l.Id);
+            query = query.OrderBy(l => l.Id);
         }
         else
         {
-            query = query.OrderByDescending(l => l.TimeStamp).ThenBy(l => l.Id);
+            query = query.OrderByDescending(l => l.Id);
         }
 
         var final = query.Select(l => new LogDetails
@@ -276,7 +278,12 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
 
     public async Task<string?> GetTraceException(int id)
     {
-        var result = (await _context.Traces.FindAsync(id))?.Exception;
+        var result = await _context.Traces
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => t.Exception)
+            .FirstAsync();
+
         return result;
     }
 
@@ -315,7 +322,12 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
 
     public async Task<string?> GetTraceProperties(int id)
     {
-        var result = (await _context.Traces.FindAsync(id))?.LogEvent;
+        var result = await _context.Traces
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => t.LogEvent)
+            .FirstAsync();
+
         return result;
     }
 

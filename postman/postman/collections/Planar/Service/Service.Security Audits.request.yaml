@@ -1,0 +1,39 @@
+$kind: http-request
+url: http://localhost:2306/service/security-audits?pageNumber=1&pageSize=25
+method: GET
+queryParams:
+  pageNumber: "1"
+  pageSize: "25"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has paging properties", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("count");
+          pm.expect(jsonData).to.have.property("pageNumber");
+          pm.expect(jsonData).to.have.property("pageSize");
+          pm.expect(jsonData).to.have.property("totalRows");
+          pm.expect(jsonData).to.have.property("totalPages");
+          pm.expect(jsonData.pageNumber).to.equal(1);
+          pm.expect(jsonData.pageSize).to.equal(25);
+      });
+
+      pm.test("Rows have valid security audit properties", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data).to.be.an("array");
+          jsonData.data.forEach(function (row) {
+              pm.expect(row.title).to.not.be.empty;
+              pm.expect(row.username).to.not.be.empty;
+              pm.expect(row.userTitle).to.not.be.empty;
+              pm.expect(row).to.have.property("dateCreated");
+              pm.expect(row).to.have.property("isWarning");
+          });
+      });
+    language: text/javascript
+order: 10000

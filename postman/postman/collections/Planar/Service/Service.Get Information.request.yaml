@@ -1,0 +1,32 @@
+$kind: http-request
+url: http://localhost:2306/service
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has app settings sections", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("authentication");
+          pm.expect(jsonData).to.have.property("cluster");
+          pm.expect(jsonData).to.have.property("database");
+          pm.expect(jsonData).to.have.property("general");
+          pm.expect(jsonData).to.have.property("retention");
+          pm.expect(jsonData).to.have.property("smtp");
+          pm.expect(jsonData).to.have.property("monitor");
+          pm.expect(jsonData).to.have.property("protection");
+          pm.expect(jsonData).to.have.property("hooks");
+      });
+
+      pm.test("General section has instance ids and up time", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.general).to.have.property("instanceIds");
+          pm.expect(jsonData.general).to.have.property("upTime");
+      });
+    language: text/javascript
+order: 2000

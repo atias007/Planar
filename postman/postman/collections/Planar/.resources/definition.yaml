@@ -9,6 +9,7 @@ variables:
   deleteHook: ""
   historyId: "0"
   historyInstanceId: ""
+  traceId: "0"
   triggerId: ""
   triggerName: ""
 auth:

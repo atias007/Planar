@@ -1,0 +1,45 @@
+$kind: http-request
+url: http://localhost:2306/trace?pageNumber=1&pageSize=25
+method: GET
+queryParams:
+  pageNumber: "1"
+  pageSize: "25"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Has paging properties", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("count");
+          pm.expect(jsonData).to.have.property("pageNumber");
+          pm.expect(jsonData).to.have.property("pageSize");
+          pm.expect(jsonData).to.have.property("totalRows");
+          pm.expect(jsonData).to.have.property("totalPages");
+          pm.expect(jsonData.pageNumber).to.equal(1);
+          pm.expect(jsonData.pageSize).to.equal(25);
+      });
+
+      pm.test("Total rows greater then 0", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.totalRows).to.be.greaterThan(0);
+          pm.expect(jsonData.data).to.be.an("array");
+          pm.expect(jsonData.data.length).to.be.greaterThan(0);
+          pm.expect(jsonData.count).to.equal(jsonData.data.length);
+      });
+
+      pm.test("First row has valid trace properties", function () {
+          var jsonData = pm.response.json();
+          var row = jsonData.data[0];
+          pm.expect(row.id).to.be.greaterThan(0);
+          pm.expect(row).to.have.property("timeStamp");
+          pm.expect(row).to.have.property("message");
+          pm.expect(row.level).to.not.be.empty;
+          pm.collectionVariables.set("traceId", row.id);
+      });
+    language: text/javascript
+order: 1000
