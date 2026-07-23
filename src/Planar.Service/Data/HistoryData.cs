@@ -2,12 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Common;
-using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
-using Polly;
 using Quartz;
-using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -463,7 +460,7 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .AsNoTracking()
             .Where(l => l.Id == id)
             .Select(l => l.Status)
-            .FirstOrDefaultAsync();
+            .FirstAsync();
 
         return result;
     }

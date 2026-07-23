@@ -18,7 +18,7 @@ public partial class Trace2
     public string? Level { get; set; }
 
     [Column("Timestamp")]
-    public DateTime TimeStamp { get; set; }
+    public DateTimeOffset TimeStamp { get; set; }
 
     public string? Exception { get; set; }
 

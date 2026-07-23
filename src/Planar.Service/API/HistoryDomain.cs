@@ -99,8 +99,14 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
 
     public async Task<int> GetHistoryStatusById(long id)
     {
-        var data = await DataLayer.GetHistoryStatusById(id);
-        return data == 0 ? throw new RestNotFoundException($"history id {id} could not be found") : data;
+        try
+        {
+            return await DataLayer.GetHistoryStatusById(id);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new RestNotFoundException($"history id {id} could not be found");
+        }
     }
 
     public async Task<JobInstanceLog> GetHistoryByInstanceId(string instanceid)

@@ -19,6 +19,7 @@ using System.Net;
 using System.Threading.RateLimiting;
 using Planar.Hooks;
 using Planar.Common.PeriodicalBatch;
+using Microsoft.Extensions.Logging;
 
 namespace Planar.Startup;
 

@@ -34,6 +34,6 @@ scripts:
       });"
     language: text/javascript
   - type: beforeRequest
-    code: setTimeout(function(){}, 40000);
+    code: ""
     language: text/javascript
-order: 16484
+order: 20000

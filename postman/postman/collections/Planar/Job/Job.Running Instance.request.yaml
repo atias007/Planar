@@ -27,4 +27,4 @@ scripts:
       });"
     language: text/javascript
 settings: {}
-order: 27000
+order: 30000

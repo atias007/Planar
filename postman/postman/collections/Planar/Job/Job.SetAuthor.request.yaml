@@ -1,9 +1,16 @@
 $kind: http-request
-url: http://localhost:2306/job/Demo.HelloWorld With Data
-method: DELETE
+name: Job.SetAuthor
+url: http://localhost:2306/job/author
+method: PATCH
 body:
   type: json
-  content: ""
+  content: "{\r
+
+    \    \"id\":\"Infrastructure.BankOfIsraelCurrency\",\r
+
+    \    \"author\": \"Some Demo Author\"\r
+
+    }"
 auth:
   type: noauth
 scripts:
@@ -12,9 +19,9 @@ scripts:
 
       \    pm.response.to.have.status(204);\r
 
-      });\r\n"
+      });"
     language: text/javascript
   - type: beforeRequest
-    code: setTimeout(function(){}, 1000)
+    code: ""
     language: text/javascript
-order: 25000
+order: 19000

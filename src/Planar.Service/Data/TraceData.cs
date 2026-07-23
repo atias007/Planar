@@ -230,7 +230,7 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
             Id = l.Id,
             Message = l.Message,
             Level = l.Level,
-            TimeStamp = l.TimeStamp
+            TimeStamp = l.TimeStamp.ToLocalTime().DateTime
         });
 
         var result = await final.ToPagingListAsync(request);
@@ -306,7 +306,7 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
                 Id = l.Id,
                 Message = l.Message,
                 Level = l.Level,
-                TimeStamp = l.TimeStamp
+                TimeStamp = l.TimeStamp.ToLocalTime().DateTime
             });
 
         var result = await final.ToPagingListAsync(request);

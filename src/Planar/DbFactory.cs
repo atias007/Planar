@@ -1,7 +1,6 @@
 ﻿using DbUp;
 using Microsoft.Data.Sqlite;
 using Planar.Common;
-using RepoDb;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System;
@@ -12,15 +11,31 @@ internal static class DbFactory
 {
     public static void InitializeRepoDb()
     {
+        ////switch (AppSettings.Database.ProviderName)
+        ////{
+        ////    case DbProviders.SqlServer:
+        ////        GlobalConfiguration.Setup().UseSqlServer();
+        ////        break;
+
+        ////    case DbProviders.Sqlite:
+        ////        GlobalConfiguration.Setup().UseSqlite();
+        ////        break;
+        ////}
+    }
+
+    public static bool IsSupportOdata()
+    {
         switch (AppSettings.Database.ProviderName)
         {
             case DbProviders.SqlServer:
-                GlobalConfiguration.Setup().UseSqlServer();
-                break;
+                return true;
 
             case DbProviders.Sqlite:
-                GlobalConfiguration.Setup().UseSqlite();
-                break;
+                return false;
+
+            default:
+            case DbProviders.Unknown:
+                return false;
         }
     }
 

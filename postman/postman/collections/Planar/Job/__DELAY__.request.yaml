@@ -1,0 +1,18 @@
+$kind: http-request
+name: __DELAY__
+url: http://localhost:2306/service/health-check
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });"
+    language: text/javascript
+  - type: beforeRequest
+    code: setTimeout(function(){}, 40000);
+    language: text/javascript
+order: 18000

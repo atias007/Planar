@@ -2,7 +2,7 @@ Serilog:
   MinimumLevel:
     Default: Debug
     Override:
-      Quartz: Information
+      Quartz: Warning
       Microsoft: Information
       System: Information
       Microsoft.Hosting.Lifetime: Information

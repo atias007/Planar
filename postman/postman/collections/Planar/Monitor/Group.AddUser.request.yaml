@@ -17,7 +17,7 @@ scripts:
   - type: afterResponse
     code: "pm.test(\"Status code is 204 or 400\", function () {\r
 
-      \    pm.expect(pm.response.code).to.be.oneOf([201, 400]);\r
+      \    pm.expect(pm.response.code).to.be.oneOf([204, 400]);\r
 
       });\r\n"
     language: text/javascript

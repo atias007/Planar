@@ -1,11 +1,12 @@
 $kind: http-request
+name: Job.Pause
 url: http://localhost:2306/job/pause
 method: POST
 body:
   type: json
   content: "{\r
 
-    \    \"id\":\"Demo.HelloWorld\"\r
+    \    \"id\":\"Infrastructure.BankOfIsraelCurrency\"\r
 
     }"
 auth:
@@ -18,4 +19,4 @@ scripts:
 
       });"
     language: text/javascript
-order: 15000
+order: 956

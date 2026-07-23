@@ -1,7 +1,6 @@
-﻿namespace Planar.Service.Model
+﻿namespace Planar.Service.Model;
+
+internal class JobPropertiesWithPath
 {
-    internal class JobPropertiesWithPath
-    {
-        public string? Path { get; set; }
-    }
+    public string? Path { get; set; }
 }

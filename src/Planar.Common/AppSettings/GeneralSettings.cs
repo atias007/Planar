@@ -26,5 +26,7 @@ namespace Planar.Common
         public bool EncryptAllSettings { get; set; }
 
         public int ApiPort => UseHttps ? HttpsPort : HttpPort;
+
+        public bool IsDevelopment => Environment.Equals("Development", StringComparison.OrdinalIgnoreCase);
     }
 }

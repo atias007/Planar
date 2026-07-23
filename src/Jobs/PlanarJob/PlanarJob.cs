@@ -37,7 +37,7 @@ public abstract class PlanarJob(
 {
     private const int HealthCheckTimeoutSeconds = 30;
     private readonly Lock ConsoleLocker = new();
-    private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
+    private readonly bool _isDevelopment = AppSettings.General.IsDevelopment;
     private bool _isHealthCheck;
     private string? _contextFilename;
     private AutoResetEvent? _healthCheckResetEvent;

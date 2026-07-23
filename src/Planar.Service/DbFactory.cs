@@ -4,7 +4,6 @@ using Planar.Common;
 using Planar.Common.Monitor;
 using Planar.Service.Data;
 using Quartz;
-using RepoDb;
 using System;
 
 namespace Planar.Service;
@@ -35,7 +34,7 @@ internal static class DbFactory
             case DbProviders.SqlServer:
                 services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                      AppSettings.Database.ConnectionString,
-                     options => 
+                     options =>
                      {
                          options.EnableRetryOnFailure(4, TimeSpan.FromSeconds(1), errorNumbersToAdd: null);
                          options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);

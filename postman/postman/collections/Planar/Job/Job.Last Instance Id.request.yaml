@@ -32,9 +32,10 @@ scripts:
 
       \    pm.collectionVariables.set(\"lastLogId\", id);\r
 
-      \    pm.collectionVariables.set(\"fireInstanceId\", jsonData.instanceId);\r
+      \    pm.collectionVariables.set(\"fireInstanceId\",
+      jsonData.instanceId);\r
 
       });"
     language: text/javascript
 settings: {}
-order: 30000
+order: 33000

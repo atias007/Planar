@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
-using Planar.Common.PeriodicalBatch;
 using Planar.Service.Model;
-using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Linq;
