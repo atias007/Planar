@@ -94,16 +94,6 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IEnumerable<KeyValueItem>> GatSettingsAsync(string id, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}/settings", HttpMethod.Get)
-               .AddSegmentParameter("id", id);
-
-            var result = await _proxy.InvokeAsync<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
-            return result;
-        }
-
         public async Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));

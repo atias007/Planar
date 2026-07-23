@@ -79,7 +79,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     public async Task<ActionResult<PlanarIdResponse>> Update()
     {
         var result = await BusinesLayer.UpdateRoute(HttpContext);
-        if(string.IsNullOrWhiteSpace(result.Id))
+        if (string.IsNullOrWhiteSpace(result.Id))
         {
             return Created();
         }
@@ -415,19 +415,6 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     {
         await BusinesLayer.Cancel(request);
         return Accepted();
-    }
-
-    [HttpGet("{id}/settings")]
-    [ViewerAuthorize]
-    [EndpointName("gat_job_id_settings")]
-    [EndpointDescription("Get job settings")]
-    [EndpointSummary("Get Job Settings")]
-    [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
-    [BadRequestResponse]
-    public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetSettings([FromRoute][Required] string id)
-    {
-        var result = await BusinesLayer.GetSettings(id);
-        return Ok(result);
     }
 
     [HttpGet("running-instance/{instanceId}")]

@@ -34,13 +34,6 @@ namespace Planar.Client
         Task ClearDataAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get Job Settings
-        /// </summary>
-        /// <param name="id">Job id or job key (Group.Name)</param>
-        /// <returns>IEnumerable&lt;KeyValueItem&gt;</returns>
-        Task<IEnumerable<KeyValueItem>> GatSettingsAsync(string id, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// List Jobs With Filter
         /// </summary>
         /// <param name="filter"></param>

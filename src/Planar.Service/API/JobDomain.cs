@@ -264,7 +264,7 @@ public partial class JobDomain(
         var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
 
         var existsTypeName = GetJobTypes().FirstOrDefault(t => string.Equals(t, typeName, StringComparison.OrdinalIgnoreCase));
-        if(string.IsNullOrWhiteSpace(existsTypeName)) { throw notFoundException.Value; }
+        if (string.IsNullOrWhiteSpace(existsTypeName)) { throw notFoundException.Value; }
 
         Assembly assembly;
 
@@ -764,48 +764,6 @@ public partial class JobDomain(
         }
 
         throw new RestRequestTimeoutException();
-    }
-
-    public async Task<IEnumerable<KeyValueItem>> GetSettings(string id)
-    {
-        var result = new List<KeyValueItem>();
-        var jobId = await JobKeyHelper.GetJobId(id) ?? string.Empty;
-        var p = await DataLayer.GetJobProperty(jobId);
-
-        if (string.IsNullOrWhiteSpace(p.Properties))
-        {
-            return result;
-        }
-
-        string jobPath;
-        try
-        {
-            var pathObj = YmlUtil.Deserialize<JobPropertiesWithPath>(p.Properties);
-            jobPath = pathObj.Path ?? string.Empty;
-        }
-        catch (Exception)
-        {
-            return result;
-        }
-
-        IEnumerable<string>? globalConfigKeys = null;
-        if (p.GlobalConfigKeys == null)
-        {
-            globalConfigKeys = null;
-        }
-        else if (string.IsNullOrWhiteSpace(p.GlobalConfigKeys))
-        {
-            globalConfigKeys = [];
-        }
-        else
-        {
-            globalConfigKeys = YmlUtil.Deserialize<IEnumerable<string>>(p.GlobalConfigKeys);
-        }
-
-        var settings = JobSettingsLoader.LoadJobSettings(jobPath, Global.GlobalConfig, globalConfigKeys);
-        result = settings.Select(d => new KeyValueItem(d.Key, d.Value)).ToList();
-
-        return result;
     }
 
     public async Task Invoke(InvokeJobRequest request)

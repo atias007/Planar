@@ -418,17 +418,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return new CliActionResponse(result, tables);
     }
 
-    [Action("settings")]
-    public static async Task<CliActionResponse> GetJobSettings(CliJobKey jobKey, CancellationToken cancellationToken = default)
-    {
-        var restRequest = new RestRequest("job/{id}/settings", Method.Get)
-            .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
-
-        var result = await RestProxy.Invoke<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
-        var table = CliTableExtensions.GetTable(result.Data);
-        return new CliActionResponse(result, table);
-    }
-
     [Action("types")]
     public static async Task<CliActionResponse> GetJobTypes(CancellationToken cancellationToken = default)
     {
