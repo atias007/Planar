@@ -23,7 +23,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageReference Include="Quartz" Version="3.18.2" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.30.0.144632">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
