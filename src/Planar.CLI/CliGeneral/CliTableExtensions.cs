@@ -103,6 +103,42 @@ internal static class CliTableExtensions
         return table;
     }
 
+    public static CliTable GetTable(ServiceHealthCheckResponse? response)
+    {
+        var table = new CliTable();
+        if (response == null) { return table; }
+        table.Table.AddColumns(string.Empty, string.Empty);
+        table.Table.HideHeaders();
+        if (response.Scheduler.IsHealthy)
+        {
+            table.Table.AddRow($":check_mark_button: {nameof(response.Scheduler)}", $"[{CliFormat.OkColor}]{response.Scheduler.Title.EscapeMarkup()}[/]");
+        }
+        else
+        {
+            table.Table.AddRow($":cross_mark_button: {nameof(response.Scheduler)}", $"[{CliFormat.ErrorColor}]{response.Scheduler.Title.EscapeMarkup()}[/]");
+        }
+
+        if (response.Database.IsHealthy)
+        {
+            table.Table.AddRow($":check_mark_button: {nameof(response.Database)}", $"[{CliFormat.OkColor}]{response.Database.Title.EscapeMarkup()}[/]");
+        }
+        else
+        {
+            table.Table.AddRow($":cross_mark_button: {nameof(response.Database)}", $"[{CliFormat.ErrorColor}]{response.Database.Title.EscapeMarkup()}[/]");
+        }
+
+        if (response.Cluster.IsHealthy)
+        {
+            table.Table.AddRow($":check_mark_button: {nameof(response.Cluster)}", $"[{CliFormat.OkColor}]{response.Cluster.Title.EscapeMarkup()}[/]");
+        }
+        else
+        {
+            table.Table.AddRow($":cross_mark_button: {nameof(response.Cluster)}", $"[{CliFormat.ErrorColor}]{response.Cluster.Title.EscapeMarkup()}[/]");
+        }
+
+        return table;
+    }
+
     public static CliTable GetTable(IReadOnlyList<LoginData>? response)
     {
         var table = new CliTable();

@@ -462,6 +462,10 @@ internal static class Program
             AnsiConsole.WriteLine();
             AnsiConsole.WriteLine(AsciiChart.Sharp.AsciiChart.Plot(response.Plot.Series, options));
         }
+        if(response.Panel != null)
+        {
+            AnsiConsole.Write(response.Panel);
+        }
         else if (response.Tables != null && response.Tables.Count != 0)
         {
             PrintTables(console, response);

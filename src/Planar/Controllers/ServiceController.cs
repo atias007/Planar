@@ -60,9 +60,9 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
     [EndpointName("get_service_health_check")]
     [EndpointDescription("Service health check")]
     [EndpointSummary("Health Check")]
-    [OkTextResponse]
+    [OkJsonResponse(typeof(ServiceHealthCheckResponse))]
     [ServiceUnavailableResponse]
-    public async Task<ActionResult<string>> HealthCheck()
+    public async Task<ActionResult<ServiceHealthCheckResponse>> HealthCheck()
     {
         var response = await BusinesLayer.HealthCheck();
         return Ok(response);

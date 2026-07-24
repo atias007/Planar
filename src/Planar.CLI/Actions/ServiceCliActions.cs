@@ -13,6 +13,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Mime;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -98,17 +100,29 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
         const string seperator = "-------------------";
         var restRequest = new RestRequest("service/health-check", Method.Get);
-        var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-        if (result.IsSuccessful)
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        var content = result.Content ?? string.Empty;
+        var stringJson = content.StartsWith('\"');
+        if (result.ContentType?.Contains(MediaTypeNames.Text.Plain) == true || stringJson)
         {
-            AnsiConsole.MarkupLine($"[green]{seperator}\r\nplanar is healthy\r\n{seperator}[/]");
+            if (result.IsSuccessful)
+            {
+                AnsiConsole.MarkupLine($"[green]{seperator}\r\nplanar is healthy\r\n{seperator}[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]{seperator}\r\nplanar is unhealthy\r\n{seperator}[/]");
+            }
+
+            if (stringJson) { content = JsonSerializer.Deserialize<string>(content); }
+            return new CliActionResponse(result, content);
         }
         else
         {
-            AnsiConsole.MarkupLine($"[red]{seperator}\r\nplanar is unhealthy\r\n{seperator}[/]");
+            var data = JsonSerializer.Deserialize<ServiceHealthCheckResponse>(content ?? string.Empty);
+            var table = CliTableExtensions.GetTable(data);
+            return new CliActionResponse(result, table);
         }
-
-        return new CliActionResponse(result, result.Data);
     }
 
     [Action("env")]
@@ -324,6 +338,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         var response = CliActionResponse.GetGenericSuccessRestResponse();
         return await Task.FromResult(new CliActionResponse(response, table));
     }
+
 
     private const string encryptKey = "encrypted:";
 
