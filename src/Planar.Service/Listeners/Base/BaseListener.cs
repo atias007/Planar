@@ -120,7 +120,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
         {
             var services = new ServiceCollection();
             services.AddPlanarDataLayerWithContext();
-            var provider = services.BuildServiceProvider(); // Seperate provider to avoid ObjectDisposedException when using the default provider
+            var provider = services.BuildServiceProvider(); // Separate provider to avoid ObjectDisposedException when using the default provider
             using var scope = provider.CreateScope();
             var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
             await func.Invoke(dal);
