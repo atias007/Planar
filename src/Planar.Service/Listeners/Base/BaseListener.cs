@@ -9,6 +9,7 @@ using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Listeners.Base;
@@ -35,7 +36,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
 
             using var scope = _serviceScopeFactory.CreateScope();
             var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-            monitor.Scan(@event, context, exception);
+            monitor.Scan(@event, context, exception, CancellationToken.None);
         }
         catch (ObjectDisposedException)
         {

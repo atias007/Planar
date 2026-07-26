@@ -52,7 +52,7 @@ public class MainService : BackgroundService
         {
             try
             {
-                removeTask.Wait(3000);
+                removeTask.Wait(3000, CancellationToken.None);
             }
             catch
             {
@@ -321,7 +321,7 @@ public class MainService : BackgroundService
         info.MessagesParameters.Add("Port", AppSettings.General.ApiPort.ToString());
         info.MessagesParameters.Add("InstanceId", await _schedulerUtil.SchedulerInstanceId());
         info.AddMachineName();
-        SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);
+        SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info, cancellationToken: _lifetime.ApplicationStopping);
     }
 
     #endregion Initialize Scheduler

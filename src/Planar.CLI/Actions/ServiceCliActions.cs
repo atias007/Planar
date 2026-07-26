@@ -119,7 +119,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         }
         else
         {
-            var data = JsonSerializer.Deserialize<ServiceHealthCheckResponse>(content ?? string.Empty);
+            var data = JsonSerializer.Deserialize<ServiceHealthCheckResponse>(content);
             var table = CliTableExtensions.GetTable(data);
             return new CliActionResponse(null, table);
         }
@@ -338,7 +338,6 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         var response = CliActionResponse.GetGenericSuccessRestResponse();
         return await Task.FromResult(new CliActionResponse(response, table));
     }
-
 
     private const string encryptKey = "encrypted:";
 

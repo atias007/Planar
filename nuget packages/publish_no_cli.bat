@@ -36,6 +36,16 @@ dotnet build Planar.Hook.Test.csproj --configuration Release
 dotnet pack Planar.Hook.Test.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
+cd Planar.Job.Http
+dotnet build Planar.Job.Http.csproj --configuration Release
+dotnet pack Planar.Job.Http.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
+cd..
+
+cd Planar.Job.RabbitMQ
+dotnet build Planar.Job.RabbitMQ.csproj --configuration Release
+dotnet pack Planar.Job.RabbitMQ.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
+cd..
+
 cd Planar.Job
 dotnet build Planar.Job.csproj --configuration Release
 dotnet pack Planar.Job.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
@@ -59,3 +69,5 @@ dotnet nuget push Planar.Hook.%version%.nupkg --api-key %apikey% --source https:
 dotnet nuget push Planar.Job.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
 dotnet nuget push Planar.Hook.Test.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
 dotnet nuget push Planar.Job.Test.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
+dotnet nuget push Planar.Job.Http.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
+dotnet nuget push Planar.Job.RabbitMQ.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json

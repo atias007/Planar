@@ -196,7 +196,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         var role = (await userData.GetUserRole(user.Id)) ?? RoleHelper.DefaultRole;
         user.Role = role;
 
-        var verify = HashUtil.VerifyHash(request.Password!, user.Password, user.Salt);
+        var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
         if (!verify)
         {
             AuditSecuritySafe($"user '{user.Fullname}' try to login with username '{request.Username}' and with wrong password", isWarning: true);
