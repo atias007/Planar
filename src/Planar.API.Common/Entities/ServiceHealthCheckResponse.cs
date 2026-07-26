@@ -16,6 +16,9 @@ public class ServiceHealthCheckResponse
 
 public class HealthCheckResponse
 {
+    [JsonPropertyName("notRelevant")]
+    public bool NotRelevant { get; set; }
+
     [JsonPropertyName("isHealthy")]
     public bool IsHealthy { get; set; }
 

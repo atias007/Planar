@@ -115,7 +115,7 @@ internal static class CliTableExtensions
         }
         else
         {
-            table.Table.AddRow($":cross_mark_button: {nameof(response.Scheduler)}", $"[{CliFormat.ErrorColor}]{response.Scheduler.Title.EscapeMarkup()}[/]");
+            table.Table.AddRow($":cross_mark: {nameof(response.Scheduler)}", $"[{CliFormat.ErrorColor}]{response.Scheduler.Title.EscapeMarkup()}[/]");
         }
 
         if (response.Database.IsHealthy)
@@ -124,16 +124,23 @@ internal static class CliTableExtensions
         }
         else
         {
-            table.Table.AddRow($":cross_mark_button: {nameof(response.Database)}", $"[{CliFormat.ErrorColor}]{response.Database.Title.EscapeMarkup()}[/]");
+            table.Table.AddRow($":cross_mark: {nameof(response.Database)}", $"[{CliFormat.ErrorColor}]{response.Database.Title.EscapeMarkup()}[/]");
         }
 
         if (response.Cluster.IsHealthy)
         {
-            table.Table.AddRow($":check_mark_button: {nameof(response.Cluster)}", $"[{CliFormat.OkColor}]{response.Cluster.Title.EscapeMarkup()}[/]");
+            if (response.Cluster.NotRelevant)
+            {
+                table.Table.AddRow($":check_mark_button: {nameof(response.Cluster)}", $"[gray]{response.Cluster.Title.EscapeMarkup()}[/]");
+            }
+            else
+            {
+                table.Table.AddRow($":check_mark_button: {nameof(response.Cluster)}", $"[{CliFormat.OkColor}]{response.Cluster.Title.EscapeMarkup()}[/]");
+            }
         }
         else
         {
-            table.Table.AddRow($":cross_mark_button: {nameof(response.Cluster)}", $"[{CliFormat.ErrorColor}]{response.Cluster.Title.EscapeMarkup()}[/]");
+            table.Table.AddRow($":cross_mark: {nameof(response.Cluster)}", $"[{CliFormat.ErrorColor}]{response.Cluster.Title.EscapeMarkup()}[/]");
         }
 
         return table;

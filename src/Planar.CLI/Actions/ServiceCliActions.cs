@@ -115,13 +115,13 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             }
 
             if (stringJson) { content = JsonSerializer.Deserialize<string>(content); }
-            return new CliActionResponse(result, content);
+            return new CliActionResponse(null, content);
         }
         else
         {
             var data = JsonSerializer.Deserialize<ServiceHealthCheckResponse>(content ?? string.Empty);
             var table = CliTableExtensions.GetTable(data);
-            return new CliActionResponse(result, table);
+            return new CliActionResponse(null, table);
         }
     }
 

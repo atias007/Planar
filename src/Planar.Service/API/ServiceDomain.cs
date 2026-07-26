@@ -1,5 +1,4 @@
 ﻿using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -15,8 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -88,34 +85,24 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
     public async Task<ServiceHealthCheckResponse> HealthCheck()
     {
         var serviceUnavaliable = false;
-        var result = new StringBuilder();
 
         var scheduler = await SchedulerUtil.IsHealthyAsync();
-        if (scheduler)
-        {
-            result.AppendLine("scheduler: healthy");
-        }
-        else
-        {
-            serviceUnavaliable = true;
-            result.AppendLine("scheduler: unhealthy");
-        }
+        if (!scheduler) { serviceUnavaliable = true; }
 
         var database = false;
         try
         {
             await DataLayer.HealthCheck();
             database = true;
-            result.AppendLine("database: healthy");
         }
         catch (Exception ex)
         {
             serviceUnavaliable = true;
             Logger.LogError(ex, "database health check failed");
-            result.AppendLine("database: unhealthy");
         }
 
         bool? cluster = null;
+        var clusterNotRelevant = false;
         string clusterDescription;
         if (AppSettings.Cluster.Clustering)
         {
@@ -125,32 +112,29 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             if (cluster.GetValueOrDefault())
             {
                 clusterDescription = "healthy";
-                result.AppendLine("cluster: healthy");
             }
             else
             {
                 clusterDescription = "unhealthy";
                 serviceUnavaliable = true;
-                result.AppendLine("cluster: unhealthy");
             }
         }
         else
         {
+            clusterNotRelevant = true;
             clusterDescription = "[clustering not enabled, skip health check]";
-            result.AppendLine("cluster: [clustering not enabled, skip health check]");
         }
 
         var response = new ServiceHealthCheckResponse
         {
             Scheduler = new HealthCheckResponse { IsHealthy = scheduler, Title = scheduler ? "healthy" : "unhealthy" },
             Database = new HealthCheckResponse { IsHealthy = database, Title = database ? "healthy" : "unhealthy" },
-            Cluster = new HealthCheckResponse { IsHealthy = cluster ?? true, Title = clusterDescription }
+            Cluster = new HealthCheckResponse { IsHealthy = cluster ?? true, Title = clusterDescription, NotRelevant = clusterNotRelevant }
         };
 
-        var message = JsonSerializer.Serialize(response);
         if (serviceUnavaliable)
         {
-            throw new RestServiceUnavailableException(message);
+            throw new RestServiceUnavailableException(response);
         }
 
         return response;

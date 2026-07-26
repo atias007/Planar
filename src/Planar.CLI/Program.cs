@@ -462,7 +462,7 @@ internal static class Program
             AnsiConsole.WriteLine();
             AnsiConsole.WriteLine(AsciiChart.Sharp.AsciiChart.Plot(response.Plot.Series, options));
         }
-        if(response.Panel != null)
+        if (response.Panel != null)
         {
             AnsiConsole.Write(response.Panel);
         }
@@ -658,34 +658,6 @@ internal static class Program
         }
     }
 
-    private static bool HandleHealthCheckResponse(RestResponse response)
-    {
-        if (response.StatusCode == HttpStatusCode.ServiceUnavailable &&
-            response.Request != null &&
-            response.Content != null &&
-            response.Request.Resource.Contains("service/health-check", StringComparison.CurrentCultureIgnoreCase))
-        {
-            var s = JsonConvert.DeserializeObject<string>(response.Content) ?? string.Empty;
-            var lines = s.Split("\r", StringSplitOptions.TrimEntries);
-            foreach (var item in lines)
-            {
-                if (item.Contains("unhealthy"))
-                {
-                    var text = item.EscapeMarkup().Replace("unhealthy", "[red]unhealthy[/]");
-                    AnsiConsole.MarkupLine(text);
-                }
-                else
-                {
-                    AnsiConsole.WriteLine(item);
-                }
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
     private static bool HandleHttpConflictResponse(RestResponse response)
     {
         const string defaultMessage = "server return conflict status";
@@ -715,7 +687,6 @@ internal static class Program
     {
         if (HandleHttpNotFoundResponse(response)) { return; }
         if (HandleBadRequestResponse(response)) { return; }
-        if (HandleHealthCheckResponse(response)) { return; }
         if (HandleHttpConflictResponse(response)) { return; }
         if (HandleHttpUnauthorizedResponse(response)) { return; }
         if (HandleODataErrorResponse(response)) { return; }
@@ -784,7 +755,7 @@ internal static class Program
                 {
                     message = JsonConvert.DeserializeObject<string>(response.Content);
                 }
-                catch 
+                catch
                 {
                     // DO NOTHING //
                 }
