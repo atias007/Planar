@@ -208,7 +208,7 @@ public static class ConnectUtil
         const string purpose = "RememberConnect";
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddDataProtection();
-        var provider = serviceCollection.BuildServiceProvider();
+        var provider = serviceCollection.BuildServiceProvider(); // Seperate provider to avoid ObjectDisposedException when using the default provider
         var protector = provider.GetRequiredService<IDataProtectionProvider>();
         return protector.CreateProtector(purpose);
     }
