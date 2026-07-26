@@ -309,7 +309,7 @@ public class MainService : BackgroundService
 
         var services = new ServiceCollection();
         services.AddPlanarDataLayerWithContext();
-        var provider = services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider(); // Create a new service provider for the data layer context
         using var scope = provider.CreateScope();
         var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
         await dal.RemoveClusterNode(cluster);

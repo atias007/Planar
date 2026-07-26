@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.Common;
 using RestSharp;
+using Spectre.Console;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -44,6 +45,12 @@ namespace Planar.CLI
             Plot = plot;
         }
 
+        public CliActionResponse(RestResponse? response, Panel panel)
+            : this(response)
+        {
+            Panel = panel;
+        }
+
         public CliActionResponse(RestResponse? response, object? dumpObject)
             : this(response)
         {
@@ -83,6 +90,7 @@ namespace Planar.CLI
         public List<CliDumpObject>? DumpObjects { get; private set; }
         public List<CliTable>? Tables { get; private set; }
         public CliPlot? Plot { get; private set; }
+        public Panel? Panel { get; private set; }
 
         public static CliActionResponse Empty
         {

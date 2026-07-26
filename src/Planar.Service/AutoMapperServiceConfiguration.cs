@@ -21,9 +21,7 @@ namespace Planar.Service
                 return services;
             }
 
-            var provider = services.BuildServiceProvider();
-
-            services.AddSingleton<IMapper>(new Mapper(new MapperConfiguration(cfg =>
+            services.AddSingleton<IMapper>(provider => new Mapper(new MapperConfiguration(cfg =>
             {
                 foreach (var p in profiles)
                 {

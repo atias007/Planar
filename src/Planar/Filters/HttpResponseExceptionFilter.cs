@@ -183,10 +183,20 @@ namespace Planar.Filters
 
         private static void HandleRestUnavailableException(ActionExecutedContext context, RestServiceUnavailableException unavailableException)
         {
-            context.Result = new ObjectResult(unavailableException.Message)
+            if (unavailableException.Body != null)
             {
-                StatusCode = 503
-            };
+                context.Result = new ObjectResult(unavailableException.Body)
+                {
+                    StatusCode = 503
+                };
+            }
+            else
+            {
+                context.Result = new ObjectResult(unavailableException.Message)
+                {
+                    StatusCode = 503
+                };
+            }
 
             context.ExceptionHandled = true;
         }
