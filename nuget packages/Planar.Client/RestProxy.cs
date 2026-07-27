@@ -28,8 +28,6 @@ namespace Planar.Client
         public string Username { get; private set; }
         public string Password { get; private set; }
         public string Role { get; private set; }
-        public string FirstName { get; private set; }
-        public string LastName { get; private set; }
         private string Token { get; set; }
         private HttpClient _client;
 
@@ -37,8 +35,6 @@ namespace Planar.Client
         public string? Username { get; private set; }
         public string? Password { get; private set; }
         public string? Role { get; private set; }
-        public string? LastName { get; private set; }
-        public string FirstName { get; private set; } = null!;
         private string? Token { get; set; }
         private HttpClient? _client;
 

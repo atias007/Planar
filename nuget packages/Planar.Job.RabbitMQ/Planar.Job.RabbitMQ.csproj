@@ -38,7 +38,6 @@
 		<Compile Include="..\Planar.Job\BaseJob.cs" Link="BaseJob.cs" />
 		<Compile Include="..\Planar.Job\BaseJobFactory.cs" Link="BaseJobFactory.cs" />
 		<Compile Include="..\Planar.Job\DataMapConvertor.cs" Link="DataMapConvertor.cs" />
-		<Compile Include="..\Planar.Job\FailOverProxy.cs" Link="FailOverProxy.cs" />
 		<Compile Include="..\Planar.Job\IBaseJob.cs" Link="IBaseJob.cs" />
 		<Compile Include="..\Planar.Job\InvokeJobOptions.cs" Link="InvokeJobOptions.cs" />
 		<Compile Include="..\Planar.Job\JobBackMapper.cs" Link="JobBackMapper.cs" />

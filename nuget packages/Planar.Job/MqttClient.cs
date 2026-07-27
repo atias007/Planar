@@ -19,18 +19,18 @@ namespace Planar
         private const int _autoReconnectDelay = 1;
         private const int _keepAlivePeriod = 1;
         private const int _defaultMqttPort = 206;
-        private const int _defaultHttpPort = 2306;
         private const string _defaultHost = "127.0.0.1";
         private const int _timeout = 12;
 
+#pragma warning disable S3263 // Static fields should appear in the order they must be initialized
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter(JsonSerializer.Create(_jsonSerializerSettings));
+#pragma warning restore S3263 // Static fields should appear in the order they must be initialized
         private static readonly SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
         private static readonly TimeSpan _lockerTimeout = TimeSpan.FromMinutes(1);
         private static string _host = _defaultHost;
         private static int _mqttPort;
 
 #if NETSTANDARD2_0
-        private static FailOverProxy _failOverProxy;
         private static IManagedMqttClient _mqttClient;
         private static System.Timers.Timer _timer;
 
@@ -39,7 +39,6 @@ namespace Planar
         public static ILogger Logger { get; set; }
 
 #else
-        private static FailOverProxy? _failOverProxy;
         private static IManagedMqttClient? _mqttClient;
         private static System.Timers.Timer? _timer;
 
@@ -66,19 +65,11 @@ namespace Planar
                 try
                 {
                     await _mqttClient.PingAsync();
-                    return;
                 }
                 catch
                 {
                     // DO NOTHING, just try to ping failover proxy if mqtt ping failed
                 }
-            }
-
-            // failover
-            if (_failOverProxy != null)
-            {
-                var cloudEvent = CreateCloudEvent(fireInstanceId, MessageBrokerChannels.HealthCheck);
-                await _failOverProxy.PingAsync(fireInstanceId, cloudEvent);
             }
         }
 
@@ -90,13 +81,6 @@ namespace Planar
             if (_mqttClient != null)
             {
                 await PublishInnerAsync(fireInstanceId, cloudEvent);
-                return;
-            }
-
-            // failover
-            if (_failOverProxy != null)
-            {
-                await _failOverProxy.PublishAsync(fireInstanceId, cloudEvent);
             }
         }
 
@@ -169,13 +153,6 @@ namespace Planar
             }
         }
 
-        public static void StartFailOver(int port)
-        {
-            if (port <= 0) { port = _defaultHttpPort; }
-            _failOverProxy = new FailOverProxy(port);
-            _mqttClient = null;
-        }
-
         public static async Task StopAsync(string fireInstanceId, int delaySeconds)
         {
             await _locker.WaitAsync(_lockerTimeout);
@@ -215,15 +192,6 @@ namespace Planar
                 await SafeCloseMqttClient();
 
                 await SafeWarnLostOfLogs(fireInstanceId, defaultWaitSecondes.TotalSeconds, pendingBefore, pendingAfter);
-
-                return;
-            }
-
-            // failover
-            if (_failOverProxy != null)
-            {
-                _failOverProxy.Dispose();
-                _failOverProxy = null;
             }
         }
 
@@ -301,10 +269,10 @@ namespace Planar
             }
         }
 
-        private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel)
-        {
-            return CreateCloudEvent(fireInstanceId, channel, message: string.Empty);
-        }
+        ////private static CloudEvent CreateCloudEvent(string fireInstanceId, MessageBrokerChannels channel)
+        ////{
+        ////    return CreateCloudEvent(fireInstanceId, channel, message: string.Empty);
+        ////}
 
 #if NETSTANDARD2_0
 
@@ -347,18 +315,11 @@ namespace Planar
         private static async Task PublishInnerAsync(string fireInstanceId, CloudEvent cloudEvent)
         {
             // mqtt
-            if (_mqttClient != null)
-            {
-                var mqttMessage = cloudEvent.ToMqttApplicationMessage(ContentMode.Structured, _formatter, fireInstanceId);
-                mqttMessage.QualityOfServiceLevel = MqttQualityOfServiceLevel.ExactlyOnce;
-                await _mqttClient.EnqueueAsync(mqttMessage);
-            }
+            if (_mqttClient == null) { return; }
 
-            // failover
-            if (_failOverProxy != null)
-            {
-                await _failOverProxy.PublishAsync(fireInstanceId, cloudEvent);
-            }
+            var mqttMessage = cloudEvent.ToMqttApplicationMessage(ContentMode.Structured, _formatter, fireInstanceId);
+            mqttMessage.QualityOfServiceLevel = MqttQualityOfServiceLevel.ExactlyOnce;
+            await _mqttClient.EnqueueAsync(mqttMessage);
         }
     }
 }

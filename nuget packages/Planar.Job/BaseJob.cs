@@ -247,12 +247,6 @@ namespace Planar.Job
                 if (await SafeStartMqttClient(connectTimeout)) { return; }
             }
 
-            // mqtt failover by http to planar service
-            for (int i = 0; i < 3; i++)
-            {
-                if (await SafeStartFailOverProxy()) { return; }
-            }
-
             throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
         }
 
@@ -269,22 +263,6 @@ namespace Planar.Job
             _timeoutCancelTokenSource = new CancellationTokenSource(timeout);
             _linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_timeoutCancelTokenSource.Token, cancellationToken);
             _context.CancellationToken = _linkedCancelTokenSource.Token;
-        }
-
-        private async Task<bool> SafeStartFailOverProxy()
-        {
-            try
-            {
-                MqttClient.StartFailOver(_context.JobFailOverPort);
-                await MqttClient.PingAsync(_context.FireInstanceId);
-                await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
-                return true;
-            }
-            catch
-            {
-                await MqttClient.StopAsync(_context.FireInstanceId);
-                return false;
-            }
         }
 
         private async Task<bool> SafeStartMqttClient(TimeSpan connectTimeout)
