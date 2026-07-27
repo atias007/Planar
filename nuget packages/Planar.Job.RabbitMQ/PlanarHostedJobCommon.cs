@@ -34,7 +34,7 @@ namespace Planar.Job
                 for (int i = 0; i < 30; i++)
                 {
                     if (_jobInstances.IsEmpty) { break; }
-                    if(_logger?.IsEnabled(LogLevel.Information) == true)
+                    if (_logger?.IsEnabled(LogLevel.Information) == true)
                     {
                         _logger.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
                     }
@@ -75,8 +75,8 @@ namespace Planar.Job
         {
             if (_jobInstances.TryRemove(fireInstanceId, out var info))
             {
-                try { info.Dispose(); } 
-                catch 
+                try { info.Dispose(); }
+                catch
                 {
                     // *** DO NOTHING, just try best effort to dispose the instance info *** //
                 }
@@ -86,8 +86,8 @@ namespace Planar.Job
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); } 
-                    catch 
+                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
+                    catch
                     {
                         // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
                     }
