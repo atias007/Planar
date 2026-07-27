@@ -14,21 +14,32 @@ namespace Planar.Job
 
         static partial void GracefullShutdownSetup()
         {
-            AppDomain.CurrentDomain.ProcessExit += (s, a) => _mainCancellationTokenSource.Cancel();
-            _mainCancellationTokenSource.Token.Register(async () =>
+            AppDomain.CurrentDomain.ProcessExit += (s, a) =>
             {
-                _logger?.LogInformation("Start gracefull shutdown");
-
                 try
                 {
-                    foreach (var item in _jobInstances)
-                    {
-                        item.Value.Cancel();
-                    }
+                    _mainCancellationTokenSource.Cancel();
                 }
                 catch
                 {
                     // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
+            };
+
+            _mainCancellationTokenSource.Token.Register(async () =>
+            {
+                _logger?.LogInformation("Start gracefull shutdown");
+
+                foreach (var item in _jobInstances)
+                {
+                    try
+                    {
+                        item.Value.Cancel();
+                    }
+                    catch
+                    {
+                        // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                    }
                 }
 
                 for (int i = 0; i < 30; i++)
@@ -55,7 +66,14 @@ namespace Planar.Job
                 // 2. Prevent the application from terminating immediately
                 args.Cancel = true;
 
-                _mainCancellationTokenSource.Cancel();
+                try
+                {
+                    _mainCancellationTokenSource.Cancel();
+                }
+                catch
+                {
+                    // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
             };
         }
 
