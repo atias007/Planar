@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Planar.Common;
 using Planar.Service.General;
 using System;
 using System.IO;
@@ -34,6 +35,16 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
         RuleFor(e => e.RabbitMq)
             .SetValidator(new PlanarJobRabbitMqPropertiesValidator()!)
             .When(e => e.RabbitMq != null);
+
+        RuleFor(e => e.EncryptPayload)
+            .Must(e => false)
+            .When(e => string.Equals(e.InvokeMethod, nameof(PlanarJobProperties.Process), StringComparison.OrdinalIgnoreCase))
+            .WithMessage("encrypt payload is not supported for process invoke method");
+
+        RuleFor(e => e.EncryptPayload)
+            .Must(e => false)
+            .When(e => string.IsNullOrWhiteSpace(AppSettings.Authentication.Secret))
+            .WithMessage("encrypt payload is not supported when authentication secret (at appsettings.yml) is not set");
 
         RuleFor(e => e).Must(e =>
         {

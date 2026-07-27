@@ -201,6 +201,7 @@ public abstract class PlanarJob(
             routingKey,
             context.FireInstanceId,
             command: "Cancel",
+            encryptPayload: Properties.EncryptPayload,
             body: string.Empty,
             copies: 20);
     }
@@ -252,6 +253,7 @@ public abstract class PlanarJob(
             routingKey,
             context.FireInstanceId,
             command: "Invoke",
+            encryptPayload: Properties.EncryptPayload,
             body: MessageBroker.Details,
             timeoutSeconds: HealthCheckTimeoutSeconds);
 
@@ -594,7 +596,9 @@ public abstract class PlanarJob(
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             var filename = GetFilenameFoLinux(startInfo.FileName);
+#pragma warning disable S4036 // OS commands should not rely on PATH resolution
             startInfo.FileName = "dotnet";
+#pragma warning restore S4036 // OS commands should not rely on PATH resolution
             startInfo.Arguments = $"\"{filename}\" {startInfo.Arguments}";
         }
     }
@@ -672,7 +676,7 @@ public abstract class PlanarJob(
             }
 
             var exception = new PlanarJobCustomMonitorException(customEventInfo.Message ?? "[no message]");
-            MonitorUtil.Scan(@event, context, exception);
+            MonitorUtil.Scan(@event, context, exception, cancellationToken: context.CancellationToken);
         }
         catch (Exception ex)
         {
