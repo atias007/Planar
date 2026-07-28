@@ -19,6 +19,7 @@ general:
   developer exception page: true                     # this value is automatically set to false in production environment
   concurrency rate limiting: 10                      # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1
   encrypt all settings: false                        # encrypt all ymf files in settings folder. set this value to true in production environment
+  encryption key: xSDmPDwzULJWpSCARDm5N+rV6D9VuxZzP5fDtWRu4so= # the encryption key for encrypting and decrypting sensitive data transform outside planar (like context passed to job process or message in RabbitMQ send to remote job). must be 32 bytes, base64 encoding string. set this value in production environment
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 database:
   provider: Sqlite                                   # options: SqlServer, Sqlite, PostgreSql, MySql

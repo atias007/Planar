@@ -18,6 +18,8 @@ namespace Planar.Job
 
 #endif
 
+        private static bool Encrypted { get; set; } = false;
+
         internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
 
         public static Task StartAsync<TJob>()
@@ -119,6 +121,7 @@ namespace Planar.Job
 
             ContextBase64 = GetArgument("--context")?.Value;
             Environment = GetArgument("--environment")?.Value ?? "Development";
+            Encrypted = HasArgument("--encrypted");
         }
 
         private static string GetJsonFromArgs()

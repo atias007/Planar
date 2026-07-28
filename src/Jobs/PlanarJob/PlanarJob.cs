@@ -201,7 +201,7 @@ public abstract class PlanarJob(
             routingKey,
             context.FireInstanceId,
             command: "Cancel",
-            encryptPayload: Properties.EncryptPayload,
+            encryptPayload: false,
             body: string.Empty,
             copies: 20);
     }
@@ -211,16 +211,32 @@ public abstract class PlanarJob(
         ArgumentNullException.ThrowIfNull(Properties.Http);
         ArgumentException.ThrowIfNullOrWhiteSpace(Properties.Http.BaseUrl);
 
+        var key = AppSettings.General.EncryptionKeyBytes;
+        var encryptPayload = Properties.EncryptPayload && key != null && key.Length == 32;
+
+        HttpContent content;
+        if (encryptPayload)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            var encrypted = AesGcmStringCipher.Encrypt(MessageBroker.Details, key);
+            content = new StringContent(encrypted, Encoding.UTF8, MediaTypeNames.Text.Plain);
+        }
+        else
+        {
+            content = new StringContent(MessageBroker.Details, Encoding.UTF8, MediaTypeNames.Application.Json);
+        }
+
         using var httpClient = new HttpClient();
         httpClient.BaseAddress = new Uri(Properties.Http.BaseUrl);
         var resource = $"planar/invoke/{Properties.Http.Route}";
         var request = new HttpRequestMessage(HttpMethod.Post, resource)
         {
-            Content = new StringContent(MessageBroker.Details, Encoding.UTF8, MediaTypeNames.Application.Json),
+            Content = content,
             Headers =
             {
                 { "FireInstanceId", context.FireInstanceId },
-                { "Command", "Invoke" }
+                { "Command", "Invoke" },
+                { "Encrypted", encryptPayload.ToString() }
             }
         };
 
@@ -552,21 +568,34 @@ public abstract class PlanarJob(
     protected override async Task<ProcessStartInfo> GetProcessStartInfo()
     {
         var startInfo = await base.GetProcessStartInfo();
-        var base64String = await GetContextArgument(MessageBroker.Details);
-        startInfo.Arguments = $"--planar-service-mode --context {base64String}";
+        var (base64String, isEncrypted) = await GetContextArgument(MessageBroker.Details);
+        var arg = isEncrypted ? " --encrypted" : string.Empty;
+        startInfo.Arguments = $"--planar-service-mode{arg} --context {base64String}";
         startInfo.StandardErrorEncoding = Encoding.UTF8;
         startInfo.StandardOutputEncoding = Encoding.UTF8;
         SetProcessToLinuxOs(startInfo);
         return startInfo;
     }
 
-    private async Task<string> GetContextArgument(string details)
+    private async Task<(string Base64String, bool IsEncrypted)> GetContextArgument(string details)
     {
         const int lengthLimit = 30_000;
 
-        var bytes = Encoding.UTF8.GetBytes(details);
-        var base64String = Convert.ToBase64String(bytes);
-        if (base64String.Length <= lengthLimit) { return base64String; }
+        var key = AppSettings.General.EncryptionKeyBytes;
+        var encryptPayload = Properties.EncryptPayload && key != null && key.Length == 32;
+        string base64String;
+
+        if (encryptPayload)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            base64String = AesGcmStringCipher.Encrypt(details, key);
+        }
+        else
+        {
+            var bytes = Encoding.UTF8.GetBytes(details);
+            base64String = Convert.ToBase64String(bytes);
+            if (base64String.Length <= lengthLimit) { return (base64String, encryptPayload); }
+        }
 
         try
         {
@@ -581,9 +610,8 @@ public abstract class PlanarJob(
             await File.WriteAllTextAsync(filename, base64String);
             _contextFilename = filename;
             var result = $"[{identifier}]";
-            bytes = Encoding.UTF8.GetBytes(result);
-            base64String = Convert.ToBase64String(bytes);
-            return base64String;
+            var bytes = Encoding.UTF8.GetBytes(result);
+            return (Convert.ToBase64String(bytes), encryptPayload);
         }
         catch (Exception ex)
         {

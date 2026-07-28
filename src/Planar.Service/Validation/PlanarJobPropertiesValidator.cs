@@ -38,13 +38,8 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
 
         RuleFor(e => e.EncryptPayload)
             .Must(e => false)
-            .When(e => string.Equals(e.InvokeMethod, nameof(PlanarJobProperties.Process), StringComparison.OrdinalIgnoreCase))
-            .WithMessage("encrypt payload is not supported for process invoke method");
-
-        RuleFor(e => e.EncryptPayload)
-            .Must(e => false)
-            .When(e => string.IsNullOrWhiteSpace(AppSettings.Authentication.Secret))
-            .WithMessage("encrypt payload is not supported when authentication secret (at appsettings.yml) is not set");
+            .When(e => AppSettings.General.EncryptionKey == null)
+            .WithMessage("encrypt payload is not supported when encryption key is not set. (general section at appsettings.yml)");
 
         RuleFor(e => e).Must(e =>
         {

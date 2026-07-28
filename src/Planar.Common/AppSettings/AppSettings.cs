@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Planar.Common.Exceptions;
+using Planar.Common.Helpers;
 using Planar.Common.Validation;
 using System;
 using System.Collections.Generic;
@@ -73,6 +74,7 @@ public static class AppSettings
         General.EncryptAllSettings = GetSettings(configuration, EC.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
         General.UseHttpsRedirect = GetSettings(configuration, EC.UseHttpsRedirectVariableKey, "general", "use https redirect", true);
         General.UseHttps = GetSettings(configuration, EC.UseHttpsVariableKey, "general", "use https", false);
+        General.EncryptionKey = GetSettings(configuration, string.Empty, "general", "encryption key", string.Empty);
 
         // Cluster
         Cluster.Clustering = GetSettings(configuration, EC.ClusteringVariableKey, "cluster", "clustering", false);
@@ -97,6 +99,15 @@ public static class AppSettings
         {
             throw new AppSettingsException($"'Clustering' is possible when database provider is {Database.Provider}");
         }
+
+        var bytes = Encoding.UTF8.GetBytes(General.EncryptionKey);
+        if (bytes.Length != 32)
+        {
+            var suggestion = Convert.ToBase64String(AesGcmStringCipher.NewKey());
+            throw new AppSettingsException($"'encryption key' must be 32 bytes base64 encoding string. current length is {bytes.Length}. Suggested key: {suggestion}");
+        }
+
+        General.EncryptionKeyBytes = bytes;
     }
 
     private static void InitializeEnvironment(IConfiguration configuration)

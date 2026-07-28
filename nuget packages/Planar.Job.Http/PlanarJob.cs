@@ -8,7 +8,8 @@ using System.Text;
 
 namespace Planar.Job
 {
-    internal interface IPlanarJob { }
+    internal interface IPlanarJob
+    { }
 
     public static partial class PlanarJob
     {
@@ -121,7 +122,7 @@ namespace Planar.Job
                 if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.NotFound(); }
 
                 jobInstanceInfo.Cancel();
-                if(_logger?.IsEnabled(LogLevel.Information) == true)
+                if (_logger?.IsEnabled(LogLevel.Information) == true)
                 {
                     _logger.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
                 }
@@ -143,7 +144,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                return Results.Json(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+                return Results.Text(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
 
@@ -193,24 +194,41 @@ namespace Planar.Job
             return GetHeader(httpContext, "FireInstanceId");
         }
 
-        private static string GetHeader(HttpContext httpContext, string name)
+        private static bool IsEncrypted(HttpContext httpContext)
+        {
+            return string.Equals(GetHeader(httpContext, "Encrypted", mandatory: false), bool.TrueString, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetHeader(HttpContext httpContext, string name, bool mandatory = true)
         {
             httpContext.Request.Headers.TryGetValue(name, out var headerValueObj);
             var result = headerValueObj.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
-            if (string.IsNullOrWhiteSpace(result))
+            if (string.IsNullOrWhiteSpace(result) && mandatory)
             {
                 throw new PlanarJobBadRequestException($"{name} header is missing or empty in the http request headers");
             }
 
-            return result;
+            return result ?? string.Empty;
         }
 
         private static async Task Execute(HttpContext httpContext, Type jobType, JobInstanceInfo jobInstanceInfo)
         {
+            if (jobType == null) { return; }
+
             using var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8);
             var json = await reader.ReadToEndAsync(jobInstanceInfo.CancellationToken);
-            if (jobType == null) { return; }
+
+            var encrypt = IsEncrypted(httpContext);
+            if (encrypt && Properties.EncryptionKeyBytes.Length == 0)
+            {
+                throw new PlanarJobBadRequestException("Encryption key is missing. Set the encryption key at startup properties.");
+            }
+
+            if (encrypt)
+            {
+                json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
+            }
 
             _ = Execute(jobType, Properties, json, jobInstanceInfo.CancellationToken)
                 .ContinueWith(async t =>

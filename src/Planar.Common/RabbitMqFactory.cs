@@ -49,9 +49,12 @@ public sealed class RabbitMqFactory
         await EnsureConnectionAsync();
         ArgumentNullException.ThrowIfNull(_connection);
 
+        var key = AppSettings.General.EncryptionKeyBytes;
+        encryptPayload = encryptPayload && key != null && key.Length == 32;
+
         if (encryptPayload)
         {
-            var key = AesGcmStringCipher.FromSecurityKey(AppSettings.Authentication.Key);
+            ArgumentNullException.ThrowIfNull(key);
             body = AesGcmStringCipher.Encrypt(body, key);
         }
 
@@ -117,7 +120,7 @@ public sealed class RabbitMqFactory
         try
         {
             StopHealthCheckTimer();
-            if (_connection != null) { await _connection.CloseAsync(); }
+            if (_connection != null) { await _connection.CloseAsync(_cancellationToken); }
             _connection?.Dispose();
             _connection = null;
         }

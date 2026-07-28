@@ -15,6 +15,18 @@ namespace Planar.Job.RabbitMq
         {
         }
 
+        public RabbitMqJobStartPropertiesBuilder WithEncryptionKey(string encryptionKey)
+        {
+            if (string.IsNullOrWhiteSpace(encryptionKey)) { throw new ArgumentNullException(nameof(encryptionKey)); }
+            _properties.EncryptionKey = encryptionKey;
+            _properties.EncryptionKeyBytes = Convert.FromBase64String(encryptionKey);
+            if (_properties.EncryptionKeyBytes.Length != 32)
+            {
+                throw new ArgumentException($"Encryption key must be 32 bytes base64 encoding string. current length is {_properties.EncryptionKeyBytes.Length}", nameof(encryptionKey));
+            }
+            return this;
+        }
+
         public RabbitMqJobStartPropertiesBuilder WithHost(IHost host)
         {
             _properties.Host = host ?? throw new ArgumentNullException(nameof(host));
