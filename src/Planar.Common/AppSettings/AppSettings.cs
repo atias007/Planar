@@ -100,7 +100,7 @@ public static class AppSettings
             throw new AppSettingsException($"'Clustering' is possible when database provider is {Database.Provider}");
         }
 
-        var bytes = Encoding.UTF8.GetBytes(General.EncryptionKey);
+        var bytes = Convert.FromBase64String(General.EncryptionKey);
         if (bytes.Length != 32)
         {
             var suggestion = Convert.ToBase64String(AesGcmStringCipher.NewKey());
