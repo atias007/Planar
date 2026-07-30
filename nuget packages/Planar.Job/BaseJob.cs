@@ -286,7 +286,7 @@ namespace Planar.Job
             catch
             {
                 await MqttClient.StopAsync(_context.FireInstanceId);
-                await Task.Delay(500);
+                await Task.Delay(500, _context.CancellationToken);
                 return false;
             }
         }
@@ -296,7 +296,7 @@ namespace Planar.Job
             for (int i = 0; i < 3; i++)
             {
                 await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
-                await Task.Delay(50);
+                await Task.Delay(50, _context.CancellationToken);
             }
         }
 
@@ -684,8 +684,8 @@ namespace Planar.Job
             {
                 const string settingsFilename = "JobSettings.yml";
                 var environmntSettingsFilename = $"JobSettings.{context.Environment}.yml";
-                builder.AddYamlFile(settingsFilename, optional: false, reloadOnChange: false);
-                builder.AddYamlFile(environmntSettingsFilename, optional: false, reloadOnChange: false);
+                builder.AddYamlFile(settingsFilename, optional: true, reloadOnChange: false);
+                builder.AddYamlFile(environmntSettingsFilename, optional: true, reloadOnChange: false);
             }
 
             try

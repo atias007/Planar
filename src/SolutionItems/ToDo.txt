@@ -1,7 +1,7 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
-*** PREFERRED_NODE / PREFERRED_NODE_AUTO
+*** PREFERRED NODE trigger option to run on specific node (by node id or node name)
 
 * test 'global config keys' in jobfile.yml with json config value
 * test hosted job reading jobfile.yml or only appsettings.json

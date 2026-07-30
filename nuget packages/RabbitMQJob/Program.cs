@@ -13,6 +13,7 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .WithPlanarHostName("localhost")
         .WithHost(app)
         .AddHostSingletonType<DemoSignleton>()
+        .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")
         .WithDeadLetterExchange("DLX")
         .WithDeadLetterRoutingKey("Errors")
         .WithRabbitMqConnectionFactory(new RabbitMQ.Client.ConnectionFactory
