@@ -568,16 +568,19 @@ public abstract class PlanarJob(
     protected override async Task<ProcessStartInfo> GetProcessStartInfo()
     {
         var startInfo = await base.GetProcessStartInfo();
-        var (base64String, isEncrypted) = await GetContextArgument(MessageBroker.Details);
-        var arg = isEncrypted ? " --encrypted" : string.Empty;
-        startInfo.Arguments = $"--planar-service-mode{arg} --context {base64String}";
+        var (base64String, isEncrypted, fileIdentifier) = await GetContextArgument(MessageBroker.Details);
+        var hasFileIdentifier = !string.IsNullOrWhiteSpace(fileIdentifier);
+        var arg1 = isEncrypted ? " --encrypted" : string.Empty;
+        var arg2 = hasFileIdentifier ? " --file-identifier" : string.Empty;
+        var arg3 = hasFileIdentifier ? string.Empty : $" --context {base64String}";
+        startInfo.Arguments = $"--planar-service-mode{arg1}{arg2}{arg3}";
         startInfo.StandardErrorEncoding = Encoding.UTF8;
         startInfo.StandardOutputEncoding = Encoding.UTF8;
         SetProcessToLinuxOs(startInfo);
         return startInfo;
     }
 
-    private async Task<(string Base64String, bool IsEncrypted)> GetContextArgument(string details)
+    private async Task<(string Base64String, bool IsEncrypted, string? FileIdentifier)> GetContextArgument(string details)
     {
         const int lengthLimit = 30_000;
 
@@ -594,8 +597,9 @@ public abstract class PlanarJob(
         {
             var bytes = Encoding.UTF8.GetBytes(details);
             base64String = Convert.ToBase64String(bytes);
-            if (base64String.Length <= lengthLimit) { return (base64String, encryptPayload); }
         }
+
+        if (base64String.Length <= lengthLimit) { return (base64String, encryptPayload, null); }
 
         try
         {
@@ -609,9 +613,8 @@ public abstract class PlanarJob(
             var filename = Path.Combine(path, $"{identifier}.ctx");
             await File.WriteAllTextAsync(filename, base64String);
             _contextFilename = filename;
-            var result = $"[{identifier}]";
-            var bytes = Encoding.UTF8.GetBytes(result);
-            return (Convert.ToBase64String(bytes), encryptPayload);
+            var bytes = Encoding.UTF8.GetBytes(identifier);
+            return (Convert.ToBase64String(bytes), encryptPayload, identifier);
         }
         catch (Exception ex)
         {
