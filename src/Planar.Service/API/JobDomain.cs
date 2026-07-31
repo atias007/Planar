@@ -183,16 +183,16 @@ public partial class JobDomain(
         var contentType = httpContext.Request.ContentType ?? string.Empty;
         if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
         {
-            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>();
+            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>(httpContext.RequestAborted);
             ArgumentNullException.ThrowIfNull(entity);
             var validator = Resolve<IValidator<UpdateJobRequest>>();
-            await validator.ValidateAndThrowAsync(entity);
+            await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
             return await Apply(entity);
         }
         else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
         {
             using var reader = new StreamReader(httpContext.Request.Body);
-            var yml = await reader.ReadToEndAsync();
+            var yml = await reader.ReadToEndAsync(httpContext.RequestAborted);
             return await Apply(yml);
         }
 
