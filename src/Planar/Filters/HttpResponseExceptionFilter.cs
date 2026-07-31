@@ -203,7 +203,7 @@ namespace Planar.Filters
 
         private static void HandleRestGeneralException(ActionExecutedContext context, RestGeneralException generalException)
         {
-            context.Result = new ObjectResult(generalException.Message))
+            context.Result = new ObjectResult(generalException.Message)
             {
                 StatusCode = generalException.StatusCode ?? StatusCodes.Status500InternalServerError,
             };
