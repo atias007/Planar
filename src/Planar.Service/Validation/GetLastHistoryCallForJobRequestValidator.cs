@@ -23,7 +23,7 @@ public class GetLastHistoryCallForJobRequestValidator : AbstractValidator<GetLas
         RuleFor(r => r.JobType)
             .Must(t =>
             {
-                return ServiceUtil.JobTypes.Any(j => string.Equals(t, j, System.StringComparison.OrdinalIgnoreCase));
+                return ServiceUtil.JobTypeNames.Any(j => string.Equals(t, j, System.StringComparison.OrdinalIgnoreCase));
             })
             .When(r => !string.IsNullOrEmpty(r.JobType))
             .WithMessage("Invalid job type {PropertyValue}");

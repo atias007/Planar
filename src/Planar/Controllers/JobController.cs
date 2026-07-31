@@ -529,7 +529,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetJobTypes()
     {
-        var result = JobDomain.GetJobTypes();
+        var result = JobDomain.GetJobTypeNames();
         return Ok(result);
     }
 

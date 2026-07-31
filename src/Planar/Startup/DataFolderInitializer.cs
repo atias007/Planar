@@ -72,7 +72,7 @@ namespace Planar.Startup
                 return;
             }
 
-            var types = ServiceUtil.JobTypes;
+            var types = ServiceUtil.JobTypeNames;
             foreach (var t in types)
             {
                 try

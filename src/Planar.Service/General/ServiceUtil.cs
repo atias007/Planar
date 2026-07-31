@@ -21,7 +21,7 @@ public static class ServiceUtil
     private static bool _disposeFlag;
     private static readonly Lock _locker = new();
 
-    public static IEnumerable<string> JobTypes =>
+    public static IEnumerable<string> JobTypeNames =>
     [
         nameof(PlanarJob),
         nameof(ProcessJob),
