@@ -365,8 +365,10 @@ public partial class JobDomain
 
         try
         {
-            if (job.JobType == null) { return typeof(object); }
-            assembly = Assembly.Load(job.JobType);
+            ArgumentException.ThrowIfNullOrWhiteSpace(job.JobType);
+            var type = ServiceUtil.JobTypes.FirstOrDefault(t => string.Equals(t.Name, job.JobType, StringComparison.OrdinalIgnoreCase));
+            ArgumentNullException.ThrowIfNull(type);
+            assembly = type.Assembly;
         }
         catch (Exception)
         {
@@ -472,7 +474,7 @@ public partial class JobDomain
 
         #region JobType
 
-        if (!ServiceUtil.JobTypes.Contains(metadata.JobType))
+        if (!ServiceUtil.JobTypeNames.Contains(metadata.JobType))
         {
             throw new RestValidationException("job type", $"job type '{metadata.JobType}' is not supported");
         }

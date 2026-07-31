@@ -77,11 +77,11 @@ namespace Planar.Startup
             {
                 try
                 {
-                    var path = Path.Combine(jobFileFolder, t);
+                    var path = Path.Combine(jobFileFolder, t.Name);
                     EnsurePath(path);
 
-                    var assembly = Assembly.Load(t);
-                    var resource = $"{t}.JobFile.yml";
+                    var assembly = t.Assembly;
+                    var resource = $"{t.Name}.JobFile.yml";
                     using var stream = assembly.GetManifestResourceStream(resource);
                     using var reader = new StreamReader(stream);
                     var content = await reader.ReadToEndAsync();

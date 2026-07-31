@@ -86,7 +86,7 @@ public partial class JobDomain
             if (request == null) { return null; }
             if (string.IsNullOrWhiteSpace(request.JobType)) { return null; }
             if (string.IsNullOrWhiteSpace(request.Name)) { return null; }
-            if (!ServiceUtil.JobTypes.Any(j => string.Equals(j, request.JobType, StringComparison.OrdinalIgnoreCase))) { return null; }
+            if (!ServiceUtil.JobTypeNames.Any(j => string.Equals(j, request.JobType, StringComparison.OrdinalIgnoreCase))) { return null; }
 
             var key = JobKeyHelper.GetJobKey(request);
             if (key == null) { return null; }

@@ -9,6 +9,7 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
+using Planar.Service.General;
 using Planar.Validation.Attributes;
 using System;
 using System.Collections.Generic;
@@ -529,7 +530,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetJobTypes()
     {
-        var result = JobDomain.GetJobTypes();
+        var result = ServiceUtil.JobTypeNames;
         return Ok(result);
     }
 

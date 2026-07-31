@@ -18,10 +18,8 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -183,16 +181,16 @@ public partial class JobDomain(
         var contentType = httpContext.Request.ContentType ?? string.Empty;
         if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
         {
-            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>();
+            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>(httpContext.RequestAborted);
             ArgumentNullException.ThrowIfNull(entity);
             var validator = Resolve<IValidator<UpdateJobRequest>>();
-            await validator.ValidateAndThrowAsync(entity);
+            await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
             return await Apply(entity);
         }
         else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
         {
             using var reader = new StreamReader(httpContext.Request.Body);
-            var yml = await reader.ReadToEndAsync();
+            var yml = await reader.ReadToEndAsync(httpContext.RequestAborted);
             return await Apply(yml);
         }
 
@@ -263,19 +261,11 @@ public partial class JobDomain(
     {
         var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
 
-        var existsTypeName = GetJobTypes().FirstOrDefault(t => string.Equals(t, typeName, StringComparison.OrdinalIgnoreCase));
-        if (string.IsNullOrWhiteSpace(existsTypeName)) { throw notFoundException.Value; }
+        var existsType =
+            ServiceUtil.JobTypes.FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.OrdinalIgnoreCase))
+            ?? throw notFoundException.Value;
 
-        Assembly assembly;
-
-        try
-        {
-            assembly = Assembly.Load(typeName);
-        }
-        catch
-        {
-            throw notFoundException.Value;
-        }
+        var assembly = existsType.Assembly;
 
         var resources = assembly.GetManifestResourceNames();
         var resourceName =
@@ -295,11 +285,6 @@ public partial class JobDomain(
         }
 
         return result;
-    }
-
-    public static IEnumerable<string> GetJobTypes()
-    {
-        return ServiceUtil.JobTypes;
     }
 
     public async Task<bool> Cancel(FireInstanceIdRequest request)
@@ -352,19 +337,18 @@ public partial class JobDomain(
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
     {
         var resolver = Resolve<JobDetailsResolver>();
-        List<IJobDetail> jobs = (request.JobCategory switch
+        IEnumerable<IJobDetail> jobs = (request.JobCategory switch
         {
             AllJobsMembers.AllUserJobs => await resolver.GetUserJobDetailsAsync(request.Group),
             AllJobsMembers.AllSystemJobs => await resolver.GetSystemJobDetailsAsync(),
             _ => await resolver.GetAllJobDetailsAsync(request.Group),
-        }).ToList();
+        });
 
         // filter by job type
         if (!string.IsNullOrEmpty(request.JobType))
         {
             jobs = jobs
-                .Where(r => string.Equals(SchedulerUtil.GetJobTypeName(r.JobType), request.JobType, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+                .Where(r => string.Equals(SchedulerUtil.GetJobTypeName(r.JobType), request.JobType, StringComparison.OrdinalIgnoreCase));
         }
 
         // filter by search
@@ -375,8 +359,7 @@ public partial class JobDomain(
                     r.Key.Name.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
                     r.Key.Group.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
                     (r.Description != null && r.Description.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
-                    )
-                .ToList();
+                    );
         }
 
         // fill IsActive property

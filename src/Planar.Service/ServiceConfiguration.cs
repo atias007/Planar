@@ -50,7 +50,7 @@ namespace Planar.Service
             services.AddSingleton<RabbitMqFactory>();
 
             // AutoMapper
-            services.AddAutoMapper(c => c.LicenseKey = null, Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
+            services.AddAutoMapper(c => c.LicenseKey = null, typeof(ServiceConfiguration).Assembly);
 
             // DAL
             services.AddPlanarDataLayerWithContext();
@@ -82,7 +82,7 @@ namespace Planar.Service
             services.AddSingleton<MonitorScanProducer>();
 
             // AutoMapper
-            var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
+            var assemply = typeof(ServiceConfiguration).Assembly;
             services.AddAutoMapperProfiles([assemply]);
 
             return services;
