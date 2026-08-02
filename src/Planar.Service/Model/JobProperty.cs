@@ -1,5 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model;
 
@@ -17,6 +20,5 @@ public partial class JobProperty
     public string JobType { get; set; } = null!;
 
     [StringLength(2000)]
-    [Unicode(false)]
     public string? GlobalConfigKeys { get; set; }
 }

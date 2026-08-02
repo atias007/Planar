@@ -7,7 +7,7 @@ namespace Planar.Client
     {
         protected readonly RestProxy _proxy;
 
-        protected static HttpMethod HttpPatchMethod = new HttpMethod("Patch");
+        protected static readonly HttpMethod HttpPatchMethod = new HttpMethod("Patch");
 
         public BaseApi(RestProxy proxy)
         {

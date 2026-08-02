@@ -156,7 +156,7 @@ namespace Planar.Job.RabbitMq
                 autoAck: true,
                 consumerTag: $"Planar:{queueName}",
                 consumer: consumer,
-                cancellationToken: this.cancellationToken);
+                cancellationToken: cancellationToken);
 
             return consumer;
         }
@@ -370,7 +370,7 @@ namespace Planar.Job.RabbitMq
                 durable: true,
                 autoDelete: false,
                 arguments: null,
-                cancellationToken: this.cancellationToken);
+                cancellationToken: cancellationToken);
 
             await _channel.QueueDeclareAsync(
                 queue: queueName,
@@ -378,14 +378,14 @@ namespace Planar.Job.RabbitMq
                 exclusive: false,     // quorum queues cannot be exclusive
                 autoDelete: false,    // quorum queues cannot be auto-delete
                 arguments: queueArguments,
-                cancellationToken: this.cancellationToken);
+                cancellationToken: cancellationToken);
 
             await _channel.QueueBindAsync(
                 queue: queueName,
                 exchange: properties.Exchange,
                 routingKey: queueName,
                 arguments: null,
-                cancellationToken: this.cancellationToken);
+                cancellationToken: cancellationToken);
 
             if (logSuccess)
             {

@@ -348,7 +348,7 @@ namespace Planar.Job
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
             LogVersion();
-            ExecuteJob(_context).Wait();
+            ExecuteJob(_context).Wait(_timeoutCancelTokenSource?.Token ?? CancellationToken.None);
 
             var result = new UnitTestResult
             {
@@ -363,6 +363,7 @@ namespace Planar.Job
 
         private static void ValidateMaxLength(string value, int length, string name)
 #else
+
         private static void ValidateMaxLength(string? value, int length, string name)
 #endif
         {

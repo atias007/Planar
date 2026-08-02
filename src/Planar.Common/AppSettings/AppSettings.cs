@@ -24,6 +24,8 @@ public enum AuthMode
 
 public static class AppSettings
 {
+    private const string general = "general";
+
     public static GeneralSettings General { get; private set; } = new();
 
     public static SmtpSettings Smtp { get; private set; } = new();
@@ -46,6 +48,8 @@ public static class AppSettings
     {
         Console.WriteLine("[x] Initialize AppSettings");
 
+        const string instanceId = "instance id";
+
         InitializeEnvironment(configuration);
         InitializeConnectionString(configuration);
         InitializeMaxConcurrency(configuration);
@@ -59,41 +63,44 @@ public static class AppSettings
         InitializeHooks(configuration);
 
         // Database
-        Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Sqlite");
-        Database.RunMigration = GetSettings(configuration, EC.RunDatabaseMigrationVariableKey, "database", "run migration", true);
+        const string database = "database";
+        Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, database, "provider", "Sqlite");
+        Database.RunMigration = GetSettings(configuration, EC.RunDatabaseMigrationVariableKey, database, "run migration", true);
         DbFactory.SetDatabaseProvider();
 
         // General
-        General.InstanceId = GetSettings(configuration, EC.InstanceIdVariableKey, "general", "instance id", "AUTO");
-        General.ServiceName = GetSettings(configuration, EC.ServiceNameVariableKey, "general", "service name", "PlanarService");
-        General.JobAutoStopSpan = GetSettings(configuration, EC.JobAutoStopSpanVariableKey, "general", "job auto stop span", TimeSpan.FromHours(2));
-        General.OpenApiUI = GetSettings(configuration, EC.OpenApiUIVariableKey, "general", "open api ui", true);
-        General.DeveloperExceptionPage = GetSettings(configuration, EC.DeveloperExceptionPageVariableKey, "general", "developer exception page", true);
-        General.SchedulerStartupDelay = GetSettings(configuration, EC.SchedulerStartupDelayVariableKey, "general", "scheduler startup delay", TimeSpan.FromSeconds(30));
-        General.ConcurrencyRateLimiting = GetSettings(configuration, EC.ConcurrencyRateLimitingVariableKey, "general", "concurrency rate limiting", 10);
-        General.EncryptAllSettings = GetSettings(configuration, EC.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
-        General.UseHttpsRedirect = GetSettings(configuration, EC.UseHttpsRedirectVariableKey, "general", "use https redirect", true);
-        General.UseHttps = GetSettings(configuration, EC.UseHttpsVariableKey, "general", "use https", false);
-        General.EncryptionKey = GetSettings(configuration, string.Empty, "general", "encryption key", string.Empty);
+        General.InstanceId = GetSettings(configuration, EC.InstanceIdVariableKey, general, instanceId, "AUTO");
+        General.ServiceName = GetSettings(configuration, EC.ServiceNameVariableKey, general, "service name", "PlanarService");
+        General.JobAutoStopSpan = GetSettings(configuration, EC.JobAutoStopSpanVariableKey, general, "job auto stop span", TimeSpan.FromHours(2));
+        General.OpenApiUI = GetSettings(configuration, EC.OpenApiUIVariableKey, general, "open api ui", true);
+        General.DeveloperExceptionPage = GetSettings(configuration, EC.DeveloperExceptionPageVariableKey, general, "developer exception page", true);
+        General.SchedulerStartupDelay = GetSettings(configuration, EC.SchedulerStartupDelayVariableKey, general, "scheduler startup delay", TimeSpan.FromSeconds(30));
+        General.ConcurrencyRateLimiting = GetSettings(configuration, EC.ConcurrencyRateLimitingVariableKey, general, "concurrency rate limiting", 10);
+        General.EncryptAllSettings = GetSettings(configuration, EC.EncryptAllSettingsVariableKey, general, "encrypt all settings", false);
+        General.UseHttpsRedirect = GetSettings(configuration, EC.UseHttpsRedirectVariableKey, general, "use https redirect", true);
+        General.UseHttps = GetSettings(configuration, EC.UseHttpsVariableKey, general, "use https", false);
+        General.EncryptionKey = GetSettings(configuration, string.Empty, general, "encryption key", string.Empty);
 
         // Cluster
-        Cluster.Clustering = GetSettings(configuration, EC.ClusteringVariableKey, "cluster", "clustering", false);
-        Cluster.CheckinInterval = GetSettings(configuration, EC.ClusteringCheckinIntervalVariableKey, "cluster", "checkin interval", TimeSpan.FromSeconds(5));
-        Cluster.CheckinMisfireThreshold = GetSettings(configuration, EC.ClusteringCheckinMisfireThresholdVariableKey, "cluster", "checkin misfire threshold", TimeSpan.FromSeconds(5));
-        Cluster.HealthCheckInterval = GetSettings(configuration, EC.ClusterHealthCheckIntervalVariableKey, "cluster", "health check interval", TimeSpan.FromMinutes(1));
-        Cluster.Port = GetSettings(configuration, EC.ClusterPortVariableKey, "cluster", "port", 12306);
+        const string cluster = "cluster";
+        Cluster.Clustering = GetSettings(configuration, EC.ClusteringVariableKey, cluster, "clustering", false);
+        Cluster.CheckinInterval = GetSettings(configuration, EC.ClusteringCheckinIntervalVariableKey, cluster, "checkin interval", TimeSpan.FromSeconds(5));
+        Cluster.CheckinMisfireThreshold = GetSettings(configuration, EC.ClusteringCheckinMisfireThresholdVariableKey, cluster, "checkin misfire threshold", TimeSpan.FromSeconds(5));
+        Cluster.HealthCheckInterval = GetSettings(configuration, EC.ClusterHealthCheckIntervalVariableKey, cluster, "health check interval", TimeSpan.FromMinutes(1));
+        Cluster.Port = GetSettings(configuration, EC.ClusterPortVariableKey, cluster, "port", 12306);
 
         // Retention
-        Retention.TraceRetentionDays = GetSettings(configuration, EC.TraceRetentionDaysVariableKey, "retention", "trace retention days", 365);
-        Retention.JobLogRetentionDays = GetSettings(configuration, EC.JobLogRetentionDaysVariableKey, "retention", "job log retention days", 365);
-        Retention.StatisticsRetentionDays = GetSettings(configuration, EC.MetricssRetentionDaysVariableKey, "retention", "statistics retention days", 365);
+        const string retention = "retention";
+        Retention.TraceRetentionDays = GetSettings(configuration, EC.TraceRetentionDaysVariableKey, retention, "trace retention days", 365);
+        Retention.JobLogRetentionDays = GetSettings(configuration, EC.JobLogRetentionDaysVariableKey, retention, "job log retention days", 365);
+        Retention.StatisticsRetentionDays = GetSettings(configuration, EC.MetricssRetentionDaysVariableKey, retention, "statistics retention days", 365);
 
         // === Validation ===
         ValidateRequired(Database.Provider, "provider");
         ValidateRequired(General.ConcurrencyRateLimiting, "concurrency rate limiting");
         ValidateMinimumValue(General.ConcurrencyRateLimiting, minimum: 1, "concurrency rate limiting");
-        ValidateMaxLength(General.InstanceId, maxLength: 50, "instance id");
-        ValidateMinLength(General.InstanceId, minLength: 3, "instance id");
+        ValidateMaxLength(General.InstanceId, maxLength: 50, instanceId);
+        ValidateMinLength(General.InstanceId, minLength: 3, instanceId);
 
         if (Cluster.Clustering && !Database.ProviderAllowClustering)
         {
@@ -112,7 +119,7 @@ public static class AppSettings
 
     private static void InitializeEnvironment(IConfiguration configuration)
     {
-        General.Environment = GetSettings(configuration, EC.EnvironmentVariableKey, "general", "environment", Consts.ProductionEnvironment);
+        General.Environment = GetSettings(configuration, EC.EnvironmentVariableKey, general, "environment", Consts.ProductionEnvironment);
         Global.Environment = General.Environment;
         if (General.Environment == Consts.ProductionEnvironment)
         {
@@ -126,16 +133,17 @@ public static class AppSettings
 
     private static void InitializeSmtp(IConfiguration configuration)
     {
-        Smtp.Host = GetSettings(configuration, EC.SmtpHost, "smtp", "host", string.Empty);
-        Smtp.Port = GetSettings(configuration, EC.SmtpPort, "smtp", "port", 25);
-        Smtp.FromAddress = GetSettings(configuration, EC.SmtpFromAddress, "smtp", "from address", string.Empty);
-        Smtp.FromName = GetSettings(configuration, EC.SmtpFromName, "smtp", "from name", string.Empty);
-        Smtp.Username = GetSettings(configuration, EC.SmtpUsername, "smtp", "username", string.Empty);
-        Smtp.Password = GetSettings(configuration, EC.SmtpPassword, "smtp", "password", string.Empty);
-        Smtp.UseDefaultCredentials = GetSettings(configuration, EC.UseSmtpDefaultCredentials, "smtp", "default credentials", false);
-        Smtp.HtmlImageInternalBaseUrl = GetSettings(configuration, EC.SmtpHtmlImageInternalBaseUrl, "smtp", "html image internal base url", string.Empty);
+        const string smtp = "smtp";
+        Smtp.Host = GetSettings(configuration, EC.SmtpHost, smtp, "host", string.Empty);
+        Smtp.Port = GetSettings(configuration, EC.SmtpPort, smtp, "port", 25);
+        Smtp.FromAddress = GetSettings(configuration, EC.SmtpFromAddress, smtp, "from address", string.Empty);
+        Smtp.FromName = GetSettings(configuration, EC.SmtpFromName, smtp, "from name", string.Empty);
+        Smtp.Username = GetSettings(configuration, EC.SmtpUsername, smtp, "username", string.Empty);
+        Smtp.Password = GetSettings(configuration, EC.SmtpPassword, smtp, "password", string.Empty);
+        Smtp.UseDefaultCredentials = GetSettings(configuration, EC.UseSmtpDefaultCredentials, smtp, "default credentials", false);
+        Smtp.HtmlImageInternalBaseUrl = GetSettings(configuration, EC.SmtpHtmlImageInternalBaseUrl, smtp, "html image internal base url", string.Empty);
 
-        var imageMode = GetSettings(configuration, EC.SmtpHtmlImageMode, "smtp", "html image mode", "embedded");
+        var imageMode = GetSettings(configuration, EC.SmtpHtmlImageMode, smtp, "html image mode", "embedded");
         ValidateRequired(imageMode, "html image mode");
         var result = ValidateEnum<ImageMode>(imageMode, "html image mode");
         ValidateMaxLength(Smtp.HtmlImageInternalBaseUrl, maxLength: 1000, "html image internal base url");
@@ -248,9 +256,10 @@ public static class AppSettings
 
     private static void InitializeMonitor(IConfiguration configuration)
     {
-        Monitor.MaxAlertsPerMonitor = GetSettings(configuration, EC.MonitorMaxAlerts, "monitor", "max alerts per monitor", 10);
-        Monitor.MaxAlertsPeriod = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, "monitor", "max alerts period", TimeSpan.FromDays(1));
-        Monitor.ManualMuteMaxPeriod = GetSettings(configuration, EC.MonitorManualMuteMaxPeriod, "monitor", "manual mute max period", TimeSpan.FromDays(1));
+        const string monitor = "monitor";
+        Monitor.MaxAlertsPerMonitor = GetSettings(configuration, EC.MonitorMaxAlerts, monitor, "max alerts per monitor", 10);
+        Monitor.MaxAlertsPeriod = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, monitor, "max alerts period", TimeSpan.FromDays(1));
+        Monitor.ManualMuteMaxPeriod = GetSettings(configuration, EC.MonitorManualMuteMaxPeriod, monitor, "manual mute max period", TimeSpan.FromDays(1));
 
         ValidateMinimumValue(Monitor.MaxAlertsPerMonitor, minimum: 1, "max alerts per monitor");
 
@@ -333,7 +342,7 @@ public static class AppSettings
 
     private static void InitializePersistanceSpan(IConfiguration configuration)
     {
-        General.PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, EC.PersistRunningJobsSpanVariableKey, "general", "persist running jobs span");
+        General.PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, EC.PersistRunningJobsSpanVariableKey, general, "persist running jobs span");
 
         if (General.PersistRunningJobsSpan == TimeSpan.Zero)
         {
@@ -346,7 +355,7 @@ public static class AppSettings
 
     private static void InitializeMaxConcurrency(IConfiguration configuration)
     {
-        General.MaxConcurrency = GetSettings<int>(configuration, EC.MaxConcurrencyVariableKey, "general", "max concurrency");
+        General.MaxConcurrency = GetSettings<int>(configuration, EC.MaxConcurrencyVariableKey, general, "max concurrency");
 
         if (General.MaxConcurrency == default)
         {
@@ -385,9 +394,9 @@ public static class AppSettings
 
     private static void InitializePorts(IConfiguration configuration)
     {
-        General.HttpPort = GetSettings(configuration, EC.HttpPortVariableKey, "general", "http port", 2306);
-        General.HttpsPort = GetSettings(configuration, EC.HttpsPortVariableKey, "general", "https port", 2610);
-        General.JobPort = GetSettings(configuration, EC.JobPortVariableKey, "general", "job port", 206);
+        General.HttpPort = GetSettings(configuration, EC.HttpPortVariableKey, general, "http port", 2306);
+        General.HttpsPort = GetSettings(configuration, EC.HttpsPortVariableKey, general, "https port", 2610);
+        General.JobPort = GetSettings(configuration, EC.JobPortVariableKey, general, "job port", 206);
 
         ValidatePort(General.HttpPort, "http port");
         ValidatePort(General.HttpsPort, "https port");
@@ -402,7 +411,7 @@ public static class AppSettings
 
     private static void InitializeLogLevel(IConfiguration configuration)
     {
-        var level = GetSettings(configuration, EC.LogLevelVariableKey, "general", "log level", LogLevel.Information.ToString());
+        var level = GetSettings(configuration, EC.LogLevelVariableKey, general, "log level", LogLevel.Information.ToString());
         if (Enum.TryParse<LogLevel>(level, true, out var tempLevel))
         {
             General.LogLevel = tempLevel;

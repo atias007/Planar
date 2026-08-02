@@ -234,7 +234,7 @@ namespace Planar.Job
                 .ContinueWith(async t =>
                 {
                     await UntrackInstance(jobInstanceInfo.FireInstanceId);
-                });
+                }, jobInstanceInfo.CancellationToken);
         }
 
         private static void FillProperties()
