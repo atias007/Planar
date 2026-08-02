@@ -8,10 +8,11 @@ concurrent: false
 log retention days: 7
 
 properties:
-  invoke method: rabbitmq 
+  invoke method: rabbitmq
+  encrypt payload: true
   rabbitmq:
-    exchange: planar
-    routing key: null
+    exchange: Planar
+    routing key: JobA
 
 simple triggers:
   - name: every-hour-trigger

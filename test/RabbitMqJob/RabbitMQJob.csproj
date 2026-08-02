@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\nuget packages\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj" />
   </ItemGroup>
 
 </Project>

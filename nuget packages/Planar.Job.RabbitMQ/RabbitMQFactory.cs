@@ -155,7 +155,8 @@ namespace Planar.Job.RabbitMq
                 queue: queueName,
                 autoAck: true,
                 consumerTag: $"Planar:{queueName}",
-                consumer: consumer);
+                consumer: consumer,
+                cancellationToken: this.cancellationToken);
 
             return consumer;
         }
@@ -179,18 +180,18 @@ namespace Planar.Job.RabbitMq
         {
             try
             {
-                if (_channel != null) { await _channel.CloseAsync(); }
+                if (_channel != null) { await _channel.CloseAsync(cancellationToken); }
                 _channel?.Dispose();
                 _channel = null;
             }
-            catch 
+            catch
             {
-                // *** DO NOTHING *** ///
+                // *** DO NOTHING *** //
             }
 
             try
             {
-                if (_connection != null) { await _connection.CloseAsync(); }
+                if (_connection != null) { await _connection.CloseAsync(cancellationToken); }
                 _connection?.Dispose();
                 _connection = null;
             }
@@ -248,7 +249,7 @@ namespace Planar.Job.RabbitMq
 
             var total = await _channel.MessageCountAsync(queueName, cancellationToken);
             if (total == 0) { return; }
-            await Task.Delay(1_000);
+            await Task.Delay(1_000, cancellationToken);
             total = await _channel.MessageCountAsync(queueName, cancellationToken);
             if (total == 0) { return; }
 
@@ -333,7 +334,7 @@ namespace Planar.Job.RabbitMq
             }
             catch
             {
-                /// *** DO NOTHING *** ///
+                // *** DO NOTHING *** //
             }
         }
 
@@ -368,20 +369,23 @@ namespace Planar.Job.RabbitMq
                 type: ExchangeType.Direct,
                 durable: true,
                 autoDelete: false,
-                arguments: null);
+                arguments: null,
+                cancellationToken: this.cancellationToken);
 
             await _channel.QueueDeclareAsync(
                 queue: queueName,
                 durable: true,        // quorum queues must be durable
                 exclusive: false,     // quorum queues cannot be exclusive
                 autoDelete: false,    // quorum queues cannot be auto-delete
-                arguments: queueArguments);
+                arguments: queueArguments,
+                cancellationToken: this.cancellationToken);
 
             await _channel.QueueBindAsync(
                 queue: queueName,
                 exchange: properties.Exchange,
                 routingKey: queueName,
-                arguments: null);
+                arguments: null,
+                cancellationToken: this.cancellationToken);
 
             if (logSuccess)
             {

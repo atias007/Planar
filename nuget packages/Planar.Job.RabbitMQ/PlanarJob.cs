@@ -216,6 +216,7 @@ namespace Planar.Job
 
             if (encrypt)
             {
+                _logger?.LogDebug("Decrypting message body for job {JobType}", jobType.Name);
                 json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
             }
 
