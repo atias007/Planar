@@ -31,5 +31,8 @@ namespace Planar.API.Common.Entities
         public string? Calendar { get; set; }
 
         public TimeSpan? Timeout { get; set; }
+
+        [YamlMember(Alias = "prefered node")]
+        public string? PreferedNode { get; set; }
     }
 }

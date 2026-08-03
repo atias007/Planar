@@ -79,6 +79,12 @@ public partial class JobDomain
             if (currentTrigger.EndTimeUtc != newTrigger.EndTimeUtc) { return true; }
             if (currentTrigger.Priority != newTrigger.Priority) { return true; }
             if (currentTrigger.HasMillisecondPrecision != newTrigger.HasMillisecondPrecision) { return true; }
+
+            var current_abs = ((Quartz.Impl.Triggers.AbstractTrigger)currentTrigger);
+            var new_abs = ((Quartz.Impl.Triggers.AbstractTrigger)newTrigger);
+            if (current_abs.IsPreferredNodeAuto != new_abs.IsPreferredNodeAuto) { return true; }
+            if (current_abs.PreferredNode != new_abs.PreferredNode) { return true; }
+            if (current_abs.ExecutionGroup != new_abs.ExecutionGroup) { return true; }
             //// ***IGNORE START TIME *** // if (currentTrigger.StartTimeUtc != newTrigger.StartTimeUtc) { return false; } *** IGNORE START TIME ***
 
             if (currentTrigger is ISimpleTrigger currentSimple && newTrigger is ISimpleTrigger newSimple)
