@@ -10,11 +10,13 @@ namespace Planar.Client.Entities
         public string MisfireBehaviour { get; set; }
         public string State { get; set; }
         public Dictionary<string, string> DataMap { get; set; } = new Dictionary<string, string>();
+        public string PreferredNode { get; set; }
 #else
         public string? CalendarName { get; set; }
         public string? MisfireBehaviour { get; set; }
         public string? State { get; set; }
         public Dictionary<string, string?> DataMap { get; set; } = new Dictionary<string, string?>();
+        public string? PreferredNode { get; set; }
 #endif
 
         public DateTime Start { get; set; }

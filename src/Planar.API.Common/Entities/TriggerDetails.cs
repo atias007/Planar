@@ -45,7 +45,10 @@ public class TriggerDetails : PausedTriggerDetails
     [YamlMember(Order = 32)]
     public string? State { get; set; }
 
-    [YamlMember(Order = 33)]
+    [YamlMember(Order = 32)]
+    public string? PreferedNode { get; set; }
+
+    [YamlMember(Order = 34)]
     public bool Active { get; set; }
 
     [YamlMember(Order = 100)]

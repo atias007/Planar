@@ -332,6 +332,11 @@ public partial class JobDomain
             trigger = trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
         }
 
+        if (!string.IsNullOrWhiteSpace(jobTrigger.PreferedNode))
+        {
+            trigger = trigger.WithPreferredNode(jobTrigger.PreferedNode);
+        }
+
         return trigger;
     }
 
@@ -630,6 +635,25 @@ public partial class JobDomain
         }
     }
 
+    private static void ValidateTriggerPreferedNode(TriggerPool pool)
+    {
+        foreach (var t in pool.Triggers)
+        {
+            if (string.IsNullOrWhiteSpace(t.PreferedNode))
+            {
+                t.PreferedNode = null;
+                continue;
+            }
+
+            t.PreferedNode = t.PreferedNode.Trim();
+            if (t.PreferedNode == "*") { continue; }
+            if (!Common.Validation.ValidationUtil.IsValidNodeInstanceId(t.PreferedNode))
+            {
+                throw new RestValidationException(nameof(t.PreferedNode), $"prefered node '{t.PreferedNode}' is not valid. must be 3 to 50 characters. valid values are: a-z, A-Z, 0-9, -, _");
+            }
+        }
+    }
+
     private static void ValidateTriggerInterval(ITriggersContainer container)
     {
         container.SimpleTriggers?.ForEach(t =>
@@ -658,6 +682,7 @@ public partial class JobDomain
         ValidateCronExpression(container);
         ValidateTriggerMisfireBehaviour(container);
         ValidateTriggerCalendar(pool, scheduler);
+        ValidateTriggerPreferedNode(pool);
     }
 
     private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)

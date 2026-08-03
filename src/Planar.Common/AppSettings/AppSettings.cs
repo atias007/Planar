@@ -99,8 +99,14 @@ public static class AppSettings
         ValidateRequired(Database.Provider, "provider");
         ValidateRequired(General.ConcurrencyRateLimiting, "concurrency rate limiting");
         ValidateMinimumValue(General.ConcurrencyRateLimiting, minimum: 1, "concurrency rate limiting");
+        ValidateRequired(General.InstanceId, instanceId);
         ValidateMaxLength(General.InstanceId, maxLength: 50, instanceId);
         ValidateMinLength(General.InstanceId, minLength: 3, instanceId);
+
+        if (!ValidationUtil.IsValidNodeInstanceId(General.InstanceId))
+        {
+            throw new AppSettingsException($"'instance id' value '{General.InstanceId}' is invalid. valid values are: a-z, A-Z, 0-9, -, _");
+        }
 
         if (Cluster.Clustering && !Database.ProviderAllowClustering)
         {
