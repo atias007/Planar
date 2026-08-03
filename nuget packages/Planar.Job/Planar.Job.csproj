@@ -47,6 +47,7 @@
 		<Compile Include="..\Planar.Common\JobMapper.cs" Link="JobMapper.cs" />
 		<Compile Include="..\Planar.Common\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
+		<Compile Include="..\Planar.Job.RabbitMQ\AesGcmStringCipher.cs" Link="AesGcmStringCipher.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -77,8 +78,9 @@
 	  <Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 	<ItemGroup>
+	  <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
 	  <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
-	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774">
+	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.31.0.145097">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>

@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Job
 {
-    internal interface IPlanarJob { }
+    internal interface IPlanarJob
+    { }
 
     public static partial class PlanarJob
     {
@@ -174,7 +175,12 @@ namespace Planar.Job
             return GetHeader(eventArgs, "FireInstanceId");
         }
 
-        private static string GetHeader(BasicDeliverEventArgs eventArgs, string name)
+        private static bool IsEncrypted(BasicDeliverEventArgs eventArgs)
+        {
+            return string.Equals(GetHeader(eventArgs, "Encrypted", mandatory: false), bool.TrueString, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetHeader(BasicDeliverEventArgs eventArgs, string name, bool mandatory = true)
         {
 #if NETSTANDARD2_0
             object headerValueObj = null;
@@ -188,7 +194,7 @@ namespace Planar.Job
             }
 
             var result = Convert.ToString(headerValueObj);
-            if (string.IsNullOrWhiteSpace(result))
+            if (string.IsNullOrWhiteSpace(result) && mandatory)
             {
                 throw new PlanarJobException($"{name} header is missing or empty in the message headers");
             }
@@ -198,8 +204,21 @@ namespace Planar.Job
 
         private static async Task Execute(BasicDeliverEventArgs eventArgs, Type jobType, CancellationToken cancellationToken)
         {
-            var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
             if (jobType == null) { return; }
+            var json = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
+
+            var encrypt = IsEncrypted(eventArgs);
+            if (encrypt && Properties.EncryptionKeyBytes.Length == 0)
+            {
+                throw new PlanarJobBadRequestException("Encryption key is missing. Set the encryption key at startup properties.");
+            }
+
+            if (encrypt)
+            {
+                _logger?.LogDebug("Decrypting message body for job {JobType}", jobType.Name);
+                json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
+            }
+
             await Execute(jobType, Properties, json, cancellationToken);
         }
 

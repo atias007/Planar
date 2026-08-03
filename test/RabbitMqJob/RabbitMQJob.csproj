@@ -8,14 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.31.0.145097">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\nuget packages\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="JobFile_JobA.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

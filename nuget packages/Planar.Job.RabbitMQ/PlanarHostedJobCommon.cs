@@ -50,7 +50,7 @@ namespace Planar.Job
                         _logger.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
                     }
 
-                    await Task.Delay(1_000);
+                    await Task.Delay(1_000, _mainCancellationTokenSource.Token);
                 }
 
                 if (!_jobInstances.IsEmpty)
@@ -109,13 +109,13 @@ namespace Planar.Job
                     {
                         // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
                     }
-                    await Task.Delay(50);
+                    await Task.Delay(50, _mainCancellationTokenSource.Token);
                     try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
                     catch
                     {
                         // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
                     }
-                    await Task.Delay(50);
+                    await Task.Delay(50, _mainCancellationTokenSource.Token);
                     try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
                     catch
                     {

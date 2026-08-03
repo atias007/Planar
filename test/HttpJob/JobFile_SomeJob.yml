@@ -1,17 +1,18 @@
 job type: PlanarJob
-name: RabbitMqTest
+name: HttpHostedTest
 group: Demo
 author: israel israeli (sales)
-description: Invoke job with rabbit mq
+description: Invoke job with http
 durable: true 
 concurrent: false
 log retention days: 7
 
 properties:
-  invoke method: rabbitmq 
-  rabbitmq:
-    exchange: planar
-    routing key: null
+  invoke method: http
+  encrypt payload: true
+  http:
+    base url: http://localhost:5000
+    route: SomeJob
 
 simple triggers:
   - name: every-hour-trigger

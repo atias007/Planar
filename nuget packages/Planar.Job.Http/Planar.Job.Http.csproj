@@ -36,11 +36,12 @@
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
 		<PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.31.0.145097">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -58,6 +59,7 @@
 		<Compile Include="..\Planar.Common\ConsoleLogger.cs" Link="ConsoleLogger.cs" />
 		<Compile Include="..\Planar.Common\JobInstanceInfo.cs" Link="JobInstanceInfo.cs" />
 		<Compile Include="..\Planar.Common\LogEntity.cs" Link="LogEntity.cs" />
+		<Compile Include="..\Planar.Job.RabbitMQ\AesGcmStringCipher.cs" Link="AesGcmStringCipher.cs" />
 		<Compile Include="..\Planar.Job.RabbitMQ\PlanarHostedJobCommon.cs" Link="PlanarHostedJobCommon.cs" />
 		<Compile Include="..\Planar.Job\Argument.cs" Link="Argument.cs" />
 		<Compile Include="..\Planar.Job\BaseJob.cs" Link="BaseJob.cs" />

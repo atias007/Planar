@@ -18,7 +18,8 @@ app.UseSerilogRequestLogging();
 var properties = new HttpJobStartPropertiesBuilder()
         .WithPlanarHostName("localhost")
         .WithHost(app)
-        .AddJob<SomeJob>("DemoHttp")
+        .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")
+        .AddJob<SomeJob>()
         .Build();
 
 await PlanarJob.StartAsync(properties);

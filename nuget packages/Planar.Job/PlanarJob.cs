@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,11 +14,13 @@ namespace Planar.Job
     {
 #if NETSTANDARD2_0
         private static string ContextBase64 { get; set; }
-
+        private static string FileIdentifier { get; set; }
 #else
         private static string? ContextBase64 { get; set; }
-
+        private static string? FileIdentifier { get; set; }
 #endif
+
+        private static bool Encrypted { get; set; } = false;
 
         internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
 
@@ -119,39 +123,59 @@ namespace Planar.Job
 
             ContextBase64 = GetArgument("--context")?.Value;
             Environment = GetArgument("--environment")?.Value ?? "Development";
+            Encrypted = HasArgument("--encrypted");
+            FileIdentifier = GetArgument("--file-identifier")?.Value;
         }
 
         private static string GetJsonFromArgs()
         {
             if (string.IsNullOrWhiteSpace(ContextBase64)) { throw new PlanarJobException("Job was executed with empty context"); }
-            var json = DecodeBase64ToString(ContextBase64);
-#if NETSTANDARD2_0
-            if (json.StartsWith("[") && json.EndsWith("]"))
-#else
-            if (json.StartsWith('[') && json.EndsWith(']'))
-#endif
+            if (!string.IsNullOrWhiteSpace(FileIdentifier))
             {
-                json = GetContextFromTemporaryFile(json);
+                ContextBase64 = GetContextFromTemporaryFile(FileIdentifier);
+            }
+
+            string json;
+            if (Encrypted)
+            {
+                var encryptionKeyBytes = GetEncryptionKeyBytes();
+                json = AesGcmStringCipher.Decrypt(ContextBase64, encryptionKeyBytes);
+            }
+            else
+            {
+                json = DecodeBase64ToString(ContextBase64);
             }
 
             return json;
         }
 
-        private static string GetContextFromTemporaryFile(string value)
+        private static byte[] GetEncryptionKeyBytes()
+        {
+            var key = Properties.EncryptionKey;
+
+            var encryptionKeyBytes = Convert.FromBase64String(key);
+            if (string.IsNullOrWhiteSpace(key) || encryptionKeyBytes.Length == 0)
+            {
+                throw new PlanarJobException("Encryption key is not provided. Please provide a valid 32-byte Base64 string as the encryption key.");
+            }
+
+            if (encryptionKeyBytes.Length != 32)
+            {
+                throw new PlanarJobException("Invalid encryption key. It must be a 32-byte Base64 string.");
+            }
+
+            return encryptionKeyBytes;
+        }
+
+        private static string GetContextFromTemporaryFile(string fileIdentifier)
         {
             const string contextFolder = "context";
-#if NETSTANDARD2_0
-            var filename = value.Substring(1, value.Length - 2);
-#else
-            var filename = value[1..^1];
-#endif
-            filename = Path.Combine(contextFolder, $"{filename}.ctx");
-            if (!File.Exists(filename)) { throw new PlanarJobException($"Temporary file '{filename}' not found"); }
-            var content = File.ReadAllText(filename);
-            SafeDeleteFile(filename);
-            if (string.IsNullOrWhiteSpace(content)) { throw new PlanarJobException($"Job was executed with empty context file '{filename}'"); }
-            var json = DecodeBase64ToString(content);
-            return json;
+            fileIdentifier = Path.Combine(contextFolder, $"{fileIdentifier}.ctx");
+            if (!File.Exists(fileIdentifier)) { throw new PlanarJobException($"Temporary file '{fileIdentifier}' not found"); }
+            var content = File.ReadAllText(fileIdentifier);
+            SafeDeleteFile(fileIdentifier);
+            if (string.IsNullOrWhiteSpace(content)) { throw new PlanarJobException($"Job was executed with empty context file '{fileIdentifier}'"); }
+            return content;
         }
 
         private static void SafeDeleteFile(string filename)
