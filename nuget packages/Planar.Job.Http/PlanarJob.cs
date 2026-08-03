@@ -26,6 +26,7 @@ namespace Planar.Job
             ArgumentNullException.ThrowIfNull(properties);
             InitWebApplication(properties);
             _logger = GetLogger(properties);
+            _ = StartHealthCheck(properties, _logger);
 
             try
             {
@@ -227,6 +228,7 @@ namespace Planar.Job
 
             if (encrypt)
             {
+                _logger?.LogDebug("Decrypting message body for job {JobType}", jobType.Name);
                 json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
             }
 

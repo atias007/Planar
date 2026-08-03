@@ -51,6 +51,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQJob", "RabbitMqJob\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Job.RabbitMQ", "..\nuget packages\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj", "{47641C88-AE2C-FE57-ED3F-8DFAACBDA8CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpJob", "HttpJob\HttpJob.csproj", "{C0A649DD-5FA7-0365-E91B-ED76A1CA63B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Job.Http", "..\nuget packages\Planar.Job.Http\Planar.Job.Http.csproj", "{5BB7F91C-5FC7-0758-A9D6-851ABD8AD622}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +149,14 @@ Global
 		{47641C88-AE2C-FE57-ED3F-8DFAACBDA8CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47641C88-AE2C-FE57-ED3F-8DFAACBDA8CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47641C88-AE2C-FE57-ED3F-8DFAACBDA8CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0A649DD-5FA7-0365-E91B-ED76A1CA63B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0A649DD-5FA7-0365-E91B-ED76A1CA63B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0A649DD-5FA7-0365-E91B-ED76A1CA63B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0A649DD-5FA7-0365-E91B-ED76A1CA63B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BB7F91C-5FC7-0758-A9D6-851ABD8AD622}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BB7F91C-5FC7-0758-A9D6-851ABD8AD622}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BB7F91C-5FC7-0758-A9D6-851ABD8AD622}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BB7F91C-5FC7-0758-A9D6-851ABD8AD622}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -154,6 +166,7 @@ Global
 		{AF080F39-A0B0-434D-85E4-66915110CB9E} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
 		{3B40E135-B283-4F88-B272-6AEB109F0BDC} = {5BE60344-B453-4860-9316-1A9E1D4CC1F4}
 		{47641C88-AE2C-FE57-ED3F-8DFAACBDA8CC} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
+		{5BB7F91C-5FC7-0758-A9D6-851ABD8AD622} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F30257B7-435D-473B-9997-2AA3DF5E7D03}

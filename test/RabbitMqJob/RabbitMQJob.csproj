@@ -18,4 +18,10 @@
     <ProjectReference Include="..\..\nuget packages\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="JobFile_JobA.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

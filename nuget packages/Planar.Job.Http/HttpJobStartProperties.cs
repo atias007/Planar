@@ -11,6 +11,18 @@ namespace Planar.Job.Http
         {
         }
 
+        public HttpJobStartPropertiesBuilder WithEncryptionKey(string encryptionKey)
+        {
+            if (string.IsNullOrWhiteSpace(encryptionKey)) { throw new ArgumentNullException(nameof(encryptionKey)); }
+            _properties.EncryptionKey = encryptionKey;
+            _properties.EncryptionKeyBytes = Convert.FromBase64String(encryptionKey);
+            if (_properties.EncryptionKeyBytes.Length != 32)
+            {
+                throw new ArgumentException($"Encryption key must be 32 bytes base64 encoding string. current length is {_properties.EncryptionKeyBytes.Length}", nameof(encryptionKey));
+            }
+            return this;
+        }
+
         public HttpJobStartPropertiesBuilder WithHost(WebApplication webApplication)
         {
             _properties.Host = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
@@ -82,14 +94,14 @@ namespace Planar.Job.Http
             return this;
         }
 
-        public HttpJobStartPropertiesBuilder AddJob<TJob>(string queueName) where TJob : BaseJob, new()
+        public HttpJobStartPropertiesBuilder AddJob<TJob>(string route) where TJob : BaseJob, new()
         {
-            if (string.IsNullOrWhiteSpace(queueName)) { throw new ArgumentNullException(nameof(queueName)); }
+            if (string.IsNullOrWhiteSpace(route)) { throw new ArgumentNullException(nameof(route)); }
             var jobType = typeof(TJob);
             ValidateJobType(jobType);
-            ValidateRoute(queueName);
+            ValidateRoute(route);
 
-            _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType, queueName)];
+            _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType, route)];
             return this;
         }
 
