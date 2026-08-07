@@ -263,7 +263,7 @@ public partial class JobDomain(
     {
         var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
 
-        var existsTypeName = GetJobTypes().FirstOrDefault(t => string.Equals(t, typeName, StringComparison.OrdinalIgnoreCase));
+        var existsTypeName = GetJobTypeNames().FirstOrDefault(t => string.Equals(t, typeName, StringComparison.OrdinalIgnoreCase));
         if (string.IsNullOrWhiteSpace(existsTypeName)) { throw notFoundException.Value; }
 
         Assembly assembly;
@@ -297,9 +297,9 @@ public partial class JobDomain(
         return result;
     }
 
-    public static IEnumerable<string> GetJobTypes()
+    public static IEnumerable<string> GetJobTypeNames()
     {
-        return ServiceUtil.JobTypes;
+        return;
     }
 
     public async Task<bool> Cancel(FireInstanceIdRequest request)

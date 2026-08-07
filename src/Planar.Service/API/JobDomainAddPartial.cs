@@ -477,7 +477,7 @@ public partial class JobDomain
 
         #region JobType
 
-        if (!ServiceUtil.JobTypes.Contains(metadata.JobType))
+        if (!ServiceUtil.JobTypeNames.Contains(metadata.JobType))
         {
             throw new RestValidationException("job type", $"job type '{metadata.JobType}' is not supported");
         }

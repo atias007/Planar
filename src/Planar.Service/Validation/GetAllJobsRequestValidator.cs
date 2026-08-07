@@ -15,7 +15,7 @@ namespace Planar.Service.Validation
             RuleFor(r => r.Filter).MaximumLength(50);
 
             RuleFor(r => r.JobType)
-                .Must(r => ServiceUtil.JobTypes.Any(t => string.Equals(r, t, StringComparison.OrdinalIgnoreCase)))
+                .Must(r => ServiceUtil.JobTypeNames.Any(t => string.Equals(r, t, StringComparison.OrdinalIgnoreCase)))
                 .When(r => !string.IsNullOrEmpty(r.JobType))
                 .WithMessage("'{PropertyValue}' is invalid job type");
 

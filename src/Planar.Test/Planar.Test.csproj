@@ -12,10 +12,6 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <Compile Remove="JobTests.cs" />
-	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="NUnit" Version="4.6.1" />
 		<PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
@@ -37,10 +33,6 @@
 
 	<ItemGroup>
 	  <Folder Include="HttpFiles\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="JobTests.cs" />
 	</ItemGroup>
 
 </Project>

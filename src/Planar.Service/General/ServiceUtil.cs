@@ -21,7 +21,7 @@ public static class ServiceUtil
     private static bool _disposeFlag;
     private static readonly Lock _locker = new();
 
-    public static IEnumerable<string> JobTypes =>
+    public static IEnumerable<string> JobTypeNames =>
     [
         nameof(PlanarJob),
         nameof(ProcessJob),
@@ -152,15 +152,29 @@ public static class ServiceUtil
 
     public static bool IsFileExists(string filename)
     {
-        if (Path.IsPathFullyQualified(filename))
+        var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+        var canonicalJobsPath = Path.GetFullPath(jobsPath);
+        if (!canonicalJobsPath.EndsWith(Path.DirectorySeparatorChar))
         {
-            return File.Exists(filename);
+            canonicalJobsPath += Path.DirectorySeparatorChar;
         }
 
-        var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-        var fullname = Path.Combine(jobsPath, filename);
-        var result = File.Exists(fullname);
-        return result;
+        string canonicalFilename;
+        if (Path.IsPathFullyQualified(filename))
+        {
+            canonicalFilename = Path.GetFullPath(filename);
+        }
+        else
+        {
+            canonicalFilename = Path.GetFullPath(Path.Combine(jobsPath, filename));
+        }
+
+        if (!canonicalFilename.StartsWith(canonicalJobsPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return File.Exists(canonicalFilename);
     }
 
     public static void ValidateJobFileExists(string filename)
