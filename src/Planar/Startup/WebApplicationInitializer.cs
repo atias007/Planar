@@ -10,129 +10,128 @@ using System;
 using Prometheus;
 using Scalar.AspNetCore;
 
-namespace Planar.Startup
+namespace Planar.Startup;
+
+public static class WebApplicationInitializer
 {
-    public static class WebApplicationInitializer
+    public static WebApplication Initialize(string[] args)
     {
-        public static WebApplication Initialize(string[] args)
+        var options = new WebApplicationOptions
         {
-            var options = new WebApplicationOptions
+            Args = args,
+            ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default,
+            EnvironmentName = AppSettings.General.Environment
+        };
+
+        var builder = WebApplication.CreateBuilder(options);
+
+        builder.Host.UseSerilog(SerilogInitializer.Configure);
+
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.ListenAnyIP(AppSettings.General.HttpPort);
+            if (AppSettings.Cluster.Clustering)
             {
-                Args = args,
-                ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default,
-                EnvironmentName = AppSettings.General.Environment
-            };
+                options.ListenAnyIP(AppSettings.General.HttpPort + 10000, x => x.Protocols = HttpProtocols.Http2);
+            }
 
-            var builder = WebApplication.CreateBuilder(options);
-
-            builder.Host.UseSerilog(SerilogInitializer.Configure);
-
-            builder.WebHost.ConfigureKestrel(options =>
+            if (AppSettings.General.UseHttps)
             {
-                options.ListenAnyIP(AppSettings.General.HttpPort);
-                if (AppSettings.Cluster.Clustering)
+                options.ListenAnyIP(AppSettings.General.HttpsPort, opts =>
                 {
-                    options.ListenAnyIP(AppSettings.General.HttpPort + 10000, x => x.Protocols = HttpProtocols.Http2);
-                }
-
-                if (AppSettings.General.UseHttps)
-                {
-                    options.ListenAnyIP(AppSettings.General.HttpsPort, opts =>
+                    if (AppSettings.General.CertificateFile == null && AppSettings.General.CertificatePassword == null)
                     {
-                        if (AppSettings.General.CertificateFile == null && AppSettings.General.CertificatePassword == null)
-                        {
-                            opts.UseHttps();
-                        }
-                        else if (AppSettings.General.CertificateFile != null && AppSettings.General.CertificatePassword == null)
-                        {
-                            opts.UseHttps(AppSettings.General.CertificateFile);
-                        }
-                        else
-                        {
-                            opts.UseHttps(AppSettings.General.CertificateFile, AppSettings.General.CertificatePassword);
-                        }
                         opts.UseHttps();
-                    });
-                }
-            });
+                    }
+                    else if (AppSettings.General.CertificateFile != null && AppSettings.General.CertificatePassword == null)
+                    {
+                        opts.UseHttps(AppSettings.General.CertificateFile);
+                    }
+                    else
+                    {
+                        opts.UseHttps(AppSettings.General.CertificateFile, AppSettings.General.CertificatePassword);
+                    }
+                    opts.UseHttps();
+                });
+            }
+        });
 
-            Console.WriteLine("[x] Load configuration & app settings");
-            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
-            using var stream = YmlFileReader.ReadStreamAsync(file).Result;
-            builder.Configuration
-                .AddYamlStream(stream)
-                .AddCommandLine(args)
-                .AddEnvironmentVariables();
+        Console.WriteLine("[x] Load configuration & app settings");
+        var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
+        using var stream = YmlFileReader.ReadStreamAsync(file).Result;
+        builder.Configuration
+            .AddYamlStream(stream)
+            .AddCommandLine(args)
+            .AddEnvironmentVariables();
 
-            ServiceCollectionInitializer.ConfigureServices(builder.Services);
-            builder.Host.UseWindowsService();
-            var app = builder.Build();
-            return app;
-        }
+        ServiceCollectionInitializer.ConfigureServices(builder.Services);
+        builder.Host.UseWindowsService();
+        var app = builder.Build();
+        return app;
+    }
 
-        public static void Configure(WebApplication app)
+    public static void Configure(WebApplication app)
+    {
+        //// app.UseHttpLogging();
+
+        if (AppSettings.Authentication.ApiSecurityHeaders)
         {
-            //// app.UseHttpLogging();
-
-            if (AppSettings.Authentication.ApiSecurityHeaders)
-            {
-                app.UseSecurityHeaders();
-            }
-
-            if (AppSettings.General.DeveloperExceptionPage && !app.Environment.IsProduction())
-            {
-#pragma warning disable S4507 // Debugging features should not be enabled in production
-                app.UseDeveloperExceptionPage();
-#pragma warning restore S4507 // Debugging features should not be enabled in production
-            }
-
-            OpenApiInitializer.SetOpenApi(app);
-
-            if (AppSettings.General.UseHttpsRedirect)
-            {
-                app.UseHttpsRedirection();
-            }
-
-            app.UseSerilogRequestLogging();
-
-            // Capture metrics about all received HTTP requests.
-            app.UseHttpMetrics();
-
-            // Capture metrics about received gRPC requests.
-            if (AppSettings.Cluster.Clustering)
-            {
-                app.UseGrpcMetrics();
-            }
-
-            //Rate limitter middleware
-            app.UseRateLimiter();
-
-            if (AppSettings.Cluster.Clustering)
-            {
-                app.MapGrpcService<ClusterService>();
-            }
-
-            // ****************************************************************
-            // ATTENTION: dont change the order of the following middlewares
-            // ****************************************************************
-
-            app.UseRouting();
-            app.MapMetrics();
-
-            // Authorization
-            // ATTENTION: Always UseAuthentication should be before UseAuthorization
-            if (AppSettings.Authentication.HasAuthontication)
-            {
-                app.UseAuthentication();
-            }
-
-            // ATTENTION: Always UseAuthentication should be before UseAuthorization
-            app.UseAuthorization();
-            app.MapControllers();
-
-            // ****************************************************************
-            // ATTENTION: dont add middlewares after --> app.MapControllers()
-            // ****************************************************************
+            app.UseSecurityHeaders();
         }
+
+        if (AppSettings.General.DeveloperExceptionPage && !app.Environment.IsProduction())
+        {
+#pragma warning disable S4507 // Debugging features should not be enabled in production
+            app.UseDeveloperExceptionPage();
+#pragma warning restore S4507 // Debugging features should not be enabled in production
+        }
+
+        OpenApiInitializer.SetOpenApi(app);
+
+        if (AppSettings.General.UseHttpsRedirect)
+        {
+            app.UseHttpsRedirection();
+        }
+
+        app.UseSerilogRequestLogging();
+
+        // Capture metrics about all received HTTP requests.
+        app.UseHttpMetrics();
+
+        // Capture metrics about received gRPC requests.
+        if (AppSettings.Cluster.Clustering)
+        {
+            app.UseGrpcMetrics();
+        }
+
+        //Rate limitter middleware
+        app.UseRateLimiter();
+
+        if (AppSettings.Cluster.Clustering)
+        {
+            app.MapGrpcService<ClusterService>();
+        }
+
+        // ****************************************************************
+        // ATTENTION: dont change the order of the following middlewares
+        // ****************************************************************
+
+        app.UseRouting();
+        app.MapMetrics();
+
+        // Authorization
+        // ATTENTION: Always UseAuthentication should be before UseAuthorization
+        if (AppSettings.Authentication.HasAuthontication)
+        {
+            app.UseAuthentication();
+        }
+
+        // ATTENTION: Always UseAuthentication should be before UseAuthorization
+        app.UseAuthorization();
+        app.MapControllers();
+
+        // ****************************************************************
+        // ATTENTION: dont add middlewares after --> app.MapControllers()
+        // ****************************************************************
     }
 }

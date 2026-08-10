@@ -1,4 +1,6 @@
-﻿using DbUp;
+﻿#nullable enable
+
+using DbUp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
@@ -9,13 +11,24 @@ using Planar.Service.General;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace Planar.Startup;
 
 public interface IDatabaseMigrationInitializerLogger
 {
+}
+
+public sealed class ProcessPropertiesOldVersion
+{
+    [YamlMember(Alias = "filename")]
+    public string? Filename { get; set; }
+
+    [YamlMember(Alias = "path")]
+    public string? Path { get; set; }
 }
 
 public static class DatabaseMigrationInitializer
@@ -36,13 +49,18 @@ public static class DatabaseMigrationInitializer
                 try
                 {
                     if (item.Properties == null) { continue; }
-                    var processProperties = YmlUtil.Deserialize<PlanarJobProcessProperties>(item.Properties);
+                    var processProperties = YmlUtil.Deserialize<ProcessPropertiesOldVersion>(item.Properties);
                     if (string.IsNullOrWhiteSpace(processProperties.Filename)) { continue; }
 
+                    var filename = string.IsNullOrWhiteSpace(processProperties.Path) ?
+                        processProperties.Filename :
+                        Path.Combine(processProperties.Path, processProperties.Filename);
+
+                    var process = new PlanarJobProcessProperties { Filename = filename };
                     var newProperties = new PlanarJobProperties
                     {
                         InvokeMethod = "process",
-                        Process = processProperties,
+                        Process = process,
                     };
 
                     item.Properties = YmlUtil.Serialize(newProperties);
