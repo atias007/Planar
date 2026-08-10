@@ -282,8 +282,8 @@ namespace Planar.Job
 
         public async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
         {
-            if (Mode != RunningMode.Debug) { return; }
             await Task.Delay(10_000);
+            if (Mode == RunningMode.Debug) { return; }
             await ExecuteHealthCheck(properties, logger);
             _healthCheckTimer.Elapsed += async (s, e) => await ExecuteHealthCheck(properties, logger);
             _healthCheckTimer.Start();

@@ -9,14 +9,20 @@
 
   <ItemGroup>
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.31.0.145097">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planar.Job.Http\Planar.Job.Http.csproj" />
+    <ProjectReference Include="..\..\nuget packages\Planar.Job.Http\Planar.Job.Http.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="JobFile_SomeJob.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

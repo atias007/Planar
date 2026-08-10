@@ -21,6 +21,9 @@ public class PlanarJobProperties : IFileJobProperties
     [YamlMember(Alias = "http", Order = 4)]
     public PlanarJobHttpProperties? Http { get; set; }
 
+    [YamlMember(Alias = "encrypt payload", Order = 5)]
+    public bool EncryptPayload { get; set; }
+
     [YamlIgnore]
     public string Filename => Process?.Filename ?? string.Empty;
 

@@ -11,6 +11,7 @@ namespace Planar.Common
         IEnumerable<Type> JobTypes { get; }
         IEnumerable<Type> HostSingletonTypes { get; }
         IHost Host { get; }
+        string EncryptionKey { get; }
     }
 
     public interface IJobDefinition

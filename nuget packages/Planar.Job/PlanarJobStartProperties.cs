@@ -2,7 +2,6 @@
 using Planar.Common;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Planar.Job
@@ -11,6 +10,7 @@ namespace Planar.Job
     {
         public static PlanarJobStartProperties Default => new PlanarJobStartProperties();
         public TimeSpan LogFlushTimeout { get; set; } = TimeSpan.FromSeconds(20);
+        public string EncryptionKey { get; set; } = string.Empty;
     }
 
     public class PlanarHostedJobStartProperties<TDefinition> : PlanarJobStartProperties, IHostedJobProperties
@@ -46,5 +46,7 @@ namespace Planar.Job
                 _hostSingletonTypes.Add(singletonType);
             }
         }
+
+        internal byte[] EncryptionKeyBytes { get; set; } = Array.Empty<byte>();
     }
 }

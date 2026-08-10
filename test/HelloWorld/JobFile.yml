@@ -4,8 +4,13 @@ group: Demo
 description: Demo Hello World Job
 durable: true
 concurrent: false
+
 properties:
-  filename: HelloWorld.exe
+  invoke method: process
+  encrypt payload: false
+  process:
+    filename: HelloWorld\HelloWorld.exe
+
 simple triggers:
   - name: default_trigger
     interval: 00:10:00

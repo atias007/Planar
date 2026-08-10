@@ -1,0 +1,21 @@
+job type: PlanarJob
+name: RabbitMqTest
+group: Demo
+author: israel israeli (sales)
+description: Invoke job with rabbit mq
+durable: true 
+concurrent: false
+log retention days: 7
+
+properties:
+  invoke method: rabbitmq
+  encrypt payload: true
+  rabbitmq:
+    exchange: Planar
+    routing key: JobA
+
+simple triggers:
+  - name: every-hour-trigger
+    interval: 01:00:00
+    misfire behaviour: auto
+    timeout: 00:05:00
