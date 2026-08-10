@@ -9,7 +9,7 @@ log retention days: null              # How many days the running logs will reta
 
 properties:                           # Job Properties
   invoke method: process              # The invoke method of job [process | rabbitmq | redis | http ]
-  encrypt payload: false              # Boolean [true/false]. Encrypt the payload data before sending it to the job. (relevant only if invoke method is rabbitmq, redis or http)
+  encrypt payload: false              # Boolean [true/false]. Encrypt the payload data before sending it to the job
   process:
     filename: HelloWorld.exe          # Name of assembly file [mandatory, up to 500 characters]
     domain: null                      # (*) The active directory domain name (only on windows OS) [up to 100 characters]

@@ -113,14 +113,17 @@ public static class AppSettings
             throw new AppSettingsException($"'Clustering' is possible when database provider is {Database.Provider}");
         }
 
-        var bytes = Convert.FromBase64String(General.EncryptionKey);
-        if (bytes.Length != 32)
+        if (!string.IsNullOrWhiteSpace(General.EncryptionKey))
         {
-            var suggestion = Convert.ToBase64String(AesGcmStringCipher.NewKey());
-            throw new AppSettingsException($"'encryption key' must be 32 bytes base64 encoding string. current length is {bytes.Length}. Suggested key: {suggestion}");
-        }
+            var bytes = Convert.FromBase64String(General.EncryptionKey);
+            if (bytes.Length != 32)
+            {
+                var suggestion = Convert.ToBase64String(AesGcmStringCipher.NewKey());
+                throw new AppSettingsException($"'encryption key' must be 32 bytes base64 encoding string. current length is {bytes.Length}. Suggested key: {suggestion}");
+            }
 
-        General.EncryptionKeyBytes = bytes;
+            General.EncryptionKeyBytes = bytes;
+        }
     }
 
     private static void InitializeEnvironment(IConfiguration configuration)

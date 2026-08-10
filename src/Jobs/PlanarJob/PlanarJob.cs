@@ -571,7 +571,7 @@ public abstract class PlanarJob(
         var (base64String, isEncrypted, fileIdentifier) = await GetContextArgument(MessageBroker.Details);
         var hasFileIdentifier = !string.IsNullOrWhiteSpace(fileIdentifier);
         var arg1 = isEncrypted ? " --encrypted" : string.Empty;
-        var arg2 = hasFileIdentifier ? " --file-identifier" : string.Empty;
+        var arg2 = hasFileIdentifier ? $" --file-identifier {fileIdentifier}" : string.Empty;
         var arg3 = hasFileIdentifier ? string.Empty : $" --context {base64String}";
         startInfo.Arguments = $"--planar-service-mode{arg1}{arg2}{arg3}";
         startInfo.StandardErrorEncoding = Encoding.UTF8;

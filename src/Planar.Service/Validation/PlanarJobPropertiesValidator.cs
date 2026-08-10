@@ -2,10 +2,7 @@
 using Planar.Common;
 using Planar.Service.General;
 using System;
-using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Planar.Service.Validation;
 
@@ -37,8 +34,8 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
             .When(e => e.RabbitMq != null);
 
         RuleFor(e => e.EncryptPayload)
-            .Must(e => false)
-            .When(e => AppSettings.General.EncryptionKey == null)
+            .Equal(false)
+            .When(_ => AppSettings.General.EncryptionKeyBytes == null)
             .WithMessage("encrypt payload is not supported when encryption key is not set. (general section at appsettings.yml)");
 
         RuleFor(e => e).Must(e =>

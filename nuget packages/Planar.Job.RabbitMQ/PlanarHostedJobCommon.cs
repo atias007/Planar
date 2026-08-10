@@ -50,7 +50,9 @@ namespace Planar.Job
                         _logger.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
                     }
 
-                    await Task.Delay(1_000, _mainCancellationTokenSource.Token);
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
+                    await Task.Delay(1_000);
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
                 }
 
                 if (!_jobInstances.IsEmpty)

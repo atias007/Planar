@@ -180,7 +180,9 @@ namespace Planar.Job.RabbitMq
         {
             try
             {
-                if (_channel != null) { await _channel.CloseAsync(cancellationToken); }
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
+                if (_channel != null) { await _channel.CloseAsync(); }
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
                 _channel?.Dispose();
                 _channel = null;
             }
@@ -191,7 +193,9 @@ namespace Planar.Job.RabbitMq
 
             try
             {
-                if (_connection != null) { await _connection.CloseAsync(cancellationToken); }
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
+                if (_connection != null) { await _connection.CloseAsync(); }
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
                 _connection?.Dispose();
                 _connection = null;
             }
