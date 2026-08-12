@@ -68,10 +68,7 @@ namespace Planar.Service
             services.AddHostedService<MonitorService>();
             services.AddHostedService<MqttBrokerService>();
             services.AddHostedService<RestartService>();
-            if (AppSettings.Authentication.HasAuthontication)
-            {
-                services.AddHostedService(p => p.GetRequiredService<SecurityService>());
-            }
+            services.AddHostedService<SecurityService>();
 
             // Channel
             services.AddSingleton(Channel.CreateUnbounded<AuditMessage>());

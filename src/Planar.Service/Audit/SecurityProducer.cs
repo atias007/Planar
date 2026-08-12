@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Planar.Common;
 using System;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ public class SecurityProducer(Channel<SecurityMessage> channel, ILogger<Security
 {
     public void Publish(SecurityMessage message)
     {
-        if (AppSettings.Authentication.NoAuthontication) { return; }
         _ = SafePublishInner(message);
     }
 
