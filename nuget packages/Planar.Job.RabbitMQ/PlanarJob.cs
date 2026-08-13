@@ -69,7 +69,9 @@ namespace Planar.Job
             _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, _mainCancellationTokenSource.Token);
 
             // Start consuming messages
-            await _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync);
+            await Task.WhenAll(
+                _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync),
+                properties.Host.StartAsync(_mainCancellationTokenSource.Token));
         }
 
         /// <summary>
