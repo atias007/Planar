@@ -7,7 +7,6 @@ using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -39,7 +38,7 @@ public class MinimumRoleHandler(IServiceProvider serviceProvider) : Authorizatio
             }
 
             // No claim supplied in Authorization mode
-            AuditWarningSecuritySafe(context.User.Claims, "no claim(s) supplied with the request while authorization mode activated");
+            AuditWarningSecuritySafe(context, "no claim(s) supplied with the request while authorization mode activated");
             return Task.CompletedTask;
         }
 
@@ -47,21 +46,21 @@ public class MinimumRoleHandler(IServiceProvider serviceProvider) : Authorizatio
         var strValue = claim.Value;
         if (string.IsNullOrEmpty(strValue))
         {
-            AuditWarningSecuritySafe(context.User.Claims, "claim(s) with empty value supplied with the request while authorization mode activated");
+            AuditWarningSecuritySafe(context, "claim(s) with empty value supplied with the request while authorization mode activated");
             return Task.CompletedTask;
         }
 
         var roleEnum = RoleHelper.GetRoleEnum(strValue);
         if (roleEnum == null)
         {
-            AuditWarningSecuritySafe(context.User.Claims, "claim(s) with bad value supplied with the request while authorization mode activated");
+            AuditWarningSecuritySafe(context, "claim(s) with bad value supplied with the request while authorization mode activated");
             return Task.CompletedTask;
         }
 
         if (roleEnum == Roles.Anonymous)
         {
             var action = GetCurrentAction();
-            AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: anonymous");
+            AuditWarningSecuritySafe(context, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: anonymous");
             return Task.CompletedTask;
         }
 
@@ -72,19 +71,18 @@ public class MinimumRoleHandler(IServiceProvider serviceProvider) : Authorizatio
         else
         {
             var action = GetCurrentAction();
-            AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: {roleEnum.ToString().ToLower()}");
+            AuditWarningSecuritySafe(context, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: {roleEnum.ToString().ToLower()}");
         }
 
         return Task.CompletedTask;
     }
 
-    protected void AuditWarningSecuritySafe(IEnumerable<Claim> claims, string title)
+    protected void AuditWarningSecuritySafe(AuthorizationHandlerContext context, string title)
     {
         try
         {
-            var audit = new SecurityMessage
+            var audit = new SecurityMessage(context)
             {
-                Claims = claims,
                 Title = title,
                 IsWarning = true
             };

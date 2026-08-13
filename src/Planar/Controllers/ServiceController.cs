@@ -27,7 +27,7 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
     [OkTextResponse]
     public ActionResult<string> GetServiceVersion()
     {
-        var response = BusinesLayer.GetServiceVersion();
+        var response = ServiceDomain.GetServiceVersion();
         return Ok(response);
     }
 

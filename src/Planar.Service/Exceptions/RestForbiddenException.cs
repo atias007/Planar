@@ -4,4 +4,11 @@ namespace Planar.Service.Exceptions;
 
 public sealed class RestForbiddenException : Exception
 {
+    public RestForbiddenException()
+    {
+    }
+
+    public RestForbiddenException(string messgae) : base(messgae)
+    {
+    }
 }

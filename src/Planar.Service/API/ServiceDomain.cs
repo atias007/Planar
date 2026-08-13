@@ -20,7 +20,7 @@ namespace Planar.Service.API;
 
 public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<ServiceDomain, IServiceData>(serviceProvider)
 {
-    public string GetServiceVersion()
+    public static string GetServiceVersion()
     {
         return ServiceVersion ?? Consts.Undefined;
     }
@@ -149,7 +149,17 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
     public async Task HaltScheduler()
     {
-        AuditSecuritySafe("scheduler was halted by user", true);
+        var audit = GetAuditSecurityMessage("scheduler was halted by user", true);
+        if (audit == null || audit.IsAnonymous)
+        {
+            AuditSecuritySafe("scheduler was trying to halted by anonymous user. action aborted", isWarning: true);
+            throw new RestForbiddenException("halt scheduler is not allowd to anonymous user/api");
+        }
+        else
+        {
+            AuditSecuritySafe(audit);
+        }
+
         await SchedulerUtil.Stop();
         if (AppSettings.Cluster.Clustering)
         {

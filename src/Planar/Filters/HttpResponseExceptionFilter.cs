@@ -142,9 +142,9 @@ namespace Planar.Filters
                 return;
             }
 
-            if (context.Exception is RestForbiddenException)
+            if (context.Exception is RestForbiddenException forbiddenException)
             {
-                context.Result = new ForbidResult();
+                context.Result = new ContentResult { StatusCode = (int)HttpStatusCode.Forbidden, Content = forbiddenException.Message };
                 context.ExceptionHandled = true;
                 return;
             }

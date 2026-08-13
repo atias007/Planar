@@ -12,13 +12,11 @@ namespace Planar.Client.Api
 
         Task<AppSettingsInfo> GetInfoAsync(CancellationToken cancellationToken = default);
 
-        Task<string> HealthCheckAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<AgentDetails>> GetAgentDetailsAsync(CancellationToken cancellationToken = default);
+
+        Task<ServiceHealthCheck> HealthCheckAsync(CancellationToken cancellationToken = default);
 
         Task<IEnumerable<string>> GetCalendarsAsync(CancellationToken cancellationToken = default);
-
-        Task HaltSchedulerAsync(CancellationToken cancellationToken = default);
-
-        Task StartSchedulerAsync(CancellationToken cancellationToken = default);
 
         Task<PagingResponse<SecurityAuditDetails>> ListSecurityAuditsAsync(
             DateTime? fromDate = null,

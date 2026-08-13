@@ -104,12 +104,12 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
     private static async Task PauseJob(IJobExecutionContext context)
     {
         var jobKey = context.JobDetail.Key;
-        await context.Scheduler.PauseJob(jobKey);
+        await context.Scheduler.PauseJob(jobKey, context.CancellationToken);
     }
 
     private void AuditJobSafe(JobKey jobKey, string description, object? additionalInfo = null)
     {
-        var audit = new AuditMessage
+        var audit = new AuditMessage(null)
         {
             JobKey = jobKey,
             Description = description,
