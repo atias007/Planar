@@ -170,6 +170,17 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
     public async Task StartScheduler()
     {
+        var audit = GetAuditSecurityMessage("scheduler was started by user", true);
+        if (audit == null || audit.IsAnonymous)
+        {
+            AuditSecuritySafe("scheduler was trying to start by anonymous user. action aborted", isWarning: true);
+            throw new RestForbiddenException("start scheduler is not allowd to anonymous user/api");
+        }
+        else
+        {
+            AuditSecuritySafe(audit);
+        }
+
         await SchedulerUtil.Start();
         if (AppSettings.Cluster.Clustering)
         {
