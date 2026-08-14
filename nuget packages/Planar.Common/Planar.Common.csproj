@@ -45,6 +45,7 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\ITriggerDetail.cs" Link="JobExecutionContext\ITriggerDetail.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\Planar.Job\ReflectionHelper.cs" Link="ReflectionHelper.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">

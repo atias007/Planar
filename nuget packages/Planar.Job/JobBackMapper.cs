@@ -29,8 +29,8 @@ namespace Planar.Job
             {
                 if (context == null) { return; }
 
-                var propInfo = instance.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-                foreach (var prop in propInfo)
+                var allProperties = ReflectionHelper.GetProperties(instance);
+                foreach (var prop in allProperties)
                 {
                     if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
                     await SafePutData(context, prop, instance);
@@ -46,43 +46,33 @@ namespace Planar.Job
 
         private async Task SafePutData(IJobExecutionContext context, PropertyInfo prop, object instance)
         {
-            var jobAttribute = prop.GetCustomAttribute<JobDataAttribute>();
-            var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
             var ignoreAttribute = prop.GetCustomAttribute<IgnoreDataMapAttribute>();
 
             if (ignoreAttribute != null)
             {
                 var jobKey = context.JobDetails.Key;
 
-                _logger?.LogDebug("ATTENTION: Ignore map back property {PropertyName} of job '{JobGroup}.{JobName}' to data map",
-                    prop.Name,
-                    jobKey.Group,
-                    jobKey.Name);
+                if (_logger?.IsEnabled(LogLevel.Debug) == false)
+                {
+                    _logger.LogDebug("ATTENTION: Ignore map back property {PropertyName} of job '{JobGroup}.{JobName}' to data map",
+                        prop.Name,
+                        jobKey.Group,
+                        jobKey.Name);
+                }
 
                 return;
             }
 
+            var jobAttribute = prop.GetCustomAttribute<JobDataAttribute>();
             if (jobAttribute != null)
             {
                 await SafePutJobDataMap(context, prop, instance);
             }
 
+            var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
             if (triggerAttribute != null)
             {
                 await SafePutTiggerDataMap(context, prop, instance);
-            }
-
-            if (jobAttribute == null && triggerAttribute == null)
-            {
-                if (context.JobDetails.JobDataMap.ContainsKey(prop.Name))
-                {
-                    await SafePutJobDataMap(context, prop, instance);
-                }
-
-                if (context.TriggerDetails.TriggerDataMap.ContainsKey(prop.Name))
-                {
-                    await SafePutTiggerDataMap(context, prop, instance);
-                }
             }
         }
 

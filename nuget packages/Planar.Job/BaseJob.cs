@@ -293,7 +293,7 @@ namespace Planar.Job
 
         private async Task SendHealthCheckSignal()
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 5; i++)
             {
                 await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
                 await Task.Delay(50, _context.CancellationToken);
