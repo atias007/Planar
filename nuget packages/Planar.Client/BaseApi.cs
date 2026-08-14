@@ -7,7 +7,7 @@ namespace Planar.Client
     {
         protected readonly RestProxy _proxy;
 
-        protected static HttpMethod HttpPatchMethod = new HttpMethod("Patch");
+        protected readonly static HttpMethod HttpPatchMethod = new HttpMethod("Patch");
 
         public BaseApi(RestProxy proxy)
         {
@@ -27,7 +27,7 @@ namespace Planar.Client
             }
         }
 
-        protected void ValidateMandatory(long value, string name)
+        protected static void ValidateMandatory(long value, string name)
         {
             if (value <= 0)
             {
@@ -35,7 +35,7 @@ namespace Planar.Client
             }
         }
 
-        protected void ValidateMandatory(TimeSpan value, string name)
+        protected static void ValidateMandatory(TimeSpan value, string name)
         {
             if (value == TimeSpan.Zero)
             {
@@ -43,7 +43,7 @@ namespace Planar.Client
             }
         }
 
-        protected void ValidateMandatory(DateTime? date, string name)
+        protected static void ValidateMandatory(DateTime? date, string name)
         {
             if (date == null || date == DateTime.MinValue)
             {
@@ -51,7 +51,7 @@ namespace Planar.Client
             }
         }
 
-        protected void ValidateMandatory<T>(T value, string name) where T : class, new()
+        protected static void ValidateMandatory<T>(T value, string name) where T : class, new()
         {
             if (value == null)
             {
