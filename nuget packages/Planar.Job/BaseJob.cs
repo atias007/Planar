@@ -280,7 +280,7 @@ namespace Planar.Job
                 }
 
                 if (!_executeResetEvent.WaitOne(connectTimeout)) { throw new PlanarJobException("MQTT connection timeout"); }
-                await MqttClient.PingAsync(_context.FireInstanceId);
+                await MqttClient.PingAsync();
                 return true;
             }
             catch

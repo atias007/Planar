@@ -80,13 +80,13 @@ foreach (var jobType in result1)
 Console.WriteLine($"[x] List Job:");
 var result2 = await client.Job.ListAsync();
 
-foreach (var job in result2.Data!)
+foreach (var job in result2.Data)
 {
     Console.WriteLine($"    - {job.Id} - {job.Group}.{job.Name}");
 }
 
 Console.WriteLine($"[x] Get Job:");
-var id = result2.Data!.First().Id;
+var id = result2.Data.First().Id;
 var result3 = await client.Job.GetAsync(id);
 Console.WriteLine($"    - {result3.Description}");
 

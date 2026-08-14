@@ -188,8 +188,8 @@ public partial class JobDomain
     {
         var target = new JobBasicDetails();
         SchedulerUtil.MapJobRowDetails(source, target);
-        target.Active = await GetJobActiveMode(source.Key);
         var scheduler = await GetScheduler();
+        target.Active = await JobHelper.GetJobActiveMode(scheduler, source.Key);
         target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(scheduler, source.Key);
         return target;
     }

@@ -57,7 +57,7 @@ namespace Planar
 
         public static bool IsConnected => _mqttClient?.IsConnected ?? false;
 
-        public static async Task PingAsync(string fireInstanceId)
+        public static async Task PingAsync()
         {
             // mqtt
             if (_mqttClient != null)

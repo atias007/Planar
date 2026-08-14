@@ -298,7 +298,7 @@ namespace Planar.Job
                     await MqttClient.StartAsync(properties.PlanarHostname, properties.PlanarPort);
                     await Task.Delay(4_000);
                 }
-                await MqttClient.PingAsync(string.Empty);
+                await MqttClient.PingAsync();
 
                 if (MqttClient.IsConnected)
                 {

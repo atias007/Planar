@@ -38,6 +38,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Job.RabbitMQ", "Plan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Job.Http", "Planar.Job.Http\Planar.Job.Http.csproj", "{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQJob", "..\test\RabbitMqJob\RabbitMQJob.csproj", "{39AC270B-040E-1247-A38D-E6C4639CB00F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,10 @@ Global
 		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F005786F-E5F2-4AD4-B51B-74AD598FD5AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39AC270B-040E-1247-A38D-E6C4639CB00F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39AC270B-040E-1247-A38D-E6C4639CB00F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39AC270B-040E-1247-A38D-E6C4639CB00F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39AC270B-040E-1247-A38D-E6C4639CB00F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -106,6 +112,7 @@ Global
 		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 		{BC9DD697-4F78-4F2D-9277-86DAC265BAD8} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 		{2E0044E8-8764-42B8-B423-836A1898B21D} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
+		{39AC270B-040E-1247-A38D-E6C4639CB00F} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {052EE731-D23D-43DF-822D-72DA17A54D1E}

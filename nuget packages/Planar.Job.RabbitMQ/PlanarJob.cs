@@ -30,6 +30,10 @@ namespace Planar.Job
 
         public async static Task StartAsync(RabbitMqJobStartProperties properties)
         {
+            Console.OutputEncoding = Encoding.UTF8;
+
+            await PrintLogo();
+
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
             _logger = GetLogger(properties);
             _ = StartHealthCheck(properties, _logger);
@@ -72,6 +76,49 @@ namespace Planar.Job
             await Task.WhenAll(
                 _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync),
                 properties.Host.StartAsync(_mainCancellationTokenSource.Token));
+        }
+
+        private static async Task PrintLogo()
+        {
+            const string logo1 = @"  ____  _                              _       _         ";
+            const string logo2 = @" |  _ \| | __ _ _ __   __ _ _ __      | | ___ | |__  ___ ";
+            const string logo3 = @" | |_) | |/ _` | '_ \ / _` | '__|  _  | |/ _ \| '_ \/ __|";
+            const string logo4 = @" |  __/| | (_| | | | | (_| | |    | |_| | (_) | |_) \__ \";
+            const string logo5 = @" |_|   |_|\__,_|_| |_|\__,_|_|     \___/ \___/|_.__/|___/";
+
+            await Console.Out.WriteLineAsync(logo1);
+            await Console.Out.WriteLineAsync(logo2);
+            await Console.Out.WriteLineAsync(logo3);
+            await Console.Out.WriteLineAsync(logo4);
+            await Console.Out.WriteLineAsync(logo5);
+            await Console.Out.WriteLineAsync();
+            var version = SafeGetVersion();
+            PrintBoxed($"RabbitMQ Hosted Job [version: {version}]");
+            await Console.Out.WriteLineAsync();
+        }
+
+        private static string SafeGetVersion()
+        {
+            try
+            {
+                var assembly = typeof(PlanarJob).Assembly;
+                var version = assembly.GetName().Version;
+                return version?.ToString() ?? "Unknown";
+            }
+            catch
+            {
+                return "Unknown";
+            }
+        }
+
+        private static void PrintBoxed(string text)
+        {
+            int width = text.Length + 2; // one space padding each side
+            string horizontal = new string('-', width);
+
+            Console.WriteLine($"+{horizontal}+");
+            Console.WriteLine($"| {text} |");
+            Console.WriteLine($"+{horizontal}+");
         }
 
         /// <summary>
