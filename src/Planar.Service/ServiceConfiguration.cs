@@ -50,7 +50,7 @@ namespace Planar.Service
             services.AddSingleton<RabbitMqFactory>();
 
             // AutoMapper
-            services.AddAutoMapper(c => c.LicenseKey = null, Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
+            services.AddAutoMapper(c => c.LicenseKey = null, typeof(ServiceConfiguration).Assembly);
 
             // DAL
             services.AddPlanarDataLayerWithContext();
@@ -68,10 +68,7 @@ namespace Planar.Service
             services.AddHostedService<MonitorService>();
             services.AddHostedService<MqttBrokerService>();
             services.AddHostedService<RestartService>();
-            if (AppSettings.Authentication.HasAuthontication)
-            {
-                services.AddHostedService(p => p.GetRequiredService<SecurityService>());
-            }
+            services.AddHostedService<SecurityService>();
 
             // Channel
             services.AddSingleton(Channel.CreateUnbounded<AuditMessage>());
@@ -82,7 +79,7 @@ namespace Planar.Service
             services.AddSingleton<MonitorScanProducer>();
 
             // AutoMapper
-            var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
+            var assemply = typeof(ServiceConfiguration).Assembly;
             services.AddAutoMapperProfiles([assemply]);
 
             return services;

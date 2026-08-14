@@ -70,12 +70,13 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
                 if (stoppingToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
                 SafeLog(usedMemory);
                 if (!AppSettings.Protection.RestartOnHighMemoryUsage) { return; }
+                LogCritical(null, "memory usage is too high ({UsedMemory:N0}mb). wait extra 30 seconds to handle monitoring", usedMemory);
                 await GracefulShutDown(stoppingToken);
             }
             else if (!await IsSchedulerHealthy())
             {
                 if (stoppingToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
-                _logger.LogCritical("scheduler engine is unhealthy. start graceful end of the process. stand by scheduler");
+                LogCritical(null, "scheduler engine is unhealthy. start graceful end of the process. stand by scheduler");
                 await GracefulShutDown(stoppingToken);
             }
             else
@@ -93,7 +94,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         if (_invokeRegularRestart)
         {
-            var scheduler = await _schedulerFactory.GetScheduler();
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             var current = (await scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
             if (current == 0)
             {
@@ -125,6 +126,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         try
         {
+            if (_schedulerUtil.IsHalted) { return true; } // If the scheduler is halted, we consider it healthy for the purpose of this check
             return await _schedulerUtil.IsHealthyAsync();
         }
         catch (Exception ex)
@@ -189,7 +191,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         await SafeStandBy(cancellationToken);
         await SafeShutdown(withLog: true, cancellationToken);
-        await SafeDelay(withLog: true, cancellationToken);
+        await SafeDelay(cancellationToken);
         CloseApplication(withLog: true, cancellationToken);
     }
 
@@ -199,7 +201,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         SafeMonitorRegularApplicationRestart(cancellationToken);
         await SafeStandBy(cancellationToken);
         await SafeShutdown(withLog: false, cancellationToken);
-        await SafeDelay(withLog: false, cancellationToken);
+        await SafeDelay(cancellationToken);
         CloseApplication(withLog: false, cancellationToken);
     }
 
@@ -214,7 +216,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "fail to get next regular restart date from settings. cron expression is: {Expression}", AppSettings.Protection.RegularRestartExpression);
+            LogCritical(ex, "fail to get next regular restart date from settings. cron expression is: {Expression}", AppSettings.Protection.RegularRestartExpression ?? string.Empty);
             return null;
         }
     }
@@ -227,7 +229,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
             {
                 if (withLog)
                 {
-                    _logger.LogCritical("stop the apllication due to system failure");
+                    LogCritical(null, "stop the apllication due to system failure");
                 }
 
                 var app = _serviceProvider.GetRequiredService<IHostApplicationLifetime>();
@@ -246,22 +248,18 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         }
     }
 
-    private async Task SafeDelay(bool withLog, CancellationToken cancellationToken)
+    private async Task SafeDelay(CancellationToken cancellationToken)
     {
         try
         {
             // extra time to handle monitors
-            if (withLog)
-            {
-                if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
-                _logger.LogCritical("memory usage is too high. wait extra 30 seconds to handle monitoring");
-            }
+            if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
             await Task.Delay(30_000, cancellationToken);
         }
         catch (Exception ex)
         {
             if (cancellationToken.IsCancellationRequested) { return; } // Exit if cancellation is requested
-            _logger.LogCritical(ex, "fail to delay shutdown (regular restart or high memory usage)");
+            LogCritical(ex, "fail to delay shutdown (regular restart or high memory usage)");
         }
     }
 
@@ -269,18 +267,18 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         try
         {
-            var scheduler = await _schedulerFactory.GetScheduler();
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             var count = (await scheduler.GetCurrentlyExecutingJobs(cancellationToken)).Count;
             if (count > 0 && withLog)
             {
-                _logger.LogCritical("shut down scheduler (with wait until complete {Count} current tasks)", count);
+                LogCritical(null, "shut down scheduler (with wait until complete {Count} current tasks)", count);
             }
         }
         catch (Exception ex)
         {
             if (withLog)
             {
-                _logger.LogCritical(ex, "fail to shut down scheduler");
+                LogCritical(ex, "fail to shut down scheduler");
             }
         }
 
@@ -288,12 +286,22 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-            var scheduler = await _schedulerFactory.GetScheduler();
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             await scheduler.Shutdown(true, linked.Token);
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "fail to shutdown scheduler (regular restart / high memory usage / scheduler unhealthy)");
+            LogCritical(ex, "fail to shutdown scheduler (regular restart / high memory usage / scheduler unhealthy)");
+        }
+    }
+
+    private void LogCritical(Exception? ex, string message, params object[] args)
+    {
+        if (_logger.IsEnabled(LogLevel.Critical))
+        {
+#pragma warning disable CA2254 // Template should be a static expression
+            _logger.LogCritical(ex, message, args);
+#pragma warning restore CA2254 // Template should be a static expression
         }
     }
 
@@ -301,7 +309,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
     {
         try
         {
-            var scheduler = await _schedulerFactory.GetScheduler();
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             await scheduler.Standby(cancellationToken);
         }
         catch
@@ -316,7 +324,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         {
             if (_lastMemoryLog == null || DateTimeOffset.Now.Subtract(_lastMemoryLog.GetValueOrDefault()).TotalHours > 1)
             {
-                _logger.LogCritical("memory usage is too high. used memory: {UsedMemory}MB. start graceful end of the process. stand by scheduler", usedMemory);
+                LogCritical(null, "memory usage is too high. used memory: {UsedMemory:N0}mb. start graceful end of the process. stand by scheduler", usedMemory);
                 _lastMemoryLog = DateTimeOffset.Now;
             }
         }

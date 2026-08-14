@@ -423,3 +423,12 @@ V 1.8.2
 - add the option to save cli login
 - global config secret
 - jobfile.yml - option for global config place holder
+
+V 1.8.3
+-------
+- PREFERRED NODE trigger option to run on specific node (by node id or node name)
+- remove restsharp dependency from planar nuget package and planar service
+- encrypted job context (process. rabbit, http)
+- add security audit even without login (for anonymous user)
+- DO NOT allow to halt service without identity (authenticated user or cli identity)
+- remove service halt from client libtrary

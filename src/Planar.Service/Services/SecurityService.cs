@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Services;
 
-public class SecurityService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
+public class SecurityService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BaseAuditService
 {
     private readonly Channel<SecurityMessage> _channel = serviceProvider.GetRequiredService<Channel<SecurityMessage>>();
     private readonly ILogger<SecurityService> _logger = serviceProvider.GetRequiredService<ILogger<SecurityService>>();
@@ -58,10 +58,8 @@ public class SecurityService(IServiceProvider serviceProvider, IServiceScopeFact
             return;
         }
 
-        var usernameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-        var surnameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
-        var givenNameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
-        var title = $"{givenNameClaim} {surnameClaim}"?.Trim();
+        var usernameClaim = GetUsername(message);
+        var title = GetTitle(message);
 
         using var scope = _serviceScopeFactory.CreateScope();
         var data = scope.ServiceProvider.GetRequiredService<IServiceData>();
@@ -70,11 +68,9 @@ public class SecurityService(IServiceProvider serviceProvider, IServiceScopeFact
             DateCreated = DateTime.Now,
             Title = message.Title.Trim(),
             IsWarning = message.IsWarning,
-            Username = usernameClaim ?? RoleHelper.DefaultRole,
-            UserTitle = title ?? RoleHelper.DefaultRole,
+            Username = usernameClaim,
+            UserTitle = title,
         };
-
-        if (audit.Title.Length > 500) { audit.Title = audit.Title[0..500]; }
 
         await data.AddSecurityAudit(audit);
     }

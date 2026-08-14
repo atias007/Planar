@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Planar.Job.RabbitMq;
 using RabbitMQJob;
 
 var builder = new HostApplicationBuilder();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
+
 builder.Services.AddSingleton<DemoSignleton>();
 var app = builder.Build();
 
@@ -13,6 +16,7 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .WithPlanarHostName("localhost")
         .WithHost(app)
         .AddHostSingletonType<DemoSignleton>()
+        .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")
         .WithDeadLetterExchange("DLX")
         .WithDeadLetterRoutingKey("Errors")
         .WithRabbitMqConnectionFactory(new RabbitMQ.Client.ConnectionFactory

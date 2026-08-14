@@ -27,10 +27,40 @@ public abstract class BaseBL<TBusinesLayer, TDataLayer>(IServiceProvider service
 
 public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
 {
-    private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
+    private readonly IHttpContextAccessor _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
     private readonly ILogger<TBusinesLayer> _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
-    private readonly IHttpContextAccessor _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+    private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
+
+    protected static string? ServiceVersion
+    {
+        get
+        {
+            var versionString = Assembly.GetEntryAssembly()
+                                   ?.GetCustomAttribute<AssemblyFileVersionAttribute>()
+                                   ?.Version;
+            return versionString;
+        }
+    }
+
+    protected ClusterUtil ClusterUtil
+    {
+        get
+        {
+            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            return util;
+        }
+    }
+
+    protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
+
+    protected ILogger<TBusinesLayer> Logger => _logger;
+
+    protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
+
+    protected SchedulerUtil SchedulerUtil => _schedulerUtil;
+
+    protected IServiceProvider ServiceProvider => _serviceProvider;
 
     protected int? UserId
     {
@@ -53,126 +83,6 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             {
                 return Roles.Anonymous;
             }
-        }
-    }
-
-    protected int? GetClaimIntValue(string claimType)
-    {
-        var context = _contextAccessor.HttpContext;
-        if (context?.User?.Claims == null) { return null; }
-        var claim = context.User.Claims.FirstOrDefault(c => c.Type == claimType);
-        if (claim == null) { return null; }
-        var strValue = claim.Value;
-        if (string.IsNullOrWhiteSpace(strValue)) { return null; }
-        if (int.TryParse(strValue, out int value)) { return value; }
-        return RoleHelper.GetRoleValue(strValue);
-    }
-
-    protected IServiceProvider ServiceProvider => _serviceProvider;
-
-    protected ClusterUtil ClusterUtil
-    {
-        get
-        {
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-            return util;
-        }
-    }
-
-    protected async Task<IScheduler> GetScheduler() => await _schedulerUtil.SchedulerFactory.GetScheduler();
-
-    protected SchedulerUtil SchedulerUtil => _schedulerUtil;
-
-    protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
-
-#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
-
-    protected string? ServiceVersion
-#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
-    {
-        get
-        {
-            var versionString = Assembly.GetEntryAssembly()
-                                   ?.GetCustomAttribute<AssemblyFileVersionAttribute>()
-                                   ?.Version;
-            return versionString;
-        }
-    }
-
-    protected ILogger<TBusinesLayer> Logger => _logger;
-
-    protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
-
-    protected T Resolve<T>()
-        where T : notnull
-    {
-        return _serviceProvider.GetRequiredService<T>();
-    }
-
-    protected static T ValidateExistingEntity<T>(T? entity, string entityName)
-        where T : class
-    {
-        if (entity == null)
-        {
-            if (string.IsNullOrEmpty(entityName))
-            {
-                entityName = "entity";
-            }
-
-            throw new RestNotFoundException($"{entityName} could not be found");
-        }
-
-        return entity;
-    }
-
-    protected async Task<ITrigger> ValidateExistingTrigger(TriggerKey entity, string triggerId)
-    {
-        var scheduler = await GetScheduler();
-        return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
-    }
-
-    protected void AuditSecuritySafe(string title, bool isWarning = false)
-    {
-        try
-        {
-            var audit = new SecurityMessage
-            {
-                Title = title,
-                IsWarning = isWarning
-            };
-
-            AuditSecurityInner(audit);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "fail to publish security audit with title {Title}. is warning audit: {IsWarning}", title, isWarning);
-        }
-    }
-
-    private void AuditSecurityInner(SecurityMessage audit)
-    {
-        var context = Resolve<IHttpContextAccessor>();
-        var claims = context?.HttpContext?.User?.Claims;
-        audit.Claims = claims;
-        var producer = Resolve<SecurityProducer>();
-        producer.Publish(audit);
-    }
-
-    protected static void TrimPropertyName(UpdateEntityRequestByName requestByName)
-    {
-        const char space = ' ';
-        while (requestByName.PropertyName.Contains(space))
-        {
-            requestByName.PropertyName = requestByName.PropertyName.Replace(space.ToString(), string.Empty);
-        }
-    }
-
-    protected static void TrimPropertyName(UpdateEntityRequestById requestByName)
-    {
-        const char space = ' ';
-        while (requestByName.PropertyName.Contains(space))
-        {
-            requestByName.PropertyName = requestByName.PropertyName.Replace(space.ToString(), string.Empty);
         }
     }
 
@@ -228,5 +138,115 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         {
             await validator.ValidateAndThrowAsync(entity);
         }
+    }
+
+    protected static void TrimPropertyName(UpdateEntityRequestByName requestByName)
+    {
+        const char space = ' ';
+        while (requestByName.PropertyName.Contains(space))
+        {
+            requestByName.PropertyName = requestByName.PropertyName.Replace(space.ToString(), string.Empty);
+        }
+    }
+
+    protected static void TrimPropertyName(UpdateEntityRequestById requestByName)
+    {
+        const char space = ' ';
+        while (requestByName.PropertyName.Contains(space))
+        {
+            requestByName.PropertyName = requestByName.PropertyName.Replace(space.ToString(), string.Empty);
+        }
+    }
+
+    protected static T ValidateExistingEntity<T>(T? entity, string entityName)
+        where T : class
+    {
+        if (entity == null)
+        {
+            if (string.IsNullOrEmpty(entityName))
+            {
+                entityName = "entity";
+            }
+
+            throw new RestNotFoundException($"{entityName} could not be found");
+        }
+
+        return entity;
+    }
+
+    protected void AuditSecuritySafe(string title, bool isWarning = false)
+    {
+        try
+        {
+            var audit = GetAuditSecurityMessage(title, isWarning);
+            if (audit == null) { return; }
+            var producer = Resolve<SecurityProducer>();
+            producer.Publish(audit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "fail to publish security audit with title {Title}. is warning audit: {IsWarning}", title, isWarning);
+        }
+    }
+
+    protected void AuditSecuritySafe(SecurityMessage message)
+    {
+        try
+        {
+            if (message == null) { return; }
+            var producer = Resolve<SecurityProducer>();
+            producer.Publish(message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "fail to publish security audit with title {Title}. is warning audit: {IsWarning}", message.Title, message.IsWarning);
+        }
+    }
+
+    protected SecurityMessage? GetAuditSecurityMessage(string title, bool isWarning = false)
+    {
+        try
+        {
+            var context = Resolve<IHttpContextAccessor>();
+
+            var audit = new SecurityMessage(context)
+            {
+                Title = title,
+                IsWarning = isWarning
+            };
+
+            return audit;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "fail to get security audit message with title {Title}. is warning audit: {IsWarning}", title, isWarning);
+            return null;
+        }
+    }
+
+    protected int? GetClaimIntValue(string claimType)
+    {
+        var context = _contextAccessor.HttpContext;
+        if (context?.User?.Claims == null) { return null; }
+        var claim = context.User.Claims.FirstOrDefault(c => c.Type == claimType);
+        if (claim == null) { return null; }
+        var strValue = claim.Value;
+        if (string.IsNullOrWhiteSpace(strValue)) { return null; }
+        if (int.TryParse(strValue, out int value)) { return value; }
+        return RoleHelper.GetRoleValue(strValue);
+    }
+
+    protected async Task<IScheduler> GetScheduler() => await _schedulerUtil.SchedulerFactory.GetScheduler();
+
+    protected T Resolve<T>()
+        where T : notnull
+    {
+        return _serviceProvider.GetRequiredService<T>();
+    }
+
+    protected async Task<ITrigger> ValidateExistingTrigger(TriggerKey entity, string triggerId)
+    {
+        var scheduler = await GetScheduler();
+        return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 }

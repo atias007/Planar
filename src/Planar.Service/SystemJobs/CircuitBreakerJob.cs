@@ -39,7 +39,7 @@ internal class CircuitBreakerJob(
 
     private void AuditJobSafe(JobKey jobKey, string description, object? additionalInfo = null)
     {
-        var audit = new AuditMessage
+        var audit = new AuditMessage(null)
         {
             JobKey = jobKey,
             Description = description,
@@ -68,7 +68,7 @@ internal class CircuitBreakerJob(
         if (string.IsNullOrWhiteSpace(jobKeyName)) { return; }
         if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return; }
         var jobKey = new JobKey(jobKeyName, jobKeyGroup);
-        var scheduler = await schedulerFactory.GetScheduler();
+        var scheduler = await schedulerFactory.GetScheduler(context.CancellationToken);
 
         // Resume job (in case of auto resume)
         if (resumeType == AutoResumeTypes.AutoResume)

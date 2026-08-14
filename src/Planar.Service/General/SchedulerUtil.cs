@@ -20,6 +20,8 @@ public class SchedulerUtil(ISchedulerFactory schedulerFactory, SchedulerHealthCh
 {
     public ISchedulerFactory SchedulerFactory => schedulerFactory;
 
+    public bool IsHalted { get; private set; }
+
     internal async Task<string> SchedulerInstanceId()
     {
         var scheduler = await schedulerFactory.GetScheduler();
@@ -28,6 +30,7 @@ public class SchedulerUtil(ISchedulerFactory schedulerFactory, SchedulerHealthCh
 
     public async Task Start(CancellationToken cancellationToken = default)
     {
+        IsHalted = false;
         var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         await scheduler.Start(cancellationToken);
     }
@@ -42,6 +45,7 @@ public class SchedulerUtil(ISchedulerFactory schedulerFactory, SchedulerHealthCh
     {
         var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         await scheduler.Standby(cancellationToken);
+        IsHalted = true;
     }
 
     public async Task<ITrigger?> GetCircuitBreakerTrigger(JobKey jobKey)

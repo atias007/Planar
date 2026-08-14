@@ -155,7 +155,8 @@ namespace Planar.Job.RabbitMq
                 queue: queueName,
                 autoAck: true,
                 consumerTag: $"Planar:{queueName}",
-                consumer: consumer);
+                consumer: consumer,
+                cancellationToken: cancellationToken);
 
             return consumer;
         }
@@ -179,18 +180,22 @@ namespace Planar.Job.RabbitMq
         {
             try
             {
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
                 if (_channel != null) { await _channel.CloseAsync(); }
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
                 _channel?.Dispose();
                 _channel = null;
             }
-            catch 
+            catch
             {
-                // *** DO NOTHING *** ///
+                // *** DO NOTHING *** //
             }
 
             try
             {
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
                 if (_connection != null) { await _connection.CloseAsync(); }
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
                 _connection?.Dispose();
                 _connection = null;
             }
@@ -248,7 +253,7 @@ namespace Planar.Job.RabbitMq
 
             var total = await _channel.MessageCountAsync(queueName, cancellationToken);
             if (total == 0) { return; }
-            await Task.Delay(1_000);
+            await Task.Delay(1_000, cancellationToken);
             total = await _channel.MessageCountAsync(queueName, cancellationToken);
             if (total == 0) { return; }
 
@@ -333,7 +338,7 @@ namespace Planar.Job.RabbitMq
             }
             catch
             {
-                /// *** DO NOTHING *** ///
+                // *** DO NOTHING *** //
             }
         }
 
@@ -368,20 +373,23 @@ namespace Planar.Job.RabbitMq
                 type: ExchangeType.Direct,
                 durable: true,
                 autoDelete: false,
-                arguments: null);
+                arguments: null,
+                cancellationToken: cancellationToken);
 
             await _channel.QueueDeclareAsync(
                 queue: queueName,
                 durable: true,        // quorum queues must be durable
                 exclusive: false,     // quorum queues cannot be exclusive
                 autoDelete: false,    // quorum queues cannot be auto-delete
-                arguments: queueArguments);
+                arguments: queueArguments,
+                cancellationToken: cancellationToken);
 
             await _channel.QueueBindAsync(
                 queue: queueName,
                 exchange: properties.Exchange,
                 routingKey: queueName,
-                arguments: null);
+                arguments: null,
+                cancellationToken: cancellationToken);
 
             if (logSuccess)
             {

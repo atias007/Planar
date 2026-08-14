@@ -90,7 +90,7 @@ internal class JobA : BaseJob
             await IncreaseEffectedRowsAsync();
             current++;
             await base.UpdateProgressAsync(current, total);
-            await Task.Delay(3000);
+            await Task.Delay(3000, context.CancellationToken);
         }
     }
 

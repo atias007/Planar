@@ -14,6 +14,13 @@ namespace Planar.Client.Api
         {
         }
 
+        public async Task<IEnumerable<AgentDetails>> GetAgentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("service/agents", HttpMethod.Get);
+            var result = await _proxy.InvokeAsync<List<AgentDetails>>(restRequest, cancellationToken);
+            return result;
+        }
+
         public async Task<IEnumerable<string>> GetCalendarsAsync(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/calendars", HttpMethod.Get);
@@ -51,16 +58,10 @@ namespace Planar.Client.Api
             return result;
         }
 
-        public async Task HaltSchedulerAsync(CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("service/halt", HttpMethod.Post);
-            await _proxy.InvokeAsync(restRequest, cancellationToken);
-        }
-
-        public async Task<string> HealthCheckAsync(CancellationToken cancellationToken = default)
+        public async Task<ServiceHealthCheck> HealthCheckAsync(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/health-check", HttpMethod.Get);
-            var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<ServiceHealthCheck>(restRequest, cancellationToken);
             return result;
         }
 

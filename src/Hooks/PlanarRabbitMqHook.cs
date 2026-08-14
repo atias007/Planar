@@ -58,7 +58,7 @@ To use different settings per group, you can set one of the 'AdditionalField' of
 
             body.SetAttributeFromString("version", "1.0.0");
             var json = CoreSerializer.SerializeCloudEvent(body);
-            await rabbitMqFactory.PublishAsync(exchange, routing, fireInstanceId, command: "Alert", body: json);
+            await rabbitMqFactory.PublishAsync(exchange, routing, fireInstanceId, command: "Alert", encryptPayload: false, body: json);
         }
         catch (Exception ex)
         {

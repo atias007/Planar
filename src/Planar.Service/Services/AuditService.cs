@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
-using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
@@ -13,15 +11,13 @@ using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Services;
 
-public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
+public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BaseAuditService
 {
     private readonly Channel<AuditMessage> _channel = serviceProvider.GetRequiredService<Channel<AuditMessage>>();
     private readonly ILogger<AuditService> _logger = serviceProvider.GetRequiredService<ILogger<AuditService>>();
@@ -58,27 +54,11 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
         }
     }
 
-    private static string GetTitle(AuditMessage message)
-    {
-        var surnameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
-        var givenNameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
-        var title = $"{givenNameClaim} {surnameClaim}".Trim();
-        if (string.IsNullOrWhiteSpace(title)) { title = message.CliIdentity; }
-        if (string.IsNullOrWhiteSpace(title)) { title = RoleHelper.DefaultRole; }
-        return title;
-    }
-
-    private static string GetUsername(AuditMessage message)
-    {
-        var usernameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-        return usernameClaim ?? message.CliIdentity ?? RoleHelper.DefaultRole;
-    }
-
     private async Task<string?> GetJobId(AuditMessage message)
     {
         if (!string.IsNullOrWhiteSpace(message.JobId)) { return message.JobId; }
         if (message.JobKey == null) { return string.Empty; }
-        
+
         var result = await _jobKeyHelper.SafeGetJobId(message.JobKey);
         return result ?? string.Empty;
     }
@@ -87,12 +67,6 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
     {
         if (jobKey == null) { return string.Empty; }
         return $"{jobKey.Group}.{jobKey.Name}";
-    }
-
-    private static string? GetAdditionalInfoString(object? additionalInfo)
-    {
-        if (additionalInfo == null) { return null; }
-        return YmlUtil.Serialize(additionalInfo)?.Trim();
     }
 
     private async Task SaveAudit(AuditMessage message)
@@ -151,7 +125,6 @@ public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory
             message.AdditionalInfo = info;
         }
     }
-
 
     private async Task<TriggerDetails?> GetTriggerDetails(ITrigger? trigger)
     {

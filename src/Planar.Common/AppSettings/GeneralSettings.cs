@@ -24,6 +24,9 @@ namespace Planar.Common
         public string? CertificateFile { get; set; }
         public string? CertificatePassword { get; set; }
         public bool EncryptAllSettings { get; set; }
+        public string EncryptionKey { get; set; } = string.Empty;
+
+        public byte[]? EncryptionKeyBytes { get; set; }
 
         public int ApiPort => UseHttps ? HttpsPort : HttpPort;
 

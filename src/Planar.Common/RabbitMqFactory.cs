@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Planar.Common.Helpers;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
@@ -41,11 +42,21 @@ public sealed class RabbitMqFactory
             string? fireInstanceId,
             string command,
             string body,
+            bool encryptPayload,
             int copies = 1,
             int? timeoutSeconds = null)
     {
         await EnsureConnectionAsync();
         ArgumentNullException.ThrowIfNull(_connection);
+
+        var key = AppSettings.General.EncryptionKeyBytes;
+        encryptPayload = encryptPayload && key != null && key.Length == 32;
+
+        if (encryptPayload)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            body = AesGcmStringCipher.Encrypt(body, key);
+        }
 
         var bodyBytes = Encoding.UTF8.GetBytes(body);
 
@@ -61,7 +72,8 @@ public sealed class RabbitMqFactory
             Persistent = true,
             Headers = new Dictionary<string, object?>
             {
-                { "Command", command }
+                { "Command", command },
+                { "Encrypted", encryptPayload }
             }
         };
 
@@ -83,7 +95,8 @@ public sealed class RabbitMqFactory
                   routingKey: routingKey,
                   mandatory: true,
                   basicProperties: properties,
-                  body: bodyBytes);
+                  body: bodyBytes,
+                  cancellationToken: _cancellationToken);
         }
     }
 
@@ -107,7 +120,7 @@ public sealed class RabbitMqFactory
         try
         {
             StopHealthCheckTimer();
-            if (_connection != null) { await _connection.CloseAsync(); }
+            if (_connection != null) { await _connection.CloseAsync(_cancellationToken); }
             _connection?.Dispose();
             _connection = null;
         }

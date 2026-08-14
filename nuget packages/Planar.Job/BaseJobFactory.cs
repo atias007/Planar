@@ -79,7 +79,7 @@ namespace Planar.Job
         {
             if (ex == null) { return; }
 
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
             {
                 var message = new ExceptionDto(ex);
@@ -180,7 +180,7 @@ namespace Planar.Job
 
         public async Task IncreaseEffectedRowsAsync(int value = 1)
         {
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
             {
                 _effectedRows = (_effectedRows ?? 0) + value;
@@ -194,7 +194,7 @@ namespace Planar.Job
 
         public async Task SetEffectedRowsAsync(int value)
         {
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
             {
                 _effectedRows = value;
@@ -306,7 +306,7 @@ namespace Planar.Job
 
         public async Task RaiseCustomEventAsync(CustomMonitorEvents customMonitorEvents, string message)
         {
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
             {
                 var number = ((int)customMonitorEvents) - 399;
@@ -331,7 +331,7 @@ namespace Planar.Job
 #endif
         {
             ValidateInvokeJobOptions(options);
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
             {
                 var entity = new { Id = id, Options = options };
@@ -351,7 +351,7 @@ namespace Planar.Job
 #endif
         {
             ValidateInvokeJobOptions(options);
-            await _semaphoreSlim.WaitAsync();
+            await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
             {
                 var entity = new { Id = id, DueDate = dueDate, Options = options };

@@ -21,7 +21,7 @@ public static class ServiceUtil
     private static bool _disposeFlag;
     private static readonly Lock _locker = new();
 
-    public static IEnumerable<string> JobTypes =>
+    public static IEnumerable<string> JobTypeNames =>
     [
         nameof(PlanarJob),
         nameof(ProcessJob),
@@ -29,6 +29,16 @@ public static class ServiceUtil
         nameof(RestJob),
         nameof(SqlTableReportJob),
         nameof(SequenceJob),
+    ];
+
+    public static IEnumerable<Type> JobTypes =>
+    [
+        typeof(PlanarJob),
+        typeof(ProcessJob),
+        typeof(SqlJob),
+        typeof(RestJob),
+        typeof(SqlTableReportJob),
+        typeof(SequenceJob),
     ];
 
     internal static string GenerateId()
