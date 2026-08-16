@@ -12,8 +12,6 @@ using System.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using Timer = System.Timers.Timer;
 
 namespace CommonJob;
 
@@ -23,12 +21,9 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
     protected Process? _process;
     protected bool _processKilled;
     private readonly StringBuilder _output = new();
-    private readonly Timer _processMetricsTimer = new(1000);
     private readonly Lock Locker = new();
     private string? _filename;
     private bool _listenOutput = true;
-    private long _peakWorkingSet64;
-    private long _peakVirtualMemorySize64;
     private string? _outputText;
 
     protected BaseProcessJob(
@@ -100,8 +95,6 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         SafeUnsubscribeOutput();
         SafeInvoke(() => _process?.Close());
         SafeInvoke(() => _process?.Dispose());
-        SafeInvoke(() => { _processMetricsTimer?.Elapsed -= MetricsTimerElapsed; });
-        SafeInvoke(() => { _processMetricsTimer?.Dispose(); });
     }
 
     protected virtual async Task<ProcessStartInfo> GetProcessStartInfo()
@@ -153,8 +146,6 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         MessageBroker.AppendLog(LogLevel.Information, " process information:");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
         MessageBroker.AppendLog(LogLevel.Information, $"exit Code: {_process.ExitCode}");
-        MessageBroker.AppendLog(LogLevel.Information, $"peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
-        MessageBroker.AppendLog(LogLevel.Information, $"peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
 
         var username = string.IsNullOrWhiteSpace(FileProperties.UserName) ?
             GetUsername(Environment.UserDomainName, Environment.UserName) :
@@ -196,9 +187,6 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         {
             throw new PlanarException($"could not start process {FileProperties.Filename}\r\n", ex);
         }
-
-        _processMetricsTimer.Elapsed += MetricsTimerElapsed;
-        _processMetricsTimer.Start();
 
         _process.BeginOutputReadLine();
         _process.BeginErrorReadLine();
@@ -262,36 +250,9 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         }
     }
 
-    private void MetricsTimerElapsed(object? sender, ElapsedEventArgs e)
-    {
-        UpdatePeakVariables(_process);
-    }
-
     private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
     {
         if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
         lock (Locker) { _output.AppendLine(eventArgs.Data); }
-    }
-
-    private void UpdatePeakVariables(Process? process)
-    {
-        if (process == null) { return; }
-        if (process.HasExited) { return; }
-
-        SafeInvoke(() =>
-        {
-            lock (Locker)
-            {
-                _peakWorkingSet64 = process.PeakWorkingSet64;
-            }
-        });
-
-        SafeInvoke(() =>
-        {
-            lock (Locker)
-            {
-                _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
-            }
-        });
     }
 }

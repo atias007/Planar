@@ -9,7 +9,6 @@ using System.Net.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Timer = System.Timers.Timer;
 
 namespace Planar.Common;
 
@@ -19,12 +18,9 @@ public sealed class RabbitMqFactory
     private readonly ConnectionFactory _connectionFactory = new();
     private readonly bool _enabled;
     private readonly List<AmqpTcpEndpoint> _endpoints = [];
-    private readonly Lock _healthCheckLock = new();
     private readonly ILogger<RabbitMqFactory> _logger;
     private readonly SemaphoreSlim _reconnectSemaphore = new(1, 1);
     private IConnection? _connection;
-    private Timer? _healthCheckTimer;
-    private int healthCheckFailCounter = 0;
 
     // CTOR //
     public RabbitMqFactory(IHostApplicationLifetime hostApplicationLifetime, ILogger<RabbitMqFactory> logger)
@@ -113,24 +109,6 @@ public sealed class RabbitMqFactory
     }
 
     /// <summary>
-    /// Closes the channel and connection gracefully
-    /// </summary>
-    private async Task CloseConnectionAsync()
-    {
-        try
-        {
-            StopHealthCheckTimer();
-            if (_connection != null) { await _connection.CloseAsync(_cancellationToken); }
-            _connection?.Dispose();
-            _connection = null;
-        }
-        catch
-        {
-            // DO NOTHING //
-        }
-    }
-
-    /// <summary>
     /// Ensures connection and channel are established and healthy (Singleton pattern)
     /// </summary>
     private async Task EnsureConnectionAsync()
@@ -150,14 +128,10 @@ public sealed class RabbitMqFactory
                 if (_connection != null)
                 {
                     await SafeInvoke(() => _connection.CloseAsync(_cancellationToken));
-                    StopHealthCheckTimer();
                     _connection = null;
                 }
 
                 var connectionName = $"{nameof(Planar)}:Server:{Environment.MachineName}";
-
-                RestartHealthCheckTimer(60);
-
                 // Create connection with 10-second timeout
                 var connectionTask = _connectionFactory.CreateConnectionAsync(_endpoints, connectionName, _cancellationToken);
                 var timeoutTask = Task.Delay(TimeSpan.FromSeconds(10), _cancellationToken);
@@ -175,13 +149,11 @@ public sealed class RabbitMqFactory
                 _connection.ConnectionShutdownAsync += async (sender, args) =>
                 {
                     _logger.LogWarning("RabbitMQ connection shutdown: {ReplyText}", args.ReplyText);
-                    await CloseConnectionAsync();
                 };
 
                 _connection.ConnectionRecoveryErrorAsync += async (sender, args) =>
                 {
                     _logger.LogError("RabbitMQ connection recovery error: {Message}", args.Exception.Message);
-                    await CloseConnectionAsync();
                 };
 
                 _connection.RecoverySucceededAsync += async (sender, args) =>
@@ -193,7 +165,7 @@ public sealed class RabbitMqFactory
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to connect to RabbitMQ");
-            throw;
+            throw new InvalidOperationException("Failed to connect to RabbitMQ", ex);
         }
         finally
         {
@@ -235,66 +207,6 @@ public sealed class RabbitMqFactory
                 ServerName = settings.Ssl.PolicyErrors,
                 CertPassphrase = settings.Ssl.CertPassphrase
             };
-        }
-    }
-
-    private void RestartHealthCheckTimer(int seconds)
-    {
-        lock (_healthCheckLock)
-        {
-            double interval = seconds * 1_000.0;
-
-            if (_healthCheckTimer != null)
-            {
-                if (Math.Abs(_healthCheckTimer.Interval - interval) < 0.1)
-                {
-                    return;
-                }
-
-                _healthCheckTimer.Stop();
-                _healthCheckTimer.Dispose();
-            }
-
-            _healthCheckTimer = new Timer(interval);
-            _healthCheckTimer.Elapsed += async (sender, e) => await SafeHealthCheck();
-        }
-    }
-
-    private async Task SafeHealthCheck()
-    {
-        try
-        {
-            StopHealthCheckTimer();
-            await EnsureConnectionAsync();
-            healthCheckFailCounter = 0;
-            RestartHealthCheckTimer(60);
-        }
-        catch (Exception ex)
-        {
-            Interlocked.Increment(ref healthCheckFailCounter);
-            if (healthCheckFailCounter >= 30 && healthCheckFailCounter < 60)
-            {
-                RestartHealthCheckTimer(300);
-            }
-
-            if (healthCheckFailCounter >= 60)
-            {
-                RestartHealthCheckTimer(1_200);
-            }
-
-            _logger.LogError(ex, "RabbitMQ health check failed on attempt {Attempt}", healthCheckFailCounter);
-        }
-    }
-
-    private void StopHealthCheckTimer()
-    {
-        lock (_healthCheckLock)
-        {
-            if (_healthCheckTimer != null)
-            {
-                _healthCheckTimer.Stop();
-                _healthCheckTimer.Dispose();
-            }
         }
     }
 }

@@ -11,7 +11,7 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.Service.General;
 
-internal class JobDetailsResolver
+internal sealed class JobDetailsResolver : IDisposable
 {
     private readonly HashSet<IJobDetail> _cache = [];
     private readonly SemaphoreSlim _locker = new(1, 1);
@@ -19,6 +19,7 @@ internal class JobDetailsResolver
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly TimeSpan _timeout = TimeSpan.FromMinutes(1);
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+    private readonly Timer _timer;
 
     private bool _initialized;
 
@@ -26,9 +27,14 @@ internal class JobDetailsResolver
     {
         _logger = logger;
         _schedulerFactory = schedulerFactory;
-        var timer = new Timer(_interval);
-        timer.Elapsed += async (sender, args) => await FillCache().ConfigureAwait(false);
-        timer.Start();
+        _timer = new Timer(_interval);
+        _timer.Elapsed += async (sender, args) => await FillCache().ConfigureAwait(false);
+        _timer.Start();
+    }
+
+    public void Dispose()
+    {
+        _timer.Dispose();
     }
 
     public async Task InitializeAsync()

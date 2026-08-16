@@ -52,18 +52,15 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         _timer = new Timer(_options.Period);
         _timer.Elapsed += async (sender, e) => await TimerElapsed();
         _timer.Start();
-        _logger.LogDebug("Initialize periodical batch service {Name} (Batch Size: {BatchSize}, Period: {Period}, Retry: {Retry}, Retry Count: {RetryCount})",
-            GetType().Name,
-            _options.BatchSize,
-            _options.Period,
-            _options.Retry,
-            _options.RetryCount);
 
-        if (_options.HealthCheckInterval.HasValue && _options.HealthCheckInterval > TimeSpan.Zero)
+        if (_logger.IsEnabled(LogLevel.Debug))
         {
-            var healthCheckTimer = new Timer(_options.HealthCheckInterval.Value);
-            healthCheckTimer.Elapsed += async (sender, e) => await SafeHealthCheck().ConfigureAwait(false);
-            healthCheckTimer.Start();
+            _logger.LogDebug("Initialize periodical batch service {Name} (Batch Size: {BatchSize}, Period: {Period}, Retry: {Retry}, Retry Count: {RetryCount})",
+                GetType().Name,
+                _options.BatchSize,
+                _options.Period,
+                _options.Retry,
+                _options.RetryCount);
         }
 
         var reader = _channel.Reader;
@@ -104,7 +101,7 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
     {
         try
         {
-            _timer?.Stop();
+            _timer.Stop();
             if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
             do
             {
@@ -198,18 +195,6 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         else
         {
             await HandleBatch(items).ConfigureAwait(false);
-        }
-    }
-
-    private async Task SafeHealthCheck()
-    {
-        try
-        {
-            await HealthCheck();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Fail to health check PeriodicalBatch ({Name})", GetType().FullName);
         }
     }
 
