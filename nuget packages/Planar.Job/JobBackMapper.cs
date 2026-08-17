@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -33,31 +32,27 @@ namespace Planar.Job
                 foreach (var prop in allProperties)
                 {
                     if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
-                    await SafePutData(context, prop, instance);
+                    await SafePutData(prop, instance);
                 }
             }
             catch (Exception ex)
             {
                 var source = nameof(MapJobInstancePropertiesBack);
                 _logger?.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetails.Key.Group, context.JobDetails.Key.Name);
-                throw;
+                throw new PlanarJobException("Fail to map job instance properties back", ex);
             }
         }
 
-        private async Task SafePutData(IJobExecutionContext context, PropertyInfo prop, object instance)
+        private async Task SafePutData(PropertyInfo prop, object instance)
         {
             var ignoreAttribute = prop.GetCustomAttribute<IgnoreDataMapAttribute>();
 
             if (ignoreAttribute != null)
             {
-                var jobKey = context.JobDetails.Key;
-
-                if (_logger?.IsEnabled(LogLevel.Debug) == false)
+                if (_logger?.IsEnabled(LogLevel.Information) ?? false)
                 {
-                    _logger.LogDebug("ATTENTION: Ignore map back property {PropertyName} of job '{JobGroup}.{JobName}' to data map",
-                        prop.Name,
-                        jobKey.Group,
-                        jobKey.Name);
+                    _logger.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'IgnoreDataMap' attribute",
+                        prop.Name);
                 }
 
                 return;
@@ -66,17 +61,17 @@ namespace Planar.Job
             var jobAttribute = prop.GetCustomAttribute<JobDataAttribute>();
             if (jobAttribute != null)
             {
-                await SafePutJobDataMap(context, prop, instance);
+                await SafePutJobDataMap(jobAttribute, prop, instance);
             }
 
             var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
             if (triggerAttribute != null)
             {
-                await SafePutTiggerDataMap(context, prop, instance);
+                await SafePutTiggerDataMap(triggerAttribute, prop, instance);
             }
         }
 
-        private async Task SafePutJobDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
+        private async Task SafePutJobDataMap(DataAttribute attribute, PropertyInfo prop, object instance)
         {
 #if NETSTANDARD2_0
             string value = null;
@@ -87,23 +82,29 @@ namespace Planar.Job
             {
                 if (!Consts.IsDataKeyValid(prop.Name))
                 {
-                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
+                    _logger?.LogWarning("the data key {Name} in invalid", prop.Name);
+                }
+
+                if (attribute.ReadOnly)
+                {
+                    _logger?.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'JobData' attribute with ReadOnly=true",
+                        prop.Name);
                 }
 
                 value = PlanarConvert.ToString(prop.GetValue(instance));
                 if (_baseJobFactory == null) { return; }
+
                 await _baseJobFactory.PutJobDataAsync(prop.Name, value);
             }
             catch (Exception ex)
             {
-                var jobKey = context.JobDetails.Key;
                 _logger?.LogWarning(ex,
-                    "Fail to save back value {Value} from property {Name} to JobDetails at job {JobGroup}.{JobName}",
-                    value, prop.Name, jobKey.Group, jobKey.Name);
+                    "Fail to save value {Value} from property {Name} to job data",
+                    value, prop.Name);
             }
         }
 
-        private async Task SafePutTiggerDataMap(IJobExecutionContext context, PropertyInfo prop, object instance)
+        private async Task SafePutTiggerDataMap(DataAttribute attribute, PropertyInfo prop, object instance)
         {
 #if NETSTANDARD2_0
             string value = null;
@@ -114,19 +115,25 @@ namespace Planar.Job
             {
                 if (!Consts.IsDataKeyValid(prop.Name))
                 {
-                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
+                    _logger?.LogWarning("the data key {Name} in invalid", prop.Name);
+                }
+
+                if (attribute.ReadOnly)
+                {
+                    _logger?.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'TriggerData' attribute with ReadOnly=true",
+                        prop.Name);
                 }
 
                 value = PlanarConvert.ToString(prop.GetValue(instance));
                 if (_baseJobFactory == null) { return; }
+
                 await _baseJobFactory.PutTriggerDataAsync(prop.Name, value);
             }
             catch (Exception ex)
             {
-                var jobKey = context.JobDetails.Key;
                 _logger?.LogWarning(ex,
-                    "Fail to save back value {Value} from property {Name} to TriggerDetails at job {JobGroup}.{JobName}",
-                    value, prop.Name, jobKey.Group, jobKey.Name);
+                    "Fail to save value {Value} from property {Name} to trigger data",
+                    value, prop.Name);
             }
         }
     }
