@@ -86,7 +86,7 @@ internal sealed class RestartService(IServiceProvider serviceProvider, IServiceS
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail monitor service memory at timer elapsed");
+            _logger.LogError(ex, "fail monitor service memory");
         }
     }
 

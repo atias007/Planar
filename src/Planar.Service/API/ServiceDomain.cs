@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -289,5 +290,16 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
 
         return result;
+    }
+
+    private static string? ServiceVersion
+    {
+        get
+        {
+            var versionString = Assembly.GetEntryAssembly()
+                                   ?.GetCustomAttribute<AssemblyFileVersionAttribute>()
+                                   ?.Version;
+            return versionString;
+        }
     }
 }

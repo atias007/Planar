@@ -74,7 +74,6 @@ namespace Planar.Job
                    (HttpContext httpContext, string route) => SafeRouteMessageAsync(httpContext, route));
 
             webApp.MapGet("/planar/health-check", () => Results.Text("Healthy"));
-            ////webApp.MapGet("/planar/info", () => Results.Ok(properties));
 
             await webApp.RunAsync();
         }

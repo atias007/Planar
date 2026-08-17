@@ -367,9 +367,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException("GroupName", $"could not remove the distribution group '{request.GroupName}' because monitor must have at least one group");
         }
 
+        if (dbMonitor == null) { return; }
         var group = dbMonitor.Groups.FirstOrDefault(g => g.Id == groupId);
         if (group == null) { return; }
-        await DataLayer.RemoveMonitorActionGroup(dbMonitor!, group);
+        await DataLayer.RemoveMonitorActionGroup(dbMonitor, group);
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 

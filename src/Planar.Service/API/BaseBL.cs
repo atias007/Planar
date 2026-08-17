@@ -32,17 +32,6 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
 
-    protected static string? ServiceVersion
-    {
-        get
-        {
-            var versionString = Assembly.GetEntryAssembly()
-                                   ?.GetCustomAttribute<AssemblyFileVersionAttribute>()
-                                   ?.Version;
-            return versionString;
-        }
-    }
-
     protected ClusterUtil ClusterUtil
     {
         get

@@ -111,7 +111,7 @@ public partial class RestJob(
     {
         if (string.IsNullOrWhiteSpace(Properties.BodyFile)) { return; }
         var filename = Path.Combine(Properties.Path, Properties.BodyFile);
-        var body = await File.ReadAllTextAsync(filename);
+        var body = await File.ReadAllTextAsync(filename, context.CancellationToken);
         body = BodyPlaceHolders().Replace(body, m =>
         {
             var k = m.Groups[1].Value;

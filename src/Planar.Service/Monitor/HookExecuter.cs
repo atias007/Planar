@@ -40,7 +40,7 @@ internal sealed class HookExecuter : IDisposable
             ValidateFileExists(_filename);
             var wrapper = new MonitorMessageWrapper(details);
             var json = JsonSerializer.Serialize(wrapper);
-            var startInfo = GetProcessStartInfo(_filename!, json);
+            var startInfo = GetProcessStartInfo(_filename, json);
             var success = StartProcess(startInfo, _timeout);
             if (!success)
             {

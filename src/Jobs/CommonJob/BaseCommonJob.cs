@@ -108,7 +108,7 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
     {
         try
         {
-            MonitorUtil.Scan(@event, context);
+            MonitorUtil.Scan(@event, context, cancellationToken: context.CancellationToken);
         }
         catch (Exception ex)
         {
@@ -160,7 +160,7 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
                 {
                     // *** DO NOTHING ***
                 }
-            });
+            }, context.CancellationToken);
         }
     }
 

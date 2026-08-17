@@ -38,10 +38,12 @@ namespace Planar.Service.Validation
             RuleFor(r => r.MaxRedirects).GreaterThan(0).When(r => r.MaxRedirects.HasValue).WithMessage("max redirects must be greater the 0");
             RuleFor(r => r.MaxRedirects).NotEmpty().When(r => r.FollowRedirects).WithMessage("max redirects must have value when follow redirects is true");
             RuleFor(r => r.BasicAuthentication).Null().When(r => r.JwtAuthentication != null).WithMessage("basic authentication must be null when jwt authentication has value");
-            RuleFor(r => r.BasicAuthentication).SetValidator(new RestJobBasicAuthenticationValidator()!).When(r => r.BasicAuthentication != null);
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+            RuleFor(r => r.BasicAuthentication).SetValidator(new RestJobBasicAuthenticationValidator()).When(r => r.BasicAuthentication != null);
             RuleFor(r => r.JwtAuthentication).Null().When(r => r.BasicAuthentication != null).WithMessage("jwt authentication must be null when basic authentication has value");
-            RuleFor(r => r.JwtAuthentication).SetValidator(new RestJobJwtAuthenticationValidator()!).When(r => r.JwtAuthentication != null);
-            RuleFor(r => r.Proxy).SetValidator(new RestJobPropertiesProxyValidator()!).When(r => r.Proxy != null);
+            RuleFor(r => r.JwtAuthentication).SetValidator(new RestJobJwtAuthenticationValidator()).When(r => r.JwtAuthentication != null);
+            RuleFor(r => r.Proxy).SetValidator(new RestJobPropertiesProxyValidator()).When(r => r.Proxy != null);
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
             RuleForEach(r => r.FormData)
                 .Must(kvp => RestListKeyNotEmpty(kvp))

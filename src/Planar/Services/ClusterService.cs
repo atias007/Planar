@@ -23,7 +23,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var configDomain = scope.ServiceProvider.GetService<ConfigDomain>();
-        await configDomain.FlushInner();
+        await configDomain.FlushInner(context.CancellationToken);
         return new Empty();
     }
 
@@ -168,7 +168,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         var result = new PersistanceRunningJobInfoReply();
         using var scope = _serviceScopeFactory.CreateScope();
         var schedulerUtil = scope.ServiceProvider.GetService<SchedulerUtil>();
-        var jobs = await schedulerUtil.GetPersistanceRunningJobsInfo();
+        var jobs = await schedulerUtil.GetPersistanceRunningJobsInfo(context.CancellationToken);
         var items = jobs.Select(j => new PersistanceRunningJobInfo
         {
             Exceptions = SafeString(j.Exceptions),

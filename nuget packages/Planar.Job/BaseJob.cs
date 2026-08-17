@@ -68,6 +68,7 @@ namespace Planar.Job
 
         protected Version Version
 #else
+
         protected Version? Version
 #endif
         {
@@ -95,6 +96,7 @@ namespace Planar.Job
 
         internal async Task<bool> Execute(string json, IHostedJobProperties hostedProperties, CancellationToken cancellationToken)
 #else
+
         internal async Task<bool> Execute(string json, IHostedJobProperties? hostedProperties, CancellationToken cancellationToken)
 #endif
         {
@@ -122,7 +124,8 @@ namespace Planar.Job
             try
             {
                 await OpenMqttConnection();
-                _ = SendHealthCheckSignal();
+                await SendHealthCheckSignal(1);
+                _ = SendHealthCheckSignal(5);
 
                 Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -166,6 +169,8 @@ namespace Planar.Job
             }
             finally
             {
+                await SendHealthCheckSignal(1);
+
                 _timeoutTimer?.Stop();
                 _timeoutCancelTokenSource?.Dispose();
                 _linkedCancelTokenSource?.Dispose();
@@ -232,6 +237,7 @@ namespace Planar.Job
 
         private async Task OpenMqttConnection()
 #else
+
         private async Task OpenMqttConnection()
 #endif
         {
@@ -291,9 +297,9 @@ namespace Planar.Job
             }
         }
 
-        private async Task SendHealthCheckSignal()
+        private async Task SendHealthCheckSignal(int count)
         {
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < count; i++)
             {
                 await MqttClient.PublishAsync(_context.FireInstanceId, MessageBrokerChannels.HealthCheck);
                 await Task.Delay(50, _context.CancellationToken);
@@ -305,6 +311,7 @@ namespace Planar.Job
         private void MqttClient_Connected(object sender, EventArgs e)
 
 #else
+
         private void MqttClient_Connected(object? sender, EventArgs e)
 #endif
         {
@@ -421,6 +428,7 @@ namespace Planar.Job
 
         public async Task PutJobDataAsync(string key, object value)
 #else
+
         public async Task PutJobDataAsync(string key, object? value)
 #endif
         {
@@ -460,6 +468,7 @@ namespace Planar.Job
 
         public async Task PutTriggerDataAsync(string key, object value)
 #else
+
         public async Task PutTriggerDataAsync(string key, object? value)
 #endif
         {
@@ -500,6 +509,7 @@ namespace Planar.Job
         public Task InvokeJobAsync(string id, InvokeJobOptions options = null)
 
 #else
+
         public Task InvokeJobAsync(string id, InvokeJobOptions? options = null)
 #endif
         {
@@ -512,6 +522,7 @@ namespace Planar.Job
 
         public Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions options = null)
 #else
+
         public Task QueueInvokeJobAsync(string id, DateTime dueDate, InvokeJobOptions? options = null)
 #endif
         {
@@ -539,6 +550,7 @@ namespace Planar.Job
 
         private static void ValidateMinLength(string value, int length, string name)
 #else
+
         private static void ValidateMinLength(string? value, int length, string name)
 #endif
         {
@@ -552,6 +564,7 @@ namespace Planar.Job
 
         private static void ValidateRange(string value, int from, int to, string name)
 #else
+
         private static void ValidateRange(string? value, int from, int to, string name)
 #endif
 
@@ -779,6 +792,7 @@ namespace Planar.Job
 
         private static void ValidateInvokeOptions(InvokeJobOptions options)
 #else
+
         private static void ValidateInvokeOptions(InvokeJobOptions? options)
 #endif
         {
@@ -792,6 +806,7 @@ namespace Planar.Job
 
         private static void ValidateDataMap(Dictionary<string, string> data)
 #else
+
         private static void ValidateDataMap(Dictionary<string, string?>? data)
 #endif
 
