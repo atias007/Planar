@@ -12,7 +12,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Timer = System.Timers.Timer;
 
 namespace Planar.Common.PeriodicalBatch;
 
@@ -21,7 +20,6 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
 
 {
     private int _locker;
-    private Timer _timer = null!;
     private readonly ConcurrentQueue<TMessage> _queue = new();
     private readonly Channel<TMessage> _channel = serviceProvider.GetRequiredService<Channel<TMessage>>();
     private readonly ILogger<PeriodicalBatch<TMessage>> _logger = serviceProvider.GetRequiredService<ILogger<PeriodicalBatch<TMessage>>>();
@@ -49,9 +47,7 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _timer = new Timer(_options.Period);
-        _timer.Elapsed += async (sender, e) => await TimerElapsed();
-        _timer.Start();
+        _ = StartHandleQueueRoutine(stoppingToken);
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
@@ -84,9 +80,13 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         await FlushQueue().ConfigureAwait(false);
     }
 
-    private async Task TimerElapsed()
+    private async Task StartHandleQueueRoutine(CancellationToken stoppingToken)
     {
-        await SafeHandleQueue().ConfigureAwait(false);
+        using var periodicTimer = new PeriodicTimer(_options.Period);
+        while (await periodicTimer.WaitForNextTickAsync(stoppingToken))
+        {
+            await SafeHandleQueue().ConfigureAwait(false);
+        }
     }
 
     private async Task CheckQueueSize()
@@ -101,7 +101,6 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
     {
         try
         {
-            _timer.Stop();
             if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
             do
             {
@@ -118,7 +117,6 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         {
             // Release the lock
             Interlocked.Exchange(ref _locker, 0);
-            _timer.Start();
         }
     }
 

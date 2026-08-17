@@ -17,7 +17,9 @@ namespace Planar.Service.Validation
                 .When(r => r.UseDefaultCredentials)
                 .WithMessage("credentials must be null when use default credentials is true");
 
-            RuleFor(r => r.Credentials).SetValidator(new RestJobPropertiesNetworkCredentialValidator()!).When(r => r.Credentials != null);
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+            RuleFor(r => r.Credentials).SetValidator(new RestJobPropertiesNetworkCredentialValidator()).When(r => r.Credentials != null);
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         }
     }
 }

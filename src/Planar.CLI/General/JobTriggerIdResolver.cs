@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Timer = System.Timers.Timer;
 
 namespace Planar.CLI.General;
 
@@ -18,34 +17,26 @@ internal static class JobTriggerIdResolver
 {
     private static readonly HashSet<string> _jobIds = [];
     private static readonly HashSet<string> _triggerIds = [];
-    private static readonly Timer _timer = new(TimeSpan.FromMinutes(10));
-    private static Timer? _initTimer;
     private static readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
-    public static async Task Initialize()
+    public static async Task Initialize(CancellationToken cancellationToken)
     {
-        var success = await SafeTimerElapsed();
-        if (!success)
-        {
-            _initTimer = new Timer(TimeSpan.FromMinutes(1));
-            _initTimer.Elapsed += async (s, e) =>
-            {
-                if (await SafeTimerElapsed())
-                {
-                    _initTimer.Stop();
-                    _initTimer.Dispose();
-                }
-            };
-            _initTimer.Start();
-        }
+        await SafeRefresh();
+        _ = StartRoutine(cancellationToken);
+    }
 
-        _timer.Elapsed += async (s, e) => await SafeTimerElapsed();
-        _timer.Start();
+    private static async Task StartRoutine(CancellationToken cancellationToken)
+    {
+        using var periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(10));
+        while (await periodicTimer.WaitForNextTickAsync(cancellationToken))
+        {
+            await SafeRefresh();
+        }
     }
 
     public static async Task Refresh()
     {
-        await SafeTimerElapsed();
+        await SafeRefresh();
     }
 
     public static async Task<IdType> SafeGetIdType(string id)
@@ -130,7 +121,7 @@ internal static class JobTriggerIdResolver
         }
     }
 
-    private static async Task<bool> SafeTimerElapsed()
+    private static async Task<bool> SafeRefresh()
     {
         return await SafeRefreshJobIds() && await SafeRefreshTriggerIds();
     }

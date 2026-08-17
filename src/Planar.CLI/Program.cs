@@ -46,11 +46,12 @@ internal static class Program
 
     public static async Task Main(string[] args)
     {
+        using var cts = new CancellationTokenSource();
         var loginsTask = ConnectUtil.GetLogins();
         ReadLine.HistoryEnabled = true;
         Console.OutputEncoding = Encoding.UTF8;
         Console.CancelKeyPress += Console_CancelKeyPress;
-        _ = JobTriggerIdResolver.Initialize();
+        _ = JobTriggerIdResolver.Initialize(cts.Token);
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Console.Title = "Planar: Command Line Interface";
@@ -70,6 +71,7 @@ internal static class Program
         finally
         {
             Console.CancelKeyPress -= Console_CancelKeyPress;
+            await cts.CancelAsync();
         }
     }
 

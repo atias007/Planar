@@ -79,7 +79,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     private static async Task<CliActionResponse> AddUpdateApplyLocalFolder(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
     {
         AnsiConsole.MarkupLine($"[grey]  > found directory: {pathInfo.Path}[/]");
-        var files = Directory.EnumerateFiles(pathInfo.Path!, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
+        var files = Directory.EnumerateFiles(pathInfo.Path, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
             .Where(f => f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
 
         foreach (var item in files)

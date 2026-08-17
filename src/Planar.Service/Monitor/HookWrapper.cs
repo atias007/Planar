@@ -84,7 +84,7 @@ internal class HookWrapper
         return Task.Run(() =>
         {
             var result = ExecuteMethod.Invoke(Instance, [json]);
-            (result as Task)?.Wait();
+            (result as Task)?.Wait(cancellationToken);
         }, cancellationToken);
     }
 
@@ -111,7 +111,7 @@ internal class HookWrapper
         return Task.Run(() =>
         {
             var result = ExecuteMethod.Invoke(Instance, [json]);
-            (result as Task)?.Wait();
+            (result as Task)?.Wait(cancellationToken);
         }, cancellationToken);
     }
 

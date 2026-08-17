@@ -31,7 +31,7 @@ public abstract class SqlTableReportJob(
             await Initialize(context);
             ValidateSqlJob();
             _ = SafeStartMonitorDuration(context);
-            var task = Task.Run(() => Generate(context));
+            var task = Task.Run(() => Generate(context), context.CancellationToken);
             await WaitForJobTask(context, task);
             StopMonitorDuration();
         }
@@ -86,15 +86,15 @@ public abstract class SqlTableReportJob(
                 cmd.CommandTimeout = Convert.ToInt32(AppSettings.General.JobAutoStopSpan.TotalSeconds);
             }
 
-            var timer = new Stopwatch();
-            timer.Start();
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             using var reader = await cmd.ExecuteReaderAsync(ExecutionCancellationToken);
-            timer.Stop();
+            stopwatch.Stop();
 
             var elapsedTitle =
-                timer.ElapsedMilliseconds < 60000 ?
-                $"{timer.Elapsed.Seconds}.{timer.Elapsed.Milliseconds:000}ms" :
-                $"{timer.Elapsed:hh\\:mm\\:ss}";
+                stopwatch.ElapsedMilliseconds < 60000 ?
+                $"{stopwatch.Elapsed.Seconds}.{stopwatch.Elapsed.Milliseconds:000}ms" :
+                $"{stopwatch.Elapsed:hh\\:mm\\:ss}";
 
             var table = ConvertDataReaderToDataTable(reader);
             var rows = table.Rows.Count;

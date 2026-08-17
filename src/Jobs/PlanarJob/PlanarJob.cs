@@ -724,6 +724,8 @@ public abstract class PlanarJob(
             return;
         }
 
+        _isHealthCheck = true;
+
         int iValue;
         KeyValueObject kv;
         switch (channel)
@@ -798,7 +800,6 @@ public abstract class PlanarJob(
                 break;
 
             case MessageBrokerChannels.HealthCheck:
-                _isHealthCheck = true;
                 _healthCheckResetEvent?.Set();
                 SafeUnsubscribeOutput();
                 break;

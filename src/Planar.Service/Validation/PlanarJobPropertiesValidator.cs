@@ -17,26 +17,29 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
             .Must(value => AllowedInvokeMethods.Any(method => string.Equals(method, value, StringComparison.OrdinalIgnoreCase)))
             .WithMessage($"invoke method must be one of: {string.Join(", ", AllowedInvokeMethods)}");
 
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         RuleFor(e => e.Process)
-            .SetValidator(new PlanarJobProcessPropertiesValidator(cluster)!)
+            .SetValidator(new PlanarJobProcessPropertiesValidator(cluster))
             .When(e => e.Process != null);
 
         RuleFor(e => e.Http)
-            .SetValidator(new PlanarJobHttpPropertiesValidator()!)
+            .SetValidator(new PlanarJobHttpPropertiesValidator())
             .When(e => e.Http != null);
 
         RuleFor(e => e.Redis)
-            .SetValidator(new PlanarJobRedisPropertiesValidator()!)
+            .SetValidator(new PlanarJobRedisPropertiesValidator())
             .When(e => e.Redis != null);
 
         RuleFor(e => e.RabbitMq)
-            .SetValidator(new PlanarJobRabbitMqPropertiesValidator()!)
+            .SetValidator(new PlanarJobRabbitMqPropertiesValidator())
             .When(e => e.RabbitMq != null);
 
         RuleFor(e => e.EncryptPayload)
             .Equal(false)
             .When(_ => AppSettings.General.EncryptionKeyBytes == null)
             .WithMessage("encrypt payload is not supported when encryption key is not set. (general section at appsettings.yml)");
+
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
         RuleFor(e => e).Must(e =>
         {

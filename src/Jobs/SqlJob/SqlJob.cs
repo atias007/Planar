@@ -104,7 +104,7 @@ public abstract class SqlJob(
         {
             if (transaction != null)
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(context.CancellationToken);
                 MessageBroker.AppendLog(LogLevel.Warning, "rollback transaction due to error in one of the steps");
             }
             throw;
@@ -174,15 +174,15 @@ public abstract class SqlJob(
                 cmd.Transaction = transaction;
             }
 
-            var timer = new Stopwatch();
-            timer.Start();
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             var rows = await ExecuteCommand(cmd, step, cancellationToken);
-            timer.Stop();
+            stopwatch.Stop();
             if (rows == -1) { rows = null; }
             var elapsedTitle =
-                timer.ElapsedMilliseconds < 60000 ?
-                $"{timer.Elapsed.Seconds}.{timer.Elapsed.Milliseconds:000} seconds" :
-                $"{timer.Elapsed:hh\\:mm\\:ss}";
+                stopwatch.ElapsedMilliseconds < 60000 ?
+                $"{stopwatch.Elapsed.Seconds}.{stopwatch.Elapsed.Milliseconds:000} seconds" :
+                $"{stopwatch.Elapsed:hh\\:mm\\:ss}";
 
             var strRows = rows == null ? "no" : rows.GetValueOrDefault().ToString(CultureInfo.CurrentCulture);
             MessageBroker.AppendLog(LogLevel.Information, $"step name '{step.Name}' executed with {strRows} effected row(s). Elapsed: {elapsedTitle}");

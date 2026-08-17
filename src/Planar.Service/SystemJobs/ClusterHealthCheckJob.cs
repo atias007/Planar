@@ -38,7 +38,7 @@ public sealed class ClusterHealthCheckJob : SystemJob, IJob
         catch (Exception ex)
         {
             _logger.LogError(ex, "fail check health of cluster: {Message}", ex.Message);
-            _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex);
+            _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex, context.CancellationToken);
         }
     }
 

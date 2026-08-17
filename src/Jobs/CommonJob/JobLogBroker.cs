@@ -227,7 +227,7 @@ public sealed class JobLogBroker : IDisposable
 
         try
         {
-            _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
+            _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context, cancellationToken: _context.CancellationToken);
         }
         catch (Exception ex)
         {

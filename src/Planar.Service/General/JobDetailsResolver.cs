@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -7,11 +8,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IJobDetail = Quartz.IJobDetail;
-using Timer = System.Timers.Timer;
 
 namespace Planar.Service.General;
 
-internal sealed class JobDetailsResolver : IDisposable
+internal sealed class JobDetailsResolver
 {
     private readonly HashSet<IJobDetail> _cache = [];
     private readonly SemaphoreSlim _locker = new(1, 1);
@@ -19,22 +19,22 @@ internal sealed class JobDetailsResolver : IDisposable
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly TimeSpan _timeout = TimeSpan.FromMinutes(1);
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
-    private readonly Timer _timer;
-
     private bool _initialized;
 
-    public JobDetailsResolver(ILogger<JobDetailsResolver> logger, ISchedulerFactory schedulerFactory)
+    public JobDetailsResolver(ILogger<JobDetailsResolver> logger, ISchedulerFactory schedulerFactory, IHostApplicationLifetime lifetime)
     {
         _logger = logger;
         _schedulerFactory = schedulerFactory;
-        _timer = new Timer(_interval);
-        _timer.Elapsed += async (sender, args) => await FillCache().ConfigureAwait(false);
-        _timer.Start();
+        _ = StartRoutine(lifetime.ApplicationStopping);
     }
 
-    public void Dispose()
+    private async Task StartRoutine(CancellationToken cancellationToken)
     {
-        _timer.Dispose();
+        using var periodicTimer = new PeriodicTimer(_interval);
+        while (await periodicTimer.WaitForNextTickAsync(cancellationToken))
+        {
+            await FillCache().ConfigureAwait(false);
+        }
     }
 
     public async Task InitializeAsync()

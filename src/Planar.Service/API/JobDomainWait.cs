@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using System;
@@ -29,7 +30,9 @@ public partial class JobDomain
             var context = Resolve<IHttpContextAccessor>().HttpContext;
             ArgumentNullException.ThrowIfNull(context);
 #pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
             await context.Response.Body.FlushAsync();
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
 #pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
         }
     }
