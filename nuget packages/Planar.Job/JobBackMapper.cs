@@ -83,11 +83,12 @@ namespace Planar.Job
                 if (!Consts.IsDataKeyValid(prop.Name))
                 {
                     _logger?.LogWarning("the data key {Name} in invalid", prop.Name);
+                    return;
                 }
 
-                if (attribute.ReadOnly)
+                if (attribute.ReadOnly && (_logger?.IsEnabled(LogLevel.Information) ?? false))
                 {
-                    _logger?.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'JobData' attribute with ReadOnly=true",
+                    _logger.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'JobData' attribute with ReadOnly=true",
                         prop.Name);
                 }
 
@@ -116,11 +117,12 @@ namespace Planar.Job
                 if (!Consts.IsDataKeyValid(prop.Name))
                 {
                     _logger?.LogWarning("the data key {Name} in invalid", prop.Name);
+                    return;
                 }
 
-                if (attribute.ReadOnly)
+                if (attribute.ReadOnly && (_logger?.IsEnabled(LogLevel.Information) ?? false))
                 {
-                    _logger?.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'TriggerData' attribute with ReadOnly=true",
+                    _logger.LogInformation("ATTENTION: mapping property {PropertyName} is skipped due to 'TriggerData' attribute with ReadOnly=true",
                         prop.Name);
                 }
 

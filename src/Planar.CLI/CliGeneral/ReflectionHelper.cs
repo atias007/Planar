@@ -1,5 +1,6 @@
 ﻿using Planar.CLI.Attributes;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,8 +10,8 @@ namespace Planar.CLI.CliGeneral;
 
 internal static class ReflectionHelper
 {
-    private static readonly Dictionary<Type, IEnumerable<PropertyInfo>> _properties = new();
-    private static readonly Dictionary<string, ActionPropertyAttribute> _attributes = new();
+    private static readonly ConcurrentDictionary<Type, IEnumerable<PropertyInfo>> _properties = new();
+    private static readonly ConcurrentDictionary<string, ActionPropertyAttribute> _attributes = new();
 
     public static IEnumerable<PropertyInfo> GetPropertiesInfo<T>() where T : class
     {
@@ -20,7 +21,7 @@ internal static class ReflectionHelper
         }
 
         var result = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-        _properties.Add(typeof(T), result);
+        _properties.TryAdd(typeof(T), result);
         return result;
     }
 
@@ -42,7 +43,7 @@ internal static class ReflectionHelper
         var result = property.GetCustomAttribute<ActionPropertyAttribute>()
             ?? throw new InvalidDataException($"Property {name} in {typeof(T).FullName} does not have ActionPropertyAttribute");
 
-        _attributes.Add(key, result);
+        _attributes.TryAdd(key, result);
         return result;
     }
 }

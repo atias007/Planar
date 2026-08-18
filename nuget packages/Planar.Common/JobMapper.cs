@@ -24,26 +24,6 @@ namespace Planar.Common
         {
         }
 
-        ////public void MapJobInstanceProperties(IJobExecutionContext context, object instance)
-        ////{
-        ////    try
-        ////    {
-        ////        var allProperties = instance.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-        ////        foreach (var item in context.MergedJobDataMap)
-        ////        {
-        ////            if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
-        ////            var prop = allProperties.Find(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
-        ////            MapProperty(context.JobDetails.Key, prop, item, instance);
-        ////        }
-        ////    }
-        ////    catch (Exception ex)
-        ////    {
-        ////        var source = nameof(MapJobInstanceProperties);
-        ////        _logger?.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetails.Key.Group, context.JobDetails.Key.Name);
-        ////        throw;
-        ////    }
-        ////}
-
         public void MapJobInstanceProperties(IJobExecutionContext context, object instance)
         {
             try
@@ -59,16 +39,29 @@ namespace Planar.Common
                     if (jobAttribute != null)
                     {
                         var item = context.JobDetails.JobDataMap.FirstOrDefault(i => string.Equals(i.Key, prop.Name, StringComparison.OrdinalIgnoreCase));
-                        if (string.IsNullOrWhiteSpace(item.Key)) { continue; }
-                        MapProperty(context.JobDetails.Key, prop, item, instance);
+                        if (!string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            MapProperty(context.JobDetails.Key, prop, item, instance);
+                        }
                     }
 
                     var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
                     if (triggerAttribute != null)
                     {
                         var item = context.TriggerDetails.TriggerDataMap.FirstOrDefault(i => string.Equals(i.Key, prop.Name, StringComparison.OrdinalIgnoreCase));
-                        if (string.IsNullOrWhiteSpace(item.Key)) { continue; }
-                        MapProperty(context.JobDetails.Key, prop, item, instance);
+                        if (!string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            MapProperty(context.JobDetails.Key, prop, item, instance);
+                        }
+                    }
+
+                    if (jobAttribute == null && triggerAttribute == null)
+                    {
+                        var item = context.MergedJobDataMap.FirstOrDefault(i => string.Equals(i.Key, prop.Name, StringComparison.OrdinalIgnoreCase));
+                        if (!string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            MapProperty(context.JobDetails.Key, prop, item, instance);
+                        }
                     }
                 }
             }
