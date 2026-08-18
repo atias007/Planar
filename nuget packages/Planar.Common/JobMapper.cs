@@ -28,12 +28,41 @@ namespace Planar.Common
         {
             try
             {
-                var allProperties = instance.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-                foreach (var item in context.MergedJobDataMap)
+                var allProperties = ReflectionHelper.GetProperties(instance);
+                foreach (var prop in allProperties)
                 {
-                    if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
-                    var prop = allProperties.Find(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
-                    MapProperty(context.JobDetails.Key, prop, item, instance);
+                    if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
+                    var ignoreAttribute = prop.GetCustomAttribute<IgnoreDataMapAttribute>();
+                    if (ignoreAttribute != null) { continue; }
+
+                    var jobAttribute = prop.GetCustomAttribute<JobDataAttribute>();
+                    if (jobAttribute != null)
+                    {
+                        var item = context.JobDetails.JobDataMap.FirstOrDefault(i => string.Equals(i.Key, prop.Name, StringComparison.OrdinalIgnoreCase));
+                        if (!string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            MapProperty(context.JobDetails.Key, prop, item, instance);
+                        }
+                    }
+
+                    var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
+                    if (triggerAttribute != null)
+                    {
+                        var item = context.TriggerDetails.TriggerDataMap.FirstOrDefault(i => string.Equals(i.Key, prop.Name, StringComparison.OrdinalIgnoreCase));
+                        if (!string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            MapProperty(context.JobDetails.Key, prop, item, instance);
+                        }
+                    }
+
+                    if (jobAttribute == null && triggerAttribute == null)
+                    {
+                        var item = context.MergedJobDataMap.FirstOrDefault(i => string.Equals(i.Key, prop.Name, StringComparison.OrdinalIgnoreCase));
+                        if (!string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            MapProperty(context.JobDetails.Key, prop, item, instance);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -94,12 +123,15 @@ namespace Planar.Common
             }
             else
             {
-                _logger.LogDebug("Ignore map data key '{DataKey}' with value '{DataValue}' to property {PropertyName} of job '{JobGroup}.{JobName}'",
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug("Ignore map data key '{DataKey}' with value '{DataValue}' to property {PropertyName} of job '{JobGroup}.{JobName}'",
                         data.Key,
                         data.Value,
                         property.Name,
                         jobKey.Group,
                         jobKey.Name);
+                }
             }
 
             return true;

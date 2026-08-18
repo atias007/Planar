@@ -3,7 +3,7 @@
 namespace Planar.Job
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-    public class TriggerDataAttribute : Attribute
+    public class TriggerDataAttribute : DataAttribute
     {
     }
 }

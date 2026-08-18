@@ -111,7 +111,7 @@ internal sealed class JobDetailsResolver
     public async Task<bool> FillCache(int? delaySeconds = null)
     {
 #if DEBUG
-        Console.WriteLine("[FC]");
+        Console.WriteLine("[FillCache]");
 #endif
 
         if (delaySeconds.HasValue && delaySeconds.Value > 0)
