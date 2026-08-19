@@ -14,7 +14,7 @@ internal static class RedisFactory
     internal static string? User { get; private set; }
     internal static string? Password { get; private set; }
     internal static IEnumerable<string> Endpoints { get; private set; } = [];
-    internal static string? ServiceName { get; set; }
+    internal static string? ServiceName { get; private set; }
 
     public static void Initialize(IConfiguration configuration)
     {
@@ -119,7 +119,8 @@ internal static class RedisFactory
                     ConfigCheckSeconds = 60,
                     ConnectRetry = 3,
                     ConnectTimeout = 10000,
-                    Ssl = Ssl
+                    Ssl = Ssl,
+                    ServiceName = ServiceName
                 };
 
                 if (!string.IsNullOrWhiteSpace(User))
