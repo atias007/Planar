@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Common.PeriodicalBatch;
 using Planar.Service.Data;
 using Planar.Service.Model;
+using Quartz.Impl.AdoJobStore.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,8 @@ public class AgentPeriodicalBatch(IServiceProvider serviceProvider) :
 
         try
         {
-            var dal = ServiceProvider.GetRequiredService<IServiceData>();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dal = scope.ServiceProvider.GetRequiredService<IServiceData>();
             await dal.DeleteAgents(DateTime.UtcNow.AddDays(-7)); // Delete agents not seen for 7 days
         }
         catch (Exception ex)
@@ -50,7 +52,9 @@ public class AgentPeriodicalBatch(IServiceProvider serviceProvider) :
 
     private async Task SaveChanges(IEnumerable<Agent> groupItems)
     {
-        var dal = ServiceProvider.GetRequiredService<IServiceData>();
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var dal = scope.ServiceProvider.GetRequiredService<IServiceData>();
+
         var agents = await dal.GetAgents();
         foreach (var item in groupItems)
         {

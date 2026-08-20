@@ -67,7 +67,8 @@ public sealed class MonitorDurationCache
         {
             _memoryCache.Remove(CacheKey);
 
-            var dataLayer = _serviceProvider.GetRequiredService<IMonitorDurationDataLayer>();
+            await using var scope = _serviceProvider.CreateAsyncScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<IMonitorDurationDataLayer>();
             var data = await dataLayer.GetDurationMonitorActions();
             _memoryCache.Set(CacheKey, data, TimeSpan.FromHours(1));
         }
