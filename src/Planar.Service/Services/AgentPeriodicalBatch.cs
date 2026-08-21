@@ -39,7 +39,7 @@ public class AgentPeriodicalBatch(IServiceProvider serviceProvider) :
 
         try
         {
-            await using var scope = serviceProvider.CreateAsyncScope();
+            await using var scope = ServiceProvider.CreateAsyncScope();
             var dal = scope.ServiceProvider.GetRequiredService<IServiceData>();
             await dal.DeleteAgents(DateTime.UtcNow.AddDays(-7)); // Delete agents not seen for 7 days
         }
@@ -52,7 +52,7 @@ public class AgentPeriodicalBatch(IServiceProvider serviceProvider) :
 
     private async Task SaveChanges(IEnumerable<Agent> groupItems)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
+        await using var scope = ServiceProvider.CreateAsyncScope();
         var dal = scope.ServiceProvider.GetRequiredService<IServiceData>();
 
         var agents = await dal.GetAgents();

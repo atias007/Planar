@@ -88,7 +88,10 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
 
 public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 {
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(GetSummaryRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var fromDate = request.FromDate;
         var toDate = request.ToDate;
@@ -190,7 +193,10 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return _context.JobInstanceLogs.AsNoTracking().Where(l => l.Id == key);
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public IQueryable<JobInstanceLog> GetHistory(GetHistoryRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var query = _context.JobInstanceLogs.AsNoTracking();
 

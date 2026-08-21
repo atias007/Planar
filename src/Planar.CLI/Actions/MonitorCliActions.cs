@@ -19,6 +19,9 @@ namespace Planar.CLI.Actions;
 [Module("monitor", "handle monitoring and monitor hooks", Synonyms = "monitors")]
 public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 {
+    private const string MonitorByIdRoute = "monitor/{id}";
+    private const string GroupRoute = "group";
+
     [Action("add")]
     [NullRequest]
     public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request, CancellationToken cancellationToken = default)
@@ -58,7 +61,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         if (!ConfirmAction($"remove monitor id {request.Id}")) { return CliActionResponse.Empty; }
 
-        var restRequest = new RestRequest("monitor/{id}", Method.Delete)
+        var restRequest = new RestRequest(MonitorByIdRoute, Method.Delete)
             .AddParameter("id", request.Id, ParameterType.UrlSegment);
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
@@ -78,7 +81,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             request.Id = monitorWrapper.Value.Id;
         }
 
-        var restRequest = new RestRequest("monitor/{id}", Method.Get)
+        var restRequest = new RestRequest(MonitorByIdRoute, Method.Get)
             .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
@@ -105,7 +108,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
                 .AddParameter("jobId", request.JobIdOrJobGroup, ParameterType.UrlSegment);
 
             var restRequest2 = new RestRequest("monitor/by-group/{group}", Method.Get)
-                .AddParameter("group", request.JobIdOrJobGroup, ParameterType.UrlSegment);
+                .AddParameter(GroupRoute, request.JobIdOrJobGroup, ParameterType.UrlSegment);
 
             var task1 = RestProxy.Invoke<List<MonitorItem>>(restRequest1, cancellationToken);
             var task2 = RestProxy.Invoke<List<MonitorItem>>(restRequest2, cancellationToken);
@@ -425,7 +428,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             }
             else
             {
-                request.GroupName = CliPromptUtil.PromptSelection(groups, "group") ?? string.Empty;
+                request.GroupName = CliPromptUtil.PromptSelection(groups, GroupRoute) ?? string.Empty;
             }
         }
 
@@ -438,7 +441,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         try
         {
-            var restRequest = new RestRequest("monitor/{id}", Method.Get)
+            var restRequest = new RestRequest(MonitorByIdRoute, Method.Get)
                 .AddParameter("id", monitorId, ParameterType.UrlSegment);
             var monitorDetails = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
             if (!monitorDetails.IsSuccessful || monitorDetails.Data == null) { return []; }
@@ -491,7 +494,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         try
         {
-            var restRequest = new RestRequest("monitor/{id}", Method.Get)
+            var restRequest = new RestRequest(MonitorByIdRoute, Method.Get)
                 .AddParameter("id", monitorId, ParameterType.UrlSegment);
             var monitorDetails = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
             if (!monitorDetails.IsSuccessful || monitorDetails.Data == null) { return []; }
@@ -544,7 +547,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
     private static async Task<bool> IsMonitorIsSystem(int monitorId, CancellationToken cancellationToken)
     {
-        var restRequest = new RestRequest("monitor/{id}", Method.Get)
+        var restRequest = new RestRequest(MonitorByIdRoute, Method.Get)
             .AddParameter("id", monitorId, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
@@ -636,7 +639,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     private static async Task<RequestBuilderWrapper<CliUpdateMonitorRequest>> CollectUpdateMonitorRequestData(int id, CancellationToken cancellationToken)
     {
         // Get Data
-        var restRequest = new RestRequest("monitor/{id}", Method.Get)
+        var restRequest = new RestRequest(MonitorByIdRoute, Method.Get)
            .AddParameter("id", id, ParameterType.UrlSegment);
         var detailsResponseTask = RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
         var data = await GetMonitorData(cancellationToken);
@@ -745,6 +748,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
     private static string? PickEventArgument(string eventName)
     {
+        const string message = " [x] number of effected rows";
+
         if (!Enum.TryParse(eventName, out MonitorEvents @event)) { return null; }
         int? x, y;
 
@@ -763,20 +768,20 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
                 return $"{x},{y}";
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx: // 202
-                x = CollectNumericCliValue(" [x] number of effected rows", true, 0, int.MaxValue);
+                x = CollectNumericCliValue(message, true, 0, int.MaxValue);
                 return x?.ToString();
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx: // 203
-                x = CollectNumericCliValue(" [x] number of effected rows", true, 2, int.MaxValue);
+                x = CollectNumericCliValue(message, true, 2, int.MaxValue);
                 return x?.ToString();
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours: // 204
-                x = CollectNumericCliValue(" [x] number of effected rows", true, 0, int.MaxValue);
+                x = CollectNumericCliValue(message, true, 0, int.MaxValue);
                 y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
                 return $"{x},{y}";
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours: // 205
-                x = CollectNumericCliValue(" [x] number of effected rows", true, 1, int.MaxValue);
+                x = CollectNumericCliValue(message, true, 1, int.MaxValue);
                 y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
                 return $"{x},{y}";
 
@@ -820,7 +825,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             return new AddMonitorJobData();
         }
 
-        if (selectedEvent == "group")
+        if (selectedEvent == GroupRoute)
         {
             var group = JobCliActions.ChooseGroup(jobs, writeSelection: false) ?? string.Empty;
             AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] job group '{group}'");
@@ -839,7 +844,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
         var hooksTask = RestProxy.Invoke<List<HookInfo>>(hooksRequest, cancellationToken);
 
-        var groupsRequest = new RestRequest("group", Method.Get)
+        var groupsRequest = new RestRequest(GroupRoute, Method.Get)
             .AddQueryPagingParameter(1000);
         var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
@@ -886,7 +891,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             .AddQueryPagingParameter(1000);
         var jobsTask = RestProxy.Invoke<PagingResponse<JobBasicDetails>>(jobsRequest, cancellationToken);
 
-        var groupsRequest = new RestRequest("group", Method.Get)
+        var groupsRequest = new RestRequest(GroupRoute, Method.Get)
             .AddQueryPagingParameter(1000);
         var groupsTask = RestProxy.InvokeWithoutSpinner<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 

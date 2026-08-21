@@ -660,6 +660,7 @@ public class HebrewEventInfo
 
         IsEvent = true;
         var d = HebrewDate.ToString("dd MMM");
+#pragma warning disable S1479 // "switch" statements with many "case" clauses should have only one statement
         switch (d)
         {
             case "י' טבת":
@@ -965,6 +966,7 @@ public class HebrewEventInfo
                 IsEvent = false;
                 break;
         }
+#pragma warning restore S1479 // "switch" statements with many "case" clauses should have only one statement
     }
 
     private void VIar(DateTime date)

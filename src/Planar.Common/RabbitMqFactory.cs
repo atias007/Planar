@@ -32,6 +32,8 @@ public sealed class RabbitMqFactory
     }
 
     // PUBLISH //
+#pragma warning disable S107 // Methods should not have too many parameters
+
     public async Task PublishAsync(
             string exchange,
             string routingKey,
@@ -41,6 +43,7 @@ public sealed class RabbitMqFactory
             bool encryptPayload,
             int copies = 1,
             int? timeoutSeconds = null)
+#pragma warning restore S107 // Methods should not have too many parameters
     {
         await EnsureConnectionAsync();
         ArgumentNullException.ThrowIfNull(_connection);
