@@ -50,7 +50,9 @@ public class CliArgumentsUtil
             {
                 item1.Value = item2.Key;
                 item2.Key = null;
+#pragma warning disable S127 // "for" loop stop conditions should be invariant
                 i++;
+#pragma warning restore S127 // "for" loop stop conditions should be invariant
             }
         }
 
@@ -184,7 +186,10 @@ public class CliArgumentsUtil
         }
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public async static Task<(CliActionMetadata? Action, string[] Args)> ValidateArgs(string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var list = args.ToList();
         await SpecialCase(list);
@@ -262,7 +267,10 @@ public class CliArgumentsUtil
         return (action, args);
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public object? GetRequest(CliActionMetadata action, CancellationToken cancellationToken)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         if (CliArguments.Count == 0 && action.AllowNullRequest) { return null; }
         if (action.RequestType == null) { return null; }
@@ -500,7 +508,10 @@ public class CliArgumentsUtil
         return matchProp;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private static void SetValue(PropertyInfo? prop, object? instance, string? value)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         if (prop == null) { return; }
         if (instance == null) { return; }

@@ -24,7 +24,7 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    private static void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)
+    private static void FillEstimatedEndTime(IEnumerable<RunningJobDetails> runningJobs)
     {
         foreach (var item in runningJobs)
         {

@@ -451,7 +451,9 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     [Action("running-log")]
     [NullRequest]
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
     public static async Task<CliActionResponse> GetRunningData(CliRunningLogRequest request, CancellationToken cancellationToken)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         request ??= new CliRunningLogRequest();
         if (string.IsNullOrWhiteSpace(request.FireInstanceId))
@@ -858,7 +860,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return (resultData, restResponse);
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private static async Task<(UpdateJobRequest? Body, CliActionResponse? CliActionResponse)> FillUpdateJobRequest(CliUpdateJobRequest request, bool apply, CancellationToken cancellationToken)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         request ??= new CliUpdateJobRequest();
         var body = new UpdateJobRequest { JobFilePath = request.Filename };

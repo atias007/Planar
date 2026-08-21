@@ -304,7 +304,10 @@ namespace Planar.CLI.Actions
             return result;
         }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
         protected static string? CollectCliValue(CollectCliValueParameters parameters)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {parameters.Field.EscapeMarkup()?.Trim()}:[/]")
                 .Validate(value =>

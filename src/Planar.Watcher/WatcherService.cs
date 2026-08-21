@@ -39,7 +39,10 @@ internal class WatcherService(ILogger<WatcherService> logger, IConfiguration con
         }
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private void CheckServiceStatus(Settings settings)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         using var controller = new ServiceController(settings.ServiceName, settings.Host);
         var status = controller.Status;

@@ -334,61 +334,106 @@ public partial class JobDomain(
         return result;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
-        var resolver = Resolve<JobDetailsResolver>();
-        IEnumerable<IJobDetail> jobs = (request.JobCategory switch
-        {
-            AllJobsMembers.AllUserJobs => await resolver.GetUserJobDetailsAsync(request.Group),
-            AllJobsMembers.AllSystemJobs => await resolver.GetSystemJobDetailsAsync(),
-            _ => await resolver.GetAllJobDetailsAsync(request.Group),
-        });
+        var scheduler = await GetScheduler();
 
-        // filter by job type
-        if (!string.IsNullOrEmpty(request.JobType))
+        // get all keys
+        var keys = (await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup())).AsEnumerable();
+
+        // filter by job category
+        if (request.JobCategory == AllJobsMembers.AllUserJobs)
         {
-            jobs = jobs
-                .Where(r => string.Equals(SchedulerUtil.GetJobTypeName(r.JobType), request.JobType, StringComparison.OrdinalIgnoreCase));
+            keys = keys
+                .Where(k => k != null && !string.Equals(Consts.PlanarSystemGroup, k.Group, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (request.JobCategory == AllJobsMembers.AllSystemJobs)
+        {
+            keys = keys
+                .Where(k => k != null && string.Equals(Consts.PlanarSystemGroup, k.Group, StringComparison.OrdinalIgnoreCase));
         }
 
-        // filter by search
-        if (!string.IsNullOrWhiteSpace(request.Filter))
+        // filter by group
+        if (!string.IsNullOrWhiteSpace(request.Group))
         {
-            jobs = jobs
-                .Where(r =>
-                    r.Key.Name.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
-                    r.Key.Group.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
-                    (r.Description != null && r.Description.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
-                    );
+            keys = keys
+                .Where(k => k != null && string.Equals(request.Group, k.Group, StringComparison.OrdinalIgnoreCase));
         }
 
-        // fill IsActive property
-        var jobList = jobs
-            .Select(async j => await MapJobDetailsSlim(j))
-            .Select(t => t.Result);
+        // order keys
+        var orderedKeys = keys.OrderBy(k => k.Group).ThenBy(k => k.Name);
 
-        // filter by active
-        if (request.Active.HasValue)
+        if (string.IsNullOrEmpty(request.JobType) && string.IsNullOrWhiteSpace(request.Filter) && request.Active == null)
         {
-            if (request.Active.Value)
+            // no more filters, just paging & get more details
+            var finalKeys = orderedKeys
+                .SetPaging(request)
+                .ToList();
+
+            var tasks = finalKeys.Select(async j => await scheduler.GetJobDetail(j));
+            var jobDetails = (await Task.WhenAll(tasks)).Where(r => r != null).Select(j => j!).ToList();
+            var resultTasks = jobDetails.Select(async j => await MapJobDetailsSlim(j));
+            var result = (await Task.WhenAll(resultTasks)).Where(r => r != null).Select(j => j).ToList();
+            return new PagingResponse<JobBasicDetails>(request, result, keys.Count());
+        }
+        else
+        {
+            // get all job details
+            var tasks = orderedKeys.Select(async j => await scheduler.GetJobDetail(j));
+            var result = (await Task.WhenAll(tasks)).AsEnumerable();
+
+            // filter by job type
+            if (!string.IsNullOrEmpty(request.JobType))
             {
-                jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive && r.Active != JobActiveMembers.NoTrigger);
+                result = result
+                    .Where(r => r != null && string.Equals(SchedulerUtil.GetJobTypeName(r.JobType), request.JobType, StringComparison.OrdinalIgnoreCase));
             }
-            else
+
+            // filter by search text
+            if (!string.IsNullOrWhiteSpace(request.Filter))
             {
-                jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive || r.Active == JobActiveMembers.NoTrigger);
+                result = result
+                    .Where(r => r != null &&
+                        (r.Key.Name.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
+                        r.Key.Group.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
+                        (r.Description != null && r.Description.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))));
             }
+
+            // fill IsActive property
+            var jobListTasks = result
+                .Where(r => r != null)
+                .Select(async j => await MapJobDetailsSlim(j!));
+
+            var jobList = (await Task.WhenAll(jobListTasks)).AsEnumerable();
+
+            // filter by active
+            if (request.Active.HasValue)
+            {
+                if (request.Active.Value)
+                {
+                    jobList = jobList
+                        .Where(r => r.Active != JobActiveMembers.Inactive && r.Active != JobActiveMembers.NoTrigger);
+                }
+                else
+                {
+                    jobList = jobList
+                        .Where(r => r.Active == JobActiveMembers.Inactive || r.Active == JobActiveMembers.NoTrigger);
+                }
+            }
+
+            // paging & order by
+            var final = jobList
+                .Select(j => j)
+                .OrderBy(j => j.Group)
+                .ThenBy(j => j.Name)
+                .SetPaging(request)
+                .ToList();
+
+            return new PagingResponse<JobBasicDetails>(request, final, jobList.Count());
         }
-
-        // paging & order by
-        var result = jobList
-            .Select(j => j)
-            .OrderBy(j => j.Group)
-            .ThenBy(j => j.Name)
-            .SetPaging(request)
-            .ToList();
-
-        return new PagingResponse<JobBasicDetails>(request, result, jobList.Count());
     }
 
     public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
@@ -474,8 +519,7 @@ public partial class JobDomain(
         var key = await JobKeyHelper.GetJobKey(id);
         var jobId = await JobKeyHelper.GetJobId(key);
         if (string.IsNullOrWhiteSpace(jobId)) { throw NotFound(id); }
-        var p = await DataLayer.GetJobProperty(jobId);
-        var properties = p.Properties;
+        var (properties, _) = await DataLayer.GetJobProperty(jobId);
         if (string.IsNullOrWhiteSpace(properties))
         {
             throw NotFound(id);
@@ -548,7 +592,7 @@ public partial class JobDomain(
             if (i % 10 == 0)
             {
                 var running = await GetRunning();
-                var exists = running.Exists(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
+                var exists = running.Any(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
                 if (exists)
                 {
                     throw new RestConflictException();
@@ -603,7 +647,7 @@ public partial class JobDomain(
         return result;
     }
 
-    public async Task<List<RunningJobDetails>> GetRunning()
+    public async Task<IEnumerable<RunningJobDetails>> GetRunning()
     {
         var result = await SchedulerUtil.GetRunningJobs();
         if (AppSettings.Cluster.Clustering)
@@ -617,11 +661,11 @@ public partial class JobDomain(
             }
         }
 
-        result = result.Where(r => r.Group != Consts.PlanarSystemGroup).ToList();
+        var final = result.Where(r => r.Group != Consts.PlanarSystemGroup);
 
-        FillEstimatedEndTime(result);
+        FillEstimatedEndTime(final);
 
-        return result;
+        return final;
     }
 
     public async Task<RunningJobDetails> GetRunning(string instanceId)
@@ -789,7 +833,6 @@ public partial class JobDomain(
         var scheduler = await GetScheduler();
         await CancelQueuedResumeJob(jobKey);
         await scheduler.PauseJob(jobKey);
-        SafeRefreshJobDetailsCache();
 
         if (request.AutoResumeDate == null)
         {
@@ -835,7 +878,6 @@ public partial class JobDomain(
             throw new RestNotFoundException($"group '{request.Name}' was not found");
         }
         await scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
-        SafeRefreshJobDetailsCache();
 
         foreach (var key in keys)
         {
@@ -952,7 +994,6 @@ public partial class JobDomain(
         var scheduler = await GetScheduler();
         await scheduler.DeleteJob(jobKey);
         AuditJobSafe(jobKey, "job deleted", null, jobId);
-        SafeRemoveJobDetailsCache(jobKey);
         _ = SafeClearJobInfo(jobId, jobKey, id);
     }
 
@@ -1038,8 +1079,6 @@ public partial class JobDomain(
             await AutoResumeJobUtil.QueueResumeJob(scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
             AuditJobSafe(jobKey, "schedule auto resume", new { autoResumeDate = request.AutoResumeDate.Value });
         }
-
-        SafeRefreshJobDetailsCache();
     }
 
     public async Task ResumeGroup(PauseResumeGroupRequest request)
@@ -1053,7 +1092,6 @@ public partial class JobDomain(
         }
 
         await scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
-        SafeRefreshJobDetailsCache();
 
         foreach (var key in keys)
         {
@@ -1106,7 +1144,6 @@ public partial class JobDomain(
         }
 
         AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
-        SafeRefreshJobDetailsCache();
     }
 
     public async Task SetAutoResume(PauseResumeJobRequest request)

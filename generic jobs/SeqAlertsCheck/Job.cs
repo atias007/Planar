@@ -194,19 +194,16 @@ internal partial class Job : BaseCheckJob
             return;
         }
 
-        if (state.SuppressedUntil.HasValue)
+        if (state.SuppressedUntil.HasValue && state.SuppressedUntil.Value >= DateTime.UtcNow)
         {
-            if (state.SuppressedUntil.Value >= DateTime.UtcNow)
-            {
-                alert.ResultMessage = $"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state but suppressed until {state.SuppressedUntil:O}";
-                Logger.LogWarning("alert: {Title}, id: {AlertId}, owner: {Owner}, is in fail state but suppressed until {SuppressedUntil:O}",
-                    title,
-                    state.AlertId,
-                    owner,
-                    state.SuppressedUntil);
+            alert.ResultMessage = $"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state but suppressed until {state.SuppressedUntil:O}";
+            Logger.LogWarning("alert: {Title}, id: {AlertId}, owner: {Owner}, is in fail state but suppressed until {SuppressedUntil:O}",
+                title,
+                state.AlertId,
+                owner,
+                state.SuppressedUntil);
 
-                return;
-            }
+            return;
         }
 
         alert.ResultMessage = $"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state";
