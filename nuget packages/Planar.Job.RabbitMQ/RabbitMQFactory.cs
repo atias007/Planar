@@ -178,6 +178,13 @@ namespace Planar.Job.RabbitMq
         /// </summary>
         private async Task CloseConnectionAsync()
         {
+            if (_connection != null)
+            {
+                _connection.ConnectionShutdownAsync -= ConnectionConnectionShutdownAsync;
+                _connection.ConnectionRecoveryErrorAsync -= ConnectionConnectionRecoveryErrorAsync;
+                _connection.RecoverySucceededAsync -= ConnectionConnectionRecoverySucceededAsync;
+            }
+
             try
             {
 #pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
@@ -290,22 +297,9 @@ namespace Planar.Job.RabbitMq
                         _connection = await connectionFactory.CreateConnectionAsync(connectionName, cancellationToken);
                     }
 
-                    _connection.ConnectionShutdownAsync += async (sender, args) =>
-                    {
-                        _logger?.LogWarning("RabbitMQ connection shutdown: {ReplyText}", args.ReplyText);
-                        await CloseConnectionAsync();
-                    };
-
-                    _connection.ConnectionRecoveryErrorAsync += async (sender, args) =>
-                    {
-                        _logger?.LogError(args.Exception, "RabbitMQ connection recovery error: {Message}", args.Exception.Message);
-                        await CloseConnectionAsync();
-                    };
-
-                    _connection.RecoverySucceededAsync += async (sender, args) =>
-                    {
-                        _logger?.LogInformation("RabbitMQ connection recovery succeeded");
-                    };
+                    _connection.ConnectionShutdownAsync += ConnectionConnectionShutdownAsync;
+                    _connection.ConnectionRecoveryErrorAsync += ConnectionConnectionRecoveryErrorAsync;
+                    _connection.RecoverySucceededAsync += ConnectionConnectionRecoverySucceededAsync;
                 }
 
                 // Ensure channel is open
@@ -328,6 +322,27 @@ namespace Planar.Job.RabbitMq
             {
                 _reconnectSemaphore.Release();
             }
+        }
+
+        private async Task ConnectionConnectionShutdownAsync(object sender, ShutdownEventArgs @event)
+        {
+            if (cancellationToken.IsCancellationRequested) { return; }
+            _logger?.LogWarning("RabbitMQ connection shutdown: {ReplyText}", @event.ReplyText);
+            await CloseConnectionAsync();
+        }
+
+        private async Task ConnectionConnectionRecoveryErrorAsync(object sender, ConnectionRecoveryErrorEventArgs args)
+        {
+            if (cancellationToken.IsCancellationRequested) { return; }
+            _logger?.LogError(args.Exception, "RabbitMQ connection recovery error: {Message}", args.Exception.Message);
+            await CloseConnectionAsync();
+        }
+
+        private async Task ConnectionConnectionRecoverySucceededAsync(object sender, AsyncEventArgs args)
+        {
+            if (cancellationToken.IsCancellationRequested) { return; }
+            _logger?.LogInformation("RabbitMQ connection recovery succeeded");
+            await CloseConnectionAsync();
         }
 
         private static async ValueTask SafeInvoke(Func<ValueTask> func)

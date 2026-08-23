@@ -243,7 +243,6 @@ namespace Planar.Job
             if (Mode != RunningMode.Debug) { return false; }
 
             var json = ShowDebugMenu(jobType);
-            GracefullShutdownSetup();
 
             await Console.Out.WriteLineAsync("---------------------------------------");
             await Console.Out.WriteAsync(">> Environment: ");
