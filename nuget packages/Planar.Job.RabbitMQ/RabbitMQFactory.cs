@@ -112,6 +112,7 @@ namespace Planar.Job.RabbitMq
                 {
                     await EnsureConnectionAsync();
                     if (_channel == null) { continue; }
+
                     _logger?.LogInformation("Started consuming messages from RabbitMQ");
 
                     foreach (var def in properties.JobDefinitions)
@@ -315,7 +316,12 @@ namespace Planar.Job.RabbitMq
                     _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
                     // Set Quality of Service (prefetch)
                     await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 100, global: false, cancellationToken: cancellationToken);
-                    _logger?.LogInformation("Connected to RabbitMQ");
+
+                    var hostname = string.IsNullOrWhiteSpace(properties.RabbitMQConnectionFactory.HostName) ?
+                        string.Join(",", properties.RabbitMqEndpoints.Select(e => e.HostName)) :
+                        properties.RabbitMQConnectionFactory.HostName;
+
+                    _logger?.LogInformation("Connected to RabbitMQ ({Hostname})", hostname);
                 }
             }
             finally

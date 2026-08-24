@@ -281,7 +281,7 @@ namespace Planar.Job
 
         public async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
         {
-            await Task.Delay(10_000);
+            await Task.Delay(5_000);
             if (Mode == RunningMode.Debug) { return; }
             await ExecuteHealthCheck(properties, logger);
             _healthCheckTimer.Elapsed += async (s, e) => await ExecuteHealthCheck(properties, logger);
@@ -301,16 +301,16 @@ namespace Planar.Job
 
                 if (MqttClient.IsConnected)
                 {
-                    logger.LogInformation("Success to ping Planar server");
+                    logger.LogInformation("Success to ping Planar server ({Hostname}:{Port})", properties.PlanarHostname, properties.PlanarPort);
                 }
                 else
                 {
-                    logger.LogWarning("Failed to ping Planar server. Will retry in 15 minutes");
+                    logger.LogWarning("Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to ping Planar server. Will retry in 15 minutes");
+                logger.LogWarning(ex, "Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
             }
         }
 

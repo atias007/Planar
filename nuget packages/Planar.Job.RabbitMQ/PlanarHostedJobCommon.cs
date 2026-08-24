@@ -12,6 +12,18 @@ namespace Planar.Job
         private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
         private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
+        private static void SafeDisposeCancellationTokenSource()
+        {
+            try
+            {
+                _mainCancellationTokenSource.Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+            }
+        }
+
         static partial void GracefullShutdownSetup()
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) =>

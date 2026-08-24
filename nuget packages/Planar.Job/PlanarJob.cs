@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +34,8 @@ namespace Planar.Job
             Properties = properties;
 
             FillProperties();
+            GracefullShutdownSetup();
+
             try
             {
                 await Execute<TJob>();
@@ -46,6 +46,10 @@ namespace Planar.Job
                 await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
                 await Console.Error.WriteLineAsync(log.ToString());
+            }
+            finally
+            {
+                SafeDisposeCancellationTokenSource();
             }
         }
 

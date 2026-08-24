@@ -42,7 +42,7 @@ namespace Planar.Job
             }
             finally
             {
-                _mainCancellationTokenSource?.Dispose();
+                SafeDisposeCancellationTokenSource();
             }
         }
 
