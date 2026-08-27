@@ -510,16 +510,17 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
     private static CliSaveLoginRequest FillSaveLoginRequest()
     {
-        var request = new CliSaveLoginRequest();
-        request.DisplayName = CollectCliValue(new CollectCliValueParameters
+        var request = new CliSaveLoginRequest
         {
-            Field = "display name",
-            Required = true,
-            MinLength = 3,
-            MaxLength = 50
-        }) ?? string.Empty;
-
-        request.Expire = CliPromptUtil.PromptForDate("expire");
+            DisplayName = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "display name",
+                Required = true,
+                MinLength = 3,
+                MaxLength = 50
+            }) ?? string.Empty,
+            Expire = CliPromptUtil.PromptForDate("expire")
+        };
 
         return request;
     }

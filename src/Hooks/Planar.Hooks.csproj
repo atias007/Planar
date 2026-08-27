@@ -29,11 +29,11 @@
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.9.0" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Planar.Hook" Version="1.8.2" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.32.0.713">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.33.0.1635">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="StackExchange.Redis" Version="3.1.13" />
+    <PackageReference Include="StackExchange.Redis" Version="3.1.31" />
     <PackageReference Include="Twilio" Version="7.14.9" />
   </ItemGroup>
 

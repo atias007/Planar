@@ -96,7 +96,7 @@ public partial class JobDomain
             return result;
         }
 
-        return items;
+        return items.ToList();
     }
 
     private static async Task SendServerEvent(HttpContext context, string @event, IEnumerable<RunningJobDetails> items, CancellationToken cancellationToken)

@@ -213,7 +213,10 @@ internal static class Program
         return true;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private static async Task<CliArgumentsUtil?> HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         if (args == null || args.Length == 0)
         {

@@ -46,7 +46,6 @@ namespace Planar.Service
             services.AddSingleton<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
             services.AddSingleton<JobMonitorUtil>();
             services.AddSingleton<SchedulerHealthCheckUtil>();
-            services.AddSingleton<JobDetailsResolver>();
             services.AddSingleton<RabbitMqFactory>();
 
             // AutoMapper
@@ -92,12 +91,12 @@ namespace Planar.Service
             return services;
         }
 
-        internal static IServiceCollection AddTransientWithLazy<TService, TImplementation>(this IServiceCollection services)
+        internal static IServiceCollection AddScopedWithLazy<TService, TImplementation>(this IServiceCollection services)
             where TService : class
             where TImplementation : class, TService
         {
-            services.AddTransient<TService, TImplementation>();
-            services.AddTransient(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
+            services.AddScoped<TService, TImplementation>();
+            services.AddScoped(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
             return services;
         }
     }
