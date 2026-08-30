@@ -37,6 +37,8 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<JobInstanceLog?> GetHistoryByInstanceId(string instanceid);
 
+    Task<long> GetHistoryIdByInstanceId(string instanceid);
+
     Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest);
 
     IQueryable<JobInstanceLog> GetHistoryData();
@@ -293,6 +295,17 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
                 ServerName = h.ServerName,
                 Retry = h.Retry
             })
+            .FirstOrDefaultAsync();
+
+        return result;
+    }
+
+    public async Task<long> GetHistoryIdByInstanceId(string instanceid)
+    {
+        var result = await _context.JobInstanceLogs
+            .AsNoTracking()
+            .Where(l => l.InstanceId == instanceid)
+            .Select(h => h.Id)
             .FirstOrDefaultAsync();
 
         return result;

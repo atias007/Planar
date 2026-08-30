@@ -61,6 +61,21 @@ public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>
         return Ok(result);
     }
 
+    [HttpGet("by-instanceid/{instanceid}/id")]
+    [ViewerAuthorize]
+    [EndpointName("get_history_by_instanceid_instanceid_id")]
+    [EndpointDescription("Get history id by instance id")]
+    [EndpointSummary("Get History Id By Instance Id")]
+    [OkTextResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<ActionResult<long>> GetHistoryIdByInstanceId([FromRoute][Required] string instanceid)
+    {
+        instanceid = WebUtility.UrlDecode(instanceid);
+        var result = await BusinesLayer.GetHistoryIdByInstanceId(instanceid);
+        return Content(result.ToString(), MediaTypeNames.Text.Plain);
+    }
+
     [HttpGet("{id}/data")]
     [ViewerAuthorize]
     [EndpointName("get_history_id_data")]

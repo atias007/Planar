@@ -421,14 +421,22 @@ public partial class JobDomain(
 
     public async Task<JobDescription> GetDescription(string id)
     {
-        var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
-        var historyDomain = ServiceProvider.GetRequiredService<HistoryDomain>();
-        var statisticsDomain = ServiceProvider.GetRequiredService<MetricsDomain>();
+        await using var monitorScope = scopeFactory.CreateAsyncScope();
+        await using var historyScope = scopeFactory.CreateAsyncScope();
+        await using var statisticsScope = scopeFactory.CreateAsyncScope();
+        await using var jobScope = scopeFactory.CreateAsyncScope();
+        await using var auditScope = scopeFactory.CreateAsyncScope();
+
+        var monitorDomain = monitorScope.ServiceProvider.GetRequiredService<MonitorDomain>();
+        var historyDomain = historyScope.ServiceProvider.GetRequiredService<HistoryDomain>();
+        var statisticsDomain = statisticsScope.ServiceProvider.GetRequiredService<MetricsDomain>();
+        var jobDomain = jobScope.ServiceProvider.GetRequiredService<JobDomain>();
+        var auditDomain = auditScope.ServiceProvider.GetRequiredService<JobDomain>();
 
         var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
-        var details = await Get(id);
+        var details = await jobDomain.Get(id);
         var monitorsTask = monitorDomain.GetByJob(id);
-        var audit = await GetJobAudits(id, new PagingRequest(1, 10));
+        var audit = await auditDomain.GetJobAudits(id, new PagingRequest(1, 10));
         var historyTask = historyDomain.GetHistory(historyRequest);
         var statisticsTask = statisticsDomain.GetJobMetrics(id);
         var result = new JobDescription

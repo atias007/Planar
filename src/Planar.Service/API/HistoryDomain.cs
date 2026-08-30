@@ -117,6 +117,13 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
         return result;
     }
 
+    public async Task<long> GetHistoryIdByInstanceId(string instanceid)
+    {
+        var data = await DataLayer.GetHistoryIdByInstanceId(instanceid);
+        var result = ValidateExistingLong(data, "history");
+        return result;
+    }
+
     public async Task<Stream> GetHistoryDataById(long id)
     {
         using var reader = await DataLayer.GetHistoryDataById(id);

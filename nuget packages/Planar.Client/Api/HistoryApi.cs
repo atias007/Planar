@@ -33,6 +33,21 @@ namespace Planar.Client
             return result;
         }
 
+        public async Task<long> GetIdAsync(string instanceId, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(instanceId, nameof(instanceId));
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}/id", HttpMethod.Get)
+                .AddSegmentParameter("instanceid", instanceId);
+
+            var result = await _proxy.InvokeAsync(restRequest, cancellationToken);
+            if (long.TryParse(result, out var id))
+            {
+                return id;
+            }
+
+            return default;
+        }
+
         public async Task<CounterResponse> GetCounterAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
         {
             var filter = new CounterFilter(fromDate, toDate);

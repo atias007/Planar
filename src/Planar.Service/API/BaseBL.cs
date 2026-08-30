@@ -147,6 +147,21 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         }
     }
 
+    protected static long ValidateExistingLong(long value, string entityName)
+    {
+        if (value == 0)
+        {
+            if (string.IsNullOrEmpty(entityName))
+            {
+                entityName = "entity";
+            }
+
+            throw new RestNotFoundException($"{entityName} could not be found");
+        }
+
+        return value;
+    }
+
     protected static T ValidateExistingEntity<T>(T? entity, string entityName)
         where T : class
     {

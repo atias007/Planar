@@ -57,6 +57,14 @@ namespace Planar.Client
         /// <summary>
         ///
         /// </summary>
+        /// <param name="instanceId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<long> GetIdAsync(string instanceId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
+        /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         Task<Stream> GetDataAsync(long id, CancellationToken cancellationToken = default);
