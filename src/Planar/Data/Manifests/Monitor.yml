@@ -1,0 +1,80 @@
+type: monitor                       # Fixed! don't change it
+title: some monitor title           # Monitor title [mandatory, 5 to 50 characters]
+event: execution fail               # The event that will trigger the monitor (see below list of events)
+job name: some job name             # The job name related to this monitor [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+                                    # Default is null. Use to connect monitor to specific job
+                                    # Must be null when event is a system event
+job group: some job group           # The job group related to this monitor [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+                                    # Default is null. Use to connect monitor to job group
+                                    # Must be null when event is a system event
+event arguments:                    # List of arguments for the event (if the event has arguments. The {x} and {y} placeholders will be replaced with these values)
+  - 50
+  - 100
+distribution groups:                # List of distribution groups to notify when the event occurs
+  - admins
+  - users
+hooks:                              # List of hooks to trigger when the event occurs
+  - Planar.Log
+  - Planar.RabbitMq
+  - Planar.Redis.Stream
+  - Planar.Redis.PubSub
+  - Planar.Rest
+  - Planar.Smtp
+  - Planar.Teams
+  - Planar.Telegram
+  - Planar.Twilio.Sms
+active: true                        # Boolean [true/false]. Enable/Disable the monitor
+
+# ##################################################################################################
+#
+# List of events
+# +--------------------------------------------------------------------+--------------------------+
+# | event                                                              | type                     |
+# +--------------------------------------------------------------------+--------------------------+
+# | execution retry                                                    | job event                |
+# | execution last retry fail                                          | job event                |
+# | execution fail                                                     | job event                |
+# | execution success                                                  | job event                |
+# | execution start                                                    | job event                |
+# | execution end                                                      | job event                |
+# | execution success with no effected rows                            | job event                |
+# | execution progress changed                                         | job event                |
+# | execution timeout                                                  | job event                |
+# | execution success with warnings                                    | job event                |
+# +--------------------------------------------------------------------+--------------------------+
+# | execution fail {x} times in row                                    | job event with arguments |
+# | execution fail {x} times in {y} hours                              | job event with arguments |
+# | execution end with effected rows greater than {x}                  | job event with arguments |
+# | execution end with effected rows less than {x}                     | job event with arguments |
+# | execution end with effected rows greater than {x} in {y} hours     | job event with arguments |
+# | execution end with effected rows less than {x} in {y} hours        | job event with arguments |
+# | execution duration greater than {x} minutes                        | job event with arguments |
+# | execution end with more than {x} exceptions                        | job event with arguments |
+# +--------------------------------------------------------------------+--------------------------+
+# | job added                                                          | system event             |
+# | job deleted                                                        | system event             |
+# | job canceled                                                       | system event             |
+# | job paused                                                         | system event             |
+# | job resumed                                                        | system event             |
+# | scheduler error                                                    | system event             |
+# | scheduler in standby mode                                          | system event             |
+# | scheduler started                                                  | system event             |
+# | scheduler shutdown                                                 | system event             |
+# | trigger paused                                                     | system event             |
+# | trigger resumed                                                    | system event             |
+# | cluster node join                                                  | system event             |
+# | cluster node removed                                               | system event             |
+# | cluster health check fail                                          | system event             |
+# | job updated                                                        | system event             |
+# | max memory usage                                                   | system event             |
+# | regular application restart                                        | system event             |
+# | circuit breaker activated                                          | system event             |
+# | circuit breaker reset                                              | system event             |
+# | any system event                                                   | system event             |
+# +--------------------------------------------------------------------+--------------------------+
+# | custom event 1                                                     | custom event             |
+# | custom event 2                                                     | custom event             |
+# | custom event 3                                                     | custom event             |
+# | custom event 4                                                     | custom event             |
+# | custom event 5                                                     | custom event             |
+# +--------------------------------------------------------------------+--------------------------+

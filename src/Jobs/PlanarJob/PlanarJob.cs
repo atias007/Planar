@@ -700,7 +700,7 @@ public abstract class PlanarJob(
         try
         {
             var name = $"{nameof(MonitorEvents.CustomEvent1)[..^1]}{customEventInfo.Number}";
-            if (!Enum.TryParse<MonitorEvents>(name, out var @event))
+            if (!MonitorEventsParser.TryParse(name, out var @event))
             {
                 _logger.LogError("monitor event '{Name}' is not valid", name);
                 return;

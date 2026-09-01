@@ -90,7 +90,6 @@ internal static class DbFactory
             case DbProviders.SqlServer:
                 services.AddTransientWithLazy<IUserData, UserDataSqlServer>();
                 services.AddTransientWithLazy<IGroupData, GroupDataSqlServer>();
-                services.AddTransientWithLazy<IAutoMapperData, AutoMapperDataSqlServer>();
                 services.AddTransientWithLazy<IConfigData, ConfigDataSqlServer>();
                 services.AddTransientWithLazy<IClusterData, ClusterDataSqlServer>();
                 services.AddTransientWithLazy<IHistoryData, HistoryDataSqlServer>();
@@ -106,7 +105,6 @@ internal static class DbFactory
             case DbProviders.Sqlite:
                 services.AddTransientWithLazy<IUserData, UserDataSqlite>();
                 services.AddTransientWithLazy<IGroupData, GroupDataSqlite>();
-                services.AddTransientWithLazy<IAutoMapperData, AutoMapperDataSqlite>();
                 services.AddTransientWithLazy<IConfigData, ConfigDataSqlite>();
                 services.AddTransientWithLazy<IClusterData, ClusterDataSqlite>();
                 services.AddTransientWithLazy<IHistoryData, HistoryDataSqlite>();

@@ -11,10 +11,12 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Quartz;
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
@@ -252,5 +254,46 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
     {
         var scheduler = await GetScheduler();
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
+    }
+
+    protected async Task<T> GetApplyEntityWithValidation<T>(HttpContext httpContext)
+        where T : class, new()
+    {
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        T? entity;
+        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                entity = await httpContext.Request.ReadFromJsonAsync<T>(httpContext.RequestAborted);
+            }
+            catch
+            {
+                throw new RestValidationException("json", "Fail to map request body to apply monitor request");
+            }
+        }
+        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(httpContext.Request.Body);
+            var yml = await reader.ReadToEndAsync(httpContext.RequestAborted);
+            try
+            {
+                entity = new Deserializer().Deserialize<T>(yml);
+            }
+            catch
+            {
+                throw new RestValidationException("yaml", "Fail to map request body to apply monitor request");
+            }
+        }
+        else
+        {            
+            throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");    
+        }
+
+        entity ??= Activator.CreateInstance<T>();
+
+        var validator = Resolve<IValidator<T>>();
+        await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
+        return entity;
     }
 }

@@ -63,7 +63,7 @@ namespace Planar.Startup
             try
             {
                 var root = FolderConsts.GetDataFolder(fullPath: true);
-                jobFileFolder = Path.Combine(root, "JobFiles");
+                jobFileFolder = Path.Combine(root, "Manifests");
                 EnsurePath(jobFileFolder);
             }
             catch

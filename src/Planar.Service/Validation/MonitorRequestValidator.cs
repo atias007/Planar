@@ -15,7 +15,9 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
     {
         RuleFor(r => r.Title).NotEmpty().Length(5, 50);
         RuleFor(r => r.EventArgument).MaximumLength(50);
-        RuleFor(r => r.Event).NotEmpty().IsInEnum(typeof(MonitorEvents));
+        RuleFor(r => r.Event).NotEmpty();
+        RuleFor(r => r.Event).Must(r => MonitorEventsParser.Parse(r) != null)
+            .WithMessage("'{PropertyName}' has a range of values which does not include '{PropertyValue}'.");
 
         RuleFor(r => r.JobGroup)
             .Must((r, g, c) => JobAndGroupExists(r, jobKeyHelper, c))

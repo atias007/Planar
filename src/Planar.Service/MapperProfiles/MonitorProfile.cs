@@ -16,7 +16,7 @@ public class MonitorProfile : Profile
 #pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         CreateMap<AddMonitorRequest, MonitorAction>()
-            .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.Event ?? string.Empty)))
+            .ForMember(t => t.EventId, map => map.MapFrom(s => (int)(MonitorEventsParser.Parse(s.Event) ?? 0)))
             .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
             .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
@@ -26,7 +26,7 @@ public class MonitorProfile : Profile
             .ForMember(t => t.Hooks, map => map.MapFrom(s => s.MonitorActionsHooks.Select(s => s.Hook)));
 
         CreateMap<UpdateMonitorRequest, MonitorAction>()
-            .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.Event ?? string.Empty)))
+            .ForMember(t => t.EventId, map => map.MapFrom(s => (int)(MonitorEventsParser.Parse(s.Event) ?? 0)))
             .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
             .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
@@ -45,5 +45,40 @@ public class MonitorProfile : Profile
 
         CreateMap<HookWrapper, HookInfo>()
             .ForMember(d => d.HookType, map => map.MapFrom(s => s.HookType.ToString()));
+    }
+
+    public static MonitorAction ToMonitorAction(AddMonitorRequest request)
+    {
+        var action = new MonitorAction
+        {
+            JobGroup = string.IsNullOrEmpty(request.JobGroup) ? null : request.JobGroup,
+            JobName = string.IsNullOrEmpty(request.JobName) ? null : request.JobName,
+            Title = request.Title,
+            EventArgument = string.IsNullOrEmpty(request.EventArgument) ? null : request.EventArgument
+        };
+
+        _ = MonitorEventsParser.TryParse(request.Event, out var eventId);
+        action.EventId = (int)eventId;
+
+        return action;
+    }
+
+    public static MonitorAction ToMonitorAction(ApplyMonitorRequest request)
+    {
+        var action = new MonitorAction
+        {
+            JobGroup = string.IsNullOrEmpty(request.JobGroup) ? null : request.JobGroup,
+            JobName = string.IsNullOrEmpty(request.JobName) ? null : request.JobName,
+            Title = request.Title,
+            Active = request.Active,
+            EventArgument = string.IsNullOrEmpty(request.EventArgument) ? null : request.EventArgument
+        };
+
+        _ = MonitorEventsParser.TryParse(request.Event, out var eventId);
+        action.EventId = (int)eventId;
+
+        action.EventArgument = request.EventArguments.Count > 0 ? string.Join(",", request.EventArguments) : null;
+
+        return action;
     }
 }

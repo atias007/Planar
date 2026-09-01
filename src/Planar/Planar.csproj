@@ -108,4 +108,14 @@
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Data\Manifests\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Data\Manifests\Monitor.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

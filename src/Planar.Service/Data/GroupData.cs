@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Models;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,9 +20,13 @@ public interface IGroupData : IGroupDataLayer, IBaseDataLayer
 
     Task<int> GetGroupId(string name);
 
+    Task<string?> GetGroupName(int id);
+
     Task<string?> GetGroupRole(string name);
 
     Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request);
+
+    Task<IEnumerable<Group>> GetGroups(IEnumerable<string> names);
 
     Task<Group?> GetGroupWithUsers(int id);
 
@@ -56,6 +61,15 @@ public class GroupDataSqlServer(PlanarContext context) : GroupData(context), IGr
 
 public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDataLayer
 {
+    public async Task<string?> GetGroupName(int id)
+    {
+        return await _context.Groups
+            .AsNoTracking()
+            .Where(g => g.Id == id)
+            .Select(g => g.Name)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task AddGroup(Group group)
     {
         _context.Groups.Add(group);
@@ -101,6 +115,15 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
             .FirstOrDefaultAsync();
 
         return result;
+    }
+
+    public async Task<IEnumerable<Group>> GetGroups(IEnumerable<string> names)
+    {
+        return (await _context.Groups
+            .AsNoTracking()
+            .Where(g => names.Contains(g.Name))
+            .Select(g => new Group { Name = g.Name, Id = g.Id })
+            .ToListAsync());
     }
 
     public async Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request)
