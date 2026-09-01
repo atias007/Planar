@@ -1,11 +1,10 @@
 $kind: http-request
-name: Monitor.Apply1
 url: http://localhost:2306/monitor/apply
 method: POST
 headers:
   Content-Type: application/yaml
 body:
-  type: json
+  type: text
   content: "type: monitor\r
 
     title: some monitor title\r
@@ -24,11 +23,9 @@ body:
 
     \  - admins\r
 
-    \  - users\r
-
     hooks:\r
 
-    \  - Planar.Logx\r
+    \  - Planar.Log\r
 
     active: true     "
 order: 2421875721384678
