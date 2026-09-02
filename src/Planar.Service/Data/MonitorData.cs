@@ -17,7 +17,11 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
     Task AddMonitor(MonitorAction monitor, int groupId, string hookName);
 
-    Task AddMonitor(MonitorAction monitor);
+    Task AddMonitor(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames);
+
+    void AddHookToMonitor(MonitorAction monitor, string hookName);
+
+    void AddGroupToMonitor(MonitorAction monitor, int groupId);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
@@ -57,7 +61,7 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task<List<MonitorAction>> GetMonitorActionsByJob(string group, string name);
 
-    IQueryable<MonitorAction> GetMonitorActionsQuery();
+    Task<PagingResponse<MonitorAction>> GetApiMonitorActions(IPagingRequest request);
 
     IQueryable<MonitorAlert?> GetMonitorAlert(int id);
 
@@ -88,8 +92,6 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
     Task<bool> IsMonitorExists(MonitorAction monitor);
 
     Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId);
-
-    //// Task<bool> IsMonitorHookExists(string name);
 
     Task<bool> IsMonitorMuted(string jobId, int monitorId);
 
@@ -141,10 +143,33 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.SaveChangesAsync();
     }
 
-    public async Task AddMonitor(MonitorAction monitor)
+    public async Task AddMonitor(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames)
     {
+        var groups = groupIds.Select(id => new Group { Id = id }).ToList();
+        var hooks = hookNames.Select(name => new MonitorActionsHook { Hook = name }).ToList();
+
+        _context.AttachRange(groups);
+        _context.AttachRange(hooks);
+
+        groups.ForEach(g => monitor.Groups.Add(g));
+        hooks.ForEach(h => monitor.MonitorActionsHooks.Add(h));
+
         _context.MonitorActions.Add(monitor);
         await _context.SaveChangesAsync();
+    }
+
+    public void AddHookToMonitor(MonitorAction monitor, string hookName)
+    {
+        var hook = new MonitorActionsHook { Hook = hookName };
+        _context.Attach(hook);
+        monitor.MonitorActionsHooks.Add(hook);
+    }
+
+    public void AddGroupToMonitor(MonitorAction monitor, int groupId)
+    {
+        var group = new Group { Id = groupId };
+        _context.Attach(group);
+        monitor.Groups.Add(group);
     }
 
     public async Task AddMonitorCounter(MonitorCounter counter)
@@ -350,6 +375,20 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         return count;
     }
 
+    public async Task<PagingResponse<MonitorAction>> GetApiMonitorActions(IPagingRequest request)
+    {
+        return await _context.MonitorActions
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(i => i.Groups)
+            .Include(i => i.MonitorActionsHooks)
+            .OrderByDescending(d => d.Active)
+            .ThenBy(d => d.JobGroup)
+            .ThenBy(d => d.JobName)
+            .ThenBy(d => d.Title)
+            .ToPagingListAsync(request);
+    }
+
     public async Task<IEnumerable<MonitorAction>> GetMonitorActions()
     {
         return await _context.MonitorActions
@@ -392,18 +431,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .ToListAsync();
 
         return result;
-    }
-
-    public IQueryable<MonitorAction> GetMonitorActionsQuery()
-    {
-        return _context.MonitorActions
-            .AsNoTracking()
-            .Include(i => i.Groups)
-            .Include(i => i.MonitorActionsHooks)
-            .OrderByDescending(d => d.Active)
-            .ThenBy(d => d.JobGroup)
-            .ThenBy(d => d.JobName)
-            .ThenBy(d => d.Title);
     }
 
     public IQueryable<MonitorAlert> GetMonitorAlert(int id)

@@ -725,7 +725,7 @@ internal static class CliTableExtensions
             r.Event.EscapeMarkup(),
             r.JobGroup.EscapeMarkup(),
             r.JobName.EscapeMarkup(),
-            r.EventArgument.EscapeMarkup(),
+            r.EventArguments.EscapeMarkup(),
             string.Join(", ", r.DistributionGroups).EscapeMarkup(),
             string.Join(", ", r.Hooks).EscapeMarkup(),
             CliTableFormat.GetBooleanMarkup(r.Active)));

@@ -28,7 +28,7 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
     public async Task<ActionResult<int>> Apply()
     {
         var result = await BusinesLayer.Apply(HttpContext);
-        return CreatedAtAction(nameof(GetById), result, result);
+        return CreatedAtAction(nameof(GetById), new { id = result }, result);
     }
 
     [HttpGet]

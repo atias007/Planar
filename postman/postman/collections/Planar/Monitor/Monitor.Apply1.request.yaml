@@ -7,7 +7,7 @@ body:
   type: text
   content: "type: monitor\r
 
-    title: some monitor title\r
+    title: some monitor title - new\r
 
     event: execution fail {x} times in row\r
 
@@ -17,7 +17,7 @@ body:
 
     event arguments:\r
 
-    \  - 5\r
+    \  x: 7\r
 
     distribution groups:\r
 
@@ -25,7 +25,7 @@ body:
 
     hooks:\r
 
-    \  - Planar.Log\r
+    \  - planar.smtp\r
 
-    active: true     "
+    active: true"
 order: 2421875721384678

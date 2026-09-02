@@ -36,6 +36,7 @@ public static class YmlUtil
         {
             var serializer = new SerializerBuilder()
                         .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                        .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
                         .Build();
             return serializer;
         }

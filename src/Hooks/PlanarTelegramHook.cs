@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Planar.Common;
 using Planar.Hook;
+using Planar.Hooks.Serialize;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Net.Mime;
@@ -109,7 +110,7 @@ To use different bot token/chat id per group, you can set one of the 'Additional
             chat_id = apiInfo.ChatId
         };
 
-        var json = JsonSerializer.Serialize(entity);
+        var json = CoreSerializer.Serialize(entity);
 
         var url = string.Format(telegramUrl, apiInfo.TokenId);
 

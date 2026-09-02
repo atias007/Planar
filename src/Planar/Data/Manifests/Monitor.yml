@@ -8,8 +8,8 @@ job group: some job group           # The job group related to this monitor [onl
                                     # Default is null. Use to connect monitor to job group
                                     # Must be null when event is a system event
 event arguments:                    # List of arguments for the event (if the event has arguments. The {x} and {y} placeholders will be replaced with these values)
-  - 50
-  - 100
+  x: 50
+  y: 100
 distribution groups:                # List of distribution groups to notify when the event occurs
   - admins
   - users

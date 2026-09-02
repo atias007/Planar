@@ -26,7 +26,7 @@ internal static class MonitorEventsExtensions
 
     public static bool IsMonitorEventHasArguments(string? eventName)
     {
-        if (!Enum.TryParse(eventName, out MonitorEvents @event)) { return false; }
+        if (!MonitorEventsParser.TryParse(eventName, out MonitorEvents @event)) { return false; }
         return IsMonitorEventHasArguments(@event);
     }
 

@@ -14,9 +14,6 @@ public class ApplyMonitorRequest : MonitorRequest
     [YamlMember(Alias = "hooks")]
     public List<string> Hooks { get; set; } = [];
 
-    [YamlMember(Alias = "event arguments")]
-    public List<string> EventArguments { get; set; } = [];
-
     [YamlMember(Alias = "active")]
     public bool Active { get; set; }
 }

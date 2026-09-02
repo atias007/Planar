@@ -14,7 +14,6 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
     public MonitorRequestValidator(JobKeyHelper jobKeyHelper)
     {
         RuleFor(r => r.Title).NotEmpty().Length(5, 50);
-        RuleFor(r => r.EventArgument).MaximumLength(50);
         RuleFor(r => r.Event).NotEmpty();
         RuleFor(r => r.Event).Must(r => MonitorEventsParser.Parse(r) != null)
             .WithMessage("'{PropertyName}' has a range of values which does not include '{PropertyValue}'.");
@@ -31,17 +30,19 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
             .When(r => MonitorEventsExtensions.IsSystemMonitorEvent(r.Event))
             .WithMessage(r => $"{{PropertyName}} must be null when Event Name is {r.Event?.SplitWords()}");
 
-        RuleFor(r => r.EventArgument).NotEmpty()
+        RuleFor(r => r)
+            .Must(r => r.HasEventArgument(out _))
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
             .WithMessage(r => $"{{PropertyName}} must have value when Event Id is {r.Event?.SplitWords()}");
 
-        RuleFor(r => r.EventArgument).Empty()
+        RuleFor(r => r)
+            .Must(r => !r.HasEventArgument(out _))
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && !MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
             .WithMessage(r => $"{{PropertyName}} must be empty when Event Id is {r.Event?.SplitWords()}");
 
         RuleFor(r => r.JobName).NotEmpty()
             .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
-            .WithMessage(r => $"{{PropertyName}} and Job Group must have value when 'Event Id' is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"{{PropertyName}} and Job Group must have value when 'Event Id' is {r.Event}");
 
         RuleFor(r => r.JobName).Empty()
             .When(r => MonitorEventsExtensions.IsSystemMonitorEvent(r.Event))

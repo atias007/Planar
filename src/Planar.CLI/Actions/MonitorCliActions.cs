@@ -621,7 +621,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         var monitor = new CliAddMonitorRequest
         {
-            EventArgument = monitorEventArgs,
+            EventArgumentX = monitorEventArgs?.X,
+            EventArgumentY = monitorEventArgs?.Y,
             JobGroup = job.JobGroup,
             GroupName = groupName,
             Hook = hookName,
@@ -659,7 +660,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         var job = changeJob ? GetJob(data.Jobs, eventName) : new AddMonitorJobData { JobGroup = details.JobGroup, JobName = details.JobName };
 
         // EVENT ARGUMENTS
-        var eventArgs = GetEventArgumentForUpdateMonitor(details.Event, details.EventArgument, eventName);
+        var eventArgs = GetEventArgumentForUpdateMonitor(details.Event, details.EventArguments, eventName);
 
         // TITLE
         var title = GetTitle(details.Title);
@@ -670,7 +671,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         var monitor = new CliUpdateMonitorRequest
         {
             Id = id,
-            EventArgument = eventArgs,
+            EventArgumentX = eventArgs?.X,
+            EventArgumentY = eventArgs?.Y,
             JobGroup = job.JobGroup,
             JobName = job.JobName,
             Event = eventName,
@@ -681,7 +683,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return new RequestBuilderWrapper<CliUpdateMonitorRequest> { Request = monitor };
     }
 
-    private static string? GetEventArgumentForUpdateMonitor(string sourceEventName, string? sourceEventArgs, string currentEventName)
+    private static CliMonitorArguments? GetEventArgumentForUpdateMonitor(string sourceEventName, string? sourceEventArgs, string currentEventName)
     {
         var sameEvent = string.Equals(sourceEventName, currentEventName, StringComparison.OrdinalIgnoreCase);
         if (!sameEvent)
@@ -696,8 +698,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 #pragma warning disable CS8604 // Possible null reference argument.
         var changeArgs = AskForUpdateField($"evet arguments", sourceEventArgs);
 #pragma warning restore CS8604 // Possible null reference argument.
-        var monitorEventArgs = changeArgs ? GetEventArguments(currentEventName) : sourceEventArgs;
-        return monitorEventArgs;
+        
+        if(changeArgs) { return GetEventArguments(currentEventName); }
+
+        return YmlUtil.Deserialize<CliMonitorArguments>(sourceEventArgs);
     }
 
     private static string GetDistributionGroup(IEnumerable<GroupInfo> groups)
@@ -734,7 +738,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return selectedEvent;
     }
 
-    private static string? GetEventArguments(string eventName)
+    private static CliMonitorArguments? GetEventArguments(string eventName)
     {
         var result = MonitorEventsExtensions.IsMonitorEventHasArguments(eventName) ?
             PickEventArgument(eventName) :
@@ -743,7 +747,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return result;
     }
 
-    private static string? PickEventArgument(string eventName)
+    private static CliMonitorArguments? PickEventArgument(string eventName)
     {
         if (!Enum.TryParse(eventName, out MonitorEvents @event)) { return null; }
         int? x, y;
@@ -755,38 +759,38 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
             case MonitorEvents.ExecutionFailxTimesInRow: // 200
                 x = CollectNumericCliValue(" [x] number of fails", true, 2, 1000);
-                return x?.ToString();
+                return new CliMonitorArguments(x, null);
 
             case MonitorEvents.ExecutionFailxTimesInyHours: // 201
                 x = CollectNumericCliValue(" [x] number of fails", true, 2, 1000);
                 y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
-                return $"{x},{y}";
+                return new CliMonitorArguments(x, y);
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx: // 202
                 x = CollectNumericCliValue(" [x] number of effected rows", true, 0, int.MaxValue);
-                return x?.ToString();
+                return new CliMonitorArguments(x, null);
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx: // 203
                 x = CollectNumericCliValue(" [x] number of effected rows", true, 2, int.MaxValue);
-                return x?.ToString();
+                return new CliMonitorArguments(x, null);
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours: // 204
                 x = CollectNumericCliValue(" [x] number of effected rows", true, 0, int.MaxValue);
                 y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
-                return $"{x},{y}";
+                return new CliMonitorArguments(x, y);
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours: // 205
                 x = CollectNumericCliValue(" [x] number of effected rows", true, 1, int.MaxValue);
                 y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
-                return $"{x},{y}";
+                return new CliMonitorArguments(x, y);
 
             case MonitorEvents.ExecutionDurationGreaterThanxMinutes: // 206
                 x = CollectNumericCliValue(" [x] number of minutes", true, 1, 1440);
-                return x?.ToString();
+                return new CliMonitorArguments(x, null);
 
             case MonitorEvents.ExecutionEndWithMoreThanxExceptions: // 207
                 x = CollectNumericCliValue(" [x] number of exceptions", true, 1, 9999);
-                return x?.ToString();
+                return new CliMonitorArguments(x, null);
         }
     }
 
@@ -964,8 +968,24 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
     private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
     {
-        var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
-        return result ?? new AddMonitorRequest();
+        var result = new AddMonitorRequest
+        {
+            Event = request.Event,
+            GroupName = request.GroupName,
+            Hook = request.Hook,
+            JobGroup = request.JobGroup,
+            JobName = request.JobName,
+            Title = request.Title
+        };
+
+        if (request.EventArgumentX == null && request.EventArgumentY == null) { return result; }
+        result.EventArguments = new MonitorEventArguments
+        {
+            X = request.EventArgumentX,
+            Y = request.EventArgumentY
+        };
+
+        return result;
     }
 
     private static RestResponse SelectRestResponse(params RestResponse[] items)

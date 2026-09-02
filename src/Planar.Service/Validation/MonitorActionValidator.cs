@@ -3,7 +3,6 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
-using System.Linq;
 
 namespace Planar.Service.Validation;
 
@@ -23,129 +22,104 @@ public class MonitorActionValidator
     internal int[]? ValidateMonitorArguments(MonitorAction action)
     {
         var @event = (MonitorEvents)action.EventId;
-        return ValidateMonitorArguments(@event, action.EventArgument);
+        return ValidateMonitorArguments(@event, action.GetEventArguments());
     }
 
     internal int[]? ValidateMonitorArguments(MonitorRequest request)
     {
         var @event = MonitorEventsParser.Parse(request.Event) ?? MonitorEvents.CustomEvent1;
-        var arguments = request.EventArgument;
-        if (request is ApplyMonitorRequest applyRequest)
-        {
-            arguments = applyRequest.EventArguments.Count == 0 ? null : string.Join(',', applyRequest.EventArguments);
-        }
-
+        var arguments = request.EventArguments;
         return ValidateMonitorArguments(@event, arguments);
     }
 
-    private int[]? ValidateMonitorArguments(MonitorEvents @event, string? arguments)
+    private int[]? ValidateMonitorArguments(MonitorEvents @event, MonitorEventArguments? arguments)
     {
         if (!MonitorEventsExtensions.IsMonitorEventHasArguments(@event)) { return null; }
 
-        if (string.IsNullOrWhiteSpace(arguments))
+        if (arguments == null || arguments.IsEmpty())
         {
-            _logger?.LogWarning("event argument is required with {Event} event type", @event.GetEnumDescription());
-            throw new RestValidationException("Event Argument", $"event argument is required with '{@event.GetEnumDescription()}' event type");
+            _logger?.LogWarning("event arguments is required with {Event} event type", @event.GetEnumDescription());
+            throw new RestValidationException("Event Arguments", $"event arguments is required with '{@event.GetEnumDescription()}' event type");
         }
 
-        int[] arr;
         switch (@event)
         {
             case MonitorEvents.ExecutionFailxTimesInRow: // 200
-                arr = ValidateNumericArray(arguments, 1);
-                ValidateRange(arr[0], 2, 1000);
-                return [arr[0]];
+                ValidateRange(arguments.X, 2, 1000, "X");
+                ValidateEmpty(arguments.Y, "Y");
+                return [arguments.X.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionFailxTimesInyHours: // 201
-                arr = ValidateNumericArray(arguments, 2);
-                ValidateRange(arr[0], 2, 1000);
-                ValidateRange(arr[1], 1, 72);
-                return arr;
+                ValidateRange(arguments.X, 2, 1000, "X");
+                ValidateRange(arguments.Y, 1, 72, "Y");
+                return [arguments.X.GetValueOrDefault(), arguments.Y.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx: // 202
-                arr = ValidateNumericArray(arguments, 1);
-                ValidateRange(arr[0], 0, int.MaxValue);
-                return [arr[0]];
+                ValidateRange(arguments.X, 0, int.MaxValue, "X");
+                ValidateEmpty(arguments.Y, "Y");
+                return [arguments.X.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx: // 203
-                arr = ValidateNumericArray(arguments, 1);
-                ValidateRange(arr[0], 2, int.MaxValue);
-                return [arr[0]];
+                ValidateRange(arguments.X, 2, int.MaxValue, "X");
+                ValidateEmpty(arguments.Y, "Y");
+                return [arguments.X.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours: // 204
-                arr = ValidateNumericArray(arguments, 2);
-                ValidateRange(arr[0], 0, int.MaxValue);
-                ValidateRange(arr[1], 1, 72);
-                return arr;
+                ValidateRange(arguments.X, 0, int.MaxValue, "X");
+                ValidateRange(arguments.Y, 1, 72, "Y");
+                return [arguments.X.GetValueOrDefault(), arguments.Y.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours: // 205
-                arr = ValidateNumericArray(arguments, 2);
-                ValidateRange(arr[0], 1, int.MaxValue);
-                ValidateRange(arr[1], 1, 72);
-                return arr;
+                ValidateRange(arguments.X, 1, int.MaxValue, "X");
+                ValidateRange(arguments.Y, 1, 72, "Y");
+                return [arguments.X.GetValueOrDefault(), arguments.Y.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionDurationGreaterThanxMinutes: // 206
-                arr = ValidateNumericArray(arguments, 1);
-                ValidateRange(arr[0], 1, 1440);
-                return [arr[0]];
+                ValidateRange(arguments.X, 1, 1440, "X");
+                ValidateEmpty(arguments.Y, "Y");
+                return [arguments.X.GetValueOrDefault()];
 
             case MonitorEvents.ExecutionEndWithMoreThanxExceptions: // 207
-                arr = ValidateNumericArray(arguments, 1);
-                ValidateRange(arr[0], 1, 9999);
-                return [arr[0]];
+                ValidateRange(arguments.X, 1, 9999, "X");
+                ValidateEmpty(arguments.Y, "Y");
+                return [arguments.X.GetValueOrDefault()];
 
             default:
                 return null;
         }
     }
 
-    private int ValidateNumeric(string? arguments)
+    private void ValidateEmpty(int? value, string name)
     {
-        if (string.IsNullOrEmpty(arguments) || !ValidationUtil.IsOnlyDigits(arguments))
+        if (value != null)
         {
-            _logger?.LogWarning("event argument {Arguments} is not valid numeric integer value", arguments);
-            throw new RestValidationException("Event Argument", $"event argument '{arguments}' is not valid numeric integer value");
+            name = name.ToLower();
+            _logger?.LogWarning("event argument {Name} must be empty", name);
+            throw new RestValidationException("Event Argument", $"event argument '{name}' must be empty");
         }
-
-        // use TryParse and translate to a validation error
-        if (!int.TryParse(arguments, out var value))
-        {
-            throw new RestValidationException("Event Argument",
-                $"event argument '{arguments}' is not a valid integer");
-        }
-
-        return value;
     }
 
-    private void ValidateRange(int value, int min, int max)
+    private void ValidateRange(int? value, int min, int max, string name)
     {
+        if (value == null)
+        {
+            name = name.ToLower();
+            _logger?.LogWarning("event argument {Name} is required", name);
+            throw new RestValidationException("Event Argument", $"event argument '{name}' is required");
+        }
+
         if (value < min)
         {
-            _logger?.LogWarning("event argument {Value} should be greater then or equals to {Min}", value, min);
-            throw new RestValidationException("Event Argument", $"event argument '{value}' should be greater then or equals to {min}");
+            name = name.ToLower();
+            _logger?.LogWarning("event argument {Name} with value {Value} should be greater then or equals to {Min}", name, value, min);
+            throw new RestValidationException("Event Argument", $"event argument '{name}' with value '{value}' should be greater then or equals to {min}");
         }
 
         if (value > max)
         {
-            _logger?.LogWarning("event argument {Value} should be less then or equals to {Max}", value, max);
-            throw new RestValidationException("Event Argument", $"event argument '{value}' should be less then or equals to {max}");
+            name = name.ToLower();
+            _logger?.LogWarning("event argument {Name} with value {Value} should be less then or equals to {Max}", name, value, max);
+            throw new RestValidationException("Event Argument", $"event argument '{name}' with value '{value}' should be less then or equals to {max}");
         }
-    }
-
-    private int[] ValidateNumericArray(string arguments, int size)
-    {
-        var parts = arguments.Split(',').Select(p => p?.ToLower()).ToList();
-        if (parts.Count != size)
-        {
-            _logger?.LogWarning("event argument {Arguments} should have {Size} numeric integers arguments", arguments, size);
-            throw new RestValidationException("Event Argument", $"event argument '{arguments}' should have {size} numeric integer arguments");
-        }
-
-        foreach (var item in parts)
-        {
-            ValidateNumeric(item);
-        }
-
-        return [.. parts.Select(p => int.Parse(p ?? "0"))];
     }
 }
