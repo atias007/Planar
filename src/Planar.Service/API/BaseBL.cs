@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
@@ -11,6 +12,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -256,44 +258,60 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 
-    protected async Task<T> GetApplyEntityWithValidation<T>(HttpContext httpContext)
+    protected async Task<IEnumerable<T>> GetApplyEntitiesWithValidation<T>(HttpContext httpContext, string kind)
         where T : class, new()
     {
+        // Valiudate YAML content type
         var contentType = httpContext.Request.ContentType ?? string.Empty;
-        T? entity;
-        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        if (!contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
         {
-            try
-            {
-                entity = await httpContext.Request.ReadFromJsonAsync<T>(httpContext.RequestAborted);
-            }
-            catch
-            {
-                throw new RestValidationException("json", "Fail to map request body to apply monitor request");
-            }
-        }
-        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
-        {
-            using var reader = new StreamReader(httpContext.Request.Body);
-            var yml = await reader.ReadToEndAsync(httpContext.RequestAborted);
-            try
-            {
-                entity = new Deserializer().Deserialize<T>(yml);
-            }
-            catch
-            {
-                throw new RestValidationException("yaml", "Fail to map request body to apply monitor request");
-            }
-        }
-        else
-        {            
-            throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");    
+            throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
         }
 
-        entity ??= Activator.CreateInstance<T>();
+        // Read body content
+        using var reader = new StreamReader(httpContext.Request.Body);
+        var content = await reader.ReadToEndAsync(httpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new RestValidationException("request body", "request body is empty");
+        }
 
+        // Deserialize YAML to entity
         var validator = Resolve<IValidator<T>>();
-        await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
-        return entity;
+        var entities = new List<T>();
+        try
+        {
+            var files = YmlUtil.SplitByKind(content);
+            ValidateKind(kind, files);
+            foreach (var file in files)
+            {
+                var entity = YmlUtil.Deserialize<T>(file.Value);
+                if (entity == null) { continue; }
+                await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
+                entities.Add(entity);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("yaml", $"Fail to map yaml body to apply monitor request\r\n{ex.Message}");
+        }
+
+        return entities;
+    }
+
+    private void ValidateKind(string kind, IEnumerable<KeyValuePair<string, string>> files)
+    {
+        foreach (var file in files)
+        {
+            if (string.IsNullOrWhiteSpace(file.Key))
+            {
+                throw new RestValidationException("kind", "kind property is missing of empty");
+            }
+
+            if (file.Key != kind)
+            {
+                throw new RestValidationException("kind", $"Unexpected kind: {file.Key}. Expected kind: {kind}");
+            }
+        }
     }
 }

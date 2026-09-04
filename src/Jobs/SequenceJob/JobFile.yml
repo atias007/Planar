@@ -1,4 +1,6 @@
-﻿type: Job                             # Fixed! don't change it
+﻿kind: Job                             # The kind of manifest file
+version: 1.0.0                        # The version of manifest file
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 job type: SequenceJob                 # Fixed! don't change it
 name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]

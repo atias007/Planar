@@ -9,7 +9,7 @@ public class ApplyMonitorRequestValidator : AbstractValidator<ApplyMonitorReques
     {
         Include(monitorValidator);
 
-        RuleFor(r => r.Type).Equal("monitor", StringIgnoreCaseComparer.Instance);
+        RuleFor(r => r.Kind).Equal("monitor", StringIgnoreCaseComparer.Instance);
 
         RuleForEach(r => r.DistributionGroups).NotEmpty().MaximumLength(50);
 

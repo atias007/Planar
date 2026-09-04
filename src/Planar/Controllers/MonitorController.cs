@@ -22,13 +22,13 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
     [EndpointName("post_monitor_apply")]
     [EndpointDescription("Add/Update monitor")]
     [EndpointSummary("Add/Update Monitor")]
-    [JsonAndYamlConsumes]
-    [CreatedResponse(typeof(int))]
+    [YamlConsumes]
+    [CreatedResponse(typeof(string))]
     [BadRequestResponse]
-    public async Task<ActionResult<int>> Apply()
+    public async Task<ActionResult<string>> Apply()
     {
         var result = await BusinesLayer.Apply(HttpContext);
-        return CreatedAtAction(nameof(GetById), new { id = result }, result);
+        return Ok(result);
     }
 
     [HttpGet]

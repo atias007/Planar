@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -58,28 +59,49 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return result;
     }
 
-    public async Task<int> Apply(HttpContext httpContext)
+    public async Task<string> Apply(HttpContext httpContext)
     {
-        var request = await GetApplyEntityWithValidation<ApplyMonitorRequest>(httpContext);
+        const string monitor = "monitor";
+        var response = new StringBuilder();
 
+        var requests = await GetApplyEntitiesWithValidation<ApplyMonitorRequest>(httpContext, monitor);
         var validator = new MonitorActionValidator();
-        validator.ValidateMonitorArguments(request);
+        validator.ValidateMonitorArguments(requests);
 
-        await ValidateGroupNamesExists(request);
-        ValidateHooksExists(request);
+        await ValidateGroupNamesExists(requests);
+        ValidateHooksExists(requests);
 
+        foreach (var request in requests)
+        {
+            var result = await ApplyInner(request);
+            response.AppendLine(result);
+        }
+
+        await DataLayer.SaveChangesAsync();
+
+        _ = Resolve<MonitorDurationCache>().Flush();
+        _ = SetMonitorActionsCache(clusterReload: true);
+
+        return response.ToString().TrimEnd();
+    }
+
+    private async Task<string> ApplyInner(ApplyMonitorRequest request)
+    {
         var groupData = Resolve<IGroupData>();
         var requestGroups = await groupData.GetGroups(request.DistributionGroups);
         var requestHooks = GetRequestHookNames(request.Hooks);
         var requestMonitor = MonitorProfile.ToMonitorAction(request);
 
-        int result;
-        var currentMonitor = await DataLayer.GetMonitorAction(requestMonitor.EventId, request.JobName, request.JobGroup);
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var monitorDal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
+        var currentMonitor = await monitorDal.GetMonitorAction(requestMonitor.EventId, request.JobName, request.JobGroup);
         if (currentMonitor == null)
         {
             var groupIds = requestGroups.Select(g => g.Id);
-            await DataLayer.AddMonitor(requestMonitor, groupIds, requestHooks);
-            result = requestMonitor.Id;
+            monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
+
+            await monitorDal.SaveChangesAsync();
+            return $"add new monitor: {request}";
         }
         else
         {
@@ -110,13 +132,14 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
                 currentMonitor.MonitorActionsHooks.Remove(hook);
             }
 
-            await DataLayer.SaveChangesAsync();
-            return currentMonitor.Id;
-        }
+            var count = await monitorDal.SaveChangesAsync();
+            if (count == 0)
+            {
+                return $"no changes applied to monitor ({currentMonitor.Id}). {request}";
+            }
 
-        _ = Resolve<MonitorDurationCache>().Flush();
-        _ = SetMonitorActionsCache(clusterReload: true);
-        return result;
+            return $"update existing monitor ({currentMonitor.Id}). {request}";
+        }
     }
 
     public async Task<int> Add(AddMonitorRequest request)
@@ -740,10 +763,11 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
     }
 
-    private static void ValidateHooksExists(ApplyMonitorRequest request)
+    private static void ValidateHooksExists(IEnumerable<ApplyMonitorRequest> requests)
     {
         var list = new List<string>();
-        foreach (var name in request.Hooks)
+        var hooks = requests.SelectMany(r => r.Hooks).Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in hooks)
         {
             var exists = IsMonitorHookExists(name);
             if (!exists) { list.Add(name); }
@@ -791,11 +815,18 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return list;
     }
 
-    private async Task ValidateGroupNamesExists(ApplyMonitorRequest request)
+    private async Task ValidateGroupNamesExists(IEnumerable<ApplyMonitorRequest> requests)
+    {
+        var groups = requests.SelectMany(r => r.DistributionGroups);
+        await ValidateGroupNamesExistsInner(groups);
+    }
+
+    private async Task ValidateGroupNamesExistsInner(IEnumerable<string> distributionGroups)
     {
         var groupDal = Resolve<IGroupData>();
         var list = new List<string>();
-        foreach (var name in request.DistributionGroups)
+        var groups = distributionGroups.Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in groups)
         {
             var exists = await groupDal.IsGroupNameExists(name);
             if (!exists) { list.Add(name); }

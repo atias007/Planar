@@ -89,13 +89,13 @@
 		<PackageReference Include="AutoMapper" Version="16.2.0" />
 		<PackageReference Include="CronExpressionDescriptor" Version="2.51.0" />
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
-		<PackageReference Include="Google.Protobuf" Version="3.35.1" />
+		<PackageReference Include="Google.Protobuf" Version="3.36.1" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.83.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.83.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Mapster" Version="10.0.11" />
+		<PackageReference Include="Mapster" Version="10.0.12" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
@@ -103,12 +103,12 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.19.1" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.19.1" />
-		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.19.1" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.19.1" />
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.20.1" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.20.1" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.20.1" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.20.1" />
 		<PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.32.0.713">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.33.0.1635">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

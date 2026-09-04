@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using System.Collections.Generic;
 
 namespace Planar.Service.Validation;
 
@@ -30,6 +31,14 @@ public class MonitorActionValidator
         var @event = MonitorEventsParser.Parse(request.Event) ?? MonitorEvents.CustomEvent1;
         var arguments = request.EventArguments;
         return ValidateMonitorArguments(@event, arguments);
+    }
+
+    internal void ValidateMonitorArguments(IEnumerable<MonitorRequest> requests)
+    {
+        foreach (var request in requests)
+        {
+            ValidateMonitorArguments(request);
+        }
     }
 
     private int[]? ValidateMonitorArguments(MonitorEvents @event, MonitorEventArguments? arguments)

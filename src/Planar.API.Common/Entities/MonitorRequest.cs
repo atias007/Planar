@@ -21,6 +21,12 @@ public abstract class MonitorRequest
     [YamlMember(Alias = "event arguments")]
     public MonitorEventArguments? EventArguments { get; set; }
 
+    public override string ToString()
+    {
+        var job = string.IsNullOrWhiteSpace(JobName) ? "[All]" : JobName;
+        return $"{Event} for job group/name: {JobGroup}/{job}";
+    }
+
     public bool HasEventArgument([NotNullWhen(true)] out MonitorEventArguments? eventArgument)
     {
         eventArgument = EventArguments;

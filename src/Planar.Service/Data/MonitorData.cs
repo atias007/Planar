@@ -8,6 +8,7 @@ using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,7 +18,7 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
     Task AddMonitor(MonitorAction monitor, int groupId, string hookName);
 
-    Task AddMonitor(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames);
+    void AddMonitorWithoutSaveChanges(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames);
 
     void AddHookToMonitor(MonitorAction monitor, string hookName);
 
@@ -143,19 +144,18 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
         await _context.SaveChangesAsync();
     }
 
-    public async Task AddMonitor(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames)
+    public void AddMonitorWithoutSaveChanges(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames)
     {
         var groups = groupIds.Select(id => new Group { Id = id }).ToList();
         var hooks = hookNames.Select(name => new MonitorActionsHook { Hook = name }).ToList();
 
-        _context.AttachRange(groups);
-        _context.AttachRange(hooks);
+        groups.ForEach(g => _context.Groups.Attach(g));
+        hooks.ForEach(h => _context.MonitorActionsHooks.Attach(h));
 
-        groups.ForEach(g => monitor.Groups.Add(g));
-        hooks.ForEach(h => monitor.MonitorActionsHooks.Add(h));
+        groups.ForEach(monitor.Groups.Add);
+        hooks.ForEach(monitor.MonitorActionsHooks.Add);
 
         _context.MonitorActions.Add(monitor);
-        await _context.SaveChangesAsync();
     }
 
     public void AddHookToMonitor(MonitorAction monitor, string hookName)

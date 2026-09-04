@@ -1,4 +1,6 @@
-type: monitor                       # Fixed! don't change it
+kind: monitor                       # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 title: some monitor title           # Monitor title [mandatory, 5 to 50 characters]
 event: execution fail               # The event that will trigger the monitor (see below list of events)
 job name: some job name             # The job name related to this monitor [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
@@ -23,11 +25,12 @@ hooks:                              # List of hooks to trigger when the event oc
   - Planar.Teams
   - Planar.Telegram
   - Planar.Twilio.Sms
+  - /any custom hook name/
 active: true                        # Boolean [true/false]. Enable/Disable the monitor
 
-# ##################################################################################################
-#
-# List of events
+# #################################################################################################
+#  List of events
+# #################################################################################################
 # +--------------------------------------------------------------------+--------------------------+
 # | event                                                              | type                     |
 # +--------------------------------------------------------------------+--------------------------+

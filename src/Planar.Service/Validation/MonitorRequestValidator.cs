@@ -33,12 +33,12 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
         RuleFor(r => r)
             .Must(r => r.HasEventArgument(out _))
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
-            .WithMessage(r => $"{{PropertyName}} must have value when Event Id is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"event arguments must have value when Event Id is {r.Event?.SplitWords()}");
 
         RuleFor(r => r)
             .Must(r => !r.HasEventArgument(out _))
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && !MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
-            .WithMessage(r => $"{{PropertyName}} must be empty when Event Id is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"event arguments must be empty when Event Id is {r.Event?.SplitWords()}");
 
         RuleFor(r => r.JobName).NotEmpty()
             .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))

@@ -5,8 +5,8 @@ namespace Planar.API.Common.Entities;
 
 public class ApplyMonitorRequest : MonitorRequest
 {
-    [YamlMember(Alias = "type")]
-    public string Type { get; set; } = string.Empty;
+    [YamlMember(Alias = "kind")]
+    public string Kind { get; set; } = string.Empty;
 
     [YamlMember(Alias = "distribution groups")]
     public List<string> DistributionGroups { get; set; } = [];
