@@ -28,17 +28,17 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
 
         RuleFor(r => r.JobGroup).Empty()
             .When(r => MonitorEventsExtensions.IsSystemMonitorEvent(r.Event))
-            .WithMessage(r => $"{{PropertyName}} must be null when Event Name is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"{{PropertyName}} must be null when Event Name is {r.Event}");
 
         RuleFor(r => r)
             .Must(r => r.HasEventArgument(out _))
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
-            .WithMessage(r => $"event arguments must have value when Event Id is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"event arguments must have value when Event Id is {r.Event}");
 
         RuleFor(r => r)
             .Must(r => !r.HasEventArgument(out _))
             .When(r => !string.IsNullOrWhiteSpace(r.Event) && !MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
-            .WithMessage(r => $"event arguments must be empty when Event Id is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"event arguments must be empty when Event Id is {r.Event}");
 
         RuleFor(r => r.JobName).NotEmpty()
             .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.Event))
@@ -46,7 +46,7 @@ public class MonitorRequestValidator : AbstractValidator<MonitorRequest>
 
         RuleFor(r => r.JobName).Empty()
             .When(r => MonitorEventsExtensions.IsSystemMonitorEvent(r.Event))
-            .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {r.Event?.SplitWords()}");
+            .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {r.Event}");
     }
 
     private static bool JobAndGroupExists(MonitorRequest request, JobKeyHelper jobKeyHelper, ValidationContext<MonitorRequest> context)

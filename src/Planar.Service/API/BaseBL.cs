@@ -291,6 +291,14 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
                 entities.Add(entity);
             }
         }
+        catch (RestValidationException)
+        {
+            throw;
+        }
+        catch (ValidationException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new RestValidationException("yaml", $"Fail to map yaml body to apply monitor request\r\n{ex.Message}");
@@ -299,7 +307,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return entities;
     }
 
-    private void ValidateKind(string kind, IEnumerable<KeyValuePair<string, string>> files)
+    private static void ValidateKind(string kind, IEnumerable<KeyValuePair<string, string>> files)
     {
         foreach (var file in files)
         {

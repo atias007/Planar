@@ -1,5 +1,4 @@
 $kind: http-request
-name: Monitor.Apply1
 url: http://localhost:2306/monitor/apply
 method: POST
 headers:
@@ -28,7 +27,7 @@ body:
 
     \  - planar.smtp\r
 
-    active: true\r
+    active: false\r
 
     ---\r
 
