@@ -1,12 +1,13 @@
 $kind: http-request
-name: Job.Add2
 url: http://localhost:2306/job/apply
 method: POST
 headers:
   Content-Type: application/yaml
 body:
   type: text
-  content: "job type: PlanarJob\r
+  content: "kind: job\r
+
+    job type: PlanarJob\r
 
     name: HelloWorld\r
 

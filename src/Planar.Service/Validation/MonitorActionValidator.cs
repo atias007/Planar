@@ -33,11 +33,12 @@ public class MonitorActionValidator
         return ValidateMonitorArguments(@event, arguments);
     }
 
-    internal void ValidateMonitorArguments(IEnumerable<MonitorRequest> requests)
+    internal static void ValidateMonitorArguments(IEnumerable<MonitorRequest> requests)
     {
+        var validator = new MonitorActionValidator();
         foreach (var request in requests)
         {
-            ValidateMonitorArguments(request);
+            validator.ValidateMonitorArguments(request);
         }
     }
 

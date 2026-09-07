@@ -39,18 +39,13 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [EndpointName("post_job_apply")]
     [EndpointDescription("Add/Update job by yml file")]
     [EndpointSummary("Add/Update Job By Yml File")]
-    [JsonAndYamlConsumes]
-    [CreatedResponse(typeof(PlanarIdResponse))]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
     [BadRequestResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Apply()
+    public async Task<ActionResult<ApplyResponse>> Apply()
     {
-        var result = await BusinesLayer.ApplyRoute(HttpContext);
-        if (string.IsNullOrWhiteSpace(result.Id))
-        {
-            return Created();
-        }
-
-        return CreatedAtAction(nameof(Get), result, result);
+        var result = await BusinesLayer.Apply(HttpContext);
+        return Ok(result);
     }
 
     [HttpPost]

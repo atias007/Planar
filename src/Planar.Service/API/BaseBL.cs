@@ -18,7 +18,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 
 namespace Planar.Service.API;
 
@@ -252,16 +251,21 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return _serviceProvider.GetRequiredService<T>();
     }
 
+    protected T? ResolveOptionally<T>()
+        where T : notnull
+    {
+        return _serviceProvider.GetService<T>();
+    }
+
     protected async Task<ITrigger> ValidateExistingTrigger(TriggerKey entity, string triggerId)
     {
         var scheduler = await GetScheduler();
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 
-    protected async Task<IEnumerable<T>> GetApplyEntitiesWithValidation<T>(HttpContext httpContext, string kind)
-        where T : class, new()
+    protected static async Task<IEnumerable<string>> GetApplyYamls(HttpContext httpContext, string kind)
     {
-        // Valiudate YAML content type
+        // Validate YAML content type
         var contentType = httpContext.Request.ContentType ?? string.Empty;
         if (!contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
         {
@@ -276,18 +280,43 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             throw new RestValidationException("request body", "request body is empty");
         }
 
-        // Deserialize YAML to entity
-        var validator = Resolve<IValidator<T>>();
-        var entities = new List<T>();
+        var entities = new List<string>();
         try
         {
             var files = YmlUtil.SplitByKind(content);
             ValidateKind(kind, files);
             foreach (var file in files)
             {
-                var entity = YmlUtil.Deserialize<T>(file.Value);
+                if (string.IsNullOrWhiteSpace(file.Value)) { continue; }
+                entities.Add(file.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("yaml", $"Fail to map yaml body to {kind} request\r\n{ex.Message}");
+        }
+
+        return entities;
+    }
+
+    protected async Task<IEnumerable<T>> GetApplyEntities<T>(HttpContext httpContext, string kind, bool withValidation = true)
+        where T : class, new()
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        var validator = withValidation ? ResolveOptionally<IValidator<T>>() : null;
+        var entities = new List<T>();
+
+        try
+        {
+            foreach (var y in yamls)
+            {
+                var entity = YmlUtil.Deserialize<T>(y);
                 if (entity == null) { continue; }
-                await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
+                if (validator != null)
+                {
+                    await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
+                }
+
                 entities.Add(entity);
             }
         }
@@ -301,7 +330,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("yaml", $"Fail to map yaml body to apply monitor request\r\n{ex.Message}");
+            throw new RestValidationException("yaml", $"Fail to map yaml body to {kind} request\r\n{ex.Message}");
         }
 
         return entities;

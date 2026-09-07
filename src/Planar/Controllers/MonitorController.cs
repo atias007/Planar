@@ -23,9 +23,9 @@ public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>
     [EndpointDescription("Add/Update monitor")]
     [EndpointSummary("Add/Update Monitor")]
     [YamlConsumes]
-    [CreatedResponse(typeof(string))]
+    [OkJsonResponse(typeof(ApplyResponse))]
     [BadRequestResponse]
-    public async Task<ActionResult<string>> Apply()
+    public async Task<ActionResult<ApplyResponse>> Apply()
     {
         var result = await BusinesLayer.Apply(HttpContext);
         return Ok(result);

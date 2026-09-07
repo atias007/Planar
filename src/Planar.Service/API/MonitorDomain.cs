@@ -175,30 +175,35 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 
-    public async Task<string> Apply(HttpContext httpContext)
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
         const string monitor = "monitor";
-        var response = new StringBuilder();
 
-        var requests = await GetApplyEntitiesWithValidation<ApplyMonitorRequest>(httpContext, monitor);
-        var validator = new MonitorActionValidator();
-        validator.ValidateMonitorArguments(requests);
+        // Read yaml body and convert to list of ApplyMonitorRequest
+        var requests = await GetApplyEntities<ApplyMonitorRequest>(httpContext, monitor);
 
+        // Validation
+        ValidateDuplicateRequests(requests);
+        MonitorActionValidator.ValidateMonitorArguments(requests);
         await ValidateGroupNamesExists(requests);
         ValidateHooksExists(requests);
 
+        // Apply changes
+        var response = new ApplyResponse();
         foreach (var request in requests)
         {
             var result = await ApplyInner(request);
-            response.AppendLine(result);
+            response.AddItem(result);
         }
 
+        // Save changes
         await DataLayer.SaveChangesAsync();
 
+        // Clear cache
         _ = Resolve<MonitorDurationCache>().Flush();
         _ = SetMonitorActionsCache(clusterReload: true);
 
-        return response.ToString().TrimEnd();
+        return response;
     }
 
     public async Task Delete(int id)
@@ -720,7 +725,24 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
     }
 
-    private async Task<string> ApplyInner(ApplyMonitorRequest request)
+    private static void ValidateDuplicateRequests(IEnumerable<ApplyMonitorRequest> requests)
+    {
+        var query = requests
+            .GroupBy(r => new { r.Event, r.JobName, r.JobGroup })
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        if (query != null)
+        {
+            const string null_string = "[null]";
+            var jobname = string.IsNullOrWhiteSpace(query.JobName) ? null_string : query.JobName;
+            var groupname = string.IsNullOrWhiteSpace(query.JobGroup) ? null_string : query.JobGroup;
+            throw new RestValidationException("DuplicateRequest", $"duplicate monitor request for event '{query.Event}' with job name '{jobname}' and job group '{groupname}'");
+        }
+    }
+
+    private async Task<ApplyResponseItem> ApplyInner(ApplyMonitorRequest request)
     {
         var groupData = Resolve<IGroupData>();
         var requestGroups = await groupData.GetGroups(request.DistributionGroups);
@@ -736,7 +758,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
 
             await monitorDal.SaveChangesAsync();
-            return $"add new monitor {GetMonitorDescription(requestMonitor)}";
+            return new ApplyResponseItem(GetMonitorKey(requestMonitor), ApplyAction.Add, $"add new monitor {GetMonitorDescription(requestMonitor)}");
         }
         else
         {
@@ -770,10 +792,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             var count = await monitorDal.SaveChangesAsync();
             if (count == 0)
             {
-                return $"no changes applied to monitor {GetMonitorDescription(currentMonitor)}";
+                return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Unchanged, $"no changes applied to monitor {GetMonitorDescription(currentMonitor)}");
             }
 
-            return $"update existing monitor {GetMonitorDescription(currentMonitor)}";
+            return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Update, $"update existing monitor {GetMonitorDescription(currentMonitor)}");
         }
     }
 
@@ -809,6 +831,12 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             var names = string.Join(",", list);
             throw new RestValidationException("DistributionGroups", $"distribution group(s): {names} could not be found");
         }
+    }
+
+    private static string GetMonitorKey(MonitorAction monitor)
+    {
+        var eventDesc = ((MonitorEvents)monitor.EventId).GetEnumDescription();
+        return $"{eventDesc}-{monitor.JobGroup}-{monitor.JobName}";
     }
 
     private static string GetMonitorDescription(MonitorAction monitor)

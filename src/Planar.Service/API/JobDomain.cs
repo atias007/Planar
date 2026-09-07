@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -176,56 +177,58 @@ public partial class JobDomain(
         Update
     }
 
-    public async Task<PlanarIdResponse> ApplyRoute(HttpContext httpContext)
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
-        var contentType = httpContext.Request.ContentType ?? string.Empty;
-        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        const string monitor = "job";
+
+        // Read yaml body and convert to list of ApplyMonitorRequest
+        var yamls = await GetApplyYamls(httpContext, monitor);
+        var response = new ApplyResponse();
+        foreach (var item in yamls)
         {
-            var entity = await httpContext.Request.ReadFromJsonAsync<UpdateJobRequest>(httpContext.RequestAborted);
-            ArgumentNullException.ThrowIfNull(entity);
-            var validator = Resolve<IValidator<UpdateJobRequest>>();
-            await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
-            return await Apply(entity);
-        }
-        else if (contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
-        {
-            using var reader = new StreamReader(httpContext.Request.Body);
-            var yml = await reader.ReadToEndAsync(httpContext.RequestAborted);
-            return await Apply(yml);
+            var result = await Apply(item);
+            response.AddItem(result);
         }
 
-        throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
+        return response;
     }
 
-    public async Task<PlanarIdResponse> Apply(UpdateJobRequest request)
-    {
-        var dynamicRequest = await GetDynamicRequest(request);
-        var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
+    ////private async Task<PlanarIdResponse> ApplyInner(UpdateJobRequest request)
+    ////{
+    ////    var dynamicRequest = await GetDynamicRequest(request);
+    ////    var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
 
-        try
-        {
-            await JobKeyHelper.ValidateJobExists(jobKey);
-            return await Update(dynamicRequest, request.Options);
-        }
-        catch (RestNotFoundException)
-        {
-            return await Add(dynamicRequest);
-        }
-    }
+    ////    try
+    ////    {
+    ////        await JobKeyHelper.ValidateJobExists(jobKey);
+    ////        return await Update(dynamicRequest, request.Options);
+    ////    }
+    ////    catch (RestNotFoundException)
+    ////    {
+    ////        return await Add(dynamicRequest);
+    ////    }
+    ////}
 
-    public async Task<PlanarIdResponse> Apply(string yml)
+    private async Task<ApplyResponseItem> Apply(string yml)
     {
         var dynamicRequest = await GetDynamicRequest(yml);
         var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
 
         try
         {
-            await JobKeyHelper.ValidateJobExists(jobKey);
-            return await Update(dynamicRequest, UpdateJobOptions.Default);
+            var details = await JobKeyHelper.ValidateJobExists(jobKey);
+            var wrapper = await Update(dynamicRequest, UpdateJobOptions.Default);
+            var response =
+                wrapper.Unchanged ?
+                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Unchanged, $"job {details.Key.Group}.{details.Key.Name} was unchanged") :
+                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Update, $"job {details.Key.Group}.{details.Key.Name} updated");
+
+            return response;
         }
         catch (RestNotFoundException)
         {
-            return await Add(dynamicRequest);
+            var response = await Add(dynamicRequest);
+            return new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {dynamicRequest.Group}.{dynamicRequest.Name} added");
         }
     }
 
