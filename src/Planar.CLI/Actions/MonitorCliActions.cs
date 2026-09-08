@@ -68,7 +68,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             files = [pathInfo.Path];
         }
 
-        var sb = new StringBuilder();
+        var sb = new List<string>();
+        var names = new List<string>();
         var counter = 0;
         foreach (var file in files)
         {
@@ -77,19 +78,24 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
                 !string.Equals(fi.Extension, ".yml", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(fi.Extension, ".yaml", StringComparison.OrdinalIgnoreCase)) { continue; }
 
-            var (Content, Success) = await SafeReadFile(file, cancellationToken);
-            if (Success)
+            var (content, success) = await SafeReadFile(file, cancellationToken);
+            if (success)
             {
+                if (counter > 50)
+                {
+                    throw new CliWarningException("apply command can handle no more then 100 files");
+                }
+
                 AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/]");
+
+                sb.Add(content);
+                names.Add(fi.Name);
                 counter++;
             }
             else
             {
-                AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/] [red]error read file. skip apply. message: {Content.EscapeMarkup()}[/]");
+                AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/] [red]error read file. skip apply. message: {content.EscapeMarkup()}[/]");
             }
-
-            sb.AppendLine(Content);
-            sb.AppendLine("---");
         }
 
         if (counter == 0)
@@ -98,12 +104,18 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             return CliActionResponse.Empty;
         }
 
-        AnsiConsole.MarkupLine($"[gray] > send apply request. {counter} file(s)...[/]");
+        var body = string.Join("\r\n---\r\n", sb).Trim();
+        var header = string.Join(',', names);
+
+        AnsiConsole.MarkupLine($"[gray] --- total {counter} file(s) ---[/]");
+        AnsiConsole.MarkupLine("[gray] > send apply request...[/]");
         var restRequestAdd = new RestRequest("monitor/apply", Method.Post)
-            .AddStringBody(sb.ToString(), CliConsts.YamlContentType);
+            .AddHeader("x-yaml-files-names", header)
+            .AddStringBody(body, CliConsts.YamlContentType);
 
         var resultApply = await RestProxy.Invoke<CliApplyResponse>(restRequestAdd, cancellationToken);
-        return new CliActionResponse(resultApply);
+        var tables = CliTableExtensions.GetTable(resultApply.Data);
+        return new CliActionResponse(resultApply, tables);
     }
 
     [Action("remove")]
@@ -442,7 +454,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         try
         {
-            return (await File.ReadAllTextAsync(filename, cancellationToken), true);
+            var content = await File.ReadAllTextAsync(filename, cancellationToken);
+            return string.IsNullOrWhiteSpace(content) ? ("file is empty", false) : (content, true);
         }
         catch (Exception ex)
         {

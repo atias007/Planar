@@ -23,7 +23,7 @@ public static class YmlUtil
         return YmlSerializer.Serialize(item);
     }
 
-    public static IEnumerable<KeyValuePair<string, string>> SplitByKind(string yamlText)
+    public static List<KeyValuePair<string, string>> SplitByKind(string yamlText)
     {
         yamlText = yamlText.ReplaceLineEndings("\n");   // keeps line numbers and slices aligned
 

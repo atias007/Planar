@@ -103,6 +103,31 @@ internal static class CliTableExtensions
         return table;
     }
 
+    public static List<CliTable> GetTable(CliApplyResponse? response)
+    {
+        var table1 = new CliTable { Title = "Summary" };
+        if (response == null) { return [table1]; }
+        table1.Table.AddColumns(string.Empty, string.Empty);
+        table1.Table.HideHeaders();
+        table1.Table.AddRow("Add", CliTableFormat.FormatNumber(response.TotalAdd)); // TODO: gray numer for 0 green for other
+        table1.Table.AddRow("Update", CliTableFormat.FormatNumber(response.TotalUpdate));
+        table1.Table.AddRow("Unchanged", CliTableFormat.FormatNumber(response.TotalUnchanged));
+
+        var table2 = new CliTable { Title = "Details" };
+        if (response == null) { return [table1]; }
+        table2.Table.AddColumns("Action", "Description"); // TODO: return and priong filenames from yml - not headers
+        var grouped = response.Items.GroupBy(r => new { r.Action, r.ActionId }).OrderBy(g => g.Key.ActionId).ToList();
+        foreach (var g in grouped)
+        {
+            foreach (var item in g)
+            {
+                table2.Table.AddRow(item.Action, SafeCliString(item.Description));
+            }
+        }
+
+        return [table1, table2];
+    }
+
     public static CliTable GetTable(ServiceHealthCheckResponse? response)
     {
         var table = new CliTable();

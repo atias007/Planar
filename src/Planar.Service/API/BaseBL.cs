@@ -281,22 +281,50 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         }
 
         var entities = new List<string>();
+        var names = GetApplyFileNames(httpContext);
+
+        string? currentName = null;
         try
         {
             var files = YmlUtil.SplitByKind(content);
-            ValidateKind(kind, files);
-            foreach (var file in files)
+            if (names.Length != files.Count) { names = []; }
+            for (var i = 0; i < files.Count; i++)
             {
+                var file = files[i];
+                currentName = names.Length > i ? names[i] : null;
+                ValidateKind(kind, file);
                 if (string.IsNullOrWhiteSpace(file.Value)) { continue; }
                 entities.Add(file.Value);
             }
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("yaml", $"Fail to map yaml body to {kind} request\r\n{ex.Message}");
+            if (string.IsNullOrWhiteSpace(currentName))
+            {
+                throw new RestValidationException("yaml", $"fail to map body to {kind} request\r\n{ex.Message}");
+            }
+            else
+            {
+                throw new RestValidationException(currentName, $"fail to map content of file: {currentName} to {kind} request\r\n{ex.Message}");
+            }
         }
 
         return entities;
+    }
+
+    private static string[] GetApplyFileNames(HttpContext httpContext)
+    {
+        try
+        {
+            if (!httpContext.Request.Headers.TryGetValue("x-yaml-files-names", out var value)) { return []; }
+            if (string.IsNullOrWhiteSpace(value)) { return []; }
+            var values = value.ToString().Split(',');
+            return values;
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     protected async Task<IEnumerable<T>> GetApplyEntities<T>(HttpContext httpContext, string kind, bool withValidation = true)
@@ -336,19 +364,16 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return entities;
     }
 
-    private static void ValidateKind(string kind, IEnumerable<KeyValuePair<string, string>> files)
+    private static void ValidateKind(string kind, KeyValuePair<string, string> file)
     {
-        foreach (var file in files)
+        if (string.IsNullOrWhiteSpace(file.Key))
         {
-            if (string.IsNullOrWhiteSpace(file.Key))
-            {
-                throw new RestValidationException("kind", "kind property is missing of empty");
-            }
+            throw new RestValidationException("kind", "kind property is missing of empty");
+        }
 
-            if (file.Key != kind)
-            {
-                throw new RestValidationException("kind", $"Unexpected kind: {file.Key}. Expected kind: {kind}");
-            }
+        if (file.Key != kind)
+        {
+            throw new RestValidationException("kind", $"Unexpected kind: {file.Key}. Expected kind: {kind}");
         }
     }
 }
