@@ -787,7 +787,7 @@ public partial class JobDomain
 
     private async Task<PlanarIdResponse> Add(string yml)
     {
-        var dynamicRequest = await GetDynamicRequest(yml);
+        var dynamicRequest = GetDynamicRequest(yml);
         return await Add(dynamicRequest);
     }
 

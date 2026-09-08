@@ -105,10 +105,18 @@ namespace Planar.Job
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
-            InitializeBaseJobFactory(json);
-            InitializeConfiguration(_context, configureAction);
-            InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
-            ValidateJobExecutionContext(_context);
+#if NETSTANDARD2_0
+            Exception initializeException = null;
+            try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
+            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { if (initializeException != null) { initializeException = ex; } }
+            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { if (initializeException != null) { initializeException = ex; } }
+#else
+            Exception? initializeException = null;
+            try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
+            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex;  }
+            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
+#endif
+
             await OpenMqttConnection();
 
             try
@@ -121,6 +129,8 @@ namespace Planar.Job
                 var mapper = new JobMapper(_logger);
                 mapper.MapJobInstanceProperties(_context, this);
                 LogVersion();
+
+                if (initializeException != null) { throw initializeException; }
 
                 var timeout = _context.TriggerDetails.Timeout;
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
@@ -638,6 +648,8 @@ namespace Planar.Job
             {
                 var ctx = JsonSerializer.Deserialize<JobExecutionContext>(json, _jsonSerializerOptions) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from json (error 7379)");
+
+                ValidateJobExecutionContext(ctx);
 
                 _baseJobFactory = new BaseJobFactory(ctx);
 

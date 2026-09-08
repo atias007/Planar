@@ -183,8 +183,11 @@ public partial class JobDomain(
 
         // Read yaml body and convert to list of ApplyMonitorRequest
         var yamls = await GetApplyYamls(httpContext, monitor);
+        var requests = yamls.Select(GetJobDynamicRequest).ToList();
+        ValidateDuplicates(requests);
+
         var response = new ApplyResponse();
-        foreach (var item in yamls)
+        foreach (var item in requests)
         {
             var result = await Apply(item);
             response.AddItem(result);
@@ -193,25 +196,22 @@ public partial class JobDomain(
         return response;
     }
 
-    ////private async Task<PlanarIdResponse> ApplyInner(UpdateJobRequest request)
-    ////{
-    ////    var dynamicRequest = await GetDynamicRequest(request);
-    ////    var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
-
-    ////    try
-    ////    {
-    ////        await JobKeyHelper.ValidateJobExists(jobKey);
-    ////        return await Update(dynamicRequest, request.Options);
-    ////    }
-    ////    catch (RestNotFoundException)
-    ////    {
-    ////        return await Add(dynamicRequest);
-    ////    }
-    ////}
-
-    private async Task<ApplyResponseItem> Apply(string yml)
+    private static void ValidateDuplicates(List<SetJobDynamicRequest> requests)
     {
-        var dynamicRequest = await GetDynamicRequest(yml);
+        var query = requests
+           .GroupBy(r => new { r.Name, r.Group })
+           .Where(g => g.Count() > 1)
+           .Select(g => g.Key)
+           .FirstOrDefault();
+
+        if (query != null)
+        {
+            throw new RestValidationException("duplicate request", $"duplicate job request for name '{query.Name}' and group '{query.Group}'");
+        }
+    }
+
+    private async Task<ApplyResponseItem> Apply(SetJobDynamicRequest dynamicRequest)
+    {
         var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
 
         try
@@ -240,7 +240,7 @@ public partial class JobDomain(
         return dynamicRequest;
     }
 
-    private static async Task<SetJobDynamicRequest> GetDynamicRequest(string yml)
+    private static SetJobDynamicRequest GetDynamicRequest(string yml)
     {
         var dynamicRequest = GetJobDynamicRequest(yml);
         return dynamicRequest;

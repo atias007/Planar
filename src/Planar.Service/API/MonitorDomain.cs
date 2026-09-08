@@ -738,7 +738,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             const string null_string = "[null]";
             var jobname = string.IsNullOrWhiteSpace(query.JobName) ? null_string : query.JobName;
             var groupname = string.IsNullOrWhiteSpace(query.JobGroup) ? null_string : query.JobGroup;
-            throw new RestValidationException("DuplicateRequest", $"duplicate monitor request for event '{query.Event}' with job name '{jobname}' and job group '{groupname}'");
+            throw new RestValidationException("duplicate request", $"duplicate monitor request for event '{query.Event}' with job name '{jobname}' and job group '{groupname}'");
         }
     }
 

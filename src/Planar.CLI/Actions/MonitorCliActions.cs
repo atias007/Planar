@@ -10,7 +10,9 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,6 +41,69 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             .AddBody(mappedRequest);
         var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd, cancellationToken);
         return new CliActionResponse(resultAdd);
+    }
+
+    [Action("apply")]
+    public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Filename))
+        {
+            request.Filename = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "filename",
+                Required = true,
+                MinLength = 2,
+                MaxLength = 500
+            }) ?? string.Empty;
+        }
+
+        var pathInfo = PathAnalyzer.AnalyzePath(request.Filename);
+        IEnumerable<string> files;
+        if (pathInfo.IsFolder)
+        {
+            files = Directory.EnumerateFiles(pathInfo.Path, pathInfo.Pattern, SearchOption.TopDirectoryOnly);
+        }
+        else
+        {
+            files = [pathInfo.Path];
+        }
+
+        var sb = new StringBuilder();
+        var counter = 0;
+        foreach (var file in files)
+        {
+            var fi = new FileInfo(file);
+            if (
+                !string.Equals(fi.Extension, ".yml", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(fi.Extension, ".yaml", StringComparison.OrdinalIgnoreCase)) { continue; }
+
+            var (Content, Success) = await SafeReadFile(file, cancellationToken);
+            if (Success)
+            {
+                AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/]");
+                counter++;
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/] [red]error read file. skip apply. message: {Content.EscapeMarkup()}[/]");
+            }
+
+            sb.AppendLine(Content);
+            sb.AppendLine("---");
+        }
+
+        if (counter == 0)
+        {
+            AnsiConsole.MarkupLine($"[gray] > no yml files found. skip apply[/]");
+            return CliActionResponse.Empty;
+        }
+
+        AnsiConsole.MarkupLine($"[gray] > send apply request. {counter} file(s)...[/]");
+        var restRequestAdd = new RestRequest("monitor/apply", Method.Post)
+            .AddStringBody(sb.ToString(), CliConsts.YamlContentType);
+
+        var resultApply = await RestProxy.Invoke<CliApplyResponse>(restRequestAdd, cancellationToken);
+        return new CliActionResponse(resultApply);
     }
 
     [Action("remove")]
@@ -373,6 +438,18 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return new CliActionResponse(result);
     }
 
+    private static async Task<(string Content, bool Success)> SafeReadFile(string filename, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return (await File.ReadAllTextAsync(filename, cancellationToken), true);
+        }
+        catch (Exception ex)
+        {
+            return (ex.Message, false);
+        }
+    }
+
     private static async Task<CliPromptWrapper> FillAddHookRequest(CliAddHookjRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(request.Filename))
@@ -698,8 +775,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 #pragma warning disable CS8604 // Possible null reference argument.
         var changeArgs = AskForUpdateField($"evet arguments", sourceEventArgs);
 #pragma warning restore CS8604 // Possible null reference argument.
-        
-        if(changeArgs) { return GetEventArguments(currentEventName); }
+
+        if (changeArgs) { return GetEventArguments(currentEventName); }
 
         return YmlUtil.Deserialize<CliMonitorArguments>(sourceEventArgs);
     }

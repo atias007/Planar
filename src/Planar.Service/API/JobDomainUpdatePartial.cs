@@ -170,7 +170,7 @@ public partial class JobDomain
 
     private async Task<PlanarIdResponseWrapper> Update(string yml)
     {
-        var dynamicRequest = await GetDynamicRequest(yml);
+        var dynamicRequest = GetDynamicRequest(yml);
         return await Update(dynamicRequest, UpdateJobOptions.Default);
     }
 
@@ -201,8 +201,12 @@ public partial class JobDomain
         // Validation
         await ValidateUpdateJob(request, options, metadata);
 
+        // Validate no changes 
         var hasChanges = await HasChanges(request);
         if (!hasChanges) { return new PlanarIdResponseWrapper(metadata.JobId, unchanged: true); }
+
+        // Validate job not runnning
+        await ValidateJobNotRunning(metadata.JobKey);
 
         // save paused triggers before pause job
         metadata.PausedTriggers = await GetPausedTriggers(metadata.JobKey);
@@ -319,6 +323,5 @@ public partial class JobDomain
         metadata.JobId =
             await JobKeyHelper.GetJobId(metadata.JobKey) ??
             throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
-        await ValidateJobNotRunning(metadata.JobKey);
     }
 }
