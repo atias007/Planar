@@ -1,9 +1,12 @@
 ﻿using Planar.API.Common.Entities;
+using YamlDotNet.Serialization;
 
-namespace Planar.Service.Model
+namespace Planar.Service.Model;
+
+internal class SetJobDynamicRequest : SetJobRequest, IApplyRequest
 {
-    internal class SetJobDynamicRequest : SetJobRequest
-    {
-        public virtual dynamic? Properties { get; set; }
-    }
+    public virtual dynamic? Properties { get; set; }
+
+    [YamlIgnore]
+    public string Source { get; set; } = string.Empty;
 }

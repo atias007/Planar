@@ -758,7 +758,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
 
             await monitorDal.SaveChangesAsync();
-            return new ApplyResponseItem(GetMonitorKey(requestMonitor), ApplyAction.Add, $"add new monitor {GetMonitorDescription(requestMonitor)}");
+            return new ApplyResponseItem(GetMonitorKey(requestMonitor), ApplyAction.Add, $"add new monitor {GetMonitorDescription(requestMonitor)}", request.Source);
         }
         else
         {
@@ -792,10 +792,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             var count = await monitorDal.SaveChangesAsync();
             if (count == 0)
             {
-                return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Unchanged, $"no changes applied to monitor {GetMonitorDescription(currentMonitor)}");
+                return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Unchanged, $"no changes applied to monitor {GetMonitorDescription(currentMonitor)}", request.Source);
             }
 
-            return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Update, $"update existing monitor {GetMonitorDescription(currentMonitor)}");
+            return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Update, $"update existing monitor {GetMonitorDescription(currentMonitor)}", request.Source);
         }
     }
 

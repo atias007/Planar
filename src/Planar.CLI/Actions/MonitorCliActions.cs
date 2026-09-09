@@ -69,7 +69,6 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
 
         var sb = new List<string>();
-        var names = new List<string>();
         var counter = 0;
         foreach (var file in files)
         {
@@ -81,15 +80,11 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             var (content, success) = await SafeReadFile(file, cancellationToken);
             if (success)
             {
-                if (counter > 50)
-                {
-                    throw new CliWarningException("apply command can handle no more then 100 files");
-                }
+                if (counter > 100) { throw new CliWarningException("apply command can handle no more then 100 files"); }
 
                 AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/]");
-
+                content = AddSourceFilenameToYmlContent(content, fi.Name);
                 sb.Add(content);
-                names.Add(fi.Name);
                 counter++;
             }
             else
@@ -105,12 +100,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
 
         var body = string.Join("\r\n---\r\n", sb).Trim();
-        var header = string.Join(',', names);
 
         AnsiConsole.MarkupLine($"[gray] --- total {counter} file(s) ---[/]");
         AnsiConsole.MarkupLine("[gray] > send apply request...[/]");
         var restRequestAdd = new RestRequest("monitor/apply", Method.Post)
-            .AddHeader("x-yaml-files-names", header)
             .AddStringBody(body, CliConsts.YamlContentType);
 
         var resultApply = await RestProxy.Invoke<CliApplyResponse>(restRequestAdd, cancellationToken);
@@ -1088,6 +1081,12 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         result ??= CliActionResponse.GetGenericSuccessRestResponse();
         return result;
+    }
+
+    private static string AddSourceFilenameToYmlContent(string ymlContent, string sourceFilename)
+    {
+        const string source = "source: ";
+        return $"{source}{sourceFilename}{Environment.NewLine}{ymlContent}";
     }
 
     private struct TestMonitorData

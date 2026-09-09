@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -263,7 +264,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 
-    protected static async Task<IEnumerable<string>> GetApplyYamls(HttpContext httpContext, string kind)
+    protected static async Task<IEnumerable<KeyValuePair<string, string>>> GetApplyYamls(HttpContext httpContext, string kind)
     {
         // Validate YAML content type
         var contentType = httpContext.Request.ContentType ?? string.Empty;
@@ -280,55 +281,36 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             throw new RestValidationException("request body", "request body is empty");
         }
 
-        var entities = new List<string>();
-        var names = GetApplyFileNames(httpContext);
-
-        string? currentName = null;
+        var result = new List<KeyValuePair<string, string>>();
         try
         {
-            var files = YmlUtil.SplitByKind(content);
-            if (names.Length != files.Count) { names = []; }
-            for (var i = 0; i < files.Count; i++)
+            var yamls = YmlUtil.SplitByKind(content);
+            for (var i = 0; i < yamls.Count; i++)
             {
-                var file = files[i];
-                currentName = names.Length > i ? names[i] : null;
-                ValidateKind(kind, file);
-                if (string.IsNullOrWhiteSpace(file.Value)) { continue; }
-                entities.Add(file.Value);
+                var yml = yamls[i];
+                ValidateKind(kind, yml.Key);
+                if (string.IsNullOrWhiteSpace(yml.Value)) { continue; }
+                result.Add(new KeyValuePair<string, string>(yml.Key, yml.Value));
             }
         }
         catch (Exception ex)
         {
-            if (string.IsNullOrWhiteSpace(currentName))
+            var source = YmlUtil.GetApplySource(content);
+            if (string.IsNullOrWhiteSpace(source))
             {
                 throw new RestValidationException("yaml", $"fail to map body to {kind} request\r\n{ex.Message}");
             }
             else
             {
-                throw new RestValidationException(currentName, $"fail to map content of file: {currentName} to {kind} request\r\n{ex.Message}");
+                throw new RestValidationException(source, $"fail to map content of file: {source} to {kind} request\r\n{ex.Message}");
             }
         }
 
-        return entities;
-    }
-
-    private static string[] GetApplyFileNames(HttpContext httpContext)
-    {
-        try
-        {
-            if (!httpContext.Request.Headers.TryGetValue("x-yaml-files-names", out var value)) { return []; }
-            if (string.IsNullOrWhiteSpace(value)) { return []; }
-            var values = value.ToString().Split(',');
-            return values;
-        }
-        catch
-        {
-            return [];
-        }
+        return result;
     }
 
     protected async Task<IEnumerable<T>> GetApplyEntities<T>(HttpContext httpContext, string kind, bool withValidation = true)
-        where T : class, new()
+        where T : class, IApplyRequest, new()
     {
         var yamls = await GetApplyYamls(httpContext, kind);
         var validator = withValidation ? ResolveOptionally<IValidator<T>>() : null;
@@ -338,7 +320,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         {
             foreach (var y in yamls)
             {
-                var entity = YmlUtil.Deserialize<T>(y);
+                var entity = YmlUtil.Deserialize<T>(y.Value);
                 if (entity == null) { continue; }
                 if (validator != null)
                 {
@@ -364,16 +346,16 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return entities;
     }
 
-    private static void ValidateKind(string kind, KeyValuePair<string, string> file)
+    private static void ValidateKind(string kind, string key)
     {
-        if (string.IsNullOrWhiteSpace(file.Key))
+        if (string.IsNullOrWhiteSpace(key))
         {
             throw new RestValidationException("kind", "kind property is missing of empty");
         }
 
-        if (file.Key != kind)
+        if (key != kind)
         {
-            throw new RestValidationException("kind", $"Unexpected kind: {file.Key}. Expected kind: {kind}");
+            throw new RestValidationException("kind", $"Unexpected kind: {key}. Expected kind: {kind}");
         }
     }
 }

@@ -340,7 +340,7 @@ public partial class JobDomain
         return trigger;
     }
 
-    private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
+    private static SetJobDynamicRequest GetJobDynamicRequest(string yml, string? source = null)
     {
         SetJobDynamicRequest dynamicRequest;
 

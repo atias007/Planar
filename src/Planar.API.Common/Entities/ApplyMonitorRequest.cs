@@ -3,7 +3,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities;
 
-public class ApplyMonitorRequest : MonitorRequest
+public class ApplyMonitorRequest : MonitorRequest, IApplyRequest
 {
     [YamlMember(Alias = "kind")]
     public string Kind { get; set; } = string.Empty;
@@ -16,4 +16,7 @@ public class ApplyMonitorRequest : MonitorRequest
 
     [YamlMember(Alias = "active")]
     public bool Active { get; set; }
+
+    [YamlMember(Alias = "source")]
+    public string Source { get; set; } = string.Empty;
 }

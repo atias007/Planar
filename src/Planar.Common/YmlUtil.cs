@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
-using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -21,6 +21,29 @@ public static class YmlUtil
     {
         if (item == null) { return string.Empty; }
         return YmlSerializer.Serialize(item);
+    }
+
+    public static string GetApplySource(string yml)
+    {
+        if (string.IsNullOrWhiteSpace(yml)) { return string.Empty; }
+        try
+        {
+            const string source = "source:";
+            var lines = yml.Split('\n');
+            foreach (var item in lines)
+            {
+                var index = item.IndexOf(source, StringComparison.OrdinalIgnoreCase);
+                if (index < 0) { continue; }
+                if (item.Length == source.Length) { return string.Empty; }
+                return item[(index + source.Length)..].Trim();
+            }
+        }
+        catch
+        {
+            // DO NOTHING //    
+        }
+
+        return string.Empty;
     }
 
     public static List<KeyValuePair<string, string>> SplitByKind(string yamlText)

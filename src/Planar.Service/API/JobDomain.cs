@@ -183,7 +183,7 @@ public partial class JobDomain(
 
         // Read yaml body and convert to list of ApplyMonitorRequest
         var yamls = await GetApplyYamls(httpContext, monitor);
-        var requests = yamls.Select(GetJobDynamicRequest).ToList();
+        var requests = yamls.Select(y => GetJobDynamicRequest(y.Value, y.Key)).ToList();
         ValidateDuplicates(requests);
 
         var response = new ApplyResponse();
