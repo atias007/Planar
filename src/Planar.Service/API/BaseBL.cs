@@ -16,8 +16,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -264,7 +264,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 
-    protected static async Task<IEnumerable<KeyValuePair<string, string>>> GetApplyYamls(HttpContext httpContext, string kind)
+    protected static async Task<IEnumerable<KeyValuePair<string, string>>> GetApplyYamls(HttpContext httpContext, string? kind = null)
     {
         // Validate YAML content type
         var contentType = httpContext.Request.ContentType ?? string.Empty;
@@ -281,16 +281,29 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             throw new RestValidationException("request body", "request body is empty");
         }
 
-        var result = new List<KeyValuePair<string, string>>();
+        // Split content to individual YAML documents
+        List<KeyValuePair<string, string>> yamls;
         try
         {
-            var yamls = YmlUtil.SplitByKind(content);
+            yamls = YmlUtil.SplitByKind(content);
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("yaml", $"fail to convert content to yaml document(s)\r\n{ex.Message}");
+        }
+
+        // Convert YAML documents to key-value pairs and validate kind
+        var result = new List<KeyValuePair<string, string>>();
+        KeyValuePair<string, string> currentYaml = default;
+
+        try
+        {
             for (var i = 0; i < yamls.Count; i++)
             {
-                var yml = yamls[i];
-                ValidateKind(kind, yml.Key);
-                if (string.IsNullOrWhiteSpace(yml.Value)) { continue; }
-                result.Add(new KeyValuePair<string, string>(yml.Key, yml.Value));
+                currentYaml = yamls[i];
+                ValidateKind(kind, currentYaml.Key);
+                if (string.IsNullOrWhiteSpace(currentYaml.Value)) { continue; }
+                result.Add(new KeyValuePair<string, string>(currentYaml.Key, currentYaml.Value));
             }
         }
         catch (Exception ex)
@@ -298,21 +311,24 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             var source = YmlUtil.GetApplySource(content);
             if (string.IsNullOrWhiteSpace(source))
             {
-                throw new RestValidationException("yaml", $"fail to map body to {kind} request\r\n{ex.Message}");
+                throw new RestValidationException("yaml", $"fail to map body to {currentYaml.Key} request\r\n{ex.Message}");
             }
             else
             {
-                throw new RestValidationException(source, $"fail to map content of file: {source} to {kind} request\r\n{ex.Message}");
+                throw new RestValidationException(source, $"fail to map content of file: {source} to {currentYaml.Key} request\r\n{ex.Message}");
             }
         }
 
         return result;
     }
 
-    protected async Task<IEnumerable<T>> GetApplyEntities<T>(HttpContext httpContext, string kind, bool withValidation = true)
+    protected async Task<IEnumerable<T>> GetApplyEntities<T>(
+        IEnumerable<KeyValuePair<string, string>> yamls,
+        string kind,
+        CancellationToken cancellationToken,
+        bool withValidation = true)
         where T : class, IApplyRequest, new()
     {
-        var yamls = await GetApplyYamls(httpContext, kind);
         var validator = withValidation ? ResolveOptionally<IValidator<T>>() : null;
         var entities = new List<T>();
 
@@ -324,7 +340,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
                 if (entity == null) { continue; }
                 if (validator != null)
                 {
-                    await validator.ValidateAndThrowAsync(entity, httpContext.RequestAborted);
+                    await validator.ValidateAndThrowAsync(entity, cancellationToken);
                 }
 
                 entities.Add(entity);
@@ -346,12 +362,14 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return entities;
     }
 
-    private static void ValidateKind(string kind, string key)
+    private static void ValidateKind(string? kind, string key)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
             throw new RestValidationException("kind", "kind property is missing of empty");
         }
+
+        if (kind == null) { return; }
 
         if (key != kind)
         {

@@ -382,6 +382,54 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         return await Task.FromResult(new CliActionResponse(response));
     }
 
+    [Action("manifest")]
+    [NullRequest]
+    public static async Task<CliActionResponse> GetManifest(CliGetJobFileRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+        {
+            var wrapper = await GetCliGetJobTypesRequest(cancellationToken);
+            if (!wrapper.IsSuccessful || wrapper.Request == null)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            request = wrapper.Request;
+        }
+
+        var restRequest = new RestRequest("service/manifest/{name}", Method.Get)
+            .AddUrlSegment("name", request.Name);
+
+        var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+
+        return new CliActionResponse(result, result.Data);
+    }
+
+
+    [Action("manifests")]
+    public static async Task<CliActionResponse> GetAllManifets(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("service/manifests", Method.Get);
+
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        return new CliActionResponse(result, result.Data);
+    }
+
+    private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobTypesRequest(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("service/manifests", Method.Get);
+
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        if (!result.IsSuccessful)
+        {
+            return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
+        }
+
+        var selectedItem = PromptSelection(result.Data, "manifest name") ?? string.Empty;
+        var request = new CliGetJobFileRequest { Name = selectedItem };
+        return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
+    }
+
     private static string Cryptographic(CliEncryptAppsettingsRequest request)
     {
         var fi = new FileInfo(request.Filename ?? string.Empty);

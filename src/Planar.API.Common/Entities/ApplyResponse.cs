@@ -32,6 +32,20 @@ public class ApplyResponse
                 break;
         }
     }
+
+    public static ApplyResponse Merge(IEnumerable<ApplyResponse> responses>)
+    {
+        var result = new ApplyResponse();
+        foreach (var response in responses)
+        {
+            result.TotalAdd += response.TotalAdd;
+            result.TotalUpdate += response.TotalUpdate;
+            result.TotalDelete += response.TotalDelete;
+            result.TotalUnchanged += response.TotalUnchanged;
+            result.Items.AddRange(response.Items);
+        }
+        return result;
+    }
 }
 
 public class ApplyResponseItem(string key, ApplyAction action, string description, string? source = null)

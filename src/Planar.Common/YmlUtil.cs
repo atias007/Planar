@@ -40,7 +40,7 @@ public static class YmlUtil
         }
         catch
         {
-            // DO NOTHING //    
+            // DO NOTHING //
         }
 
         return string.Empty;

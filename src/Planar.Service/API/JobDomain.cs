@@ -33,6 +33,7 @@ public partial class JobDomain(
     : BaseJobBL<JobDomain, IJobData>(serviceProvider), IJobActions
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
+    private const string kind = "job";
 
     #region Data
 
@@ -177,12 +178,8 @@ public partial class JobDomain(
         Update
     }
 
-    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        const string monitor = "job";
-
-        // Read yaml body and convert to list of ApplyMonitorRequest
-        var yamls = await GetApplyYamls(httpContext, monitor);
         var requests = yamls.Select(y => GetJobDynamicRequest(y.Value, y.Key)).ToList();
         ValidateDuplicates(requests);
 
@@ -194,6 +191,12 @@ public partial class JobDomain(
         }
 
         return response;
+    }
+
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        return await Apply(yamls, httpContext.RequestAborted);
     }
 
     private static void ValidateDuplicates(List<SetJobDynamicRequest> requests)

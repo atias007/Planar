@@ -19,7 +19,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -40,6 +42,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes,
         (int)MonitorEvents.ExecutionEndWithMoreThanxExceptions,
         ];
+
+    private const string kind = "monitor";
 
     public static List<MonitorEventModel> GetEvents()
     {
@@ -175,12 +179,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 
-    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        const string monitor = "monitor";
-
-        // Read yaml body and convert to list of ApplyMonitorRequest
-        var requests = await GetApplyEntities<ApplyMonitorRequest>(httpContext, monitor);
+        // Convert to list of ApplyMonitorRequest
+        var requests = await GetApplyEntities<ApplyMonitorRequest>(yamls, kind, cancellationToken);
 
         // Validation
         ValidateDuplicateRequests(requests);
@@ -204,6 +206,12 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         _ = SetMonitorActionsCache(clusterReload: true);
 
         return response;
+    }
+
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        return await Apply(yamls, httpContext.RequestAborted);
     }
 
     public async Task Delete(int id)

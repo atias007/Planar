@@ -34,6 +34,7 @@
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Certificate\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
+	  <None Remove="Data\Manifests\Monitor.yml" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
@@ -58,6 +59,9 @@
 	  <EmbeddedResource Include="Content\no_access.jpg" />
 	  <EmbeddedResource Include="Data\Certificate\readme.md">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Manifests\Monitor.yml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	  <EmbeddedResource Include="Data\Settings\AppSettings.yml">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -107,15 +111,5 @@
 		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Data\Manifests\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="Data\Manifests\Monitor.yml">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
 	</ItemGroup>
 </Project>

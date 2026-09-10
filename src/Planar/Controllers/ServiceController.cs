@@ -8,6 +8,7 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
+using Planar.Service.General;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -156,6 +157,32 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
     public ActionResult<IEnumerable<WorkingHoursModel>> GetDefaultWorkingHours()
     {
         var result = BusinesLayer.GetDefaultWorkingHours();
+        return Ok(result);
+    }
+
+    [HttpGet("manifest/{name}")]
+    [EditorAuthorize]
+    [EndpointName("get_service_manifest_name")]
+    [EndpointDescription("Get manifest yaml file")]
+    [EndpointSummary("Get Manifest Yaml File")]
+    [OkYmlResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public ActionResult<string> GetManifest([Required][FromRoute] string name)
+    {
+        var result = ServiceDomain.GetManifest(name);
+        return Ok(result);
+    }
+
+    [HttpGet("manifests")]
+    [ViewerAuthorize]
+    [EndpointName("get_service_manifests")]
+    [EndpointDescription("Get all manifest names")]
+    [EndpointSummary("Get All Manifest Names")]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public ActionResult<IEnumerable<string>> GetManifests()
+    {
+        var result = ServiceUtil.Manifests.Keys;
         return Ok(result);
     }
 }

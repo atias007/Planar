@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -13,6 +14,7 @@ using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -21,6 +23,41 @@ namespace Planar.Service.API;
 
 public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<ServiceDomain, IServiceData>(serviceProvider)
 {
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        // Read yaml body and
+        var yamls = await GetApplyYamls(httpContext);
+
+        // Group yamls by kind
+        var yamlGroups = yamls.GroupBy(y => y.Key, StringComparer.OrdinalIgnoreCase);
+
+        // Validate known kinds
+        // TODO: Implement validation logic for known kinds
+
+        var jobs = yamlGroups.FirstOrDefault(g => g.Key.Equals("job", StringComparison.OrdinalIgnoreCase));
+        var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals("monitor", StringComparison.OrdinalIgnoreCase));
+
+        var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+        var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
+
+        var responses = new List<ApplyResponse>();
+
+        if (jobs != null)
+        {
+            var response = await jobDomain.Apply([.. jobs], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
+        if (monitors != null)
+        {
+            var monitorResponse = await monitorDomain.Apply([.. monitors], httpContext.RequestAborted);
+            responses.Add(monitorResponse);
+        }
+
+        var result = ApplyResponse.Merge(responses);
+        return result;
+    }
+
     public static string GetServiceVersion()
     {
         return ServiceVersion ?? Consts.Undefined;
@@ -258,6 +295,16 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
 
         return result;
+    }
+
+    public static string GetManifest(string manifestName)
+    {
+        if (!ServiceUtil.Manifests.TryGetValue(manifestName, out var manifest))
+        {
+            throw new RestNotFoundException($"manifest '{manifestName}' could not be found");
+        }
+
+        return manifest;
     }
 
     public WorkingHoursModel GetWorkingHours(string calendar)
