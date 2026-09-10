@@ -20,6 +20,20 @@ namespace Planar.Controllers;
 [Route("service")]
 public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>(bl)
 {
+    [HttpPost("apply")]
+    [EditorAuthorize]
+    [EndpointName("post_service_apply")]
+    [EndpointDescription("Add/Update any planar manifest yaml file")]
+    [EndpointSummary("Add/Update Any Planar Manifest Yaml File")]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
+    [BadRequestResponse]
+    public async Task<ActionResult<ApplyResponse>> Apply()
+    {
+        var result = await BusinesLayer.Apply(HttpContext);
+        return Ok(result);
+    }
+
     [HttpGet("version")]
     [ViewerAuthorize]
     [EndpointName("get_service_version")]
@@ -182,7 +196,7 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
     [OkJsonResponse(typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetManifests()
     {
-        var result = ServiceUtil.Manifests.Keys;
+        var result = Manifest.All.Keys;
         return Ok(result);
     }
 }

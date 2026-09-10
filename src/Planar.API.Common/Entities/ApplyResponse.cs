@@ -33,7 +33,7 @@ public class ApplyResponse
         }
     }
 
-    public static ApplyResponse Merge(IEnumerable<ApplyResponse> responses>)
+    public static ApplyResponse Merge(IEnumerable<ApplyResponse> responses)
     {
         var result = new ApplyResponse();
         foreach (var response in responses)

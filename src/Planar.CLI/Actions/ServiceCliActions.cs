@@ -23,6 +23,12 @@ namespace Planar.CLI.Actions;
 [Module("service", "operate service, check alive, list calendars and more")]
 public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 {
+    [Action("apply")]
+    public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
+    {
+        return await Apply("service", request, cancellationToken);
+    }
+
     [Action("agents")]
     public static async Task<CliActionResponse> GetAgents(CancellationToken cancellationToken = default)
     {
@@ -404,7 +410,6 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
         return new CliActionResponse(result, result.Data);
     }
-
 
     [Action("manifests")]
     public static async Task<CliActionResponse> GetAllManifets(CancellationToken cancellationToken = default)

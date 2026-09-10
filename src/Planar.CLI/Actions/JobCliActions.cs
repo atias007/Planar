@@ -434,7 +434,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke<DateTime?>(restRequest, cancellationToken);
-        var message = $"{result?.Data?.ToShortDateString()} {result?.Data?.ToShortTimeString()}";
+        var message = $"{result?.Data?.ToShortDateString()} {result?.Data:HH:mm}";
         return new CliActionResponse(result, message: message);
     }
 
