@@ -137,13 +137,15 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, Periodi
         await producer.PublishAsync(info);
     }
 
+#pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
+
     private async Task InterceptingPublish(InterceptingPublishEventArgs arg)
     {
         try
         {
             var cloudEvent = arg.ApplicationMessage.ToCloudEvent(_formatter);
             //// **** IMPORTANT: keep await to Task.Run to preserve the log order ***** ////
-            await Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg), arg.CancellationToken);
+            await Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg));
         }
         catch (Exception ex)
         {
@@ -160,6 +162,8 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger, Periodi
             // *** DO NOTHING ***
         }
     }
+
+#pragma warning restore S8949 // The overload accepting a 'CancellationToken' should be used
 
     private async Task StartedAsync(EventArgs arg)
     {

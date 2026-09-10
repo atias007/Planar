@@ -124,7 +124,6 @@ namespace Planar.Job
             try
             {
                 await OpenMqttConnection();
-                await SendHealthCheckSignal(1);
                 _ = SendHealthCheckSignal(5);
 
                 Logger = ServiceProvider.GetRequiredService<ILogger>();
@@ -164,7 +163,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                await HandleException(ex);
+                await SafeHandleException(ex);
                 return false;
             }
             finally
@@ -598,11 +597,24 @@ namespace Planar.Job
             return data.Any(k => string.Equals(k.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
+        private async Task SafeHandleException(Exception ex)
+        {
+            try
+            {
+                await HandleException(ex);
+            }
+            catch (Exception inner)
+            {
+                Console.WriteLine(ex);
+                Console.WriteLine(inner);
+            }
+        }
+
         private async Task HandleException(Exception ex)
         {
             if (ex is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
             {
-                await HandleException(aggregateException.InnerExceptions[0]);
+                await SafeHandleException(aggregateException.InnerExceptions[0]);
                 return;
             }
 
@@ -762,7 +774,7 @@ namespace Planar.Job
             try
             {
                 var ex = new PlanarJobException("Execution timeout. Terminate application");
-                await HandleException(ex);
+                await SafeHandleException(ex);
             }
             catch
             {

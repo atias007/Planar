@@ -28,8 +28,8 @@ internal static class CliPromptUtil
     }
 
     internal static CliSelectItem<T>? PromptSelection<T>(
-        IEnumerable<CliSelectItem<T>>? items, 
-        string title, bool 
+        IEnumerable<CliSelectItem<T>>? items,
+        string title, bool
         writeSelection = true,
         bool throwWarning = true)
     {

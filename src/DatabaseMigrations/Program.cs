@@ -18,6 +18,7 @@ while (counter > 0)
     counter--;
 }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 static void Run(string[] args)
 {
     var executer = new Executer();
@@ -98,6 +99,7 @@ static void Run(string[] args)
 
     AssertStatus();
 }
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 static RunningMode GetRunningMode(string[] args)
 {
     string modeText;
@@ -210,6 +212,7 @@ static string GetConnectionString(RunningEnvironment environment)
     return connectionString;
 }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 static void AddScript()
 {
     var name = AnsiConsole.Prompt(
@@ -308,6 +311,7 @@ static void AddScript()
         WriteError(ex.Message);
     }
 }
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 
 static void WriteError(string text)
 {

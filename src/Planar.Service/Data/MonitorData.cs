@@ -393,7 +393,10 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .Where(a => a.Id == id);
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public IQueryable<MonitorAlert> GetMonitorAlerts(GetMonitorsAlertsRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var query = _context.MonitorAlerts.AsNoTracking();
 

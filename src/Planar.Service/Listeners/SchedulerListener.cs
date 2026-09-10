@@ -14,7 +14,6 @@ namespace Planar.Service.Listeners;
 
 internal class SchedulerListener(
     IServiceScopeFactory serviceScopeFactory,
-    JobDetailsResolver resolver,
     ILogger<SchedulerListener> logger)
     : BaseListener<SchedulerListener>(serviceScopeFactory, logger), ISchedulerListener
 {
@@ -157,8 +156,6 @@ internal class SchedulerListener(
         return Task.Run(async () =>
         {
             if (IsLocked(nameof(SchedulerStarted), null)) { return; }
-            _ = resolver.FillCache();
-
             _logger.LogInformation("scheduler started");
             var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
             SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);

@@ -645,7 +645,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
             dbcontext.MonitorAlerts.AddRange(items);
-            await dbcontext.SaveChangesAsync();
+            await dbcontext.SaveChangesAsync(context.CancellationToken);
         }
         catch (Exception ex)
         {

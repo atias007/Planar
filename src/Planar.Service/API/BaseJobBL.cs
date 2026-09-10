@@ -58,32 +58,6 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         AuditInnerSafe(audit);
     }
 
-    protected void SafeRefreshJobDetailsCache()
-    {
-        try
-        {
-            var resolver = Resolve<JobDetailsResolver>();
-            _ = resolver.FillCache(1);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to refresh job details cache");
-        }
-    }
-
-    protected void SafeRemoveJobDetailsCache(JobKey jobKey)
-    {
-        try
-        {
-            var resolver = Resolve<JobDetailsResolver>();
-            _ = resolver.RemoveJob(jobKey);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to refresh job details cache");
-        }
-    }
-
     protected void AuditTriggerSafe(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
     {
         var context = Resolve<IHttpContextAccessor>();

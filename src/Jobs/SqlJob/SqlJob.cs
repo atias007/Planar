@@ -59,7 +59,10 @@ public abstract class SqlJob(
         return connections;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private async Task ExecuteSql(IJobExecutionContext context)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         Properties.Steps ??= [];
 

@@ -37,7 +37,10 @@ public class CliActionMetadata
 
     public string CommandsTitle => string.Join('|', Commands);
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public void SetArgumentsDisplayName()
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var defaultArgs = Arguments
             .Where(a => a.Default)
