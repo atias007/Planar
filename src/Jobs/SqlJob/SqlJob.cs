@@ -63,6 +63,12 @@ public abstract class SqlJob(
     {
         Properties.Steps ??= [];
 
+        if (Properties.Steps.Count == 0)
+        {
+            MessageBroker.AppendLog(LogLevel.Warning, "no steps defined for sql job");
+            return;
+        }
+
         var total = Properties.Steps.Count;
         MessageBroker.AppendLog(LogLevel.Information, $"start sql job with {total} steps");
 
@@ -76,7 +82,8 @@ public abstract class SqlJob(
         {
             if (singleConnection)
             {
-                defaultConnection = new SqlConnection(connections[0]);
+                var connectionString = ValidateConnectionName(connections[0]);
+                defaultConnection = new SqlConnection(connectionString);
                 await defaultConnection.OpenAsync(ExecutionCancellationToken);
                 if (Properties.Transaction)
                 {

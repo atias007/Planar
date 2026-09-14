@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.Service.General;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +13,8 @@ namespace Planar.Service.Validation
         public SqlJobPropertiesValidator(ClusterUtil cluster)
         {
             _cluster = cluster;
+
+            RuleFor(s => s.Path).NotEmpty();
 
             RuleFor(j => j.DefaultConnectionName).Length(1, 50);
             RuleFor(j => j.DefaultConnectionName)
@@ -41,7 +44,8 @@ namespace Planar.Service.Validation
 
         private async Task<bool> FilenameExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
         {
-            return await CommonValidations.FilenameExists("filename", step.Filename, _cluster, context);
+            var fullFilename = Path.Combine(properties.Path, step.Filename ?? string.Empty);
+            return await CommonValidations.FilenameExists("filename", fullFilename, _cluster, context);
         }
     }
 }
