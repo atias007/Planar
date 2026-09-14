@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,69 +45,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("apply")]
     public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Filename))
-        {
-            request.Filename = CollectCliValue(new CollectCliValueParameters
-            {
-                Field = "filename",
-                Required = true,
-                MinLength = 2,
-                MaxLength = 500
-            }) ?? string.Empty;
-        }
-
-        var pathInfo = PathAnalyzer.AnalyzePath(request.Filename);
-        IEnumerable<string> files;
-        if (pathInfo.IsFolder)
-        {
-            files = Directory.EnumerateFiles(pathInfo.Path, pathInfo.Pattern, SearchOption.TopDirectoryOnly);
-        }
-        else
-        {
-            files = [pathInfo.Path];
-        }
-
-        var sb = new List<string>();
-        var counter = 0;
-        foreach (var file in files)
-        {
-            var fi = new FileInfo(file);
-            if (
-                !string.Equals(fi.Extension, ".yml", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(fi.Extension, ".yaml", StringComparison.OrdinalIgnoreCase)) { continue; }
-
-            var (content, success) = await SafeReadFile(file, cancellationToken);
-            if (success)
-            {
-                if (counter > 100) { throw new CliWarningException("apply command can handle no more then 100 files"); }
-
-                AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/]");
-                content = AddSourceFilenameToYmlContent(content, fi.Name);
-                sb.Add(content);
-                counter++;
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/] [red]error read file. skip apply. message: {content.EscapeMarkup()}[/]");
-            }
-        }
-
-        if (counter == 0)
-        {
-            AnsiConsole.MarkupLine($"[gray] > no yml files found. skip apply[/]");
-            return CliActionResponse.Empty;
-        }
-
-        var body = string.Join("\r\n---\r\n", sb).Trim();
-
-        AnsiConsole.MarkupLine($"[gray] --- total {counter} file(s) ---[/]");
-        AnsiConsole.MarkupLine("[gray] > send apply request...[/]");
-        var restRequestAdd = new RestRequest("monitor/apply", Method.Post)
-            .AddStringBody(body, CliConsts.YamlContentType);
-
-        var resultApply = await RestProxy.Invoke<CliApplyResponse>(restRequestAdd, cancellationToken);
-        var tables = CliTableExtensions.GetTable(resultApply.Data);
-        return new CliActionResponse(resultApply, tables);
+        return await Apply("monitor", request, cancellationToken);
     }
 
     [Action("remove")]
@@ -441,19 +378,6 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
-    }
-
-    private static async Task<(string Content, bool Success)> SafeReadFile(string filename, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var content = await File.ReadAllTextAsync(filename, cancellationToken);
-            return string.IsNullOrWhiteSpace(content) ? ("file is empty", false) : (content, true);
-        }
-        catch (Exception ex)
-        {
-            return (ex.Message, false);
-        }
     }
 
     private static async Task<CliPromptWrapper> FillAddHookRequest(CliAddHookjRequest request, CancellationToken cancellationToken)
@@ -1081,12 +1005,6 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 
         result ??= CliActionResponse.GetGenericSuccessRestResponse();
         return result;
-    }
-
-    private static string AddSourceFilenameToYmlContent(string ymlContent, string sourceFilename)
-    {
-        const string source = "source: ";
-        return $"{source}{sourceFilename}{Environment.NewLine}{ymlContent}";
     }
 
     private struct TestMonitorData

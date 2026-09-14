@@ -14,7 +14,6 @@ using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -32,29 +31,37 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         var yamlGroups = yamls.GroupBy(y => y.Key, StringComparer.OrdinalIgnoreCase);
 
         // Validate known kinds
-        // TODO: Implement validation logic for known kinds
-
-        var jobs = yamlGroups.FirstOrDefault(g => g.Key.Equals("job", StringComparison.OrdinalIgnoreCase));
-        var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals("monitor", StringComparison.OrdinalIgnoreCase));
-
-        var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
-        var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
+        foreach (var item in yamlGroups)
+        {
+            if (!Manifest.IsValid(item.Key))
+            {
+                throw new RestValidationException("kind", $"kind '{item.Key}' is not valid. valid kinds are: {string.Join(", ", Manifest.All)}");
+            }
+        }
 
         var responses = new List<ApplyResponse>();
 
+        // Apply Jobs
+        var jobs = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Job, StringComparison.OrdinalIgnoreCase));
         if (jobs != null)
         {
+            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
             var response = await jobDomain.Apply([.. jobs], httpContext.RequestAborted);
             responses.Add(response);
         }
 
+        // Apply Monitors
+        var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
         if (monitors != null)
         {
+            var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
             var monitorResponse = await monitorDomain.Apply([.. monitors], httpContext.RequestAborted);
             responses.Add(monitorResponse);
         }
 
+        // Merge all responses
         var result = ApplyResponse.Merge(responses);
+
         return result;
     }
 
@@ -299,7 +306,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
     public static string GetManifest(string manifestName)
     {
-        if (!ServiceUtil.Manifests.TryGetValue(manifestName, out var manifest))
+        if (!Manifest.All.TryGetValue(manifestName, out var manifest))
         {
             throw new RestNotFoundException($"manifest '{manifestName}' could not be found");
         }
