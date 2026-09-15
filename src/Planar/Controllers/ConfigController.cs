@@ -29,6 +29,18 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
         return Ok(result);
     }
 
+    [HttpGet("keys")]
+    [EditorAuthorize]
+    [EndpointName("get_config_keys")]
+    [EndpointDescription("Get all global configuration keys")]
+    [EndpointSummary("Get All Global Configuration Keys")]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetAllKeys()
+    {
+        var result = await BusinesLayer.GetAllKeys();
+        return Ok(result);
+    }
+
     [HttpGet("flat")]
     [EditorAuthorize]
     [EndpointName("get_config_flat")]

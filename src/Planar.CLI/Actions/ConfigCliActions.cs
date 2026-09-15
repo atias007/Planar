@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
@@ -15,16 +16,62 @@ namespace Planar.CLI.Actions;
 [Module("config", "add, remove, list & update global parameters", Synonyms = "configs")]
 public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 {
-    [Action("get")]
-    public static async Task<CliActionResponse> GetConfig(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
+    [Action("add")]
+    public static async Task<CliActionResponse> Add(CliAddConfigRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Key));
+        var wrapper = FillCliAddConfigRequest(request);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
 
-        var restRequest = new RestRequest("config/{key}", Method.Get)
-            .AddParameter("key", request.Key, ParameterType.UrlSegment);
-        var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
+        var data = new { request.Key, request.Value, IsSecret = false };
+        var restRequest = new RestRequest("config", Method.Post)
+            .AddBody(data);
 
-        return new CliActionResponse(result, message: result.Data?.Value);
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("add-secret")]
+    public static async Task<CliActionResponse> AddSecret(CliAddConfigRequest request, CancellationToken cancellationToken = default)
+    {
+        var wrapper = FillCliAddConfigRequest(request);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var data = new { request.Key, request.Value, IsSecret = true };
+        var restRequest = new RestRequest("config", Method.Post)
+            .AddBody(data);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("add-url")]
+    public static async Task<CliActionResponse> AddUrl(CliAddUrlConfigRequest request, CancellationToken cancellationToken = default)
+    {
+        var wrapper = FillCliAddUrlConfigRequest(request);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var data = new { request.Key, request.SourceUrl, IsSecret = false };
+        var restRequest = new RestRequest("config", Method.Post)
+            .AddBody(data);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("flush")]
+    public static async Task<CliActionResponse> Flush(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("config/flush", Method.Post);
+        return await Execute(restRequest, cancellationToken);
     }
 
     [Action("ls")]
@@ -45,58 +92,16 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
     }
 
-    [Action("add")]
-    public static async Task<CliActionResponse> Add(CliAddConfigRequest request, CancellationToken cancellationToken = default)
-    {
-        FillCliAddConfigRequest(request);
-
-        var data = new { request.Key, request.Value, request.SourceUrl, IsSecret = false };
-        var restRequest = new RestRequest("config", Method.Post)
-            .AddBody(data);
-
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        return new CliActionResponse(result);
-    }
-
-    private static void FillCliAddConfigRequest(CliAddConfigRequest request)
+    [Action("get")]
+    public static async Task<CliActionResponse> GetConfig(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredString(request, nameof(request.Key));
 
-        if (string.IsNullOrWhiteSpace(request.SourceUrl))
-        {
-            FillOptionalString(request, nameof(request.Value));
-        }
+        var restRequest = new RestRequest("config/{key}", Method.Get)
+            .AddParameter("key", request.Key, ParameterType.UrlSegment);
+        var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(request.SourceUrl)) { request.SourceUrl = null; }
-
-        if (string.IsNullOrWhiteSpace(request.Value))
-        {
-            FillOptionalString(request, nameof(request.SourceUrl));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
-    }
-
-    [Action("add-secret")]
-    public static async Task<CliActionResponse> AddSecret(CliAddConfigRequest request, CancellationToken cancellationToken = default)
-    {
-        FillCliAddConfigRequest(request);
-
-        var data = new { request.Key, request.Value, request.SourceUrl, IsSecret = true };
-        var restRequest = new RestRequest("config", Method.Post)
-            .AddBody(data);
-
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        return new CliActionResponse(result);
-    }
-
-    [Action("load-yml")]
-    public static async Task<CliActionResponse> LoadYml(CliConfigFileRequest request, CancellationToken cancellationToken = default)
-    {
-        FillRequiredString(request, nameof(request.Key));
-        FillRequiredString(request, nameof(request.Filename));
-
-        return await LoadConfig(request, GlobalConfigTypes.Yml, cancellationToken);
+        return new CliActionResponse(result, message: result.Data?.Value);
     }
 
     [Action("load-json")]
@@ -108,24 +113,13 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         return await LoadConfig(request, GlobalConfigTypes.Json, cancellationToken);
     }
 
-    [Action("update")]
-    public static async Task<CliActionResponse> Update(CliAddConfigRequest request, CancellationToken cancellationToken = default)
+    [Action("load-yml")]
+    public static async Task<CliActionResponse> LoadYml(CliConfigFileRequest request, CancellationToken cancellationToken = default)
     {
-        FillCliAddConfigRequest(request);
+        FillRequiredString(request, nameof(request.Key));
+        FillRequiredString(request, nameof(request.Filename));
 
-        var data = new { request.Key, request.Value, request.SourceUrl };
-        var restRequest = new RestRequest("config", Method.Put)
-            .AddBody(data);
-
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        return new CliActionResponse(result);
-    }
-
-    [Action("flush")]
-    public static async Task<CliActionResponse> Flush(CancellationToken cancellationToken = default)
-    {
-        var restRequest = new RestRequest("config/flush", Method.Post);
-        return await Execute(restRequest, cancellationToken);
+        return await LoadConfig(request, GlobalConfigTypes.Yml, cancellationToken);
     }
 
     [Action("remove")]
@@ -139,6 +133,99 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         var restRequest = new RestRequest("config/{key}", Method.Delete)
             .AddParameter("key", request.Key, ParameterType.UrlSegment);
         return await Execute(restRequest, cancellationToken);
+    }
+
+    [Action("update")]
+    public static async Task<CliActionResponse> Update(CliUpdateConfigRequest request, CancellationToken cancellationToken = default)
+    {
+        var wrapper = await FillCliUpdateConfigRequest(request, cancellationToken);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var data = new { request.Key, request.Value, request.SourceUrl };
+        var restRequest = new RestRequest("config", Method.Put)
+            .AddBody(data);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    private static CliPromptWrapper FillCliAddConfigRequest(CliAddConfigRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Key))
+        {
+            FillRequiredString(request, nameof(request.Key));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Value))
+        {
+            FillOptionalString(request, nameof(request.Value));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
+
+        return CliPromptWrapper.Success;
+    }
+
+    private static CliPromptWrapper FillCliAddUrlConfigRequest(CliAddUrlConfigRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Key))
+        {
+            FillRequiredString(request, nameof(request.Key));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SourceUrl))
+        {
+            FillOptionalString(request, nameof(request.SourceUrl));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SourceUrl)) { request.SourceUrl = null; }
+
+        return CliPromptWrapper.Success;
+    }
+
+    private static async Task<CliPromptWrapper> FillCliUpdateConfigRequest(CliUpdateConfigRequest request, CancellationToken cancellationToken)
+    {
+        RestResponse<CliGlobalConfig> result;
+
+        if (string.IsNullOrWhiteSpace(request.Key))
+        {
+            FillRequiredString(request, nameof(request.Key));
+        }
+
+        try
+        {
+            var restRequest = new RestRequest("config/{key}", Method.Get)
+                .AddParameter("key", request.Key, ParameterType.UrlSegment);
+            result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
+            if (!result.IsSuccessful || result.Data == null) { return new CliPromptWrapper<string>(result); }
+        }
+        catch (Exception ex)
+        {
+            throw new CliException($"fail to get data for config key '{request.Key}'. {ex.Message}");
+        }
+
+        if (string.IsNullOrWhiteSpace(result.Data.SourceUrl))
+        {
+            if (string.IsNullOrWhiteSpace(request.Value))
+            {
+                FillOptionalString(request, nameof(request.Value));
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.SourceUrl))
+            {
+                FillOptionalString(request, nameof(request.SourceUrl));
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
+        if (string.IsNullOrWhiteSpace(request.SourceUrl)) { request.SourceUrl = null; }
+
+        return CliPromptWrapper.Success;
     }
 
     private static async Task<CliActionResponse> LoadConfig(CliConfigFileRequest request, GlobalConfigTypes configType, CancellationToken cancellationToken)

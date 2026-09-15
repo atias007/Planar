@@ -94,6 +94,24 @@ public class MonitorScanProducer(Channel<MonitorScanMessage> channel, ILogger<Mo
                 await channel.Writer.WriteAsync(message, cancellationToken).ConfigureAwait(false);
             }
         }
+        catch (OperationCanceledException)
+        {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("publish monitor scan message canceled. the message: {@Message}", message);
+            }
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+        }
+        catch (ChannelClosedException)
+        {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("publish monitor scan message canceled. the message: {@Message}", message);
+            }
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "fail to publish monitor scan message. the message: {@Message}", message);

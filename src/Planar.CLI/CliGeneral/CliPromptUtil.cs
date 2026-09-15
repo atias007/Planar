@@ -18,6 +18,7 @@ internal static class CliPromptUtil
     private const string group = "group";
     private const string noAvaliableUsers = "no available users to perform the opertaion";
     private const string noAvaliableGroups = "no available groups to perform the opertaion";
+    private const string noAvaliableConfigs = "no available configs to perform the opertaion";
 
     internal static string? PromptSelection(IEnumerable<string>? items, string title, bool writeSelection = true)
     {
@@ -28,8 +29,8 @@ internal static class CliPromptUtil
     }
 
     internal static CliSelectItem<T>? PromptSelection<T>(
-        IEnumerable<CliSelectItem<T>>? items, 
-        string title, bool 
+        IEnumerable<CliSelectItem<T>>? items,
+        string title, bool
         writeSelection = true,
         bool throwWarning = true)
     {
@@ -292,6 +293,26 @@ internal static class CliPromptUtil
 
         var select = PromptSelection(items, "user");
         return new CliPromptWrapper<string>(select);
+    }
+
+    internal static async Task<CliPromptWrapper<string>> GlobalConfigs(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("config/keys", Method.Get);
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        if (!result.IsSuccessful)
+        {
+            return new CliPromptWrapper<string>(result);
+        }
+
+        var data = result.Data;
+        if (data == null || !data.Any())
+        {
+            throw new CliWarningException(noAvaliableConfigs);
+        }
+
+        var items = data.Select(g => new CliSelectItem<string> { DisplayName = g, Value = g });
+        var select = PromptSelection(items, "key");
+        return new CliPromptWrapper<string>(select?.Value ?? string.Empty);
     }
 
     internal static async Task<CliPromptWrapper<string>> Reports(CancellationToken cancellationToken)
