@@ -262,7 +262,7 @@ public abstract class BaseCliAction
         var info = ReflectionHelper.GetPropertyInfo<T>(propertyName);
         var value = info.GetValue(entity)?.ToString();
         var attribute = ReflectionHelper.GetActionPropertyAttribute<T>(propertyName);
-        var displayName = attribute.DisplayName ?? string.Empty;
+        var displayName = attribute.InputDisplayName ?? attribute.DisplayName ?? string.Empty;
         if (string.IsNullOrWhiteSpace(displayName)) { displayName = propertyName; }
 
         if (IsEmpty(value, info.PropertyType)) { value = string.Empty; }

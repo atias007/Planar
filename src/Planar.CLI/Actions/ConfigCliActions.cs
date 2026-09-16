@@ -95,7 +95,11 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     [Action("get")]
     public static async Task<CliActionResponse> GetConfig(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Key));
+        var wrapper = await FillCliConfigKeyRequest(request, cancellationToken);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
 
         var restRequest = new RestRequest("config/{key}", Method.Get)
             .AddParameter("key", request.Key, ParameterType.UrlSegment);
@@ -126,8 +130,11 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     [Action("delete")]
     public static async Task<CliActionResponse> RemoveConfig(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Key));
-
+        var wrapper = await FillCliConfigKeyRequest(request, cancellationToken);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
         if (!ConfirmAction($"remove config '{request.Key}'")) { return CliActionResponse.Empty; }
 
         var restRequest = new RestRequest("config/{key}", Method.Delete)
@@ -150,6 +157,18 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
+    }
+
+    private static async Task<CliPromptWrapper> FillCliConfigKeyRequest(CliConfigKeyRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(request.Key))
+        {
+            var p1 = await CliPromptUtil.GlobalConfigs(cancellationToken);
+            if (!p1.IsSuccessful) { return p1; }
+            request.Key = p1.Value ?? string.Empty;
+        }
+
+        return CliPromptWrapper.Success;
     }
 
     private static CliPromptWrapper FillCliAddConfigRequest(CliAddConfigRequest request)
@@ -190,11 +209,12 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         RestResponse<CliGlobalConfig> result;
 
-        if (string.IsNullOrWhiteSpace(request.Key))
-        {
-            FillRequiredString(request, nameof(request.Key));
-        }
+        // Key
+        var response = await FillCliConfigKeyRequest(request, cancellationToken);
+        if (!response.IsSuccessful) { return response; }
 
+
+        // Get db config
         try
         {
             var restRequest = new RestRequest("config/{key}", Method.Get)
@@ -207,18 +227,20 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
             throw new CliException($"fail to get data for config key '{request.Key}'. {ex.Message}");
         }
 
-        if (string.IsNullOrWhiteSpace(result.Data.SourceUrl))
+        if (string.IsNullOrWhiteSpace(result.Data.SourceUrl)) // this is value config
         {
             if (string.IsNullOrWhiteSpace(request.Value))
             {
-                FillOptionalString(request, nameof(request.Value));
+                var currentValue = result.Data.Value ?? string.Empty;
+                var defaultValue = currentValue.Length > 50 ? currentValue[..50] : currentValue;
+                FillRequiredString(request, nameof(request.Value), defaultValue);
             }
         }
-        else
+        else // this is url config
         {
             if (string.IsNullOrWhiteSpace(request.SourceUrl))
             {
-                FillOptionalString(request, nameof(request.SourceUrl));
+                FillRequiredString(request, nameof(request.SourceUrl));
             }
         }
 
