@@ -19,10 +19,13 @@ namespace Planar.Service.API;
 
 public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigDomain, IConfigData>(serviceProvider)
 {
-    public async Task<IEnumerable<KeyValueItem>> GetAllFlat(CancellationToken stoppingToken = default)
+    public async Task<PagingResponse<KeyValueItem>> GetAllFlat(PagingRequest request, CancellationToken stoppingToken = default)
     {
         var final = await LoadConfigFlat(decrypt: false, stoppingToken);
-        return final.Select(kv => new KeyValueItem { Key = kv.Key, Value = kv.Value });
+        var items = final.Select(kv => new KeyValueItem { Key = kv.Key, Value = kv.Value })
+            .SetPaging(request)
+            .ToList();
+        return new PagingResponse<KeyValueItem>(request, items, final.Count);
     }
 
     public async Task Add(GlobalConfigModelAddRequest request)
@@ -149,11 +152,11 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return result;
     }
 
-    public async Task<IEnumerable<GlobalConfigModel>> GetAll()
+    public async Task<PagingResponse<GlobalConfigModel>> GetAll(PagingRequest request)
     {
-        var data = await DataLayer.GetAllGlobalConfig();
-        var result = GlobalConfig.ToGlobalConfigModel(data);
-        return result;
+        var data = await DataLayer.GetAllGlobalConfigWithPaging(request);
+        var items = GlobalConfig.ToGlobalConfigModel(data.Data ?? []).ToList();
+        return new PagingResponse<GlobalConfigModel>(request, items, data.TotalRows);
     }
 
     public async Task<IEnumerable<string>> GetAllKeys()

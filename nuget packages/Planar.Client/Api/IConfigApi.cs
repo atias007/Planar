@@ -7,9 +7,9 @@ namespace Planar.Client.Api
 {
     public interface IConfigApi
     {
-        Task<IEnumerable<GlobalConfig>> ListAsync(CancellationToken cancellationToken = default);
+        Task<PagingResponse<GlobalConfig>> ListAsync(CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<KeyValueItem>> ListFlatAsync(CancellationToken cancellationToken = default);
+        Task<PagingResponse<KeyValueItem>> ListFlatAsync(CancellationToken cancellationToken = default);
 
         Task<GlobalConfig> GetAsync(string key, CancellationToken cancellationToken = default);
 

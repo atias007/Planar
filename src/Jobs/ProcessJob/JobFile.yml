@@ -8,7 +8,7 @@ author: israel israeli (sales)        # The author/responsible person of the job
 durable: true                         # Boolean [true/false]. The nondurable job will be deleted from the system if there are no future triggers are defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
-
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 properties:                           # Job Properties
   filename: HelloWorld.exe            # Name process executable file [mandatory, up to 500 characters]
   domain: null                        # (*) The active directory domain name (only on windows OS) [up to 100 characters]
@@ -25,13 +25,13 @@ properties:                           # Job Properties
     - -2
   success output regex: "[Ss]uccess"  # Regular expression to define success run
   fail output regex: "[Ee]rror"       # Regular expression to define fail run
-
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 circuit breaker:
   enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker
   failure threshold: 5                # The number of failures that will trip the circuit breaker [2 to 100]
   success threshold: 1                # The number of successes that will reset the circuit breaker [1 to 100]
   pause span: 01:00:00                # The time span which the circuit breaker will pause the job execution. set null value for permanent pause. minimum value is 5 minutes
-
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     start: 2021-09-19 00:00:00        # Start date
@@ -49,7 +49,7 @@ simple triggers:                      # List of simple triggers
       key4: value4                    # -------------------------------------------------------
       key5: value5                    # key --> [1 to 100 characters]
       key6: value6                    # value --> [up to 1000 characters]
-
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     cron expression: 0 15 10 ? * MON-FRI     # Cron expression [mandatory]
@@ -64,6 +64,7 @@ cron triggers:                               # List of cron triggers
       key7: value7                           # -------------------------------------------------------
       key8: value8                           # key --> [1 to 100 characters]
       key9: value9                           # value --> [up to 1000 characters]
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 
 ##############################################################################################################################
 # if you want to update the effected rows you should write to stdout the following format: <<planar.effectedrows:100>>

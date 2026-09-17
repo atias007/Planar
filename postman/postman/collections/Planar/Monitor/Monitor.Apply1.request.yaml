@@ -33,7 +33,7 @@ body:
 
     kind: monitor\r
 
-    title: some monitor title2\r
+    title: some monitor title3\r
 
     event: execution fail\r
 

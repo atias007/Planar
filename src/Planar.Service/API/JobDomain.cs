@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Asn1.Kisa;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
@@ -20,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -226,12 +226,24 @@ public partial class JobDomain(
                 new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Unchanged, $"job {details.Key.Group}.{details.Key.Name} was unchanged") :
                 new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Update, $"job {details.Key.Group}.{details.Key.Name} updated");
 
+            if (!wrapper.Unchanged)
+            {
+                AuditJobSafe(details.Key, "job was applied (update)", response.Description);
+            }
+
             return response;
         }
         catch (RestNotFoundException)
         {
             var response = await Add(dynamicRequest);
-            return new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {dynamicRequest.Group}.{dynamicRequest.Name} added");
+            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {dynamicRequest.Group}.{dynamicRequest.Name} added");
+
+            if (jobKey != null)
+            {
+                AuditJobSafe(jobKey, "job was applied (add)", applyResponse.Description);
+            }
+
+            return applyResponse;
         }
     }
 
@@ -480,7 +492,7 @@ public partial class JobDomain(
         [YamlMember(Alias = "job type")]
         public string? JobType { get; set; }
 
-        public string? Name { get; set; } = null!;
+        public string? Name { get; set; } = null;
     }
 
     public async Task<string> GetJobFilename(string id)
@@ -631,7 +643,7 @@ public partial class JobDomain(
             }
         }
 
-        result = result.Where(r => r.Group != Consts.PlanarSystemGroup).ToList();
+        result = [.. result.Where(r => r.Group != Consts.PlanarSystemGroup)];
 
         FillEstimatedEndTime(result);
 

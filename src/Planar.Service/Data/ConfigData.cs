@@ -14,6 +14,8 @@ public interface IConfigData : IBaseDataLayer
 
     Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default);
 
+    Task<PagingResponse<GlobalConfig>> GetAllGlobalConfigWithPaging(PagingRequest request);
+
     Task<IEnumerable<GlobalConfig>> GetExternalSourceGlobalConfig(CancellationToken stoppingToken = default);
 
     Task<IEnumerable<string>> GetAllGlobalConfigKeys(CancellationToken stoppingToken = default);
@@ -57,6 +59,16 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
             .AsNoTracking()
             .OrderBy(p => p.Key)
             .ToListAsync(stoppingToken);
+        return result;
+    }
+
+    public async Task<PagingResponse<GlobalConfig>> GetAllGlobalConfigWithPaging(PagingRequest request)
+    {
+        var result = await _context.GlobalConfigs
+            .AsNoTracking()
+            .OrderBy(p => p.Key)
+            .ToPagingListAsync(request);
+
         return result;
     }
 

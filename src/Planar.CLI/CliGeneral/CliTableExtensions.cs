@@ -112,6 +112,7 @@ internal static class CliTableExtensions
         table1.Table.AddRow("Add", CliTableFormat.FormatSummaryNumber(response.TotalAdd));
         table1.Table.AddRow("Update", CliTableFormat.FormatSummaryNumber(response.TotalUpdate));
         table1.Table.AddRow("Unchanged", CliTableFormat.FormatSummaryNumber(response.TotalUnchanged));
+        table1.Table.AddRow("Errors", CliTableFormat.FormatSummaryNumber(response.TotalErrors, "red"));
 
         var table2 = new CliTable { Title = "Details" };
         if (response == null) { return [table1]; }
@@ -121,7 +122,8 @@ internal static class CliTableExtensions
         {
             foreach (var item in g)
             {
-                table2.Table.AddRow(item.Action, SafeCliString(item.Source), SafeCliString(item.Description));
+                var action = item.ActionId == 99 ? CliFormat.GetErrorMarkup(item.Action) : item.Action;
+                table2.Table.AddRow(action, SafeCliString(item.Source), SafeCliString(item.Description));
             }
         }
 
@@ -335,12 +337,13 @@ internal static class CliTableExtensions
         return table;
     }
 
-    public static CliTable GetTable(IEnumerable<KeyValueItem>? response)
+    public static CliTable GetTable(PagingResponse<KeyValueItem>? response)
     {
-        var table = new CliTable(showCount: true);
-        if (response == null) { return table; }
+        var table = new CliTable(paging: response);
         table.Table.AddColumns("Key", ColumnValue);
-        foreach (var item in response)
+
+        if (response == null || response.Data == null) { return table; }
+        foreach (var item in response.Data)
         {
             if (item == null) { continue; }
             table.Table.AddRow(SafeCliString(item.Key), LimitValue(item.Value));
@@ -810,13 +813,13 @@ internal static class CliTableExtensions
         return table;
     }
 
-    internal static CliTable GetTable(List<CliGlobalConfig>? response)
+    internal static CliTable GetTable(PagingResponse<CliGlobalConfig>? response)
     {
-        var table = new CliTable(showCount: true);
+        var table = new CliTable(paging: response);
         table.Table.AddColumns("Key", ColumnValue, "Type", "Source Url", "Is Secret", "Last Update");
 
-        if (response == null) { return table; }
-        response.ForEach(r => table.Table.AddRow(
+        if (response == null || response.Data == null) { return table; }
+        response.Data.ForEach(r => table.Table.AddRow(
             r.Key.EscapeMarkup(),
             SafeCliString(LimitValue(r.Value)),
             r.Type?.EscapeMarkup() ?? string.Empty,

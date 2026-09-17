@@ -322,7 +322,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return result;
     }
 
-    protected async Task<IEnumerable<T>> GetApplyEntities<T>(
+    protected async Task<IReadOnlyCollection<T>> GetApplyEntities<T>(
         IEnumerable<KeyValuePair<string, string>> yamls,
         string kind,
         CancellationToken cancellationToken,

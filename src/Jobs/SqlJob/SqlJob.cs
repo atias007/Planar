@@ -10,7 +10,6 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using System.Threading;
 
 namespace Planar;
 

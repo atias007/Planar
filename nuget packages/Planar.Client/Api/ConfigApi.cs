@@ -87,17 +87,17 @@ namespace Planar.Client.Api
             return result;
         }
 
-        public async Task<IEnumerable<GlobalConfig>> ListAsync(CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<GlobalConfig>> ListAsync(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("config", HttpMethod.Get);
-            var result = await _proxy.InvokeAsync<IEnumerable<GlobalConfig>>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<PagingResponse<GlobalConfig>>(restRequest, cancellationToken);
             return result;
         }
 
-        public async Task<IEnumerable<KeyValueItem>> ListFlatAsync(CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<KeyValueItem>> ListFlatAsync(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("config/flat", HttpMethod.Get);
-            var result = await _proxy.InvokeAsync<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<PagingResponse<KeyValueItem>>(restRequest, cancellationToken);
             return result;
         }
 

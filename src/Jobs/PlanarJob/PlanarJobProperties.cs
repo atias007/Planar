@@ -4,7 +4,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class PlanarJobProperties : IFileJobProperties
+public class PlanarJobProperties : IFileJobProperties, IPlanarJobProperties
 {
     [YamlMember(Alias = "invoke method", Order = 0)]
     public string InvokeMethod { get; set; } = null!;

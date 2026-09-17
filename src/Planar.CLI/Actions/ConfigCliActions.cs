@@ -82,13 +82,15 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 
         if (request.Flat)
         {
-            restRequest = new RestRequest("config/flat", Method.Get);
-            return await ExecuteTable<List<KeyValueItem>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            restRequest = new RestRequest("config/flat", Method.Get)
+                .AddQueryPagingParameter(request);
+            return await ExecuteTable<PagingResponse<KeyValueItem>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
         else
         {
-            restRequest = new RestRequest("config", Method.Get);
-            return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            restRequest = new RestRequest("config", Method.Get)
+                .AddQueryPagingParameter(request);
+            return await ExecuteTable<PagingResponse<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
     }
 
@@ -212,7 +214,6 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         // Key
         var response = await FillCliConfigKeyRequest(request, cancellationToken);
         if (!response.IsSuccessful) { return response; }
-
 
         // Get db config
         try

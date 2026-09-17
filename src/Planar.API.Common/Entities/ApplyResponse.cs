@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net;
 
 namespace Planar.API.Common.Entities;
 
@@ -8,6 +9,7 @@ public class ApplyResponse
     public int TotalAdd { get; private set; }
     public int TotalDelete { get; private set; }
     public int TotalUnchanged { get; private set; }
+    public int TotalErrors { get; private set; }
     public List<ApplyResponseItem> Items { get; private set; } = [];
 
     public void AddItem(ApplyResponseItem item)
@@ -30,7 +32,24 @@ public class ApplyResponse
             case (int)ApplyAction.Unchanged:
                 TotalUnchanged++;
                 break;
+
+            case (int)ApplyAction.Error:
+                TotalErrors++;
+                break;
+
+            default:
+                break;
         }
+    }
+
+    public HttpStatusCode GetStatusCode()
+    {
+        if (TotalErrors == 0)
+        {
+            return HttpStatusCode.OK;
+        }
+
+        return HttpStatusCode.MultiStatus;
     }
 
     public static ApplyResponse Merge(IEnumerable<ApplyResponse> responses)
@@ -62,5 +81,7 @@ public enum ApplyAction
     Add,
     Update,
     Delete,
-    Unchanged
+    Unchanged,
+    Skipped,
+    Error = 99
 }

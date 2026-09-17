@@ -8,6 +8,7 @@ internal class CliApplyResponse
     public int TotalAdd { get; set; }
     public int TotalDelete { get; set; }
     public int TotalUnchanged { get; set; }
+    public int TotalErrors { get; set; }
     public List<CliApplyResponseItem> Items { get; set; } = [];
 }
 
