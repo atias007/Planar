@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Planar.Common;
 using Planar.Service.General;
 using System;
@@ -14,8 +15,11 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
     {
         RuleFor(e => e.InvokeMethod)
             .NotEmpty()
+            .WithMessage("'invoke method' must not be empty");
+
+        RuleFor(e => e.InvokeMethod)
             .Must(value => AllowedInvokeMethods.Any(method => string.Equals(method, value, StringComparison.OrdinalIgnoreCase)))
-            .WithMessage($"invoke method must be one of: {string.Join(", ", AllowedInvokeMethods)}");
+            .WithMessage($"'invoke method' must be one of: {string.Join(", ", AllowedInvokeMethods)}");
 
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         RuleFor(e => e.Process)
@@ -37,7 +41,7 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
         RuleFor(e => e.EncryptPayload)
             .Equal(false)
             .When(_ => AppSettings.General.EncryptionKeyBytes == null)
-            .WithMessage("encrypt payload is not supported when encryption key is not set. (general section at appsettings.yml)");
+            .WithMessage("'encrypt payload' is not supported when planar encryption key is not set. (general section at appsettings.yml)");
 
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
@@ -51,26 +55,25 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
             return count == 1;
         }).WithMessage("exactly one of 'process', 'http', 'redis' or 'rabbitmq' properties must be provided");
 
-        RuleFor(e => e).Must(e =>
-        {
-            if (string.Equals(e.InvokeMethod, "process", StringComparison.OrdinalIgnoreCase))
-            {
-                return e.Process != null;
-            }
-            else if (string.Equals(e.InvokeMethod, "http", StringComparison.OrdinalIgnoreCase))
-            {
-                return e.Http != null;
-            }
-            else if (string.Equals(e.InvokeMethod, "redis", StringComparison.OrdinalIgnoreCase))
-            {
-                return e.Redis != null;
-            }
-            else if (string.Equals(e.InvokeMethod, "rabbitmq", StringComparison.OrdinalIgnoreCase))
-            {
-                return e.RabbitMq != null;
-            }
-            return false;
-        }).WithMessage("the property corresponding to the invoke method must be provided");
+        RuleFor(e => e)
+            .Must(e => e.Process != null)
+            .When(e => string.Equals(e.InvokeMethod, "process", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("'process' is null or empty");
+
+        RuleFor(e => e)
+            .Must(e => e.Http != null)
+            .When(e => string.Equals(e.InvokeMethod, "http", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("'http' is null or empty");
+
+        RuleFor(e => e)
+            .Must(e => e.Redis != null)
+            .When(e => string.Equals(e.InvokeMethod, "redis", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("'redis' is null or empty");
+
+        RuleFor(e => e)
+            .Must(e => e.RabbitMq != null)
+            .When(e => string.Equals(e.InvokeMethod, "rabbitmq", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("'rabbitmq' is null or empty");
     }
 }
 
@@ -78,8 +81,21 @@ public class PlanarJobRabbitMqPropertiesValidator : AbstractValidator<PlanarJobR
 {
     public PlanarJobRabbitMqPropertiesValidator()
     {
-        RuleFor(e => e.Exchange).NotEmpty().MaximumLength(100);
-        RuleFor(e => e.RoutingKey).NotEmpty().MaximumLength(100);
+        RuleFor(e => e.Exchange)
+            .NotEmpty()
+            .WithMessage("'exchange' must not be empty");
+
+        RuleFor(e => e.Exchange)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'exchange' must be 100 characters or fewer. You entered {e.Exchange.Length} characters");
+
+        RuleFor(e => e.RoutingKey)
+            .NotEmpty()
+            .WithMessage("'routing key' must not be empty");
+
+        RuleFor(e => e.RoutingKey)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'routing key' must be 100 characters or fewer. You entered {e.RoutingKey.Length} characters");
     }
 }
 
@@ -87,8 +103,21 @@ public class PlanarJobRedisPropertiesValidator : AbstractValidator<PlanarJobRedi
 {
     public PlanarJobRedisPropertiesValidator()
     {
-        RuleFor(e => e.StreamName).NotEmpty().MaximumLength(100);
-        RuleFor(e => e.ConsumerGroup).NotEmpty().MaximumLength(100);
+        RuleFor(e => e.StreamName)
+            .NotEmpty()
+            .WithMessage("'stream name' must not be empty");
+
+        RuleFor(e => e.StreamName)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'stream name' must be 100 characters or fewer. You entered {e.StreamName.Length} characters");
+
+        RuleFor(e => e.ConsumerGroup)
+            .NotEmpty()
+            .WithMessage("'consumer group' must not be empty");
+
+        RuleFor(e => e.ConsumerGroup)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'consumer group' must be 100 characters or fewer. You entered {e.StreamName.Length} characters");
     }
 }
 
@@ -96,8 +125,25 @@ public class PlanarJobHttpPropertiesValidator : AbstractValidator<PlanarJobHttpP
 {
     public PlanarJobHttpPropertiesValidator()
     {
-        RuleFor(e => e.BaseUrl).NotEmpty().MaximumLength(1000).IsUri();
-        RuleFor(e => e.Route).NotEmpty().Length(2, 100);
+        RuleFor(e => e.BaseUrl)
+            .NotEmpty()
+            .WithMessage("'base url' must not be empty");
+
+        RuleFor(e => e.BaseUrl)
+            .MaximumLength(1000)
+            .WithMessage(e => $"the length of 'base url' must be 1000 characters or fewer. You entered {e.BaseUrl.Length} characters");
+
+        RuleFor(e => e.BaseUrl)
+            .IsUri()
+            .WithMessage("'base url' has invalid url format");
+
+        RuleFor(e => e.Route)
+            .NotEmpty()
+            .WithMessage("'route' must not be empty");
+
+        RuleFor(e => e.Route)
+            .Length(2, 100)
+            .WithMessage(e => $"'route' must be between 2 and 100 characters. You entered {e.Route.Length} characters");
     }
 }
 

@@ -101,7 +101,7 @@ public class RestJobProperties : BaseProperties, IJobProperties, IPathJobPropert
         }
     }
 
-    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
         UserAgent = GetGlobalConfigPropertyPlaceholder(() => UserAgent, parameters) ?? UserAgent;
 

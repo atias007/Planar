@@ -46,7 +46,7 @@ public class SqlJobProperties : IJobProperties, IPathJobProperties, IJobProperti
         }
     }
 
-    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
         // No global config placeholder to set for SqlJobProperties //
     }

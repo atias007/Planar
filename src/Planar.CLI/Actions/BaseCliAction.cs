@@ -547,6 +547,20 @@ public abstract class BaseCliAction
         }
     }
 
+    protected static void AssertCreated(RestResponse<PlanarIdResponseWrapper> response)
+    {
+        if (!response.IsSuccessful) { return; }
+        Util.SetLastJobOrTriggerId(response);
+        if (response.Data?.Unchanged == true || string.IsNullOrWhiteSpace(response.Data?.PlanarId?.Id))
+        {
+            AnsiConsole.MarkupLine("no change");
+        }
+        else
+        {
+            Console.WriteLine(response.Data?.PlanarId?.Id);
+        }
+    }
+
     protected static void AssertJobUpdated(RestResponse<PlanarIdResponse> response)
     {
         if (!response.IsSuccessful) { return; }

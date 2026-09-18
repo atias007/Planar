@@ -52,7 +52,7 @@ public abstract class BaseProcessJobProperties : BaseProperties, IFileJobPropert
     [YamlIgnore]
     public IEnumerable<string> Files => string.IsNullOrWhiteSpace(Filename) ? [] : [Filename];
 
-    public virtual void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public virtual void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
         Domain = GetGlobalConfigPropertyPlaceholder(() => Domain, parameters) ?? Domain;
         Password = GetGlobalConfigPropertyPlaceholder(() => Password, parameters) ?? Password;

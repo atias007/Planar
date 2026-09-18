@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
@@ -26,7 +25,7 @@ namespace Planar.API.Common.Entities
 
         [YamlMember(Alias = "job data")]
         public Dictionary<string, string?> JobData { get; set; } = [];
-        
+
         [YamlMember(Alias = "global config keys")]
         public List<string> GlobalConfigKeys { get; set; } = [];
 

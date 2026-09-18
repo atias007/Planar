@@ -37,7 +37,7 @@ public class SqlTableReportJobProperties : IJobProperties, IPathJobProperties, I
         string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
     ];
 
-    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
         // No global config placeholder to set for SqlTableReportJobProperties //
     }

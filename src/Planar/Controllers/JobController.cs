@@ -69,13 +69,13 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [EndpointDescription("Update job")]
     [EndpointSummary("Update Job")]
     [JsonAndYamlConsumes]
-    [CreatedResponse(typeof(PlanarIdResponse))]
+    [CreatedResponse(typeof(PlanarIdResponseWrapper))]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Update()
+    public async Task<ActionResult<PlanarIdResponseWrapper>> Update()
     {
         var result = await BusinesLayer.UpdateRoute(HttpContext);
-        if (string.IsNullOrWhiteSpace(result.Id))
+        if (result.Unchanged)
         {
             return Created();
         }

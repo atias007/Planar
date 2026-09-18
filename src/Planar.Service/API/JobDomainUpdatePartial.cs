@@ -18,7 +18,7 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    public async Task<PlanarIdResponse> UpdateRoute(HttpContext httpContext)
+    public async Task<PlanarIdResponseWrapper> UpdateRoute(HttpContext httpContext)
     {
         var contentType = httpContext.Request.ContentType ?? string.Empty;
         if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
@@ -33,7 +33,7 @@ public partial class JobDomain
         {
             using var reader = new StreamReader(httpContext.Request.Body);
             var yml = await reader.ReadToEndAsync(httpContext.RequestAborted);
-            return (await Update(yml)).PlanarId;
+            return await Update(yml);
         }
 
         throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
@@ -189,19 +189,20 @@ public partial class JobDomain
         }
     }
 
-    public async Task<PlanarIdResponse> Update(UpdateJobRequest request)
+    public async Task<PlanarIdResponseWrapper> Update(UpdateJobRequest request)
     {
         var dynamicRequest = await GetDynamicRequest(request);
         var response = await Update(dynamicRequest, request.Options);
-        return response.PlanarId;
+        return response;
     }
 
     private async Task<PlanarIdResponseWrapper> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
     {
         // Validation
         await ValidateUpdateJob(request, options, metadata);
+        ValidateJobProperty(request);
 
-        // Validate no changes 
+        // Validate no changes
         var hasChanges = await HasChanges(request);
         if (!hasChanges) { return new PlanarIdResponseWrapper(metadata.JobId, unchanged: true); }
 
@@ -216,7 +217,7 @@ public partial class JobDomain
         await scheduler.PauseJob(metadata.JobKey);
 
         // Lock monitor events
-        MonitorUtil.Lock(metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+        MonitorUtil.Lock(metadata.JobKey, lockSeconds: 7, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
         // Save for rollback
         await FillRollbackData(metadata);

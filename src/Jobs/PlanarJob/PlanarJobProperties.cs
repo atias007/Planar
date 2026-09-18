@@ -42,9 +42,9 @@ public class PlanarJobProperties : IFileJobProperties, IPlanarJobProperties
     [YamlIgnore]
     public IEnumerable<string> Files => Process?.Files ?? [];
 
-    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
-        Process?.SetGlobalConfigPlaceholder(parameters);
+        Process?.FillGlobalConfigPlaceholder(parameters);
     }
 }
 

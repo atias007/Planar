@@ -29,9 +29,9 @@ public class ProcessJobProperties : BaseProcessJobProperties
     [YamlMember(Alias = "fail output regex", Order = 16)]
     public string? FailOutputRegex { get; set; }
 
-    public override void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public override void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
-        base.SetGlobalConfigPlaceholder(parameters);
+        base.FillGlobalConfigPlaceholder(parameters);
         Arguments = GetGlobalConfigPropertyPlaceholder(() => Arguments, parameters) ?? Arguments;
     }
 }

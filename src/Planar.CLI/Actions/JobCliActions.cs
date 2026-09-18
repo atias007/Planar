@@ -61,7 +61,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         var body = new SetJobPathRequest { JobFilePath = pathInfo.Path };
         restRequest.AddBody(body);
-        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+        var result = await RestProxy.Invoke<PlanarIdResponseWrapper>(restRequest, cancellationToken);
         AssertCreated(result);
         return new CliActionResponse(result);
     }
@@ -863,7 +863,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         request ??= new CliUpdateJobRequest();
         var body = new UpdateJobRequest { JobFilePath = request.Filename };
 
-        if (Util.IsJobId(request.Filename))
+        if (Util.IsJobId(request.Filename) || Util.IsJobKey(request.Filename))
         {
             var filenameRequest = new RestRequest("job/jobfilename/{id}", Method.Get)
                 .AddParameter("id", request.Filename, ParameterType.UrlSegment);

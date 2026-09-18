@@ -1,6 +1,4 @@
-﻿using Planar.API.Common.Entities;
-
-namespace Planar.Service.Model;
+﻿namespace Planar.API.Common.Entities;
 
 public class PlanarIdResponseWrapper
 {

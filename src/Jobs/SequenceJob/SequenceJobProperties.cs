@@ -11,7 +11,7 @@ public class SequenceJobProperties : IJobProperties
     [YamlMember(Alias = "steps", Order = 1)]
     public List<SequenceJobStep> Steps { get; set; } = [];
 
-    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
         // No global config placeholder to set for SequenceJobProperties //
     }

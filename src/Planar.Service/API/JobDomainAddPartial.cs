@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -24,18 +25,11 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    private const int MaxNameLength = 50;
-
-    private const int MinNameLength = 3;
-
-    private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
-
+    private const string group = "group";
+    private const string name = "name";
+    private const string props = "properties";
+    private const string global_config_keys = "global config keys";
     private static readonly string[] _cronValues = ["auto", "donothing", "fireandproceed", "ignoremisfires"];
-
-    private static readonly Regex _regex = new(
-            NameRegexTemplate
-            .Replace("@MinNameLength@", MinNameLength.ToString())
-            .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
     private static readonly string[] _simpleValues = ["auto", "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount"];
     private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
@@ -270,7 +264,7 @@ public partial class JobDomain
         return result;
     }
 
-    private static string CreateJobId(IJobDetail job)
+    private static string GenerateJobId(IJobDetail job)
     {
         // job id
         var id = ServiceUtil.GenerateId();
@@ -347,6 +341,7 @@ public partial class JobDomain
         try
         {
             dynamicRequest = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
+            dynamicRequest.Source = source ?? string.Empty;
         }
         catch (Exception ex)
         {
@@ -472,7 +467,7 @@ public partial class JobDomain
 
         #region Mandatory
 
-        if (string.IsNullOrWhiteSpace(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
+        if (string.IsNullOrWhiteSpace(metadata.Name)) throw new RestValidationException(name, "job name is mandatory");
         if (string.IsNullOrWhiteSpace(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
 
         #endregion Mandatory
@@ -488,27 +483,27 @@ public partial class JobDomain
 
         #region Valid Name & Group
 
-        if (!IsRegexMatch(_regex, metadata.Name))
+        if (!IsRegexMatch(JobConsts.JobNameRegex, metadata.Name))
         {
-            throw new RestValidationException("name", $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
+            throw new RestValidationException(name, $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
         }
 
-        if (!IsRegexMatch(_regex, metadata.Group))
+        if (!IsRegexMatch(JobConsts.JobNameRegex, metadata.Group))
         {
-            throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            throw new RestValidationException(group, $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
         }
 
         if (Consts.PreserveGroupNames.Contains(metadata.Group))
         {
-            throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid (preserved value)");
+            throw new RestValidationException(group, $"job group '{metadata.Group}' is invalid (preserved value)");
         }
 
         #endregion Valid Name & Group
 
         #region Max Chars / Value
 
-        ValidateRange(metadata.Name, 5, 50, "name", "job");
-        ValidateRange(metadata.Group, 1, 50, "group", "job");
+        ValidateRange(metadata.Name, 5, 50, name, "job");
+        ValidateRange(metadata.Group, 1, 50, group, "job");
         ValidateRangeValue(metadata.LogRetentionDays, 1, 1000, "log retention days", "job");
         ValidateMaxLength(metadata.Author, 200, "author", "job");
         ValidateMaxLength(metadata.Description, 100, "description", "job");
@@ -531,7 +526,7 @@ public partial class JobDomain
 
         #endregion JobData
 
-        #region circuit breaker
+        #region Circuit Breaker
 
         if (metadata.CircuitBreaker.Enabled)
         {
@@ -547,7 +542,7 @@ public partial class JobDomain
             }
         }
 
-        #endregion circuit breaker
+        #endregion Circuit Breaker
 
         var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
         if (triggersCount == 0 && metadata.Durable == false)
@@ -569,7 +564,7 @@ public partial class JobDomain
         container.SimpleTriggers?.ForEach(t =>
         {
             t.TriggerData ??= [];
-            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException(name, "trigger name is mandatory");
 
             var emptyKeys = t.TriggerData.Any(item => string.IsNullOrWhiteSpace(item.Key));
             if (emptyKeys) throw new RestValidationException("key", "trigger data key must have value");
@@ -577,19 +572,21 @@ public partial class JobDomain
         container.CronTriggers?.ForEach(t =>
         {
             t.TriggerData ??= [];
-            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException(name, "trigger name is mandatory");
         });
     }
 
     private static void ValidateMaxCharsTiggerProperties(TriggerPool pool)
     {
+        const string trigger = "trigger";
+
         foreach (var t in pool.Triggers)
         {
             t.TriggerData ??= [];
-            ValidateRange(t.Name, 5, 50, "name", "trigger");
-            ValidateRange(t.Group, 1, 50, "group", "trigger");
-            ValidateMaxLength(t.Calendar, 50, "calendar", "trigger");
-            ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", "trigger");
+            ValidateRange(t.Name, 5, 50, name, trigger);
+            ValidateRange(t.Group, 1, 50, group, trigger);
+            ValidateMaxLength(t.Calendar, 50, "calendar", trigger);
+            ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", trigger);
 
             foreach (var item in t.TriggerData)
             {
@@ -604,8 +601,8 @@ public partial class JobDomain
         foreach (var t in pool.Triggers)
         {
             t.TriggerData ??= [];
-            if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
-            if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
+            if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException(group, $"trigger group '{t.Group}' is invalid (preserved value)"); }
+            if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException(name, $"simple trigger name '{t.Name}' has invalid prefix"); }
             ValidateDataMap(t.TriggerData, "trigger");
         }
     }
@@ -708,8 +705,8 @@ public partial class JobDomain
     {
         foreach (var t in pool.Triggers)
         {
-            if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-            if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            if (!IsRegexMatch(JobConsts.JobNameRegex, t.Name)) throw new RestValidationException(name, $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+            if (!IsRegexMatch(JobConsts.JobNameRegex, t.Group)) throw new RestValidationException(group, $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
         }
     }
 
@@ -813,7 +810,7 @@ public partial class JobDomain
         BuildJobData(request, job);
 
         // Create Job Id
-        var id = CreateJobId(job);
+        var id = GenerateJobId(job);
 
         // Build Triggers
         var triggers = BuildTriggers(request, id);
@@ -829,6 +826,8 @@ public partial class JobDomain
             GlobalConfigKeys = jobGlobalConfigKeysYml,
             JobType = jobType
         };
+
+        ValidateJobProperty(property);
 
         await DataLayer.AddJobProperty(property);
 
@@ -852,6 +851,24 @@ public partial class JobDomain
 
         // Return Id
         return new PlanarIdResponse { Id = id };
+    }
+
+    private static void ValidateJobProperty(JobProperty property)
+    {
+        if (string.Equals(property.JobType, nameof(PlanarJob), StringComparison.OrdinalIgnoreCase)) { return; }
+        if (!string.IsNullOrWhiteSpace(property.GlobalConfigKeys))
+        {
+            throw new RestValidationException(global_config_keys, $"{global_config_keys} is not valid field of {property.JobType} job type");
+        }
+    }
+
+    private static void ValidateJobProperty(SetJobDynamicRequest request)
+    {
+        if (string.Equals(request.JobType, nameof(PlanarJob), StringComparison.OrdinalIgnoreCase)) { return; }
+        if (request.GlobalConfigKeys.Count > 0)
+        {
+            throw new RestValidationException(global_config_keys, $"{global_config_keys} is not valid field of {request.JobType} job type");
+        }
     }
 
     private async Task<string> GetJobFileContent(IJobFileRequest request)
@@ -907,11 +924,11 @@ public partial class JobDomain
     {
         if (yml == null)
         {
-            throw new RestValidationException("properties", "properties is null or empty");
+            throw new RestValidationException(props, "properties is null or empty");
         }
 
         var properties = YmlUtil.Deserialize<TProperties>(yml) ??
-            throw new RestValidationException("properties", "properties is null or empty");
+            throw new RestValidationException(props, "properties is null or empty");
 
         var validator = ServiceProvider.GetService<IValidator<TProperties>>();
 
@@ -938,7 +955,7 @@ public partial class JobDomain
         if (request.GlobalConfigKeys.Count == 0) { return; }
         if (request.GlobalConfigKeys.Count > 40)
         {
-            throw new RestValidationException("global config keys", $"total count of global config keys ({request.GlobalConfigKeys.Count}) must be up to 40 items");
+            throw new RestValidationException(global_config_keys, $"total count of {global_config_keys} ({request.GlobalConfigKeys.Count}) must be up to 40 items");
         }
 
         var longKeys = request.GlobalConfigKeys
@@ -947,7 +964,7 @@ public partial class JobDomain
         if (longKeys.Any())
         {
             var longKeysTitle = string.Join(',', longKeys);
-            throw new RestValidationException("global config keys", $"global config key(s) {longKeysTitle} has more the 50 chars");
+            throw new RestValidationException(global_config_keys, $"global config key(s) {longKeysTitle} has more the 50 chars");
         }
 
         var duplicates = request.GlobalConfigKeys
@@ -958,7 +975,7 @@ public partial class JobDomain
         if (duplicates.Any())
         {
             var duplicatesTitle = string.Join(',', duplicates);
-            throw new RestValidationException("global config keys", $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
+            throw new RestValidationException(global_config_keys, $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
         }
     }
 
@@ -1006,7 +1023,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
+            throw new RestValidationException(props, $"fail to read/validate properties section. error: {ex.Message}");
         }
     }
 
@@ -1018,7 +1035,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("properties", $"fail to read/validate global config keys section. error: {ex.Message}");
+            throw new RestValidationException(props, $"fail to read/validate global config keys section. error: {ex.Message}");
         }
     }
 
