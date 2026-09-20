@@ -203,7 +203,7 @@ public partial class JobDomain
         ValidateJobProperty(request);
 
         // Validate no changes
-        var hasChanges = await HasChanges(request);
+        var hasChanges = await HasChanges(request, options);
         if (!hasChanges) { return new PlanarIdResponseWrapper(metadata.JobId, unchanged: true); }
 
         // Validate job not runnning

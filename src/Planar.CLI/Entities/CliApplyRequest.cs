@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities;
 
 public class CliApplyRequest
 {
-    [ActionProperty(DefaultOrder = 0)]
+    [ActionProperty(DefaultOrder = 0, Name = "file/path")]
     [Required("filename argument is required")]
     public string Filename { get; set; } = string.Empty;
 }
