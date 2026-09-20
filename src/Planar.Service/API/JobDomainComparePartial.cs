@@ -1,4 +1,5 @@
-﻿using Planar.Service.API.Helpers;
+﻿using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Model;
 using Quartz;
@@ -12,7 +13,7 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    internal async Task<bool> HasChanges(SetJobDynamicRequest request)
+    internal async Task<bool> HasChanges(SetJobDynamicRequest request, UpdateJobOptions options)
     {
         var jobKey = JobKeyHelper.GetJobKey(request);
         if (jobKey == null) { return false; }
@@ -48,7 +49,7 @@ public partial class JobDomain
         if (currentJobDetails.Key.Name != newJobDetails.Key.Name) { return true; }
 
         // JobData
-        if (currentJobDataJson != newJobDataJson) { return true; }
+        if (options.UpdateJobData && currentJobDataJson != newJobDataJson) { return true; }
 
         // Properties
         if (currentJobPropertiesYml != newJobPropertiesYml) { return true; }
@@ -59,12 +60,12 @@ public partial class JobDomain
         // Trigges
         if (currentTriggers.Count != newTriggers.Count) { return true; }
 
-        return HasChangesInTriggers(currentTriggers, newTriggers);
+        return HasChangesInTriggers(currentTriggers, newTriggers, options);
     }
 
 #pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 
-    internal static bool HasChangesInTriggers(List<ITrigger> currentTriggers, List<ITrigger> newTriggers)
+    internal static bool HasChangesInTriggers(List<ITrigger> currentTriggers, List<ITrigger> newTriggers, UpdateJobOptions options)
 #pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         for (int i = 0; i < currentTriggers.Count; i++)
@@ -99,9 +100,10 @@ public partial class JobDomain
 #pragma warning restore S1066 // Mergeable "if" statements should be combined
             }
 
+            // Trigger Data
             var currentTriggerDataJson = GetDataMapJson(currentTrigger.JobDataMap);
             var newTriggerDataJson = GetDataMapJson(newTrigger.JobDataMap);
-            if (currentTriggerDataJson != newTriggerDataJson) { return true; }
+            if (options.UpdateJobData && currentTriggerDataJson != newTriggerDataJson) { return true; }
         }
 
         return false;

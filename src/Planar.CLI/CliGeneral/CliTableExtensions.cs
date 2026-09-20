@@ -105,14 +105,14 @@ internal static class CliTableExtensions
 
     public static List<CliTable> GetTable(CliApplyResponse? response)
     {
-        var table1 = new CliTable { Title = "Summary" };
+        var table1 = new CliTable();
         if (response == null) { return [table1]; }
         table1.Table.AddColumns(string.Empty, string.Empty);
         table1.Table.HideHeaders();
-        table1.Table.AddRow("Add", CliTableFormat.FormatSummaryNumber(response.TotalAdd));
-        table1.Table.AddRow("Update", CliTableFormat.FormatSummaryNumber(response.TotalUpdate));
-        table1.Table.AddRow("Unchanged", CliTableFormat.FormatSummaryNumber(response.TotalUnchanged));
-        table1.Table.AddRow("Errors", CliTableFormat.FormatSummaryNumber(response.TotalErrors, "red"));
+        table1.Table.AddRow("Add", CliTableFormat.FormatSummaryNumber(response.TotalAdd, CliFormat.OkColor));
+        table1.Table.AddRow("Update", CliTableFormat.FormatSummaryNumber(response.TotalUpdate, CliFormat.OkColor));
+        table1.Table.AddRow("Unchanged", CliTableFormat.FormatSummaryNumber(response.TotalUnchanged, "gray"));
+        table1.Table.AddRow("Errors", CliTableFormat.FormatSummaryNumber(response.TotalErrors, CliFormat.ErrorColor));
 
         var table2 = new CliTable { Title = "Details" };
         if (response == null) { return [table1]; }

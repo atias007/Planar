@@ -10,6 +10,7 @@ using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Twilio.TwiML.Messaging;
 
 namespace Planar.Service.API;
 
@@ -311,11 +313,11 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             var source = YmlUtil.GetApplySource(content);
             if (string.IsNullOrWhiteSpace(source))
             {
-                throw new RestValidationException("yaml", $"fail to map body to {currentYaml.Key} request\r\n{ex.Message}");
+                throw new RestValidationException("yaml", $"fail to map yaml to apply request\r\n{ex.Message}");
             }
             else
             {
-                throw new RestValidationException(source, $"fail to map content of file: {source} to {currentYaml.Key} request\r\n{ex.Message}");
+                throw new RestValidationException(source, $"fail to map content of file: {source} to apply request\r\n{ex.Message}");
             }
         }
 
@@ -343,6 +345,8 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
                     await validator.ValidateAndThrowAsync(entity, cancellationToken);
                 }
 
+                ValidateUnmatched<T>(y.Value);
+
                 entities.Add(entity);
             }
         }
@@ -360,6 +364,13 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         }
 
         return entities;
+    }
+
+    protected static void ValidateUnmatched<T>(string yaml)
+    {
+        var unmatched = YmlUtil.GetUnmatchedMessage<T>(yaml);
+        if (string.IsNullOrWhiteSpace(unmatched)) { return; }
+        throw new RestValidationException("yaml", unmatched);
     }
 
     private static void ValidateKind(string? kind, string key)

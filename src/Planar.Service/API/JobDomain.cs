@@ -180,7 +180,7 @@ public partial class JobDomain(
 
     public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        var requests = yamls.Select(y => GetJobDynamicRequest(y.Value, y.Key)).ToList();
+        var requests = yamls.Select(y => GetJobDynamicRequest(y.Value)).ToList();
         ValidateDuplicates(requests);
 
         var response = new ApplyResponse();
@@ -188,6 +188,7 @@ public partial class JobDomain(
         {
             var result = await Apply(item);
             response.AddItem(result);
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         return response;
@@ -223,8 +224,8 @@ public partial class JobDomain(
             var wrapper = await Update(dynamicRequest, UpdateJobOptions.Default);
             var response =
                 wrapper.Unchanged ?
-                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Unchanged, $"job {details.Key.Group}.{details.Key.Name} was unchanged") :
-                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Update, $"job {details.Key.Group}.{details.Key.Name} updated");
+                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Unchanged, $"job {details.Key.Group}.{details.Key.Name} was unchanged", dynamicRequest.Source) :
+                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Update, $"job {details.Key.Group}.{details.Key.Name} updated", dynamicRequest.Source);
 
             if (!wrapper.Unchanged)
             {
@@ -236,7 +237,7 @@ public partial class JobDomain(
         catch (RestNotFoundException)
         {
             var response = await Add(dynamicRequest);
-            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {dynamicRequest.Group}.{dynamicRequest.Name} added");
+            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {dynamicRequest.Group}.{dynamicRequest.Name} added", dynamicRequest.Source);
 
             if (jobKey != null)
             {
@@ -255,7 +256,7 @@ public partial class JobDomain(
         return dynamicRequest;
     }
 
-    private static SetJobDynamicRequest GetDynamicRequest(string yml)
+    private SetJobDynamicRequest GetDynamicRequest(string yml)
     {
         var dynamicRequest = GetJobDynamicRequest(yml);
         return dynamicRequest;

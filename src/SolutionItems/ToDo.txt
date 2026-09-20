@@ -1,25 +1,8 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
-*** cli, job apply, not display the apply table (lime monitor)
-*** implement the YamlUnknownKeyFinder to find extra fields in yaml files:
+*** add new manifest: jobdata.yaml
 
----------------------------------------------------------------------------------------------
-var builder = new DeserializerBuilder()
-    .WithNamingConvention(CamelCaseNamingConvention.Instance)
-    .IgnoreUnmatchedProperties();
-
-var deserializer = builder.Build();
-var finder = YamlUnknownKeyFinder.From(builder);   // build after all With... calls
-
-var config  = deserializer.Deserialize<AppConfig>(yaml);
-var unknown = finder.Find<AppConfig>(yaml);
-
-if (unknown.Count > 0)
-    _logger.LogWarning("Unrecognized config keys: {Keys}",
-        string.Join(", ", unknown.Select(u => $"{u.Path} (line {u.Line})")));
-
----------------------------------------------------------------------------------------------
 
 * test 'global config keys' in jobfile.yml with json config value
 * test hosted job reading jobfile.yml or only appsettings.json
@@ -451,4 +434,6 @@ V 1.8.3
 - encrypted job context (process. rabbit, http)
 - add security audit even without login (for anonymous user)
 - DO NOT allow to halt service without identity (authenticated user or cli identity)
-- remove service halt from client libtrary
+- remove service halt from client library
+- add apply to monitor
+- validate extra fields in yaml files

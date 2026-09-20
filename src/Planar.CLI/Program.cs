@@ -96,29 +96,6 @@ internal static class Program
         e.Cancel = true;
     }
 
-    private static void DisplayValidationErrors(IEnumerable<JToken> errors)
-    {
-        foreach (JToken item in errors)
-        {
-            if (item is JArray arr)
-            {
-                foreach (JToken subItem in arr)
-                {
-                    if (subItem is JValue jvalue)
-                    {
-                        var message = Convert.ToString(jvalue.Value)?.EscapeMarkup();
-                        AnsiConsole.MarkupLine($"[red]  - {message}[/]");
-                    }
-                }
-            }
-            else
-            {
-                var message = Convert.ToString((item as JValue)?.Value)?.EscapeMarkup();
-                AnsiConsole.MarkupLine($"[red]  - {message}[/]");
-            }
-        }
-    }
-
     private static string? SafeFromBase64ToiString(string base64)
     {
         try
@@ -189,31 +166,38 @@ internal static class Program
         var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
         if (entity == null) { return false; }
 
-        var obj = JObject.Parse(response.Content);
-        var errors = obj["errors"]?.SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
-        if (errors == null) { return false; }
-
-        if (!errors.Any())
+        if (entity.Errors.Count == 0)
         {
             MarkupCliLine(CliFormat.GetValidationErrorMarkup(entity.Detail));
             return true;
         }
 
-        if (errors.Count() == 1)
+        var details = entity.Errors
+            .SelectMany(e => e.Detail)
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .ToImmutableList();
+
+        if (details.Count == 1)
         {
-            var value = errors.First() as JValue;
-            var strValue = Convert.ToString(value?.Value);
-            MarkupCliLine(CliFormat.GetValidationErrorMarkup(strValue));
+            var value = details[0];
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(value));
             return true;
         }
 
         MarkupCliLine(CliFormat.GetValidationErrorMarkup(string.Empty));
-        DisplayValidationErrors(errors);
+        foreach (var d in details)
+        {
+            var message = Convert.ToString(d).EscapeMarkup();
+            AnsiConsole.MarkupLine($"[red]  - {message}[/]");
+        }
 
         return true;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private static async Task<CliArgumentsUtil?> HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         if (args == null || args.Length == 0)
         {

@@ -334,14 +334,14 @@ public partial class JobDomain
         return trigger;
     }
 
-    private static SetJobDynamicRequest GetJobDynamicRequest(string yml, string? source = null)
+    private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
     {
         SetJobDynamicRequest dynamicRequest;
 
         try
         {
             dynamicRequest = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
-            dynamicRequest.Source = source ?? string.Empty;
+            ValidateUnmatched<SetJobDynamicRequest>(yml);
         }
         catch (Exception ex)
         {
@@ -982,31 +982,38 @@ public partial class JobDomain
     private async Task ValidatePropertiesInner(SetJobDynamicRequest request)
     {
         var yml = GetJopPropertiesYml(request);
+        if (yml == null) { return; }
 
         switch (request.JobType)
         {
             case nameof(PlanarJob):
                 await ValidateJobProperties<PlanarJobProperties>(yml);
+                ValidateUnmatched<PlanarJobProperties>(yml);
                 break;
 
             case nameof(ProcessJob):
                 await ValidateJobProperties<ProcessJobProperties>(yml);
+                ValidateUnmatched<ProcessJobProperties>(yml);
                 break;
 
             case nameof(SqlJob):
                 await ValidateJobProperties<SqlJobProperties>(yml);
+                ValidateUnmatched<SqlJobProperties>(yml);
                 break;
 
             case nameof(RestJob):
                 await ValidateJobProperties<RestJobProperties>(yml);
+                ValidateUnmatched<RestJobProperties>(yml);
                 break;
 
             case nameof(SqlTableReportJob):
                 await ValidateJobProperties<SqlTableReportJobProperties>(yml);
+                ValidateUnmatched<SqlTableReportJobProperties>(yml);
                 break;
 
             case nameof(SequenceJob):
                 await ValidateJobProperties<SequenceJobProperties>(yml);
+                ValidateUnmatched<SequenceJobProperties>(yml);
                 break;
 
             default:
@@ -1020,6 +1027,10 @@ public partial class JobDomain
         try
         {
             await ValidatePropertiesInner(request);
+        }
+        catch (ValidationException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

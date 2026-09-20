@@ -5,6 +5,7 @@ using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
+using Planar.Common;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -13,6 +14,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +42,8 @@ public abstract class BaseCliAction
 
     protected static async Task<CliActionResponse> Apply(string kind, CliApplyRequest request, CancellationToken cancellationToken = default)
     {
+        request ??= new CliApplyRequest();
+
         if (string.IsNullOrWhiteSpace(request.Filename))
         {
             request.Filename = CollectCliValue(new CollectCliValueParameters
@@ -371,7 +375,10 @@ public abstract class BaseCliAction
         return result;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     protected static string? CollectCliValue(CollectCliValueParameters parameters)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var prompt = new TextPrompt<string>($"[turquoise2]  > {parameters.Field.EscapeMarkup()?.Trim()}:[/]")
             .Validate(value =>
@@ -703,8 +710,30 @@ public abstract class BaseCliAction
 
     private static string AddSourceFilenameToYmlContent(string ymlContent, string sourceFilename)
     {
+        const string seperator = "---";
         const string source = "source: ";
-        return $"{source}{sourceFilename}{Environment.NewLine}{ymlContent}";
+
+        var items = YmlUtil.SplitByKind(ymlContent);
+        var final = new StringBuilder();
+        foreach (var item in items)
+        {
+            var content = item.Value.Trim();
+            if (string.IsNullOrWhiteSpace(content)) { continue; }
+            if (content == seperator) { continue; }
+            if (content.StartsWith(seperator)) { content = content[seperator.Length..]; }
+            if (content.EndsWith(seperator)) { content = content[0..(content.Length - seperator.Length)]; }
+            final.AppendLine($"{source}{sourceFilename}");
+            final.AppendLine(content.Trim());
+            final.AppendLine(seperator);
+        }
+
+        var result = final.ToString().Trim();
+        if (result.EndsWith(seperator))
+        {
+            result = result[0..(result.Length - seperator.Length)];
+        }
+
+        return result;
     }
 }
 

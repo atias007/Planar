@@ -45,102 +45,33 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         if (pathInfo.IsLocal && pathInfo.IsFolder)
         {
-            return await AddUpdateApplyLocalFolder(pathInfo, restRequest, cancellationToken);
+            throw new CliException("adding jobs from a folder is not supported. use 'apply' command or use a single file instead.");
         }
         else if (pathInfo.IsLocal && !pathInfo.IsFolder)
         {
-            return await AddUpdateApplyLocalFilename(pathInfo, restRequest, cancellationToken);
+            return await AddUpdateApplyLocalFilename(pathInfo, restRequest, OperationType.Add, cancellationToken);
         }
         else
         {
-            return await AddUpdateApplyRemoteFilename(pathInfo, restRequest, cancellationToken);
+            return await AddUpdateApplyRemoteFilename(pathInfo, restRequest, OperationType.Add, cancellationToken);
         }
-    }
-
-    private static async Task<CliActionResponse> AddUpdateApplyRemoteFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
-    {
-        var body = new SetJobPathRequest { JobFilePath = pathInfo.Path };
-        restRequest.AddBody(body);
-        var result = await RestProxy.Invoke<PlanarIdResponseWrapper>(restRequest, cancellationToken);
-        AssertCreated(result);
-        return new CliActionResponse(result);
-    }
-
-    private static async Task<CliActionResponse> AddUpdateApplyLocalFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
-    {
-        var filename = Path.GetFullPath(pathInfo.Path);
-        var yml = await File.ReadAllTextAsync(filename, cancellationToken);
-        restRequest.AddStringBody(yml, CliConsts.YamlContentType);
-        var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
-        AssertCreated(result);
-        return new CliActionResponse(result);
-    }
-
-    private static async Task<CliActionResponse> AddUpdateApplyLocalFolder(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
-    {
-        AnsiConsole.MarkupLine($"[grey]  > found directory: {pathInfo.Path}[/]");
-        var files = Directory.EnumerateFiles(pathInfo.Path, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
-            .Where(f => f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
-
-        foreach (var item in files)
-        {
-            await AddUpdateApplyLocalFolderInner(restRequest, item, cancellationToken);
-        }
-
-        AnsiConsole.MarkupLine($"[grey]  > {files.Count():N0} file(s)[/]");
-        return CliActionResponse.Empty;
-    }
-
-    private static async Task AddUpdateApplyLocalFolderInner(RestRequest restRequest, string item, CancellationToken cancellationToken)
-    {
-        var fi = new FileInfo(item);
-        AnsiConsole.Markup($"[grey]     - found local file: {fi.Name}[/]");
-        var yml = await File.ReadAllTextAsync(item, cancellationToken);
-        var localRequest = new RestRequest(restRequest.Resource, restRequest.Method)
-            .AddStringBody(yml, CliConsts.YamlContentType);
-        var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
-        if (res.IsSuccessStatusCode)
-        {
-            if (string.IsNullOrWhiteSpace(res.Data?.Id))
-            {
-                AnsiConsole.MarkupLine($"[grey]   no change[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
-            }
-        }
-        else
-        {
-            var hasText = string.Equals(res.ContentType, MediaTypeNames.Text.Plain, StringComparison.OrdinalIgnoreCase);
-            var error = hasText ? res.Content.EscapeMarkup() : null;
-            if (res.StatusCode == HttpStatusCode.BadRequest) { error = "validation error(s)"; }
-            if (res.StatusCode == HttpStatusCode.Unauthorized) { error = "unauthorized"; }
-            if (res.StatusCode == HttpStatusCode.Forbidden) { error = "forbidden"; }
-            AnsiConsole.MarkupLine($"[red]   Fail! {error}[/]");
-        }
-    }
-
-    [Action("update")]
-    [NullRequest]
-    public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
-    {
-        var uoa = await FillUpdateJobRequest(request, apply: false, cancellationToken);
-        if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
-        ArgumentNullException.ThrowIfNull(uoa.Body);
-        var result = await UpdateOrApply(uoa.Body, apply: false, cancellationToken);
-        return result;
     }
 
     [Action("apply")]
     [NullRequest]
-    public static async Task<CliActionResponse> ApplyJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> ApplyJob(CliApplyRequest request, CancellationToken cancellationToken = default)
     {
-        var uoa = await FillUpdateJobRequest(request, apply: true, cancellationToken);
-        if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
-        ArgumentNullException.ThrowIfNull(uoa.Body);
-        var result = await UpdateOrApply(uoa.Body, apply: true, cancellationToken);
-        return result;
+        return await Apply("job", request, cancellationToken);
+    }
+
+    [Action("cancel-auto-resume")]
+    public static async Task<CliActionResponse> CancelAutoResume(CliJobKey request, CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
+            .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
     }
 
     [Action("cancel")]
@@ -179,6 +110,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             {
                 message += $". error message: {result.ErrorMessage}";
             }
+
             throw new CliException(message, result);
         }
 
@@ -451,7 +383,9 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     [Action("running-log")]
     [NullRequest]
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
     public static async Task<CliActionResponse> GetRunningData(CliRunningLogRequest request, CancellationToken cancellationToken)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         request ??= new CliRunningLogRequest();
         if (string.IsNullOrWhiteSpace(request.FireInstanceId))
@@ -691,29 +625,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return new CliActionResponse(result);
     }
 
-    [Action("auto-resume")]
-    public static async Task<CliActionResponse> SetAutoResume(CliAutoResumeRequest request, CancellationToken cancellationToken = default)
-    {
-        CollectCliAutoResumeRequest(request);
-
-        var autoResumeDate = request.In == null ? (DateTime?)null : DateTime.Now.Add(request.In.Value);
-        var restRequest = new RestRequest("job/auto-resume", Method.Post)
-                .AddBody(new { request.Id, autoResumeDate });
-
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        return new CliActionResponse(result);
-    }
-
-    [Action("cancel-auto-resume")]
-    public static async Task<CliActionResponse> CancelAutoResume(CliJobKey request, CancellationToken cancellationToken = default)
-    {
-        var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
-            .AddParameter("id", request.Id, ParameterType.UrlSegment);
-
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        return new CliActionResponse(result);
-    }
-
     [Action("set-author")]
     [NullRequest]
     public static async Task<CliActionResponse> SetAuthor(CliSetAuthorOfJob request, CancellationToken cancellationToken = default)
@@ -727,6 +638,19 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         var restRequest = new RestRequest("job/author", Method.Patch)
             .AddBody(request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("auto-resume")]
+    public static async Task<CliActionResponse> SetAutoResume(CliAutoResumeRequest request, CancellationToken cancellationToken = default)
+    {
+        CollectCliAutoResumeRequest(request);
+
+        var autoResumeDate = request.In == null ? (DateTime?)null : DateTime.Now.Add(request.In.Value);
+        var restRequest = new RestRequest("job/auto-resume", Method.Post)
+                .AddBody(new { request.Id, autoResumeDate });
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
@@ -762,6 +686,17 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         var step6 = await TestStep5CheckLog(logId, cancellationToken);
         if (step6 != null) { return step6; }
         return CliActionResponse.Empty;
+    }
+
+    [Action("update")]
+    [NullRequest]
+    public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
+    {
+        var uoa = await FillUpdateJobRequest(request, apply: false, cancellationToken);
+        if (uoa.Body == null && uoa.CliActionResponse != null) { return uoa.CliActionResponse; }
+        ArgumentNullException.ThrowIfNull(uoa.Body);
+        var result = await UpdateInner(uoa.Body, cancellationToken);
+        return result;
     }
 
     [Action("wait")]
@@ -858,7 +793,185 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return (resultData, restResponse);
     }
 
+    private enum OperationType
+    {
+        Add,
+        Update,
+        Apply
+    }
+
+    private static async Task<CliActionResponse> AddUpdateApplyLocalFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, OperationType operationType, CancellationToken cancellationToken)
+    {
+        var filename = Path.GetFullPath(pathInfo.Path);
+        var yml = await File.ReadAllTextAsync(filename, cancellationToken);
+        restRequest.AddStringBody(yml, CliConsts.YamlContentType);
+
+        switch (operationType)
+        {
+            case OperationType.Add:
+                {
+                    var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+                    AssertCreated(result);
+                    return new CliActionResponse(result);
+                }
+            case OperationType.Update:
+                {
+                    var result = await RestProxy.Invoke<PlanarIdResponseWrapper>(restRequest, cancellationToken);
+                    AssertCreated(result);
+                    return new CliActionResponse(result);
+                }
+            case OperationType.Apply:
+                {
+                    var result = await RestProxy.Invoke<ApplyResponse>(restRequest, cancellationToken);
+                    return new CliActionResponse(result);
+                }
+
+            default:
+                return CliActionResponse.Empty;
+        }
+    }
+
+    private static async Task<CliActionResponse> ApplyLocalFolder(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
+    {
+        AnsiConsole.MarkupLine($"[grey]  > found directory: {pathInfo.Path}[/]");
+        var files = Directory.EnumerateFiles(pathInfo.Path, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
+            .Where(f => f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
+
+        foreach (var item in files)
+        {
+            await AddUpdateApplyLocalFolderInner(restRequest, item, cancellationToken);
+        }
+
+        AnsiConsole.MarkupLine($"[grey]  > {files.Count():N0} file(s)[/]");
+        return CliActionResponse.Empty;
+    }
+
+    private static async Task AddUpdateApplyLocalFolderInner(RestRequest restRequest, string item, CancellationToken cancellationToken)
+    {
+        var fi = new FileInfo(item);
+        AnsiConsole.Markup($"[grey]     - found local file: {fi.Name}[/]");
+        var yml = await File.ReadAllTextAsync(item, cancellationToken);
+        var localRequest = new RestRequest(restRequest.Resource, restRequest.Method)
+            .AddStringBody(yml, CliConsts.YamlContentType);
+        var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
+        if (res.IsSuccessStatusCode)
+        {
+            if (string.IsNullOrWhiteSpace(res.Data?.Id))
+            {
+                AnsiConsole.MarkupLine($"[grey]   no change[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
+            }
+        }
+        else
+        {
+            var hasText = string.Equals(res.ContentType, MediaTypeNames.Text.Plain, StringComparison.OrdinalIgnoreCase);
+            var error = hasText ? res.Content.EscapeMarkup() : null;
+            if (res.StatusCode == HttpStatusCode.BadRequest) { error = "validation error(s)"; }
+            if (res.StatusCode == HttpStatusCode.Unauthorized) { error = "unauthorized"; }
+            if (res.StatusCode == HttpStatusCode.Forbidden) { error = "forbidden"; }
+            AnsiConsole.MarkupLine($"[red]   Fail! {error}[/]");
+        }
+    }
+
+    private static async Task<CliActionResponse> AddUpdateApplyRemoteFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, OperationType operationType, CancellationToken cancellationToken)
+    {
+        var body = new SetJobPathRequest { JobFilePath = pathInfo.Path };
+        restRequest.AddBody(body);
+
+        switch (operationType)
+        {
+            case OperationType.Add:
+                {
+                    var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+                    AssertCreated(result);
+                    return new CliActionResponse(result);
+                }
+            case OperationType.Update:
+                {
+                    var result = await RestProxy.Invoke<PlanarIdResponseWrapper>(restRequest, cancellationToken);
+                    AssertCreated(result);
+                    return new CliActionResponse(result);
+                }
+            case OperationType.Apply:
+                throw new CliException("apply operation is not supported for remote filename");
+
+            default:
+                return CliActionResponse.Empty;
+        }
+    }
+
+    private static async Task<RestResponse> CheckAlreadyRunningJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
+    {
+        var result = await CheckJobInner(cancellationToken);
+        if (result.IsSuccessful)
+        {
+            var exists = result.Data?.Exists(d => d.Id == request.Id || string.Equals($"{d.Group}.{d.Name}", request.Id, StringComparison.OrdinalIgnoreCase)) ?? false;
+            if (exists) { throw new CliException($"job id {request.Id} already running. test can not be invoked until job done"); }
+        }
+
+        return result;
+    }
+
+    private static async Task<RestResponse<List<RunningJobDetails>>> CheckJobInner(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("job/running", Method.Get);
+        var result = await RestProxy.Invoke<List<RunningJobDetails>>(restRequest, cancellationToken);
+        return result;
+    }
+
+    private static async Task<string> ChooseRunningJobInstance()
+    {
+        var result = await GetRunningJobsInner(new CliGetRunningJobsRequest());
+
+        var items = result.Item1
+            .Select(i => $"{i.FireInstanceId} ({i.Group}.{i.Name})  [{i.Progress}%]".EscapeMarkup())
+            .ToList();
+
+        if (items.Count == 0)
+        {
+            throw new CliWarningException("no running job instance(s)");
+        }
+
+        var selection = PromptSelection(items, "running job instance") ?? string.Empty;
+        var parts = selection.Split(' ');
+        return parts[0];
+    }
+
+    private static void CollectCliAutoResumeRequest(CliAutoResumeRequest request)
+    {
+        if (request.In.GetValueOrDefault() == TimeSpan.Zero)
+        {
+            var ts = CliPromptUtil.PromptForTimeSpan("resume in:", required: true);
+            request.In = ts ?? TimeSpan.Zero;
+        }
+    }
+
+    /// <summary>
+    /// Helper method to create a simple text-based progress bar representation using Markup.
+    /// You could also use a custom renderable that visually looks more like Spectre's standard progress bar.
+    /// </summary>
+    private static Markup CreateProgressBarMarkup(int percentage, Color? color = null)
+    {
+        color ??= Color.Gold3_1;
+        int completedChars = percentage / 5; // Each char is 5%
+        int remainingChars = 20 - completedChars;
+
+        // Build the bar: [▬▬▬▬▬▬▬▬▬▬       ] 50%
+        var bar = new string('▬', completedChars);
+        var tail = new string('▬', remainingChars);
+        var extraSpace = percentage < 100 ? " " : string.Empty;
+        var space = percentage < 10 ? "  " : extraSpace;
+        var final = $"[{color.Value}][[{bar}[/][Gray15]{tail}[/][{color.Value}]]][/] {percentage}%{space}";
+        return new Markup(final);
+    }
+
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private static async Task<(UpdateJobRequest? Body, CliActionResponse? CliActionResponse)> FillUpdateJobRequest(CliUpdateJobRequest request, bool apply, CancellationToken cancellationToken)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         request ??= new CliUpdateJobRequest();
         var body = new UpdateJobRequest { JobFilePath = request.Filename };
@@ -921,62 +1034,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return (body, null);
     }
 
-    private static async Task<CliActionResponse> UpdateOrApply(UpdateJobRequest request, bool apply, CancellationToken cancellationToken)
-    {
-        var restRequest = apply ? new RestRequest("job/apply", Method.Post) : new RestRequest("job", Method.Put);
-
-        var pathInfo = PathAnalyzer.AnalyzePath(request.JobFilePath);
-        if (pathInfo.IsLocal && pathInfo.IsFolder)
-        {
-            return await AddUpdateApplyLocalFolder(pathInfo, restRequest, cancellationToken);
-        }
-        else if (pathInfo.IsLocal && !pathInfo.IsFolder)
-        {
-            return await AddUpdateApplyLocalFilename(pathInfo, restRequest, cancellationToken);
-        }
-        else
-        {
-            return await AddUpdateApplyRemoteFilename(pathInfo, restRequest, cancellationToken);
-        }
-    }
-
-    private static async Task<RestResponse> CheckAlreadyRunningJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
-    {
-        var result = await CheckJobInner(cancellationToken);
-        if (result.IsSuccessful)
-        {
-            var exists = result.Data?.Exists(d => d.Id == request.Id || string.Equals($"{d.Group}.{d.Name}", request.Id, StringComparison.OrdinalIgnoreCase)) ?? false;
-            if (exists) { throw new CliException($"job id {request.Id} already running. test can not be invoked until job done"); }
-        }
-
-        return result;
-    }
-
-    private static async Task<RestResponse<List<RunningJobDetails>>> CheckJobInner(CancellationToken cancellationToken)
-    {
-        var restRequest = new RestRequest("job/running", Method.Get);
-        var result = await RestProxy.Invoke<List<RunningJobDetails>>(restRequest, cancellationToken);
-        return result;
-    }
-
-    private static async Task<string> ChooseRunningJobInstance()
-    {
-        var result = await GetRunningJobsInner(new CliGetRunningJobsRequest());
-
-        var items = result.Item1
-            .Select(i => $"{i.FireInstanceId} ({i.Group}.{i.Name})  [{i.Progress}%]".EscapeMarkup())
-            .ToList();
-
-        if (items.Count == 0)
-        {
-            throw new CliWarningException("no running job instance(s)");
-        }
-
-        var selection = PromptSelection(items, "running job instance") ?? string.Empty;
-        var parts = selection.Split(' ');
-        return parts[0];
-    }
-
     private static List<JobBasicDetails>? FilterJobs(List<JobBasicDetails>? data, string? filter)
     {
         if (data == null) { return null; }
@@ -984,11 +1041,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         if (filter.StartsWith('?')) { filter = filter[1..]; }
 
-        data = data.Where(d =>
+        data = [.. data.Where(d =>
             d.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
             d.Group.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
-            (!string.IsNullOrEmpty(d.Description) && d.Description.Contains(filter, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+            (!string.IsNullOrEmpty(d.Description) && d.Description.Contains(filter, StringComparison.OrdinalIgnoreCase)))];
 
         return data;
     }
@@ -1061,6 +1117,51 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         var result = await RestProxy.Invoke<LastInstanceId>(restRequest, cancellationToken);
         return result;
+    }
+
+    private static Table? GetRunningTable(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
+    {
+        if (runResult.Data == null) { return null; }
+        var data = runResult.Data;
+        var span = DateTimeOffset.Now.Subtract(invokeDate);
+        var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
+
+        var table = new Table();
+        table.AddColumn("Progress", col => col.Centered());
+        table.AddColumn("Effected Row(s)", col => col.Centered());
+        table.AddColumn("Exception Count", col => col.Centered());
+        table.AddColumn("Run Time", col => col.Centered());
+        table.AddColumn("End Time");
+        table.AddRow(
+            $"[gray]{data.Progress}%[/]",
+            $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
+            CliTableFormat.FormatExceptionCount(data.ExceptionsCount),
+            $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",
+            $"[gray]{CliTableFormat.FormatTimeSpan(endSpan)}[/]");
+
+        return table;
+    }
+
+    private static Table GetRunningTable(JobHistory data, int duration)
+    {
+        var span = TimeSpan.FromMilliseconds(duration);
+        var table = new Table();
+        table.AddColumn("Progress", col => col.Centered());
+        table.AddColumn("Effected Row(s)", col => col.Centered());
+        table.AddColumn("Exception Count", col => col.Centered());
+        table.AddColumn("Run Time", col => col.Centered());
+        table.AddColumn("End Time");
+
+        var bar = new string('▬', 20);
+
+        table.AddRow(
+            $"[gray][[{bar}]] 100%[/] ",
+            $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
+            CliTableFormat.FormatExceptionCount(data.ExceptionCount),
+            $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",
+            "[gray]--:--:--[/]");
+
+        return table;
     }
 
     private static async Task<(CliActionResponse?, bool, RestResponse<RunningJobDetails>)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
@@ -1390,6 +1491,25 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return null;
     }
 
+    private static async Task<CliActionResponse> UpdateInner(UpdateJobRequest request, CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("job", Method.Put);
+
+        var pathInfo = PathAnalyzer.AnalyzePath(request.JobFilePath);
+        if (pathInfo.IsLocal && pathInfo.IsFolder)
+        {
+            throw new CliException("updating jobs from a folder is not supported. use 'apply' command or use a single file/job key instead.");
+        }
+        else if (pathInfo.IsLocal && !pathInfo.IsFolder)
+        {
+            return await AddUpdateApplyLocalFilename(pathInfo, restRequest, OperationType.Update, cancellationToken);
+        }
+        else
+        {
+            return await AddUpdateApplyRemoteFilename(pathInfo, restRequest, OperationType.Update, cancellationToken);
+        }
+    }
+
     private static bool UpdateRunningTable(Table table, LiveDisplayContext context, RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
     {
         if (runResult.Data == null) { return false; }
@@ -1403,79 +1523,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         table.UpdateCell(0, 4, $"[gray]{CliTableFormat.FormatTimeSpan(endSpan)}[/]");
         context.Refresh();
         return true;
-    }
-
-    /// <summary>
-    /// Helper method to create a simple text-based progress bar representation using Markup.
-    /// You could also use a custom renderable that visually looks more like Spectre's standard progress bar.
-    /// </summary>
-    private static Markup CreateProgressBarMarkup(int percentage, Color? color = null)
-    {
-        color ??= Color.Gold3_1;
-        int completedChars = percentage / 5; // Each char is 5%
-        int remainingChars = 20 - completedChars;
-
-        // Build the bar: [▬▬▬▬▬▬▬▬▬▬       ] 50%
-        var bar = new string('▬', completedChars);
-        var tail = new string('▬', remainingChars);
-        var extraSpace = percentage < 100 ? " " : string.Empty;
-        var space = percentage < 10 ? "  " : extraSpace;
-        var final = $"[{color.Value}][[{bar}[/][Gray15]{tail}[/][{color.Value}]]][/] {percentage}%{space}";
-        return new Markup(final);
-    }
-
-    private static Table? GetRunningTable(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
-    {
-        if (runResult.Data == null) { return null; }
-        var data = runResult.Data;
-        var span = DateTimeOffset.Now.Subtract(invokeDate);
-        var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
-
-        var table = new Table();
-        table.AddColumn("Progress", col => col.Centered());
-        table.AddColumn("Effected Row(s)", col => col.Centered());
-        table.AddColumn("Exception Count", col => col.Centered());
-        table.AddColumn("Run Time", col => col.Centered());
-        table.AddColumn("End Time");
-        table.AddRow(
-            $"[gray]{data.Progress}%[/]",
-            $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
-            CliTableFormat.FormatExceptionCount(data.ExceptionsCount),
-            $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",
-            $"[gray]{CliTableFormat.FormatTimeSpan(endSpan)}[/]");
-
-        return table;
-    }
-
-    private static Table GetRunningTable(JobHistory data, int duration)
-    {
-        var span = TimeSpan.FromMilliseconds(duration);
-        var table = new Table();
-        table.AddColumn("Progress", col => col.Centered());
-        table.AddColumn("Effected Row(s)", col => col.Centered());
-        table.AddColumn("Exception Count", col => col.Centered());
-        table.AddColumn("Run Time", col => col.Centered());
-        table.AddColumn("End Time");
-
-        var bar = new string('▬', 20);
-
-        table.AddRow(
-            $"[gray][[{bar}]] 100%[/] ",
-            $"[gray]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]",
-            CliTableFormat.FormatExceptionCount(data.ExceptionCount),
-            $"[gray]{CliTableFormat.FormatTimeSpan(span)}[/]",
-            "[gray]--:--:--[/]");
-
-        return table;
-    }
-
-    private static void CollectCliAutoResumeRequest(CliAutoResumeRequest request)
-    {
-        if (request.In.GetValueOrDefault() == TimeSpan.Zero)
-        {
-            var ts = CliPromptUtil.PromptForTimeSpan("resume in:", required: true);
-            request.In = ts ?? TimeSpan.Zero;
-        }
     }
 
     private struct TestData

@@ -5,9 +5,6 @@ namespace Planar.API.Common.Entities;
 
 public class ApplyMonitorRequest : MonitorRequest, IApplyRequest
 {
-    [YamlMember(Alias = "kind")]
-    public string Kind { get; set; } = string.Empty;
-
     [YamlMember(Alias = "distribution groups")]
     public List<string> DistributionGroups { get; set; } = [];
 
@@ -17,6 +14,16 @@ public class ApplyMonitorRequest : MonitorRequest, IApplyRequest
     [YamlMember(Alias = "active")]
     public bool Active { get; set; }
 
+    //// ===== APPLY REQUEST PROPERTIES ===== ////
+
     [YamlMember(Alias = "source")]
     public string Source { get; set; } = string.Empty;
+
+    [YamlMember(Alias = "kind")]
+    public string Kind { get; set; } = string.Empty;
+
+    [YamlMember(Alias = "version")]
+    public string Version { get; set; } = string.Empty;
+
+    //// ==================================== ////
 }
