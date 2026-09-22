@@ -165,7 +165,7 @@ public partial class JobDomain(
         {
             // Reschedule job
             MonitorUtil.Lock(request.JobDetail.Key, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-            var allTriggers = request.TriggersData.Select(t => t.Trigger).Where(t => t != null).ToList();
+            var allTriggers = request.TriggersData.Select(t => t.Trigger).Where(t => t != null).ToList(); // TODO: wrong, need to get all triggers of job, not only the ones in request
             await scheduler.ScheduleJob(request.JobDetail, allTriggers, true);
             foreach (var item in info)
             {
