@@ -67,12 +67,13 @@ public class ApplyResponse
     }
 }
 
-public class ApplyResponseItem(string key, ApplyAction action, string description, string? source = null)
+public class ApplyResponseItem(string key, ApplyAction action, string description, string kind, string? source)
 {
     public string Key { get; private set; } = key;
     public string Action { get; private set; } = action.ToString();
     public int ActionId { get; private set; } = (int)action;
     public string Description { get; private set; } = description;
+    public string Kind { get; private set; } = kind;
     public string? Source { get; private set; } = string.IsNullOrWhiteSpace(source) ? null : source;
 }
 

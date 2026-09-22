@@ -1,7 +1,6 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.8.*
 ----------------
---- add new manifest: jobdata.yaml
 *** error code for: job is running while apply changes
 *** error text for al job properties
 
@@ -439,3 +438,4 @@ V 1.8.3
 - add apply to monitor
 - validate extra fields in yaml files
 - manifest directory and api/cli
+- add new manifest: jobdata.yaml

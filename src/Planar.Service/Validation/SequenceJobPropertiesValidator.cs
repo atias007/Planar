@@ -34,7 +34,7 @@ public class SequenceJobStepValidator : AbstractValidator<SequenceJobStep>
     public SequenceJobStepValidator(ISchedulerFactory schedulerFactory)
     {
         RuleFor(e => e.Key)
-            .MustAsync((key, ct) => IsJobExistsAsync(schedulerFactory, key, ct))
+            .MustAsync((key, ct) => IsJobExistsAsync(schedulerFactory, key))
             .WithMessage("job with key '{PropertyValue}' does not exist");
 
         RuleFor(e => e.Key)
@@ -54,7 +54,7 @@ public class SequenceJobStepValidator : AbstractValidator<SequenceJobStep>
         RuleFor(e => e.Data).Must(ValidateDataAsync);
     }
 
-    public static async Task<bool> IsJobExistsAsync(ISchedulerFactory schedulerFactory, string? jobKey, CancellationToken cancellationToken)
+    public static async Task<bool> IsJobExistsAsync(ISchedulerFactory schedulerFactory, string? jobKey)
     {
         if (jobKey == null) { return true; }
         var helper = new JobKeyHelper(schedulerFactory);

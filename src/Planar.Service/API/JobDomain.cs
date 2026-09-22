@@ -61,13 +61,12 @@ public partial class JobDomain(
             // Reschedule job
             MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
         }
         finally
         {
             await PauseTriggers(info.JobKey, pausedTriggers);
         }
-
-        AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
     }
 
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -76,15 +75,20 @@ public partial class JobDomain(
         ValidateMaxLength(request.DataValue, 1000, "value", string.Empty);
         if (info.JobDetails == null) { return; }
 
-        if (info.JobDetails.JobDataMap.ContainsKey(request.DataKey))
+        var new_value = (request.DataValue ?? string.Empty).Trim();
+        string description;
+
+        if (info.JobDetails.JobDataMap.TryGetValue(request.DataKey, out object? value))
         {
             if (mode == PutMode.Add)
             {
                 throw new RestConflictException($"data with key '{request.DataKey}' already exists");
             }
 
-            info.JobDetails.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
-            AuditJobSafe(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
+            var current_value = PlanarConvert.ToString(value) ?? string.Empty;
+            if (current_value == new_value) { return; }
+            info.JobDetails.JobDataMap[request.DataKey] = new_value;
+            description = $"update job data with key '{request.DataKey}'";
         }
         else
         {
@@ -99,8 +103,8 @@ public partial class JobDomain(
                 throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            info.JobDetails.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
-            AuditJobSafe(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
+            info.JobDetails.JobDataMap[request.DataKey] = new_value;
+            description = $"add job data with key '{request.DataKey}'";
         }
 
         var pausedTriggers = await GetPausedTriggers(info.JobKey);
@@ -114,6 +118,7 @@ public partial class JobDomain(
             // Reschedule job
             MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            AuditJobSafe(info.JobKey, description, new { value = new_value });
         }
         finally
         {
@@ -121,35 +126,61 @@ public partial class JobDomain(
         }
     }
 
-    internal async Task ApplyData(JobDataRequest request)
+    internal async Task<ApplyResponseItem?> ApplyData(JobDataRequest request)
     {
-        if (request.JobDetail == null) { return; }
+        if (request.JobDetail == null) { return null; }
+        var info = new List<ApplyDataInfo>();
 
+        // 1. apply all job data
         foreach (var data in request.JobData)
         {
-            ApplyDataInner(request, data);
+            var result = ApplyDataInner(request, data);
+            if (result != null) { info.Add(result); }
         }
 
+        // 2. apply all trigger data
         var triggerDomain = Resolve<TriggerDomain>();
         foreach (var t in request.TriggersData)
         {
             foreach (var data in t.Data)
             {
-                triggerDomain.ApplyDataInner(t.Trigger, data);
+                var result = TriggerDomain.ApplyDataInner(t.Trigger, data);
+                if (result != null) { info.Add(result); }
             }
+        }
+
+        // *. no changes
+        if (info.Count == 0)
+        {
+            var jobKey = request.JobDetail.Key.ToString();
+            return new ApplyResponseItem(jobKey, ApplyAction.Unchanged, $"job {jobKey} data was unchanged", Manifest.JobData, request.Source);
         }
 
         var pausedTriggers = await GetPausedTriggers(request.JobDetail.Key);
         var scheduler = await GetScheduler();
         await scheduler.PauseJob(request.JobDetail.Key);
 
+        // 3. reschedule job & audit
         try
         {
-            var triggers = await scheduler.GetTriggersOfJob(request.JobDetail.Key);
-
             // Reschedule job
             MonitorUtil.Lock(request.JobDetail.Key, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-            await scheduler.ScheduleJob(request.JobDetail, triggers, true);
+            var allTriggers = request.TriggersData.Select(t => t.Trigger).Where(t => t != null).ToList();
+            await scheduler.ScheduleJob(request.JobDetail, allTriggers, true);
+            foreach (var item in info)
+            {
+                if (item.TriggerKey != null)
+                {
+                    triggerDomain.AuditTriggerSafe(item.TriggerKey, item.Description, item.AdditionalInfo);
+                }
+                else if (item.JobKey != null)
+                {
+                    AuditJobSafe(item.JobKey, item.Description, item.AdditionalInfo);
+                }
+            }
+
+            var jobKey = request.JobDetail.Key.ToString();
+            return new ApplyResponseItem(jobKey, ApplyAction.Update, $"job {jobKey} data was updated, {info.Count} data item(s)", Manifest.JobData, request.Source);
         }
         finally
         {
@@ -157,12 +188,21 @@ public partial class JobDomain(
         }
     }
 
-    private void ApplyDataInner(JobDataRequest request, KeyValuePair<string, string?> data)
+    private ApplyDataInfo? ApplyDataInner(JobDataRequest request, KeyValuePair<string, string?> data)
     {
-        if (request.JobDetail.JobDataMap.ContainsKey(data.Key))
+        var new_value = (data.Value ?? string.Empty).Trim();
+        if (request.JobDetail.JobDataMap.TryGetValue(data.Key, out object? value))
         {
-            request.JobDetail.JobDataMap[data.Key] = data.Value ?? string.Empty;
-            AuditJobSafe(request.JobDetail.Key, $"update job data with key '{data.Key}'", new { value = data.Value?.Trim() });
+            var current_value = PlanarConvert.ToString(value) ?? string.Empty;
+            if (current_value == new_value) { return null; }
+
+            request.JobDetail.JobDataMap[data.Key] = new_value;
+            return new ApplyDataInfo
+            {
+                JobKey = request.JobDetail.Key,
+                Description = $"update job data with key '{data.Key}'",
+                AdditionalInfo = new { value = new_value }
+            };
         }
         else
         {
@@ -172,8 +212,13 @@ public partial class JobDomain(
                 throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            request.JobDetail.JobDataMap[data.Key] = data.Value ?? string.Empty;
-            AuditJobSafe(request.JobDetail.Key, $"add job data with key '{data.Key}'", new { value = data.Value?.Trim() });
+            request.JobDetail.JobDataMap[data.Key] = new_value;
+            return new ApplyDataInfo
+            {
+                JobKey = request.JobDetail.Key,
+                Description = $"add job data with key '{data.Key}'",
+                AdditionalInfo = new { value = new_value }
+            };
         }
     }
 
@@ -242,28 +287,34 @@ public partial class JobDomain(
 
     public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
+        // split yaml to 2 kinks
         var jobYamls = yamls.Where(y => string.Equals(y.Key, kind1, StringComparison.OrdinalIgnoreCase));
         var jobDataYamls = yamls.Where(y => string.Equals(y.Key, kind2, StringComparison.OrdinalIgnoreCase));
 
+        // build & validate request for kind: job
         var jobRequests = jobYamls.Select(y => GetJobDynamicRequest(y.Value)).ToList();
         ValidateDuplicates(jobRequests);
 
+        // build & validate request for kind: job data
         var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, cancellationToken);
         ValidateDuplicates(dataRequests);
         ValidateJobDataRequest(dataRequests);
         await FillDetails(dataRequests, cancellationToken);
 
+        // apply jobs
         var response = new ApplyResponse();
         foreach (var item in jobRequests)
         {
             var result = await SafeApply(item);
-            response.AddItem(result);
+            if (result != null) { response.AddItem(result); }
             cancellationToken.ThrowIfCancellationRequested();
         }
 
+        // apply job data
         foreach (var item in dataRequests)
         {
-            await ApplyData(item);
+            var result = await SafeApplyData(item);
+            if (result != null) { response.AddItem(result); }
             cancellationToken.ThrowIfCancellationRequested();
         }
 
@@ -357,23 +408,48 @@ public partial class JobDomain(
         }
     }
 
-    private async Task<ApplyResponseItem> SafeApply(SetJobDynamicRequest dynamicRequest)
+    private async Task<ApplyResponseItem?> SafeApplyData(JobDataRequest request)
     {
-        // this is a safe operation
+        try
+        {
+            return await ApplyData(request);
+        }
+        catch (Exception ex)
+        {
+            var jobKey = request.JobDetail.Key.ToString();
+            return new ApplyResponseItem(jobKey, ApplyAction.Error, $"job {jobKey} has error: {ex.Message}", Manifest.JobData, request.Source);
+        }
+    }
+
+    private async Task<ApplyResponseItem?> SafeApply(SetJobDynamicRequest dynamicRequest)
+    {
         var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
+        if (jobKey == null) { return null; }
 
         try
         {
-            var details = await JobKeyHelper.ValidateJobExists(jobKey);
+            return await Apply(dynamicRequest, jobKey);
+        }
+        catch (Exception ex)
+        {
+            return new ApplyResponseItem(jobKey.ToString(), ApplyAction.Error, $"job {jobKey} has error: {ex.Message}", Manifest.Job, dynamicRequest.Source);
+        }
+    }
+
+    private async Task<ApplyResponseItem?> Apply(SetJobDynamicRequest dynamicRequest, JobKey jobKey)
+    {
+        try
+        {
+            _ = await JobKeyHelper.ValidateJobExists(jobKey);
             var wrapper = await Update(dynamicRequest, UpdateJobOptions.Default);
             var response =
                 wrapper.Unchanged ?
-                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Unchanged, $"job {details.Key.Group}.{details.Key.Name} was unchanged", dynamicRequest.Source) :
-                new ApplyResponseItem(wrapper.PlanarId.Id, ApplyAction.Update, $"job {details.Key.Group}.{details.Key.Name} updated", dynamicRequest.Source);
+                new ApplyResponseItem(jobKey.ToString(), ApplyAction.Unchanged, $"job {jobKey} was unchanged", Manifest.Job, dynamicRequest.Source) :
+                new ApplyResponseItem(jobKey.ToString(), ApplyAction.Update, $"job {jobKey} updated", Manifest.Job, dynamicRequest.Source);
 
             if (!wrapper.Unchanged)
             {
-                AuditJobSafe(details.Key, "job was applied (update)", response.Description);
+                AuditJobSafe(jobKey, "job was applied (update)", response.Description);
             }
 
             return response;
@@ -381,12 +457,8 @@ public partial class JobDomain(
         catch (RestNotFoundException)
         {
             var response = await Add(dynamicRequest);
-            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {dynamicRequest.Group}.{dynamicRequest.Name} added", dynamicRequest.Source);
-
-            if (jobKey != null)
-            {
-                AuditJobSafe(jobKey, "job was applied (add)", applyResponse.Description);
-            }
+            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {jobKey} added", Manifest.Job, dynamicRequest.Source);
+            AuditJobSafe(jobKey, "job was applied (add)", applyResponse.Description);
 
             return applyResponse;
         }
@@ -400,7 +472,7 @@ public partial class JobDomain(
         return dynamicRequest;
     }
 
-    private SetJobDynamicRequest GetDynamicRequest(string yml)
+    private static SetJobDynamicRequest GetDynamicRequest(string yml)
     {
         var dynamicRequest = GetJobDynamicRequest(yml);
         return dynamicRequest;

@@ -50,6 +50,15 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             responses.Add(response);
         }
 
+        // Apply Job Data
+        var jobData = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.JobData, StringComparison.OrdinalIgnoreCase));
+        if (jobData != null)
+        {
+            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+            var response = await jobDomain.Apply([.. jobData], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
         // Apply Monitors
         var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
         if (monitors != null)
