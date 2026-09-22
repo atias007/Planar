@@ -248,7 +248,7 @@ public partial class JobDomain(
         var jobRequests = jobYamls.Select(y => GetJobDynamicRequest(y.Value)).ToList();
         ValidateDuplicates(jobRequests);
 
-        var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, cancellationToken, withValidation: true);
+        var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, cancellationToken);
         ValidateDuplicates(dataRequests);
         ValidateJobDataRequest(dataRequests);
         await FillDetails(dataRequests, cancellationToken);
