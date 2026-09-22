@@ -1,0 +1,23 @@
+kind: job data                      # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
+job name: some job name             # The job name [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+job group: some job group           # The job group [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2                        # key --> [1 to 100 characters]
+  key3: value3                        # value --> [up to 1000 characters]
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
+triggers data:
+  - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    data:                             # Key/Value pairs used by job code (merged with job data)
+      key4: value4                    # -------------------------------------------------------
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value6                    # value --> [up to 1000 characters]
+  - name: every-day-trigger           # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    data:                             # Key/Value pairs used by job code (merged with job data)
+      key7: value7                    # -------------------------------------------------------
+      key8: value8                    # key --> [1 to 100 characters]
+      key9: value9                    # value --> [up to 1000 characters]
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #

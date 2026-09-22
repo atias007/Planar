@@ -90,13 +90,6 @@ namespace Planar.Client
         Task<JobDescription> DescribeJobAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get JobFile.yml Template
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns>string</returns>
-        Task<string> GetJobFileAsync(string name, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Get Next Running
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
@@ -129,12 +122,6 @@ namespace Planar.Client
         /// <param name="instanceId"></param>
         /// <returns>RunningJobData</returns>
         Task<RunningJobData> GetRunningDataAsync(string instanceId, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Get All Job Types Get all job types
-        /// </summary>
-        /// <returns>List&lt;string&gt;</returns>
-        Task<IEnumerable<string>> GetJobTypesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cancel Running Job

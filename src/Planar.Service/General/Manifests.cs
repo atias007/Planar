@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Mapster;
+using Planar.Common;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
@@ -12,9 +14,10 @@ public static class Manifest
 {
     public const string Monitor = "monitor";
     public const string Job = "job";
+    public const string JobData = "job data";
     private static readonly Lock _locker = new();
 
-    public static IEnumerable<string> Names => [Monitor, Job];
+    public static IEnumerable<string> Names => [Monitor, Job, JobData];
 
     public static bool IsValid(string name) => Names.Contains(name, StringComparer.OrdinalIgnoreCase);
 
@@ -34,15 +37,24 @@ public static class Manifest
                 var resources = assembly
                     .GetManifestResourceNames()
                     .Where(r => r.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    .Select(r => new { Key = r[prefix.Length..], Value = GetManifestResource(assembly, r) });
+                    .Select(r => new { Key = r[prefix.Length..].ToKebabCase(), Value = GetManifestResource(assembly, r) });
 
                 var jobTypes = ServiceUtil.JobTypes
-                    .Select(t => new { Key = $"{t.Name}File.yml", Value = GetManifestResource(t.Assembly, $"{t.Name}.JobFile.yml") });
+                    .Select(t => new { Key = GetMemberName(t.Name), Value = GetManifestResource(t.Assembly, $"{t.Name}.JobFile.yml") });
 
-                _manifests = jobTypes.Union(resources).ToFrozenDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+                _manifests = jobTypes
+                    .Union(resources)
+                    .OrderBy(j => j.Key)
+                    .ToFrozenDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+
                 return _manifests;
             }
         }
+    }
+
+    private static string GetMemberName(string name)
+    {
+        return $"{name.Replace(" ", "-").ToKebabCase()}.yml";
     }
 
     private static string GetManifestResource(Assembly assembly, string resourceName)

@@ -112,23 +112,6 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<string> GetJobFileAsync(string name, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("job/jobfile/{name}", HttpMethod.Get)
-                .AddSegmentParameter("name", name);
-
-            var result = await _proxy.InvokeAsync<string>(restRequest, cancellationToken);
-            return result;
-        }
-
-        public async Task<IEnumerable<string>> GetJobTypesAsync(CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("job/types", HttpMethod.Get);
-            var result = await _proxy.InvokeAsync<IEnumerable<string>>(restRequest, cancellationToken);
-            return result;
-        }
-
         public async Task<DateTime?> GetNextRunningAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
