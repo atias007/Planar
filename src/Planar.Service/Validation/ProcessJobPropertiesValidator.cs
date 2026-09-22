@@ -9,17 +9,32 @@ public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobPropert
     public ProcessJobPropertiesValidator(ClusterUtil cluster)
     {
         Include(new BaseProcessJobPropertiesValidator(cluster));
-        RuleFor(e => e.Arguments).MaximumLength(1000);
-        RuleFor(e => e.OutputEncoding).Must(EncodingExists)
-            .WithMessage("fail to validate encoding property");
-        RuleFor(e => e).Must(ExitCodeValid)
-            .WithMessage("fail to validate exit code / output properties");
-        RuleFor(e => e.SuccessOutputRegex).MaximumLength(500);
-        RuleFor(e => e.FailOutputRegex).MaximumLength(500);
-        RuleFor(e => e.SuccessExitCodes).Must(c => c == null || c.Count() <= 50)
-            .WithMessage("{PropertyName} items count is more then maximum of 50");
-        RuleFor(e => e.FailExitCodes).Must(c => c == null || c.Count() <= 50)
-            .WithMessage("{PropertyName} items count is more then maximum of 50");
+
+        RuleFor(e => e.Arguments)
+            .MaximumLength(1000)
+            .WithMessage(e => $"the length of 'arguments' must be 1000 characters or fewer. You entered {e.Arguments?.Length ?? 0} characters");
+
+        RuleFor(e => e.OutputEncoding)
+            .Must(EncodingExists)
+            .WithMessage("invalid 'output encoding' {PropertyValue}");
+
+        RuleFor(e => e)
+            .Must(ExitCodeValid);
+
+        RuleFor(e => e.SuccessOutputRegex)
+            .MaximumLength(500)
+            .WithMessage(e => $"the length of 'success output regex' must be 500 characters or fewer. You entered {e.SuccessOutputRegex?.Length ?? 0} characters");
+
+        RuleFor(e => e.FailOutputRegex)
+            .MaximumLength(500);
+
+        RuleFor(e => e.SuccessExitCodes)
+            .Must(c => c == null || c.Count() <= 50)
+            .WithMessage("'success exit codes' items count is more then maximum of 50");
+
+        RuleFor(e => e.FailExitCodes)
+            .Must(c => c == null || c.Count() <= 50)
+            .WithMessage("'fail exit codes' items count is more then maximum of 50");
     }
 
     private static bool ExitCodeValid(ProcessJobProperties properties, ProcessJobProperties properties2, ValidationContext<ProcessJobProperties> context)
@@ -32,7 +47,7 @@ public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobPropert
 
         if (counter > 1)
         {
-            context.AddFailure("exit code", "only 1 of the following properties are allowed to be defined: success exit codes, success output pattern, fail exit codes, fail output pattern");
+            context.AddFailure("exit code", "only 1 of the following properties are allowed to be defined: 'success exit codes', 'success output regex', 'fail exit codes', 'fail output regex'");
             return false;
         }
 

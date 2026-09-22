@@ -18,56 +18,93 @@ namespace Planar.Service.Validation
             _cluster = cluster;
 
             RuleFor(r => r.Url)
-                .NotEmpty()
-                .MaximumLength(1000)
+                .NotEmpty();
+
+            RuleFor(r => r.Url)
+                .MaximumLength(1000);
+
+            RuleFor(r => r.Url)
                 .Must(r => Uri.TryCreate(r, UriKind.Absolute, out _))
-                .WithMessage("'{PropertyValue}' is not valid url");
+                .WithMessage("url '{PropertyValue}' is not valid");
 
             RuleFor(r => r.Method)
-                .NotEmpty()
-                .Must(r => Array.Exists(_methods, m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
-                .WithMessage("methot '{PropertyValue}' is invalid. avaliable options are: " + string.Join(',', _methods));
+                .NotEmpty();
 
-            RuleFor(r => r.BodyFile).MaximumLength(1000).MustAsync(FilenameExists);
+            RuleFor(r => r.Method)
+                .Must(r => Array.Exists(_methods, m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
+                .WithMessage("'method' '{PropertyValue}' is invalid. available options are: " + string.Join(',', _methods));
+
+            RuleFor(r => r.BodyFile)
+                .MaximumLength(1000);
+
+            RuleFor(r => r.BodyFile)
+                .MustAsync(FilenameExists);
+
             RuleFor(r => r.BodyFile)
                 .Empty()
                 .When(r => r.Method == "GET" || r.Method == "HEAD" || (r.Headers?.Any() ?? true))
-                .WithMessage("body filename must be null when method is GET or HEAD");
+                .WithMessage("'body file' must be null when method is GET or HEAD");
 
-            RuleFor(r => r.UserAgent).MaximumLength(1000);
-            RuleFor(r => r.MaxRedirects).GreaterThan(0).When(r => r.MaxRedirects.HasValue).WithMessage("max redirects must be greater the 0");
-            RuleFor(r => r.MaxRedirects).NotEmpty().When(r => r.FollowRedirects).WithMessage("max redirects must have value when follow redirects is true");
-            RuleFor(r => r.BasicAuthentication).Null().When(r => r.JwtAuthentication != null).WithMessage("basic authentication must be null when jwt authentication has value");
+            RuleFor(r => r.UserAgent)
+                .MaximumLength(1000);
+
+            RuleFor(r => r.MaxRedirects)
+                .GreaterThan(0)
+                .When(r => r.MaxRedirects.HasValue)
+                .WithMessage("'max redirects' must be greater than 0");
+
+            RuleFor(r => r.MaxRedirects)
+                .NotEmpty()
+                .When(r => r.FollowRedirects)
+                .WithMessage("'max redirects' must have value when follow redirects is true");
+
+            RuleFor(r => r.BasicAuthentication)
+                .Null()
+                .When(r => r.JwtAuthentication != null)
+                .WithMessage("'basic authentication' must be null when 'jwt authentication' has value");
+
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-            RuleFor(r => r.BasicAuthentication).SetValidator(new RestJobBasicAuthenticationValidator()).When(r => r.BasicAuthentication != null);
-            RuleFor(r => r.JwtAuthentication).Null().When(r => r.BasicAuthentication != null).WithMessage("jwt authentication must be null when basic authentication has value");
-            RuleFor(r => r.JwtAuthentication).SetValidator(new RestJobJwtAuthenticationValidator()).When(r => r.JwtAuthentication != null);
-            RuleFor(r => r.Proxy).SetValidator(new RestJobPropertiesProxyValidator()).When(r => r.Proxy != null);
+            RuleFor(r => r.BasicAuthentication)
+                .SetValidator(new RestJobBasicAuthenticationValidator())
+                .When(r => r.BasicAuthentication != null);
+
+            RuleFor(r => r.JwtAuthentication)
+                .Null()
+                .When(r => r.BasicAuthentication != null)
+                .WithMessage("'jwt authentication' must be null when 'basic authentication' has value");
+
+            RuleFor(r => r.JwtAuthentication)
+                .SetValidator(new RestJobJwtAuthenticationValidator())
+                .When(r => r.JwtAuthentication != null);
+
+            RuleFor(r => r.Proxy)
+                .SetValidator(new RestJobPropertiesProxyValidator())
+                .When(r => r.Proxy != null);
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
             RuleForEach(r => r.FormData)
                 .Must(kvp => RestListKeyNotEmpty(kvp))
-                .WithMessage("form data key is mandatory");
+                .WithMessage("'form data' key is mandatory");
 
             RuleForEach(r => r.FormData)
                 .Must(kvp => RestListKeyLength(kvp))
-                .WithMessage("form data key maximum length is 100 chars");
+                .WithMessage("'form data' key maximum length is 100 chars");
 
             RuleForEach(r => r.FormData)
                 .Must(kvp => RestListValueLength(kvp))
-                .WithMessage("form data value maximum length is 1000 chars");
+                .WithMessage("'form data' value maximum length is 1000 chars");
 
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListKeyNotEmpty(kvp))
-                .WithMessage("headers key is mandatory");
+                .WithMessage("'headers' key is mandatory");
 
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListKeyLength(kvp))
-                .WithMessage("header key maximum length is 100 chars");
+                .WithMessage("'headers' key maximum length is 100 chars");
 
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListValueLength(kvp))
-                .WithMessage("header value maximum length is 1000 chars");
+                .WithMessage("'headers' value maximum length is 1000 chars");
         }
 
         private async Task<bool> FilenameExists(RestJobProperties properties, string? filename, ValidationContext<RestJobProperties> context, CancellationToken cancellationToken = default)

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Asn1.Kisa;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
@@ -32,8 +31,9 @@ public partial class JobDomain(
     IServiceScopeFactory scopeFactory)
     : BaseJobBL<JobDomain, IJobData>(serviceProvider), IJobActions
 {
-    private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
-    private const string kind = "job";
+    private static readonly TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
+    private const string kind1 = "job";
+    private const string kind2 = "job data";
 
     #region Data
 
@@ -121,6 +121,62 @@ public partial class JobDomain(
         }
     }
 
+    internal async Task ApplyData(JobDataRequest request)
+    {
+        if (request.JobDetail == null) { return; }
+
+        foreach (var data in request.JobData)
+        {
+            ApplyDataInner(request, data);
+        }
+
+        var triggerDomain = Resolve<TriggerDomain>();
+        foreach (var t in request.TriggersData)
+        {
+            foreach (var data in t.Data)
+            {
+                triggerDomain.ApplyDataInner(t.Trigger, data);
+            }
+        }
+
+        var pausedTriggers = await GetPausedTriggers(request.JobDetail.Key);
+        var scheduler = await GetScheduler();
+        await scheduler.PauseJob(request.JobDetail.Key);
+
+        try
+        {
+            var triggers = await scheduler.GetTriggersOfJob(request.JobDetail.Key);
+
+            // Reschedule job
+            MonitorUtil.Lock(request.JobDetail.Key, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await scheduler.ScheduleJob(request.JobDetail, triggers, true);
+        }
+        finally
+        {
+            await PauseTriggers(request.JobDetail.Key, pausedTriggers);
+        }
+    }
+
+    private void ApplyDataInner(JobDataRequest request, KeyValuePair<string, string?> data)
+    {
+        if (request.JobDetail.JobDataMap.ContainsKey(data.Key))
+        {
+            request.JobDetail.JobDataMap[data.Key] = data.Value ?? string.Empty;
+            AuditJobSafe(request.JobDetail.Key, $"update job data with key '{data.Key}'", new { value = data.Value?.Trim() });
+        }
+        else
+        {
+            var dataCount = CountUserJobDataItems(request.JobDetail.JobDataMap);
+            if (dataCount >= Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
+
+            request.JobDetail.JobDataMap[data.Key] = data.Value ?? string.Empty;
+            AuditJobSafe(request.JobDetail.Key, $"add job data with key '{data.Key}'", new { value = data.Value?.Trim() });
+        }
+    }
+
     public async Task RemoveData(string id, string key)
     {
         var info = await GetJobDetailsForDataCommands(id, key);
@@ -178,29 +234,65 @@ public partial class JobDomain(
         Update
     }
 
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind1, kind2);
+        return await Apply(yamls, httpContext.RequestAborted);
+    }
+
     public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        var requests = yamls.Select(y => GetJobDynamicRequest(y.Value)).ToList();
-        ValidateDuplicates(requests);
+        var jobYamls = yamls.Where(y => string.Equals(y.Key, kind1, StringComparison.OrdinalIgnoreCase));
+        var jobDataYamls = yamls.Where(y => string.Equals(y.Key, kind2, StringComparison.OrdinalIgnoreCase));
+
+        var jobRequests = jobYamls.Select(y => GetJobDynamicRequest(y.Value)).ToList();
+        ValidateDuplicates(jobRequests);
+
+        var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, cancellationToken, withValidation: true);
+        ValidateDuplicates(dataRequests);
+        ValidateJobDataRequest(dataRequests);
+        await FillDetails(dataRequests, cancellationToken);
 
         var response = new ApplyResponse();
-        foreach (var item in requests)
+        foreach (var item in jobRequests)
         {
-            var result = await Apply(item);
+            var result = await SafeApply(item);
             response.AddItem(result);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        foreach (var item in dataRequests)
+        {
+            await ApplyData(item);
             cancellationToken.ThrowIfCancellationRequested();
         }
 
         return response;
     }
 
-    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    private async Task FillDetails(IReadOnlyCollection<JobDataRequest> dataRequests, CancellationToken cancellationToken)
     {
-        var yamls = await GetApplyYamls(httpContext, kind);
-        return await Apply(yamls, httpContext.RequestAborted);
+        foreach (var dataRequest in dataRequests)
+        {
+            var key = new JobOrTriggerKey { Id = $"{dataRequest.JobGroup}.{dataRequest.JobName}" };
+            var jobKey = await JobKeyHelper.GetJobKey(key);
+            var jobDetails = await JobKeyHelper.ValidateJobExists(jobKey);
+            dataRequest.JobDetail = jobDetails;
+
+            var scheduler = await GetScheduler();
+            if (dataRequest.TriggersData.Count == 0) { continue; }
+            var triggers = await scheduler.GetTriggersOfJob(jobKey, cancellationToken);
+            foreach (var t in dataRequest.TriggersData)
+            {
+                var the_trigger = triggers.FirstOrDefault(tr => string.Equals(tr.Key.Name, t.Name, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new RestNotFoundException($"trigger with name '{t.Name}' does not exist for job '{dataRequest.JobGroup}.{dataRequest.JobName}'");
+
+                t.Trigger = the_trigger;
+            }
+        }
     }
 
-    private static void ValidateDuplicates(List<SetJobDynamicRequest> requests)
+    private static void ValidateDuplicates(IReadOnlyCollection<SetJobDynamicRequest> requests)
     {
         var query = requests
            .GroupBy(r => new { r.Name, r.Group })
@@ -214,8 +306,60 @@ public partial class JobDomain(
         }
     }
 
-    private async Task<ApplyResponseItem> Apply(SetJobDynamicRequest dynamicRequest)
+    private static void ValidateDuplicates(IReadOnlyCollection<JobDataRequest> requests)
     {
+        var query = requests
+           .GroupBy(r => new { r.JobName, r.JobGroup })
+           .Where(g => g.Count() > 1)
+           .Select(g => g.Key)
+           .FirstOrDefault();
+
+        if (query != null)
+        {
+            throw new RestValidationException("duplicate request", $"duplicate job data request for name '{query.JobName}' and group '{query.JobGroup}'");
+        }
+    }
+
+    private static void ValidateJobDataRequest(IReadOnlyCollection<JobDataRequest> requests)
+    {
+        foreach (var item in requests)
+        {
+            item.JobData ??= [];
+
+            #region Trim
+
+            item.JobName = item.JobName?.SafeTrim() ?? string.Empty;
+            item.JobGroup = item.JobGroup?.SafeTrim() ?? string.Empty;
+
+            #endregion Trim
+
+            #region Mandatory
+
+            if (string.IsNullOrWhiteSpace(item.JobName)) throw new RestValidationException(name, "job name is mandatory");
+
+            #endregion Mandatory
+
+            #region Name & Group
+
+            ValidateNameAndGroup(item.JobName, item.JobGroup);
+
+            #endregion Name & Group
+
+            ValidateDataMap(item.JobData, "job");
+            foreach (var t in item.TriggersData)
+            {
+                t.Data ??= [];
+                ValidateTriggerName(t.Name, null);
+                ValidateRange(t.Name, 5, 50, name, trigger);
+                if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException(name, $"trigger name '{t.Name}' has invalid prefix"); }
+                ValidateDataMap(t.Data, trigger);
+            }
+        }
+    }
+
+    private async Task<ApplyResponseItem> SafeApply(SetJobDynamicRequest dynamicRequest)
+    {
+        // this is a safe operation
         var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
 
         try
@@ -256,7 +400,7 @@ public partial class JobDomain(
         return dynamicRequest;
     }
 
-    private SetJobDynamicRequest GetDynamicRequest(string yml)
+    private static SetJobDynamicRequest GetDynamicRequest(string yml)
     {
         var dynamicRequest = GetJobDynamicRequest(yml);
         return dynamicRequest;
@@ -274,36 +418,6 @@ public partial class JobDomain(
         }
 
         throw new RestForbiddenException();
-    }
-
-    public static string GetJobFileTemplate(string typeName)
-    {
-        var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
-
-        var existsType =
-            ServiceUtil.JobTypes.FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.OrdinalIgnoreCase))
-            ?? throw notFoundException.Value;
-
-        var assembly = existsType.Assembly;
-
-        var resources = assembly.GetManifestResourceNames();
-        var resourceName =
-            Array.Find(resources, r => r.Equals($"{typeName}.JobFile.yml", StringComparison.CurrentCultureIgnoreCase)) ??
-            throw notFoundException.Value;
-
-        using Stream? stream =
-            assembly.GetManifestResourceStream(resourceName) ??
-            throw new RestNotFoundException("jobfile.yml resource could not be found");
-
-        using StreamReader reader = new(stream);
-        var result = reader.ReadToEnd();
-
-        if (string.IsNullOrEmpty(result))
-        {
-            throw new RestNotFoundException("jobfile.yml resource could not be found");
-        }
-
-        return result;
     }
 
     public async Task<bool> Cancel(FireInstanceIdRequest request)
@@ -501,8 +615,7 @@ public partial class JobDomain(
         var key = await JobKeyHelper.GetJobKey(id);
         var jobId = await JobKeyHelper.GetJobId(key);
         if (string.IsNullOrWhiteSpace(jobId)) { throw NotFound(id); }
-        var p = await DataLayer.GetJobProperty(jobId);
-        var properties = p.Properties;
+        var (properties, _) = await DataLayer.GetJobProperty(jobId);
         if (string.IsNullOrWhiteSpace(properties))
         {
             throw NotFound(id);

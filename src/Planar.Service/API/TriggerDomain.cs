@@ -49,6 +49,26 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
     }
 
+    internal void ApplyDataInner(ITrigger trigger, KeyValuePair<string, string?> data)
+    {
+        if (IsDataKeyExists(trigger, data.Key))
+        {
+            trigger.JobDataMap[data.Key] = data.Value ?? string.Empty;
+            AuditTriggerSafe(trigger.Key, GetTriggerAuditDescription("update", data.Key), new { value = data.Value?.Trim() });
+        }
+        else
+        {
+            var dataCount = CountUserJobDataItems(trigger.JobDataMap);
+            if (dataCount >= Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
+
+            trigger.JobDataMap[data.Key] = data.Value ?? string.Empty;
+            AuditTriggerSafe(trigger.Key, GetTriggerAuditDescription("add", data.Key), new { value = data.Value?.Trim() });
+        }
+    }
+
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
     {
         var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey, skipSystemCheck);

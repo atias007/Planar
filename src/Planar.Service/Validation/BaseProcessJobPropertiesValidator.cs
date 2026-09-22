@@ -15,24 +15,42 @@ public class BaseProcessJobPropertiesValidator : AbstractValidator<BaseProcessJo
     {
         _cluster = cluster;
 
-        RuleFor(e => e.Filename).NotEmpty().MaximumLength(500);
-        RuleFor(e => e.Filename).MustAsync(FilenameExists).When(e => !string.IsNullOrEmpty(e.Filename));
+        RuleFor(e => e.Filename)
+            .NotEmpty()
+            .WithMessage("'filename' must not be empty");
 
-        RuleFor(e => e.Filename).Must(FileExtentionIsExe)
+        RuleFor(e => e.Filename)
+            .MaximumLength(500)
+            .WithMessage(e => $"the length of 'filename' must be 500 characters or fewer. You entered {e.Filename?.Length ?? 0} characters");
+
+        RuleFor(e => e.Filename)
+            .MustAsync(FilenameExists)
+            .When(e => !string.IsNullOrEmpty(e.Filename));
+
+        RuleFor(e => e.Filename)
+            .Must(FileExtentionIsExe)
             .When(e => !string.IsNullOrEmpty(e.Filename))
-            .WithMessage("property '{PropertyName}' with value '{PropertyValue}' must have 'exe' extention");
+            .WithMessage("property 'filename' with value '{PropertyValue}' must have 'exe' extention");
 
-        RuleFor(e => e.Domain).MaximumLength(100);
-        RuleFor(e => e.UserName).MaximumLength(100);
-        RuleFor(e => e.Password).MaximumLength(100);
+        RuleFor(e => e.Domain)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'domain' must be 100 characters or fewer. You entered {e.Domain?.Length ?? 0} characters");
+
+        RuleFor(e => e.UserName)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'userName' must be 100 characters or fewer. You entered {e.UserName?.Length ?? 0} characters");
+
+        RuleFor(e => e.Password)
+            .MaximumLength(100)
+            .WithMessage(e => $"the length of 'password' must be 100 characters or fewer. You entered {e.Password?.Length ?? 0} characters");
 
         RuleFor(e => e.Domain).Null()
             .When(p => !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            .WithMessage("{PropertyName} must be null when operation system is not windows");
+            .WithMessage("'domain' must be null when operation system is not windows");
 
         RuleFor(e => e.Password).Null()
             .When(p => !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            .WithMessage("{PropertyName} must be null when operation system is not windows");
+            .WithMessage("'password' must be null when operation system is not windows");
     }
 
     private async Task<bool> FilenameExists(BaseProcessJobProperties properties, string? filename, ValidationContext<BaseProcessJobProperties> context, CancellationToken cancellationToken = default)

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Planar.Common
@@ -86,6 +87,39 @@ namespace Planar.Common
             var r = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
             var result = r.Replace(value, spacer);
             return result;
+        }
+
+        public static string ToKebabCase(this string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            var sb = new StringBuilder(input.Length + 8);
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                char c = input[i];
+
+                if (char.IsUpper(c))
+                {
+                    if (i > 0)
+                    {
+                        char prev = input[i - 1];
+                        bool nextIsLower = i + 1 < input.Length && char.IsLower(input[i + 1]);
+
+                        // Word boundary: "myWord" / "v2Beta", or end of an acronym: "XMLParser"
+                        if (char.IsLower(prev) || char.IsDigit(prev) || (char.IsUpper(prev) && nextIsLower))
+                            sb.Append('-');
+                    }
+                    sb.Append(char.ToLowerInvariant(c));
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
         }
 
         public static bool Is<T>(this Type type) where T : struct

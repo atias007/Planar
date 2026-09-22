@@ -25,6 +25,7 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
+    private const string trigger = "trigger";
     private const string group = "group";
     private const string name = "name";
     private const string props = "properties";
@@ -225,10 +226,10 @@ public partial class JobDomain
 
         var result = triggers.Select(t =>
         {
-            var trigger = GetBaseTriggerBuilder(t, jobId)
+            var the_trigger = GetBaseTriggerBuilder(t, jobId)
                 .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
 
-            return trigger.Build();
+            return the_trigger.Build();
         });
 
         return result;
@@ -240,25 +241,25 @@ public partial class JobDomain
 
         var result = triggers.Select(t =>
         {
-            var trigger = GetBaseTriggerBuilder(t, jobId);
+            var the_trigger = GetBaseTriggerBuilder(t, jobId);
 
             if (t.Start == null)
             {
-                trigger = trigger.StartAt(DelayStartTriggerDateTime);
+                the_trigger = the_trigger.StartAt(DelayStartTriggerDateTime);
             }
             else
             {
-                trigger = trigger.StartAt(new DateTimeOffset(t.Start.Value));
+                the_trigger = the_trigger.StartAt(new DateTimeOffset(t.Start.Value));
             }
 
             if (t.End != null)
             {
-                trigger = trigger.EndAt(new DateTimeOffset(t.End.Value));
+                the_trigger = the_trigger.EndAt(new DateTimeOffset(t.End.Value));
             }
 
-            trigger = trigger.WithSimpleSchedule(s => BuildSimpleSchedule(s, t));
+            the_trigger = the_trigger.WithSimpleSchedule(s => BuildSimpleSchedule(s, t));
 
-            return trigger.Build();
+            return the_trigger.Build();
         });
 
         return result;
@@ -280,20 +281,20 @@ public partial class JobDomain
             ServiceUtil.GenerateId() :
             jobTrigger.Id;
 
-        var trigger = TriggerBuilder.Create();
+        var the_trigger = TriggerBuilder.Create();
         jobTrigger.Group = jobId;
-        trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
+        the_trigger = the_trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
 
         // Priority
         if (jobTrigger.Priority.HasValue)
         {
-            trigger = trigger.WithPriority(jobTrigger.Priority.Value);
+            the_trigger = the_trigger.WithPriority(jobTrigger.Priority.Value);
         }
 
         // Calendar
         if (jobTrigger.Calendar.HasValue())
         {
-            trigger = trigger.ModifiedByCalendar(jobTrigger.Calendar);
+            the_trigger = the_trigger.ModifiedByCalendar(jobTrigger.Calendar);
         }
 
         // Data
@@ -301,37 +302,37 @@ public partial class JobDomain
 
         if (jobTrigger.TriggerData.Count > 0)
         {
-            trigger = trigger.UsingJobData(new JobDataMap(jobTrigger.TriggerData));
+            the_trigger = the_trigger.UsingJobData(new JobDataMap(jobTrigger.TriggerData));
         }
 
         // Data --> TriggerId
-        trigger = trigger.UsingJobData(Consts.TriggerId, id);
+        the_trigger = the_trigger.UsingJobData(Consts.TriggerId, id);
 
         // Data --> TriggerTimeout
         if (jobTrigger.Timeout.HasValue)
         {
             var timeoutValue = jobTrigger.Timeout.Value.Ticks.ToString();
-            trigger = trigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
+            the_trigger = the_trigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
         }
 
         // Data --> Retry span, Max retries
         if (jobTrigger.RetrySpan.HasValue)
         {
-            trigger = trigger.UsingJobData(Consts.RetrySpan, jobTrigger.RetrySpan.Value.ToSimpleTimeString());
+            the_trigger = the_trigger.UsingJobData(Consts.RetrySpan, jobTrigger.RetrySpan.Value.ToSimpleTimeString());
         }
 
         // Data --> Max retries
         if (jobTrigger.MaxRetries.HasValue)
         {
-            trigger = trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
+            the_trigger = the_trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
         }
 
         if (!string.IsNullOrWhiteSpace(jobTrigger.PreferedNode))
         {
-            trigger = trigger.WithPreferredNode(jobTrigger.PreferedNode);
+            the_trigger = the_trigger.WithPreferredNode(jobTrigger.PreferedNode);
         }
 
-        return trigger;
+        return the_trigger;
     }
 
     private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
@@ -483,27 +484,12 @@ public partial class JobDomain
 
         #region Valid Name & Group
 
-        if (!IsRegexMatch(JobConsts.JobNameRegex, metadata.Name))
-        {
-            throw new RestValidationException(name, $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
-        }
-
-        if (!IsRegexMatch(JobConsts.JobNameRegex, metadata.Group))
-        {
-            throw new RestValidationException(group, $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
-        }
-
-        if (Consts.PreserveGroupNames.Contains(metadata.Group))
-        {
-            throw new RestValidationException(group, $"job group '{metadata.Group}' is invalid (preserved value)");
-        }
+        ValidateNameAndGroup(metadata.Name, metadata.Group);
 
         #endregion Valid Name & Group
 
         #region Max Chars / Value
 
-        ValidateRange(metadata.Name, 5, 50, name, "job");
-        ValidateRange(metadata.Group, 1, 50, group, "job");
         ValidateRangeValue(metadata.LogRetentionDays, 1, 1000, "log retention days", "job");
         ValidateMaxLength(metadata.Author, 200, "author", "job");
         ValidateMaxLength(metadata.Description, 100, "description", "job");
@@ -559,6 +545,27 @@ public partial class JobDomain
         return jobKey;
     }
 
+    private static void ValidateNameAndGroup(string jobname, string? jobgroup)
+    {
+        if (!IsRegexMatch(JobConsts.JobNameRegex, jobname))
+        {
+            throw new RestValidationException(name, $"job name '{jobname}' is invalid. use only alphanumeric, dashes & underscore");
+        }
+
+        if (!IsRegexMatch(JobConsts.JobNameRegex, jobgroup))
+        {
+            throw new RestValidationException(group, $"job group '{jobgroup}' is invalid. use only alphanumeric, dashes & underscore");
+        }
+
+        if (Consts.PreserveGroupNames.Contains(jobgroup))
+        {
+            throw new RestValidationException(group, $"job group '{jobgroup}' is invalid (preserved value)");
+        }
+
+        ValidateRange(jobname, 5, 50, name, "job");
+        ValidateRange(jobgroup, 1, 50, group, "job");
+    }
+
     private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)
     {
         container.SimpleTriggers?.ForEach(t =>
@@ -578,8 +585,6 @@ public partial class JobDomain
 
     private static void ValidateMaxCharsTiggerProperties(TriggerPool pool)
     {
-        const string trigger = "trigger";
-
         foreach (var t in pool.Triggers)
         {
             t.TriggerData ??= [];
@@ -587,12 +592,6 @@ public partial class JobDomain
             ValidateRange(t.Group, 1, 50, group, trigger);
             ValidateMaxLength(t.Calendar, 50, "calendar", trigger);
             ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", trigger);
-
-            foreach (var item in t.TriggerData)
-            {
-                ValidateRange(item.Key, 1, 100, "key", "trigger data");
-                ValidateMaxLength(item.Value, 1000, "value", "trigger data");
-            }
         }
     }
 
@@ -602,8 +601,8 @@ public partial class JobDomain
         {
             t.TriggerData ??= [];
             if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException(group, $"trigger group '{t.Group}' is invalid (preserved value)"); }
-            if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException(name, $"simple trigger name '{t.Name}' has invalid prefix"); }
-            ValidateDataMap(t.TriggerData, "trigger");
+            if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException(name, $"trigger name '{t.Name}' has invalid prefix"); }
+            ValidateDataMap(t.TriggerData, trigger);
         }
     }
 
@@ -705,9 +704,14 @@ public partial class JobDomain
     {
         foreach (var t in pool.Triggers)
         {
-            if (!IsRegexMatch(JobConsts.JobNameRegex, t.Name)) throw new RestValidationException(name, $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-            if (!IsRegexMatch(JobConsts.JobNameRegex, t.Group)) throw new RestValidationException(group, $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            ValidateTriggerName(t.Name, t.Group);
         }
+    }
+
+    private static void ValidateTriggerName(string? triggerName, string? triggerGroup)
+    {
+        if (!IsRegexMatch(JobConsts.JobNameRegex, triggerName)) throw new RestValidationException(name, $"trigger name '{triggerName}' is invalid. use only alphanumeric, dashes & underscore");
+        if (!IsRegexMatch(JobConsts.JobNameRegex, triggerGroup)) throw new RestValidationException(group, $"trigger group '{triggerGroup}' is invalid. use only alphanumeric, dashes & underscore");
     }
 
     private static void ValidateTriggerPriority(TriggerPool pool)

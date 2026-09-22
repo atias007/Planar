@@ -70,13 +70,6 @@ Console.WriteLine(res1);
 Console.WriteLine(res2);
 Console.WriteLine(res3);
 
-var result1 = await client.Job.GetJobTypesAsync();
-Console.WriteLine($"[x] Job Types:");
-foreach (var jobType in result1)
-{
-    Console.WriteLine($"    - {jobType}");
-}
-
 Console.WriteLine($"[x] List Job:");
 var result2 = await client.Job.ListAsync();
 
@@ -91,9 +84,7 @@ var result3 = await client.Job.GetAsync(id);
 Console.WriteLine($"    - {result3.Description}");
 
 Console.WriteLine($"[x] Get Job File:");
-var result4 = await client.Job.GetJobFileAsync(result1.First());
 var result5 = await client.Job.DescribeJobAsync(jobid1);
-Console.WriteLine(result4);
 Console.WriteLine(result5);
 
 await client.Job.ResumeAsync("5c1sgknnaj5");

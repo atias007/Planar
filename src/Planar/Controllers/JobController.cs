@@ -500,33 +500,6 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         await sse.GetRunningLog(instanceId, cancellationToken);
     }
 
-    [HttpGet("jobfile/{name}")]
-    [EditorAuthorize]
-    [EndpointName("get_job_jobfile_name")]
-    [EndpointDescription("Get JobFile.yml template")]
-    [EndpointSummary("Get JobFile.yml Template")]
-    [OkYmlResponse]
-    [BadRequestResponse]
-    [NotFoundResponse]
-    public ActionResult<string> GetJobFileTemplate([Required][FromRoute] string name)
-    {
-        name = WebUtility.UrlDecode(name);
-        var result = JobDomain.GetJobFileTemplate(name);
-        return Ok(result);
-    }
-
-    [HttpGet("types")]
-    [ViewerAuthorize]
-    [EndpointName("get_job_types")]
-    [EndpointDescription("Get all job types")]
-    [EndpointSummary("Get All Job Types")]
-    [OkJsonResponse(typeof(IEnumerable<string>))]
-    public ActionResult<IEnumerable<string>> GetJobTypes()
-    {
-        var result = ServiceUtil.JobTypeNames;
-        return Ok(result);
-    }
-
     [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet("{id}/last-instance-id/long-polling")]
     [TesterAuthorize]

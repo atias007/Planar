@@ -183,7 +183,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             throw new RestValidationException("key", "key is required");
         }
 
-        ValidateRange(key, 1, 100, "key", string.Empty);
+        ValidateRange(key, 1, 200, "key", string.Empty);
 
         if (!Consts.IsDataKeyValid(key))
         {

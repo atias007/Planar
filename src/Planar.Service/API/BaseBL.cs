@@ -266,7 +266,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
     }
 
-    protected static async Task<IEnumerable<KeyValuePair<string, string>>> GetApplyYamls(HttpContext httpContext, string? kind = null)
+    protected static async Task<IEnumerable<KeyValuePair<string, string>>> GetApplyYamls(HttpContext httpContext, params List<string> kinds)
     {
         // Validate YAML content type
         var contentType = httpContext.Request.ContentType ?? string.Empty;
@@ -303,7 +303,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
             for (var i = 0; i < yamls.Count; i++)
             {
                 currentYaml = yamls[i];
-                ValidateKind(kind, currentYaml.Key);
+                ValidateKind(kinds, currentYaml.Key);
                 if (string.IsNullOrWhiteSpace(currentYaml.Value)) { continue; }
                 result.Add(new KeyValuePair<string, string>(currentYaml.Key, currentYaml.Value));
             }
@@ -373,18 +373,18 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         throw new RestValidationException("yaml", unmatched);
     }
 
-    private static void ValidateKind(string? kind, string key)
+    private static void ValidateKind(List<string>? kinds, string key)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
             throw new RestValidationException("kind", "kind property is missing of empty");
         }
 
-        if (kind == null) { return; }
+        if (kinds == null || kinds.Count == 0) { return; }
 
-        if (key != kind)
+        if (!kinds.Contains(key))
         {
-            throw new RestValidationException("kind", $"Unexpected kind: {key}. Expected kind: {kind}");
+            throw new RestValidationException("kind", $"Unexpected kind: {key}");
         }
     }
 }

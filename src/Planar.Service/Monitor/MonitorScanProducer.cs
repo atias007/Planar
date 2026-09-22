@@ -94,16 +94,7 @@ public class MonitorScanProducer(Channel<MonitorScanMessage> channel, ILogger<Mo
                 await channel.Writer.WriteAsync(message, cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException)
-        {
-#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            if (logger.IsEnabled(LogLevel.Information))
-            {
-                logger.LogInformation("publish monitor scan message canceled. the message: {@Message}", message);
-            }
-#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-        }
-        catch (ChannelClosedException)
+        catch (Exception ex) when (ex is OperationCanceledException || ex is ChannelClosedException || ex is TaskCanceledException)
         {
 #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
             if (logger.IsEnabled(LogLevel.Information))
@@ -128,6 +119,15 @@ public class MonitorScanProducer(Channel<MonitorScanMessage> channel, ILogger<Mo
                 await channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false);
                 await channel.Writer.WriteAsync(message2, cancellationToken).ConfigureAwait(false);
             }
+        }
+        catch (Exception ex) when (ex is OperationCanceledException || ex is ChannelClosedException || ex is TaskCanceledException)
+        {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("publish monitor scan message canceled. the message: {@Message}", message);
+            }
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
         }
         catch (Exception ex)
         {
