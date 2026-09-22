@@ -1,5 +1,4 @@
-﻿using CommonJob;
-using FluentValidation;
+﻿using FluentValidation;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
@@ -16,7 +15,10 @@ public class SequenceJobPropertiesValidator : AbstractValidator<SequenceJobPrope
 {
     public SequenceJobPropertiesValidator(ISchedulerFactory schedulerFactory)
     {
-        RuleFor(e => e.Steps).NotEmpty();
+        RuleFor(e => e.Steps)
+            .NotEmpty()
+            .WithMessage("'steps' must not be empty");
+
         RuleFor(e => e.Steps)
             .Must(e => e.Count <= 100)
             .WithMessage("no more than total 100 steps are allowed");
@@ -34,9 +36,21 @@ public class SequenceJobStepValidator : AbstractValidator<SequenceJobStep>
         RuleFor(e => e.Key)
             .MustAsync((key, ct) => IsJobExistsAsync(schedulerFactory, key, ct))
             .WithMessage("job with key '{PropertyValue}' does not exist");
-        RuleFor(e => e.Key).NotEmpty().MinimumLength(7).MaximumLength(101);
 
-        RuleFor(e => e.Timeout).NotZero().LessThanOrEqualTo(TimeSpan.FromDays(1));
+        RuleFor(e => e.Key)
+            .NotEmpty()
+            .WithMessage("'key' must not be empty")
+            .MinimumLength(7)
+            .WithMessage("'key' must be at least 7 characters long")
+            .MaximumLength(101)
+            .WithMessage("'key' must be at most 101 characters long");
+
+        RuleFor(e => e.Timeout)
+            .NotZero()
+            .WithMessage("'timeout' must not be zero")
+            .LessThanOrEqualTo(TimeSpan.FromDays(1))
+            .WithMessage("'timeout' must be at most 1 day");
+
         RuleFor(e => e.Data).Must(ValidateDataAsync);
     }
 

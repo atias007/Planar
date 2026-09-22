@@ -10,7 +10,7 @@ namespace Planar.Service.Validation
 {
     public class RestJobPropertiesValidator : AbstractValidator<RestJobProperties>
     {
-        private static readonly string[] _methods = new[] { "POST", "GET", "PUT", "DELETE", "PATCH", "HEAD" };
+        private static readonly string[] _methods = ["POST", "GET", "PUT", "DELETE", "PATCH", "HEAD", "QUERY"];
         private readonly ClusterUtil _cluster;
 
         public RestJobPropertiesValidator(ClusterUtil cluster)
@@ -18,35 +18,40 @@ namespace Planar.Service.Validation
             _cluster = cluster;
 
             RuleFor(r => r.Url)
-                .NotEmpty();
+                .NotEmpty()
+                .WithMessage("'url' must not be empty");
 
             RuleFor(r => r.Url)
-                .MaximumLength(1000);
+                .MaximumLength(1000)
+                .WithMessage(e => $"the length of 'url' must be 1000 characters or fewer. You entered {e.Url.Length} characters");
 
             RuleFor(r => r.Url)
                 .Must(r => Uri.TryCreate(r, UriKind.Absolute, out _))
                 .WithMessage("url '{PropertyValue}' is not valid");
 
             RuleFor(r => r.Method)
-                .NotEmpty();
+                .NotEmpty()
+                .WithMessage("'method' must not be empty");
 
             RuleFor(r => r.Method)
                 .Must(r => Array.Exists(_methods, m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
                 .WithMessage("'method' '{PropertyValue}' is invalid. available options are: " + string.Join(',', _methods));
 
             RuleFor(r => r.BodyFile)
-                .MaximumLength(1000);
+                .MaximumLength(1000)
+                .WithMessage(e => $"the length of 'body file' must be 1000 characters or fewer. You entered {e.BodyFile?.Length ?? 0} characters");
 
             RuleFor(r => r.BodyFile)
                 .MustAsync(FilenameExists);
 
             RuleFor(r => r.BodyFile)
                 .Empty()
-                .When(r => r.Method == "GET" || r.Method == "HEAD" || (r.Headers?.Any() ?? true))
-                .WithMessage("'body file' must be null when method is GET or HEAD");
+                .When(r => r.Method == "GET" || r.Method == "HEAD" || r.Method == "DELETE")
+                .WithMessage("'body file' must be null when method is GET or HEAD or DELETE");
 
             RuleFor(r => r.UserAgent)
-                .MaximumLength(1000);
+                .MaximumLength(1000)
+                .WithMessage(e => $"the length of 'user agent' must be 1000 characters or fewer. You entered {e.UserAgent?.Length ?? 0} characters");
 
             RuleFor(r => r.MaxRedirects)
                 .GreaterThan(0)
@@ -56,7 +61,7 @@ namespace Planar.Service.Validation
             RuleFor(r => r.MaxRedirects)
                 .NotEmpty()
                 .When(r => r.FollowRedirects)
-                .WithMessage("'max redirects' must have value when follow redirects is true");
+                .WithMessage("'max redirects' must have value when 'follow redirects' is true");
 
             RuleFor(r => r.BasicAuthentication)
                 .Null()
