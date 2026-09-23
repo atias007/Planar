@@ -31,7 +31,8 @@ public class ServiceController(ServiceDomain bl) : BaseController<ServiceDomain>
     public async Task<ActionResult<ApplyResponse>> Apply()
     {
         var result = await BusinesLayer.Apply(HttpContext);
-        return Ok(result);
+        var status = result.GetStatusCode();
+        return StatusCode((int)status, result);
     }
 
     [HttpGet("version")]
