@@ -1,6 +1,8 @@
 ﻿using Planar.API.Common.Entities;
 using Quartz;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Planar.Service.Model;
@@ -30,6 +32,14 @@ internal class JobDataRequest : IApplyRequest
 
     [YamlIgnore]
     internal IJobDetail JobDetail { get; set; } = null!;
+
+    [YamlIgnore]
+    internal IReadOnlyCollection<ITrigger> Triggers { get; set; } = null!;
+
+    public ITrigger? GetTrigger(string name)
+    {
+        return Triggers.FirstOrDefault(tr => string.Equals(tr.Key.Name, name, StringComparison.OrdinalIgnoreCase));
+    }
 }
 
 internal class TriggerData
@@ -39,7 +49,4 @@ internal class TriggerData
 
     [YamlMember(Alias = "data")]
     public Dictionary<string, string?> Data { get; set; } = [];
-
-    [YamlIgnore]
-    public ITrigger Trigger { get; set; } = null!;
 }

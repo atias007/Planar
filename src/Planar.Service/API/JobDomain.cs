@@ -144,7 +144,9 @@ public partial class JobDomain(
         {
             foreach (var data in t.Data)
             {
-                var result = TriggerDomain.ApplyDataInner(t.Trigger, data);
+                var data_trigger = request.GetTrigger(t.Name);
+                if (data_trigger == null) { continue; }
+                var result = TriggerDomain.ApplyDataInner(data_trigger, data);
                 if (result != null) { info.Add(result); }
             }
         }
@@ -153,7 +155,7 @@ public partial class JobDomain(
         if (info.Count == 0)
         {
             var jobKey = request.JobDetail.Key.ToString();
-            return new ApplyResponseItem(jobKey, ApplyAction.Unchanged, $"job {jobKey} data was unchanged", Manifest.JobData, request.Source);
+            return new ApplyResponseItem(jobKey, ApplyAction.Unchanged, $"job '{jobKey}' data was unchanged", Manifest.JobData, request.Source);
         }
 
         var pausedTriggers = await GetPausedTriggers(request.JobDetail.Key);
@@ -165,8 +167,7 @@ public partial class JobDomain(
         {
             // Reschedule job
             MonitorUtil.Lock(request.JobDetail.Key, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-            var allTriggers = request.TriggersData.Select(t => t.Trigger).Where(t => t != null).ToList(); // TODO: wrong, need to get all triggers of job, not only the ones in request
-            await scheduler.ScheduleJob(request.JobDetail, allTriggers, true);
+            await scheduler.ScheduleJob(request.JobDetail, request.Triggers, true);
             foreach (var item in info)
             {
                 if (item.TriggerKey != null)
@@ -180,7 +181,7 @@ public partial class JobDomain(
             }
 
             var jobKey = request.JobDetail.Key.ToString();
-            return new ApplyResponseItem(jobKey, ApplyAction.Update, $"job {jobKey} data was updated, {info.Count} data item(s)", Manifest.JobData, request.Source);
+            return new ApplyResponseItem(jobKey, ApplyAction.Update, $"job '{jobKey}' data was updated, {info.Count} data item(s)", Manifest.JobData, request.Source);
         }
         finally
         {
@@ -333,12 +334,12 @@ public partial class JobDomain(
             var scheduler = await GetScheduler();
             if (dataRequest.TriggersData.Count == 0) { continue; }
             var triggers = await scheduler.GetTriggersOfJob(jobKey, cancellationToken);
-            foreach (var t in dataRequest.TriggersData)
-            {
-                var the_trigger = triggers.FirstOrDefault(tr => string.Equals(tr.Key.Name, t.Name, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new RestNotFoundException($"trigger with name '{t.Name}' does not exist for job '{dataRequest.JobGroup}.{dataRequest.JobName}'");
+            dataRequest.Triggers = triggers;
 
-                t.Trigger = the_trigger;
+            var any = dataRequest.TriggersData.FirstOrDefault(t => !triggers.Any(tr => string.Equals(t.Name, tr.Key.Name, StringComparison.OrdinalIgnoreCase)));
+            if (any != null)
+            {
+                throw new RestNotFoundException($"trigger with name '{any.Name}' does not exist for job '{dataRequest.JobGroup}.{dataRequest.JobName}'");
             }
         }
     }
@@ -417,7 +418,7 @@ public partial class JobDomain(
         catch (Exception ex)
         {
             var jobKey = request.JobDetail.Key.ToString();
-            return new ApplyResponseItem(jobKey, ApplyAction.Error, $"job {jobKey} has error: {ex.Message}", Manifest.JobData, request.Source);
+            return new ApplyResponseItem(jobKey, ApplyAction.Error, $"job '{jobKey}' has error: {ex.Message}", Manifest.JobData, request.Source);
         }
     }
 
@@ -432,7 +433,7 @@ public partial class JobDomain(
         }
         catch (Exception ex)
         {
-            return new ApplyResponseItem(jobKey.ToString(), ApplyAction.Error, $"job {jobKey} has error: {ex.Message}", Manifest.Job, dynamicRequest.Source);
+            return new ApplyResponseItem(jobKey.ToString(), ApplyAction.Error, $"job '{jobKey}' has error: {ex.Message}", Manifest.Job, dynamicRequest.Source);
         }
     }
 
@@ -444,8 +445,8 @@ public partial class JobDomain(
             var wrapper = await Update(dynamicRequest, UpdateJobOptions.Default);
             var response =
                 wrapper.Unchanged ?
-                new ApplyResponseItem(jobKey.ToString(), ApplyAction.Unchanged, $"job {jobKey} was unchanged", Manifest.Job, dynamicRequest.Source) :
-                new ApplyResponseItem(jobKey.ToString(), ApplyAction.Update, $"job {jobKey} updated", Manifest.Job, dynamicRequest.Source);
+                new ApplyResponseItem(jobKey.ToString(), ApplyAction.Unchanged, $"job '{jobKey}' was unchanged", Manifest.Job, dynamicRequest.Source) :
+                new ApplyResponseItem(jobKey.ToString(), ApplyAction.Update, $"job '{jobKey}' updated", Manifest.Job, dynamicRequest.Source);
 
             if (!wrapper.Unchanged)
             {
@@ -457,7 +458,7 @@ public partial class JobDomain(
         catch (RestNotFoundException)
         {
             var response = await Add(dynamicRequest);
-            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job {jobKey} added", Manifest.Job, dynamicRequest.Source);
+            var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job '{jobKey}' added", Manifest.Job, dynamicRequest.Source);
             AuditJobSafe(jobKey, "job was applied (add)", applyResponse.Description);
 
             return applyResponse;

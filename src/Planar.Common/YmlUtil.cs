@@ -83,6 +83,18 @@ public static class YmlUtil
 
     public static List<KeyValuePair<string, string>> SplitByKind(string yamlText)
     {
+        try
+        {
+            return SplitByKindInner(yamlText);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidCastException($"failed read yaml file. check file content to be valid yaml format. message: {ex.Message}");
+        }
+    }
+
+    private static List<KeyValuePair<string, string>> SplitByKindInner(string yamlText)
+    {
         yamlText = yamlText.ReplaceLineEndings("\n");   // keeps line numbers and slices aligned
 
         // 1. where does each document begin? (Mark.Line is 1-based)

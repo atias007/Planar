@@ -801,7 +801,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             {
                 var action = MonitorProfile.ToMonitorAction(request);
                 var description = GetMonitorDescription(action);
-                response.AddItem(new ApplyResponseItem(GetMonitorKey(action), ApplyAction.Error, $"fail to handle monitor {description}. {ex.Message}", Manifest.Monitor, request.Source));
+                response.AddItem(new ApplyResponseItem(GetMonitorKey(action), ApplyAction.Error, $"fail to handle monitor: {description}. {ex.Message}", Manifest.Monitor, request.Source));
             }
         }
 
@@ -824,7 +824,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
 
             await monitorDal.SaveChangesAsync();
-            var message = $"add new monitor {GetMonitorDescription(requestMonitor)}";
+            var message = $"add new monitor: {GetMonitorDescription(requestMonitor)}";
             var result = new ApplyResponseItem(GetMonitorKey(requestMonitor), ApplyAction.Add, message, Manifest.Monitor, request.Source);
             AuditSecuritySafe($"monitor was applied: {message}", true);
             return result;
@@ -861,10 +861,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             var count = await monitorDal.SaveChangesAsync();
             if (count == 0)
             {
-                return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Unchanged, $"no changes applied to monitor {GetMonitorDescription(currentMonitor)}", Manifest.Monitor, request.Source);
+                return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Unchanged, $"no changes applied to monitor: {GetMonitorDescription(currentMonitor)}", Manifest.Monitor, request.Source);
             }
 
-            var message = $"update existing monitor {GetMonitorDescription(currentMonitor)}";
+            var message = $"update existing monitor: {GetMonitorDescription(currentMonitor)}";
             var result = new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Update, message, Manifest.Monitor, request.Source);
             AuditSecuritySafe($"monitor was applied: {message}", true);
             return result;

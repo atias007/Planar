@@ -122,7 +122,7 @@ internal static class CliTableExtensions
         {
             foreach (var item in g)
             {
-                var action = item.ActionId == 99 ? CliFormat.GetErrorMarkup(item.Action) : item.Action;
+                var action = item.ActionId == 99 ? $"[{CliFormat.ErrorColor}]{item.Action}[/]" : item.Action;
                 table2.Table.AddRow(action, SafeCliString(item.Source), SafeCliString(item.Description));
             }
         }
