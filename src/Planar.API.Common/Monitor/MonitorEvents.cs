@@ -89,7 +89,7 @@ public static class MonitorEventsParser
             .Replace(ph2, string.Empty)
             .Replace(space, string.Empty);
 
-        if (!Enum.TryParse<MonitorEvents>(value, ignoreCase: true, out var parsed)) { return null; }
+        if (!Enum.TryParse<MonitorEvents>(value, ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed)) { return null; }
         return parsed;
     }
 }
