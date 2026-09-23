@@ -329,7 +329,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         string kind,
         CancellationToken cancellationToken,
         bool withValidation = true)
-        where T : class, IApplyRequest, new()
+        where T : class, IApplyRequest
     {
         var validator = withValidation ? ResolveOptionally<IValidator<T>>() : null;
         var entities = new List<T>();

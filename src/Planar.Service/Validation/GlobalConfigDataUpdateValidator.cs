@@ -15,5 +15,10 @@ public class GlobalConfigDataUpdateValidator : AbstractValidator<GlobalConfigMod
            .NotEmpty()
            .When(f => string.IsNullOrWhiteSpace(f.SourceUrl))
            .WithMessage(f => "{PropertyName} must have value when SourceUrl is empty");
+
+        RuleFor(f => f.Value)
+           .Empty()
+           .When(f => !string.IsNullOrWhiteSpace(f.SourceUrl))
+           .WithMessage(f => "{PropertyName} must be empty when SourceUrl is provided");
     }
 }

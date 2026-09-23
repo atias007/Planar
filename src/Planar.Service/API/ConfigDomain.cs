@@ -1,5 +1,4 @@
-﻿using CommonJob;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NetEscapades.Configuration.Yaml;
@@ -7,6 +6,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Validation;
 using System;
@@ -16,12 +16,15 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Twilio.TwiML.Messaging;
+using static Twilio.Rest.Intelligence.V3.ConversationResource;
 
 namespace Planar.Service.API;
 
 public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigDomain, IConfigData>(serviceProvider)
 {
     private const string kind = "global config";
+    private const string c_source_url = "source url";
 
     public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
@@ -49,14 +52,27 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestConflictException($"key {request.Key} already exists");
         }
 
-        await SetValueSourceUrlContent(request);
+        await AddInner(request);
+        _ = Flush();
+    }
 
+    private async Task AddInner(GlobalConfigModelAddRequest request, bool withDelete = false)
+    {
+        await SetValueSourceUrlContent(request);
         var secretKey = EncryptConfigValueIfNeeded(request);
         var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
         globalConfig.SecretKey = secretKey;
-        await DataLayer.AddGlobalConfig(globalConfig);
-        AuditSecuritySafe($"config key '{request.Key}' was added");
-        _ = Flush();
+
+        if (withDelete)
+        {
+            await DataLayer.AddGlobalConfigWithDelete(globalConfig);
+            AuditSecuritySafe($"config key '{request.Key}' was updated");
+        }
+        else
+        {
+            await DataLayer.AddGlobalConfig(globalConfig);
+            AuditSecuritySafe($"config key '{request.Key}' was added");
+        }
     }
 
     public async Task Delete(string key)
@@ -97,7 +113,8 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             // string
             if (string.Equals(p.Type, GlobalConfigTypes.String.ToString(), StringComparison.OrdinalIgnoreCase))
             {
-                final.Put(p.Key.Trim(), p.Value);
+                var value = GetGlobalConfigValue(p, decrypt);
+                final.Put(p.Key.Trim(), value);
             } // yml
             else if (
                 string.Equals(p.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase) &&
@@ -151,7 +168,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         await Flush(cancellationToken);
         if (message != null)
         {
-            throw new RestValidationException("source url", message);
+            throw new RestValidationException(c_source_url, message);
         }
     }
 
@@ -176,10 +193,11 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return data;
     }
 
-    public async Task Update(GlobalConfigModelUpdateRequest request)
+    public async Task<int> Update(GlobalConfigModelUpdateRequest request)
     {
         request.Key = request.Key.Trim();
-        var exists = await DataLayer.GetGlobalConfig(request.Key) ?? throw new RestNotFoundException();
+        var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key) ?? throw new RestNotFoundException();
+
         if (!string.IsNullOrWhiteSpace(exists.SourceUrl))
         {
             if (!string.IsNullOrWhiteSpace(request.Value)) { throw new RestValidationException(nameof(request.Value), $"config key '{request.Key}' has source url '{exists.SourceUrl}' and cannot be updated with value"); }
@@ -197,9 +215,33 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
         EncryptConfigValueIfNeeded(exists);
 
-        await DataLayer.UpdateGlobalConfig(exists);
-        AuditSecuritySafe($"config key '{request.Key}' was updated");
-        _ = Flush();
+        var count = await DataLayer.SaveChangesAsync();
+        if (count > 0)
+        {
+            AuditSecuritySafe($"config key '{request.Key}' was updated");
+            _ = Flush();
+        }
+
+        return count;
+    }
+
+    private async Task<bool> NeedToUpdate(GlobalConfigModelAddRequest request)
+    {
+        request.Key = request.Key.Trim();
+        var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key) ?? throw new RestNotFoundException();
+        if (exists.SourceUrl != request.SourceUrl) { return true; }
+        if (exists.IsSecret != request.IsSecret) { return true; }
+        if (exists.IsSecret)
+        {
+            var existsValue = GetGlobalConfigValue(exists, decrypt: true);
+            if (existsValue != request.Value) { return true; }
+        }
+        else
+        {
+            if (exists.Value != request.Value) { return true; }
+        }
+
+        return false;
     }
 
     private static string? EncryptConfigValueIfNeeded(GlobalConfigModelAddRequest request)
@@ -235,7 +277,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("source url", $"unable to get content from source url '{sourceUrl}'. message: {ex.Message}");
+            throw new RestValidationException(c_source_url, $"unable to get content from source url '{sourceUrl}'. message: {ex.Message}");
         }
     }
 
@@ -263,7 +305,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         const int maxLength = 4_000;
         if (content.Length > maxLength)
         {
-            throw new RestValidationException("source url", $"source url '{sourceUrl}' content has more then {maxLength:N0} characters");
+            throw new RestValidationException(c_source_url, $"source url '{sourceUrl}' content has more then {maxLength:N0} characters");
         }
 
         return content;
@@ -303,7 +345,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("source url", $"unable to get content from source url '{request.SourceUrl}'. message: {ex.Message}");
+            throw new RestValidationException(c_source_url, $"unable to get content from source url '{request.SourceUrl}'. message: {ex.Message}");
         }
     }
 
@@ -373,14 +415,13 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
         // Convert to list of ApplyMonitorRequest
-        var requests = await GetApplyEntities<GlobalConfigModelAddRequest>(yamls, kind, cancellationToken);
+        var requests = await GetApplyEntities<GlobalConfigApplyRequest>(yamls, kind, cancellationToken);
 
         // Validation
         ValidateDuplicateRequests(requests);
-        MonitorActionValidator.ValidateMonitorArguments(requests);
 
         // Apply changes
         var response = await ApplyChnges(requests);
@@ -389,8 +430,77 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         await DataLayer.SaveChangesAsync();
 
         // Clear cache
-        _ = Flush();
+        _ = Flush(cancellationToken);
 
         return response;
+    }
+
+    private static void ValidateDuplicateRequests(IEnumerable<GlobalConfigApplyRequest> requests)
+    {
+        var query = requests
+            .GroupBy(r => r.Key)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        if (query != null)
+        {
+            throw new RestValidationException("duplicate request", $"duplicate global config request for key '{query}'");
+        }
+    }
+
+    private async Task<ApplyResponse> ApplyChnges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)
+    {
+        var response = new ApplyResponse();
+        if (requests.Count == 0) { return response; }
+        if (requests.Count == 1)
+        {
+            var request = requests.First();
+            var result = await ApplyInner(request);
+            response.AddItem(result);
+            return response;
+        }
+
+        foreach (var request in requests)
+        {
+            try
+            {
+                var result = await ApplyInner(request);
+                response.AddItem(result);
+            }
+            catch (Exception ex)
+            {
+                response.AddItem(new ApplyResponseItem(request.Key, ApplyAction.Error, $"fail to handle global config '{request.Key}'. {ex.Message}", Manifest.GlobalConfig, request.Source));
+            }
+        }
+
+        return response;
+    }
+
+    private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request)
+    {
+        request.Key = request.Key.Trim();
+        var exists = await DataLayer.IsGlobalConfigExists(request.Key);
+        if (exists)
+        {
+            var count = 0;
+            if (await NeedToUpdate(request))
+            {
+                await AddInner(request, true);
+                count = 1;
+            }
+
+            var message = count > 0 ? $"global config '{request.Key}' was updated" : $"global config '{request.Key}' was not changed";
+            var action = count > 0 ? ApplyAction.Update : ApplyAction.Unchanged;
+            AuditSecuritySafe($"global config was applied: {message}", false);
+            return new ApplyResponseItem(request.Key, action, message, Manifest.GlobalConfig, request.Source);
+        }
+        else
+        {
+            await AddInner(request);
+            var message = $"global config '{request.Key}' was added";
+            AuditSecuritySafe($"global config was applied: {message}", false);
+            return new ApplyResponseItem(request.Key, ApplyAction.Add, message, Manifest.GlobalConfig, request.Source);
+        }
     }
 }

@@ -126,7 +126,10 @@ public partial class JobDomain(
         }
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     internal async Task<ApplyResponseItem?> ApplyData(JobDataRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         if (request.JobDetail == null) { return null; }
         var info = new List<ApplyDataInfo>();

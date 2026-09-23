@@ -6,11 +6,11 @@ using System.Linq;
 
 namespace Planar.Service.Validation;
 
-public class GlobalConfigDataValidator : AbstractValidator<GlobalConfigModelAddRequest>
+public class GlobalConfigModelAddRequestValidator : AbstractValidator<GlobalConfigModelAddRequest>
 {
     private static readonly IEnumerable<string> _types = Enum.GetNames<GlobalConfigTypes>().Select(n => n.ToLower());
 
-    public GlobalConfigDataValidator()
+    public GlobalConfigModelAddRequestValidator()
     {
         Include(new GlobalConfigDataUpdateValidator());
 
@@ -41,6 +41,11 @@ public class GlobalConfigDataValidator : AbstractValidator<GlobalConfigModelAddR
             .Must(ValidationUtil.IsJsonValid)
             .When(f => string.Equals(f.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase))
             .WithMessage(f => "{PropertyName} has invalid json format");
+
+        RuleFor(f => f.SourceUrl)
+           .Empty()
+           .When(f => f.IsSecret == true)
+           .WithMessage(f => "{PropertyName} should not be provided when value is secret");
     }
 
     private static bool IsValidType(string type)

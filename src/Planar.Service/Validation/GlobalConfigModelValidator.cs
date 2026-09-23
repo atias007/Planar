@@ -7,6 +7,6 @@ public class GlobalConfigModelValidator : AbstractValidator<GlobalConfigModel>
 {
     public GlobalConfigModelValidator()
     {
-        Include(new GlobalConfigDataValidator());
+        Include(new GlobalConfigModelAddRequestValidator());
     }
 }

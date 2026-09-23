@@ -19,13 +19,22 @@ public class GlobalConfigModelAddRequest : GlobalConfigModelUpdateRequest
     [YamlIgnore]
     public string? Type { get; set; }
 
-    [YamlIgnore]
+    [YamlMember(Alias = "is secret")]
     public bool? IsSecret { get; set; }
 }
 
-public class GlobalConfigApplyRequest : GlobalConfigModelUpdateRequest, IApplyRequest
+public class GlobalConfigApplyRequest : GlobalConfigModelAddRequest, IApplyRequest
 {
-    public string Kind { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
-    public string Source { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
-    public string Version { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+    //// ===== APPLY REQUEST PROPERTIES ===== ////
+
+    [YamlMember(Alias = "source")]
+    public string Source { get; set; } = string.Empty;
+
+    [YamlMember(Alias = "kind")]
+    public string Kind { get; set; } = string.Empty;
+
+    [YamlMember(Alias = "version")]
+    public string Version { get; set; } = string.Empty;
+
+    //// ==================================== ////
 }

@@ -48,7 +48,7 @@ public abstract class BaseCliAction
         {
             request.Filename = CollectCliValue(new CollectCliValueParameters
             {
-                Field = "filename/path",
+                Field = "file/path",
                 Required = true,
                 MinLength = 2,
                 MaxLength = 500
