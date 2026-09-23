@@ -320,6 +320,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return await _context.MonitorActions
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(m => m.Groups)
             .Include(m => m.MonitorActionsHooks)
             .Where(m => m.Id == id)

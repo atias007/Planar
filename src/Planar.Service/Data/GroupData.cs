@@ -129,7 +129,6 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     public async Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request)
     {
         var result = await _context.Groups
-            .Include(g => g.Users)
             .Select(g => new GroupInfo
             {
                 Name = g.Name,

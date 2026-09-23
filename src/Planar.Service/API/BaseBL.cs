@@ -382,7 +382,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
 
         if (kinds == null || kinds.Count == 0) { return; }
 
-        if (!kinds.Contains(key))
+        if (!kinds.Contains(key, StringComparer.OrdinalIgnoreCase))
         {
             throw new RestValidationException("kind", $"Unexpected kind: {key}");
         }

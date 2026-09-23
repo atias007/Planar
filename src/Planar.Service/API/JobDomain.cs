@@ -189,7 +189,7 @@ public partial class JobDomain(
         }
     }
 
-    private ApplyDataInfo? ApplyDataInner(JobDataRequest request, KeyValuePair<string, string?> data)
+    private static ApplyDataInfo? ApplyDataInner(JobDataRequest request, KeyValuePair<string, string?> data)
     {
         var new_value = (data.Value ?? string.Empty).Trim();
         if (request.JobDetail.JobDataMap.TryGetValue(data.Key, out object? value))

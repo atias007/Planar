@@ -71,7 +71,8 @@ public class MonitorProfile : Profile
             JobGroup = string.IsNullOrEmpty(request.JobGroup) ? null : request.JobGroup,
             JobName = string.IsNullOrEmpty(request.JobName) ? null : request.JobName,
             Title = request.Title,
-            EventArgument = request.ToEventArgumentString()
+            EventArgument = request.ToEventArgumentString(),
+            Active = true
         };
 
         _ = MonitorEventsParser.TryParse(request.Event, out var eventId);
@@ -84,6 +85,7 @@ public class MonitorProfile : Profile
     {
         var action = new MonitorAction
         {
+            Active = request.Active,
             JobGroup = string.IsNullOrEmpty(request.JobGroup) ? null : request.JobGroup,
             JobName = string.IsNullOrEmpty(request.JobName) ? null : request.JobName,
             Title = request.Title,

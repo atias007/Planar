@@ -10,7 +10,6 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +19,8 @@ namespace Planar.CLI.Actions;
 [Module("monitor", "handle monitoring and monitor hooks", Synonyms = "monitors")]
 public class MonitorCliActions : BaseCliAction<MonitorCliActions>
 {
+    private const string c_monitor = "monitor";
+
     [Action("add")]
     [NullRequest]
     public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request, CancellationToken cancellationToken = default)
@@ -36,7 +37,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
 
         var mappedRequest = MapAddMonitorRequest(request);
-        var restRequestAdd = new RestRequest("monitor", Method.Post)
+        var restRequestAdd = new RestRequest(c_monitor, Method.Post)
             .AddBody(mappedRequest);
         var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd, cancellationToken);
         return new CliActionResponse(resultAdd);
@@ -45,7 +46,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     [Action("apply")]
     public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
     {
-        return await Apply("monitor", request, cancellationToken);
+        return await Apply(c_monitor, request, cancellationToken);
     }
 
     [Action("remove")]
@@ -98,7 +99,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         if (string.IsNullOrEmpty(request.JobIdOrJobGroup))
         {
-            var restRequest = new RestRequest("monitor", Method.Get)
+            var restRequest = new RestRequest(c_monitor, Method.Get)
                 .AddQueryPagingParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<MonitorItem>>(restRequest, cancellationToken);
@@ -182,7 +183,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         {
             return new CliActionResponse(wrapper.FailResponse);
         }
-        var restRequest = new RestRequest("monitor", Method.Put)
+        var restRequest = new RestRequest(c_monitor, Method.Put)
             .AddBody(wrapper.Request);
 
         return await Execute(restRequest, cancellationToken);

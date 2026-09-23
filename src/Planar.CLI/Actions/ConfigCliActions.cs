@@ -16,6 +16,8 @@ namespace Planar.CLI.Actions;
 [Module("config", "add, remove, list & update global parameters", Synonyms = "configs")]
 public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 {
+    private const string c_config = "config";
+
     [Action("add")]
     public static async Task<CliActionResponse> Add(CliAddConfigRequest request, CancellationToken cancellationToken = default)
     {
@@ -26,7 +28,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
 
         var data = new { request.Key, request.Value, IsSecret = false };
-        var restRequest = new RestRequest("config", Method.Post)
+        var restRequest = new RestRequest(c_config, Method.Post)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -43,7 +45,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
 
         var data = new { request.Key, request.Value, IsSecret = true };
-        var restRequest = new RestRequest("config", Method.Post)
+        var restRequest = new RestRequest(c_config, Method.Post)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -60,7 +62,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
 
         var data = new { request.Key, request.SourceUrl, IsSecret = false };
-        var restRequest = new RestRequest("config", Method.Post)
+        var restRequest = new RestRequest(c_config, Method.Post)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -88,7 +90,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
         else
         {
-            restRequest = new RestRequest("config", Method.Get)
+            restRequest = new RestRequest(c_config, Method.Get)
                 .AddQueryPagingParameter(request);
             return await ExecuteTable<PagingResponse<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
@@ -154,7 +156,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
 
         var data = new { request.Key, request.Value, request.SourceUrl };
-        var restRequest = new RestRequest("config", Method.Put)
+        var restRequest = new RestRequest(c_config, Method.Put)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -258,7 +260,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         var type = configType.ToString().ToLower();
 
         var data = new { request.Key, value, Type = type };
-        var restRequest = new RestRequest("config", Method.Put)
+        var restRequest = new RestRequest(c_config, Method.Put)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);

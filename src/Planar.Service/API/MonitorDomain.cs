@@ -837,7 +837,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
             foreach (var group in addGroups)
             {
-                DataLayer.AddGroupToMonitor(currentMonitor, group.Id);
+                monitorDal.AddGroupToMonitor(currentMonitor, group.Id);
             }
 
             foreach (var group in removeGroups)
@@ -850,7 +850,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
             foreach (var hook in addHooks)
             {
-                DataLayer.AddHookToMonitor(currentMonitor, hook);
+                monitorDal.AddHookToMonitor(currentMonitor, hook);
             }
 
             foreach (var hook in removeHooks)

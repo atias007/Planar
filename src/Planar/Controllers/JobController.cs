@@ -78,7 +78,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
             return Created();
         }
 
-        return CreatedAtAction(nameof(Get), result, result);
+        return CreatedAtAction(nameof(Get), result.PlanarId, result);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]

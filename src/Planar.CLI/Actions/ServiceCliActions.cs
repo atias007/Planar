@@ -23,10 +23,12 @@ namespace Planar.CLI.Actions;
 [Module("service", "operate service, check alive, list calendars and more")]
 public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 {
+    private const string c_service = "service";
+
     [Action("apply")]
     public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
     {
-        return await Apply("service", request, cancellationToken);
+        return await Apply(c_service, request, cancellationToken);
     }
 
     [Action("agents")]
@@ -57,7 +59,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("info")]
     public static async Task<CliActionResponse> GetInfo(CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("service", Method.Get);
+        var restRequest = new RestRequest(c_service, Method.Get);
         var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
 
         var data =
@@ -134,7 +136,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("env")]
     public static async Task<CliActionResponse> GetEnvironment(CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("service", Method.Get);
+        var restRequest = new RestRequest(c_service, Method.Get);
         var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Data?.General.Environment);
     }
@@ -142,7 +144,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("log-level")]
     public static async Task<CliActionResponse> GetLogLevel(CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("service", Method.Get);
+        var restRequest = new RestRequest(c_service, Method.Get);
         var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Data?.General.LogLevel);
     }

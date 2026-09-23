@@ -115,7 +115,6 @@ internal static class CliTableExtensions
         table1.Table.AddRow("Errors", CliTableFormat.FormatSummaryNumber(response.TotalErrors, CliFormat.ErrorColor));
 
         var table2 = new CliTable { Title = "Details" };
-        if (response == null) { return [table1]; }
         table2.Table.AddColumns("Action", "Source", "Description");
         var grouped = response.Items.GroupBy(r => new { r.Action, r.ActionId }).OrderBy(g => g.Key.ActionId).ToList();
         foreach (var g in grouped)

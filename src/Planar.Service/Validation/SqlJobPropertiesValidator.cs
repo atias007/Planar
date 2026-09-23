@@ -35,7 +35,7 @@ public class SqlJobPropertiesValidator : AbstractValidator<SqlJobProperties>
 
         RuleFor(j => j.TransactionIsolationLevel)
             .IsInEnum()
-            .WithMessage(e => $"'transaction isolation level' with value '{e.TransactionIsolationLevel}' is not valid. Available options are: {string.Join(", ", Enum.GetNames(typeof(System.Data.IsolationLevel)))}");
+            .WithMessage(e => $"'transaction isolation level' with value '{e.TransactionIsolationLevel}' is not valid. Available options are: {string.Join(", ", Enum.GetNames<System.Data.IsolationLevel>())}");
 
         RuleFor(j => j.ContinueOnError)
             .Equal(false)

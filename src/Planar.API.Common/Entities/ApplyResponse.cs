@@ -61,6 +61,7 @@ public class ApplyResponse
             result.TotalUpdate += response.TotalUpdate;
             result.TotalDelete += response.TotalDelete;
             result.TotalUnchanged += response.TotalUnchanged;
+            result.TotalErrors += response.TotalErrors;
             result.Items.AddRange(response.Items);
         }
         return result;

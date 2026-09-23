@@ -78,12 +78,12 @@ public abstract class BaseCliAction
             var (content, success) = await SafeReadFile(file, cancellationToken);
             if (success)
             {
+                counter++;
                 if (counter > 100) { throw new CliWarningException("apply command can handle no more then 100 files"); }
 
                 AnsiConsole.MarkupLine($"[gray] > read file {file.EscapeMarkup()} ({fi.Length:N0} bytes)[/]");
                 content = AddSourceFilenameToYmlContent(content, fi.Name);
                 sb.Add(content);
-                counter++;
             }
             else
             {

@@ -831,21 +831,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
     }
 
-    private static async Task<CliActionResponse> ApplyLocalFolder(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, CancellationToken cancellationToken)
-    {
-        AnsiConsole.MarkupLine($"[grey]  > found directory: {pathInfo.Path}[/]");
-        var files = Directory.EnumerateFiles(pathInfo.Path, pathInfo.Pattern, SearchOption.TopDirectoryOnly)
-            .Where(f => f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
-
-        foreach (var item in files)
-        {
-            await AddUpdateApplyLocalFolderInner(restRequest, item, cancellationToken);
-        }
-
-        AnsiConsole.MarkupLine($"[grey]  > {files.Count():N0} file(s)[/]");
-        return CliActionResponse.Empty;
-    }
-
     private static async Task AddUpdateApplyLocalFolderInner(RestRequest restRequest, string item, CancellationToken cancellationToken)
     {
         var fi = new FileInfo(item);
