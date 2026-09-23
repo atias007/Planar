@@ -7,6 +7,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.MapperProfiles;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -49,21 +50,61 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
     }
 
+    internal static ApplyDataInfo? ApplyDataInner(ITrigger trigger, KeyValuePair<string, string?> data)
+    {
+        var new_value = (data.Value ?? string.Empty).Trim();
+        if (trigger.JobDataMap.TryGetValue(data.Key, out object? value))
+        {
+            var current_value = PlanarConvert.ToString(value) ?? string.Empty;
+            if (current_value == new_value) { return null; }
+
+            trigger.JobDataMap[data.Key] = new_value;
+            return new ApplyDataInfo
+            {
+                TriggerKey = trigger.Key,
+                Description = GetTriggerAuditDescription("update", data.Key),
+                AdditionalInfo = new { value = new_value }
+            };
+        }
+        else
+        {
+            var dataCount = CountUserJobDataItems(trigger.JobDataMap);
+            if (dataCount >= Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
+
+            trigger.JobDataMap[data.Key] = new_value;
+            return new ApplyDataInfo
+            {
+                TriggerKey = trigger.Key,
+                Description = GetTriggerAuditDescription("add", data.Key),
+                AdditionalInfo = new { value = new_value }
+            };
+        }
+    }
+
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
     {
         var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey, skipSystemCheck);
         ValidateMaxLength(request.DataValue, 1000, "value", string.Empty);
         if (info.Trigger == null || info.JobDetails == null) { return; }
 
-        if (IsDataKeyExists(info.Trigger, request.DataKey))
+        var new_value = (request.DataValue ?? string.Empty).Trim();
+        string description;
+
+        if (info.Trigger.JobDataMap.TryGetValue(request.DataKey, out object? value))
         {
             if (mode == PutMode.Add)
             {
                 throw new RestConflictException($"data with key '{request.DataKey}' already exists");
             }
 
-            info.Trigger.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
-            AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("update", request.DataKey), new { value = request.DataValue?.Trim() });
+            var current_value = PlanarConvert.ToString(value) ?? string.Empty;
+            if (current_value == new_value) { return; }
+
+            info.Trigger.JobDataMap[request.DataKey] = new_value;
+            description = GetTriggerAuditDescription("update", request.DataKey);
         }
         else
         {
@@ -78,8 +119,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
                 throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            info.Trigger.JobDataMap[request.DataKey] = request.DataValue ?? string.Empty;
-            AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
+            info.Trigger.JobDataMap[request.DataKey] = new_value;
+            description = GetTriggerAuditDescription("add", request.DataKey);
         }
 
         var pausedTriggers = await GetPausedTriggers(info.JobKey);
@@ -90,6 +131,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         {
             var triggers = await BuildTriggers(info.Trigger);
             await scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            AuditTriggerSafe(info.TriggerKey, description, new { value = new_value });
         }
         finally
         {

@@ -117,13 +117,10 @@ namespace Planar.Job
             try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 #endif
 
-            if (initializeException != null) { throw initializeException; }
-
-            ValidateJobExecutionContext(_context);
+            await OpenMqttConnection();
 
             try
             {
-                await OpenMqttConnection();
                 await SendHealthCheckSignal(1);
                 _ = SendHealthCheckSignal(5);
 
@@ -139,26 +136,14 @@ namespace Planar.Job
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
                 SetContextTimeoutCancellationToken(timeout.Value, cancellationToken);
 
-                if (Logger.IsEnabled(LogLevel.Debug))
-                {
-                    Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
-                        _context.FireInstanceId,
-                        _context.JobDetails.Key,
-                        _context.TriggerDetails.Key.Name);
-                }
+                LogStartExecute();
 
                 _baseJobFactory.StartTiming();
                 await ExecuteJob(_context);
                 _timeoutTimer?.Stop();
                 _baseJobFactory.StopTiming();
 
-                if (Logger.IsEnabled(LogLevel.Debug))
-                {
-                    Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
-                    _context.FireInstanceId,
-                    _context.JobDetails.Key,
-                    _context.TriggerDetails.Key.Name);
-                }
+                LogEndExecute();
 
                 return true;
             }
@@ -184,6 +169,28 @@ namespace Planar.Job
                 SafeHandle(() => _timeoutTimer?.Dispose());
                 SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
                 if (!_isHosted) { await SafeHandleAsync(() => MqttClient.StopAsync(_context.FireInstanceId)); }
+            }
+        }
+
+        private void LogEndExecute()
+        {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("End executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                _context.FireInstanceId,
+                _context.JobDetails.Key,
+                _context.TriggerDetails.Key.Name);
+            }
+        }
+
+        private void LogStartExecute()
+        {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("Start executing job. FireInstanceId: {FireInstanceId}, JobKey: {JobKey}, TriggerKey: {TriggerKey}",
+                    _context.FireInstanceId,
+                    _context.JobDetails.Key,
+                    _context.TriggerDetails.Key.Name);
             }
         }
 
@@ -245,11 +252,20 @@ namespace Planar.Job
             if (MqttClient.IsConnected) { return; }
 
             var connectTimeout = TimeSpan.FromSeconds(4);
-            MqttClient.Connected += MqttClient_Connected;
 
-            for (int i = 0; i < 3; i++)
+            try
             {
-                if (await SafeStartMqttClient(connectTimeout)) { return; }
+                MqttClient.Connected += MqttClient_Connected;
+
+                for (int i = 0; i < 5; i++)
+                {
+                    if (await SafeStartMqttClient(connectTimeout)) { return; }
+                }
+            }
+            catch
+            {
+                MqttClient.Connected -= MqttClient_Connected;
+                throw;
             }
 
             throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
@@ -632,6 +648,8 @@ namespace Planar.Job
             {
                 var ctx = JsonSerializer.Deserialize<JobExecutionContext>(json, _jsonSerializerOptions) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from json (error 7379)");
+
+                ValidateJobExecutionContext(ctx);
 
                 _baseJobFactory = new BaseJobFactory(ctx);
 

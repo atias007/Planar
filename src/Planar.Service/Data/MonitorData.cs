@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Monitor;
+using Planar.Service.General;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,6 +17,12 @@ namespace Planar.Service.Data;
 public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 {
     Task AddMonitor(MonitorAction monitor, int groupId, string hookName);
+
+    void AddMonitorWithoutSaveChanges(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames);
+
+    void AddHookToMonitor(MonitorAction monitor, string hookName);
+
+    void AddGroupToMonitor(MonitorAction monitor, int groupId);
 
     Task AddMonitorCounter(MonitorCounter counter);
 
@@ -44,6 +52,8 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task<MonitorAction?> GetMonitorAction(int id);
 
+    Task<MonitorAction?> GetMonitorAction(int eventId, string? jobName, string? jobGroup);
+
     Task<IEnumerable<int>> GetMonitorActionIds();
 
     Task<IEnumerable<MonitorAction>> GetMonitorActions();
@@ -52,7 +62,7 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
 
     Task<List<MonitorAction>> GetMonitorActionsByJob(string group, string name);
 
-    IQueryable<MonitorAction> GetMonitorActionsQuery();
+    Task<PagingResponse<MonitorAction>> GetApiMonitorActions(IPagingRequest request);
 
     IQueryable<MonitorAlert?> GetMonitorAlert(int id);
 
@@ -83,8 +93,6 @@ public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
     Task<bool> IsMonitorExists(MonitorAction monitor);
 
     Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId);
-
-    Task<bool> IsMonitorHookExists(string name);
 
     Task<bool> IsMonitorMuted(string jobId, int monitorId);
 
@@ -134,6 +142,34 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 
         _context.MonitorActions.Add(monitor);
         await _context.SaveChangesAsync();
+    }
+
+    public void AddMonitorWithoutSaveChanges(MonitorAction monitor, IEnumerable<int> groupIds, IEnumerable<string> hookNames)
+    {
+        var groups = groupIds.Select(id => new Group { Id = id }).ToList();
+        var hooks = hookNames.Select(name => new MonitorActionsHook { Hook = name }).ToList();
+
+        groups.ForEach(g => _context.Groups.Attach(g));
+        hooks.ForEach(h => _context.MonitorActionsHooks.Attach(h));
+
+        groups.ForEach(monitor.Groups.Add);
+        hooks.ForEach(monitor.MonitorActionsHooks.Add);
+
+        _context.MonitorActions.Add(monitor);
+    }
+
+    public void AddHookToMonitor(MonitorAction monitor, string hookName)
+    {
+        var hook = new MonitorActionsHook { Hook = hookName };
+        _context.Attach(hook);
+        monitor.MonitorActionsHooks.Add(hook);
+    }
+
+    public void AddGroupToMonitor(MonitorAction monitor, int groupId)
+    {
+        var group = new Group { Id = groupId };
+        _context.Attach(group);
+        monitor.Groups.Add(group);
     }
 
     public async Task AddMonitorCounter(MonitorCounter counter)
@@ -284,9 +320,19 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     {
         return await _context.MonitorActions
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(m => m.Groups)
             .Include(m => m.MonitorActionsHooks)
             .Where(m => m.Id == id)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<MonitorAction?> GetMonitorAction(int eventId, string? jobName, string? jobGroup)
+    {
+        return await _context.MonitorActions
+            .Include(m => m.Groups)
+            .Include(m => m.MonitorActionsHooks)
+            .Where(m => m.EventId == eventId && m.JobName == jobName && m.JobGroup == jobGroup)
             .FirstOrDefaultAsync();
     }
 
@@ -328,6 +374,20 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .ToListAsync();
 
         return count;
+    }
+
+    public async Task<PagingResponse<MonitorAction>> GetApiMonitorActions(IPagingRequest request)
+    {
+        return await _context.MonitorActions
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(i => i.Groups)
+            .Include(i => i.MonitorActionsHooks)
+            .OrderByDescending(d => d.Active)
+            .ThenBy(d => d.JobGroup)
+            .ThenBy(d => d.JobName)
+            .ThenBy(d => d.Title)
+            .ToPagingListAsync(request);
     }
 
     public async Task<IEnumerable<MonitorAction>> GetMonitorActions()
@@ -372,18 +432,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
             .ToListAsync();
 
         return result;
-    }
-
-    public IQueryable<MonitorAction> GetMonitorActionsQuery()
-    {
-        return _context.MonitorActions
-            .AsNoTracking()
-            .Include(i => i.Groups)
-            .Include(i => i.MonitorActionsHooks)
-            .OrderByDescending(d => d.Active)
-            .ThenBy(d => d.JobGroup)
-            .ThenBy(d => d.JobName)
-            .ThenBy(d => d.Title);
     }
 
     public IQueryable<MonitorAlert> GetMonitorAlert(int id)
@@ -609,12 +657,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context)
     public async Task<bool> IsMonitorExists(int id)
     {
         return await _context.MonitorActions.AnyAsync(m => m.Id == id);
-    }
-
-    public async Task<bool> IsMonitorHookExists(string name)
-    {
-        return await _context.MonitorHooks
-            .AnyAsync(m => m.Name == name);
     }
 
     public async Task<bool> IsMonitorMuted(string jobId, int monitorId)

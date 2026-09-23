@@ -22,10 +22,22 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [EndpointName("get_config")]
     [EndpointDescription("Get all global configuration")]
     [EndpointSummary("Get All Global Configurations")]
-    [OkJsonResponse(typeof(IEnumerable<GlobalConfigModel>))]
-    public async Task<ActionResult<IEnumerable<GlobalConfigModel>>> GetAll()
+    [OkJsonResponse(typeof(PagingResponse<GlobalConfigModel>))]
+    public async Task<ActionResult<PagingResponse<GlobalConfigModel>>> GetAll([FromQuery] PagingRequest request)
     {
-        var result = await BusinesLayer.GetAll();
+        var result = await BusinesLayer.GetAll(request);
+        return Ok(result);
+    }
+
+    [HttpGet("keys")]
+    [EditorAuthorize]
+    [EndpointName("get_config_keys")]
+    [EndpointDescription("Get all global configuration keys")]
+    [EndpointSummary("Get All Global Configuration Keys")]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetAllKeys()
+    {
+        var result = await BusinesLayer.GetAllKeys();
         return Ok(result);
     }
 
@@ -34,10 +46,11 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [EndpointName("get_config_flat")]
     [EndpointDescription("Get all global configuration")]
     [EndpointSummary("Get All Global Configurations")]
-    [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
-    public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetAllFlat()
+    [BadRequestResponse]
+    [OkJsonResponse(typeof(PagingResponse<KeyValueItem>))]
+    public async Task<ActionResult<PagingResponse<KeyValueItem>>> GetAllFlat([FromQuery] PagingRequest request)
     {
-        var result = await BusinesLayer.GetAllFlat();
+        var result = await BusinesLayer.GetAllFlat(request);
         return Ok(result);
     }
 

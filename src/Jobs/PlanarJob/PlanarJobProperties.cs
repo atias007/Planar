@@ -4,7 +4,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class PlanarJobProperties : IFileJobProperties
+public class PlanarJobProperties : IFileJobProperties, IPlanarJobProperties
 {
     [YamlMember(Alias = "invoke method", Order = 0)]
     public string InvokeMethod { get; set; } = null!;
@@ -42,9 +42,9 @@ public class PlanarJobProperties : IFileJobProperties
     [YamlIgnore]
     public IEnumerable<string> Files => Process?.Files ?? [];
 
-    public void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
+    public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {
-        Process?.SetGlobalConfigPlaceholder(parameters);
+        Process?.FillGlobalConfigPlaceholder(parameters);
     }
 }
 

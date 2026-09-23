@@ -1,6 +1,4 @@
 ﻿using Planar.Client.Entities;
-using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -87,17 +85,29 @@ namespace Planar.Client.Api
             return result;
         }
 
-        public async Task<IEnumerable<GlobalConfig>> ListAsync(CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<GlobalConfig>> ListAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("config", HttpMethod.Get);
-            var result = await _proxy.InvokeAsync<IEnumerable<GlobalConfig>>(restRequest, cancellationToken);
+            var filter = new Paging(pageNumber, pageSize);
+            var restRequest = new RestRequest("config", HttpMethod.Get)
+                .AddQueryPagingParameter(filter);
+
+            var result = await _proxy.InvokeAsync<PagingResponse<GlobalConfig>>(restRequest, cancellationToken);
             return result;
         }
 
-        public async Task<IEnumerable<KeyValueItem>> ListFlatAsync(CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<KeyValueItem>> ListFlatAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("config/flat", HttpMethod.Get);
-            var result = await _proxy.InvokeAsync<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
+            var filter = new Paging(pageNumber, pageSize);
+            var restRequest = new RestRequest("config/flat", HttpMethod.Get)
+                .AddQueryPagingParameter(filter);
+
+            var result = await _proxy.InvokeAsync<PagingResponse<KeyValueItem>>(restRequest, cancellationToken);
             return result;
         }
 

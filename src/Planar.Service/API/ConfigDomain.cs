@@ -19,10 +19,13 @@ namespace Planar.Service.API;
 
 public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigDomain, IConfigData>(serviceProvider)
 {
-    public async Task<IEnumerable<KeyValueItem>> GetAllFlat(CancellationToken stoppingToken = default)
+    public async Task<PagingResponse<KeyValueItem>> GetAllFlat(PagingRequest request, CancellationToken stoppingToken = default)
     {
         var final = await LoadConfigFlat(decrypt: false, stoppingToken);
-        return final.Select(kv => new KeyValueItem { Key = kv.Key, Value = kv.Value });
+        var items = final.Select(kv => new KeyValueItem { Key = kv.Key, Value = kv.Value })
+            .SetPaging(request)
+            .ToList();
+        return new PagingResponse<KeyValueItem>(request, items, final.Count);
     }
 
     public async Task Add(GlobalConfigModelAddRequest request)
@@ -149,11 +152,17 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return result;
     }
 
-    public async Task<IEnumerable<GlobalConfigModel>> GetAll()
+    public async Task<PagingResponse<GlobalConfigModel>> GetAll(PagingRequest request)
     {
-        var data = await DataLayer.GetAllGlobalConfig();
-        var result = GlobalConfig.ToGlobalConfigModel(data);
-        return result;
+        var data = await DataLayer.GetAllGlobalConfigWithPaging(request);
+        var items = GlobalConfig.ToGlobalConfigModel(data.Data ?? []).ToList();
+        return new PagingResponse<GlobalConfigModel>(request, items, data.TotalRows);
+    }
+
+    public async Task<IEnumerable<string>> GetAllKeys()
+    {
+        var data = await DataLayer.GetAllGlobalConfigKeys();
+        return data;
     }
 
     public async Task Update(GlobalConfigModelUpdateRequest request)
@@ -221,24 +230,32 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     private static async Task<string> GetSourceUrlContent(string sourceUrl)
     {
+        string content;
         var uri = new Uri(sourceUrl);
         if (uri.IsFile && uri.IsAbsoluteUri)
         {
-            return await File.ReadAllTextAsync(uri.LocalPath);
+            content = await File.ReadAllTextAsync(uri.LocalPath);
         }
         else if (uri.IsFile && !uri.IsAbsoluteUri)
         {
             var path = Path.Combine(FolderConsts.BasePath, uri.LocalPath);
-            return await File.ReadAllTextAsync(path);
+            content = await File.ReadAllTextAsync(path);
         }
         else
         {
             using var httpClient = new HttpClient();
             var response = await httpClient.GetAsync(sourceUrl);
             response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-            return content;
+            content = await response.Content.ReadAsStringAsync();
         }
+
+        const int maxLength = 8_000;
+        if (content.Length > maxLength)
+        {
+            throw new RestValidationException("source url", $"source url '{sourceUrl}' content has more then {maxLength:N0} characters");
+        }
+
+        return content;
     }
 
     private static async Task SetValueSourceUrlContent(GlobalConfigModelAddRequest request)

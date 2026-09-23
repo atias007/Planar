@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliListConfigsRequest
+    public class CliListConfigsRequest : CliPagingRequest
     {
         [ActionProperty("f", "flat")]
         public bool Flat { get; set; }

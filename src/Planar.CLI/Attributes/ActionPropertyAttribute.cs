@@ -23,6 +23,8 @@ public class ActionPropertyAttribute : Attribute
 
     public string ShortName { get; set; }
 
+    public string? InputDisplay { get; set; }
+
     public bool Default { get; set; }
 
     private int _defaultOrder;
@@ -34,6 +36,34 @@ public class ActionPropertyAttribute : Attribute
         {
             _defaultOrder = value;
             Default = true;
+        }
+    }
+    
+    public string InputDisplayName
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(InputDisplay))
+            {
+                return InputDisplay;
+            }
+
+            if (!string.IsNullOrEmpty(Name))
+            {
+                return Name;
+            }
+
+            if (string.IsNullOrEmpty(LongName) && string.IsNullOrEmpty(ShortName))
+            {
+                return "error: no name";
+            }
+
+            if (string.IsNullOrEmpty(LongName))
+            {
+                return ShortName;
+            }
+            
+            return LongName;
         }
     }
 

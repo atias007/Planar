@@ -1,0 +1,53 @@
+$kind: http-request
+url: http://localhost:2306/monitor/apply
+method: POST
+headers:
+  Content-Type: application/yaml
+body:
+  type: text
+  content: "kind: monitor\r
+
+    title: some monitor title - new\r
+
+    event: execution fail {x} times in row\r
+
+    job name: BankOfIsraelCurrency\r
+
+    job group: Infrastructure\r
+
+    event arguments:\r
+
+    \  x: 7\r
+
+    distribution groups:\r
+
+    \  - admins\r
+
+    hooks:\r
+
+    \  - planar.smtp\r
+
+    active: false\r
+
+    ---\r
+
+    kind: monitor\r
+
+    title: some monitor title3\r
+
+    event: execution fail\r
+
+    job name: BankOfIsraelCurrency\r
+
+    job group: Infrastructure\r
+
+    distribution groups:\r
+
+    \  - admins\r
+
+    hooks:\r
+
+    \  - planar.smtp\r
+
+    active: true"
+order: 2421875721384678

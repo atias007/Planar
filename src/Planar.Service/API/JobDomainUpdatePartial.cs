@@ -10,7 +10,6 @@ using Planar.Service.Model;
 using Planar.Service.Monitor;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,7 +18,7 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    public async Task<PlanarIdResponse> UpdateRoute(HttpContext httpContext)
+    public async Task<PlanarIdResponseWrapper> UpdateRoute(HttpContext httpContext)
     {
         var contentType = httpContext.Request.ContentType ?? string.Empty;
         if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
@@ -169,13 +168,13 @@ public partial class JobDomain
         await Resolve<IJobData>().UpdateJobProperty(property);
     }
 
-    private async Task<PlanarIdResponse> Update(string yml)
+    private async Task<PlanarIdResponseWrapper> Update(string yml)
     {
-        var dynamicRequest = await GetDynamicRequest(yml);
+        var dynamicRequest = GetDynamicRequest(yml);
         return await Update(dynamicRequest, UpdateJobOptions.Default);
     }
 
-    private async Task<PlanarIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
+    private async Task<PlanarIdResponseWrapper> Update(SetJobDynamicRequest request, UpdateJobOptions options)
     {
         var metadata = new JobUpdateMetadata();
 
@@ -190,20 +189,25 @@ public partial class JobDomain
         }
     }
 
-    private async Task<PlanarIdResponse> Update(UpdateJobRequest request)
+    public async Task<PlanarIdResponseWrapper> Update(UpdateJobRequest request)
     {
         var dynamicRequest = await GetDynamicRequest(request);
         var response = await Update(dynamicRequest, request.Options);
         return response;
     }
 
-    private async Task<PlanarIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+    private async Task<PlanarIdResponseWrapper> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
     {
         // Validation
         await ValidateUpdateJob(request, options, metadata);
+        ValidateJobProperty(request);
 
-        var hasChanges = await HasChanges(request);
-        if (!hasChanges) { return new PlanarIdResponse { Id = string.Empty }; }
+        // Validate no changes
+        var hasChanges = await HasChanges(request, options);
+        if (!hasChanges) { return new PlanarIdResponseWrapper(metadata.JobId, unchanged: true); }
+
+        // Validate job not runnning
+        await ValidateJobNotRunning(metadata.JobKey);
 
         // save paused triggers before pause job
         metadata.PausedTriggers = await GetPausedTriggers(metadata.JobKey);
@@ -213,7 +217,7 @@ public partial class JobDomain
         await scheduler.PauseJob(metadata.JobKey);
 
         // Lock monitor events
-        MonitorUtil.Lock(metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+        MonitorUtil.Lock(metadata.JobKey, lockSeconds: 7, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
         // Save for rollback
         await FillRollbackData(metadata);
@@ -262,7 +266,7 @@ public partial class JobDomain
         MonitorUtil.SafeSystemScan(ServiceProvider, Logger, MonitorEvents.ClusterNodeJoin, info);
 
         // Return Id
-        return new PlanarIdResponse { Id = metadata.JobId };
+        return new PlanarIdResponseWrapper(metadata.JobId, unchanged: false);
     }
 
     private async Task UpdateJobDetails(SetJobDynamicRequest request, JobUpdateMetadata metadata)
@@ -320,6 +324,5 @@ public partial class JobDomain
         metadata.JobId =
             await JobKeyHelper.GetJobId(metadata.JobKey) ??
             throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
-        await ValidateJobNotRunning(metadata.JobKey);
     }
 }

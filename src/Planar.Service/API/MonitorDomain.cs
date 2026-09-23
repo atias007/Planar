@@ -1,12 +1,15 @@
 ﻿using CommonJob;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Monitor.Test;
@@ -17,15 +20,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
 public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<MonitorDomain, IMonitorData>(serviceProvider)
 {
+    private const string kind = "monitor";
+
     private static readonly int[] _counterEvents = [
-        (int)MonitorEvents.ClusterHealthCheckFail,
+            (int)MonitorEvents.ClusterHealthCheckFail,
         (int)MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
         (int)MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
         (int)MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours,
@@ -62,9 +69,12 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         var validator = new MonitorActionValidator();
         validator.ValidateMonitorArguments(request);
 
-        var mapperData = Resolve<IAutoMapperData>();
-        var monitor = Mapper.Map<MonitorAction>(request);
-        var groupId = await mapperData.GetGroupId(request.GroupName);
+        await ValidateGroupNameExists(request);
+        ValidateHookExists(request);
+
+        var monitor = MonitorProfile.ToMonitorAction(request);
+        var groupData = Resolve<IGroupData>();
+        var groupId = await groupData.GetGroupId(request.GroupName);
 
         if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
         if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
@@ -75,11 +85,38 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestConflictException("monitor with same properties already exists");
         }
 
-        await DataLayer.AddMonitor(monitor, groupId, request.Hook);
+        var requestHook = GetRequestHookName(request.Hook);
+        await DataLayer.AddMonitor(monitor, groupId, requestHook);
 
         _ = Resolve<MonitorDurationCache>().Flush();
         _ = SetMonitorActionsCache(clusterReload: true);
         return monitor.Id;
+    }
+
+    public async Task AddDistributionGroup(MonitorGroupRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        var groupDal = Resolve<IGroupData>();
+        var groupId = await groupDal.GetGroupId(request.GroupName);
+        if (groupId == 0)
+        {
+            throw new RestNotFoundException($"distribution group '{request.GroupName}' could not be found");
+        }
+
+        if (monitor.Groups.Any(g => g.Id == groupId))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} already have distribution group '{request.GroupName}'");
+        }
+
+        if (monitor.Groups.Count >= 20)
+        {
+            throw new RestValidationException("GroupName", $"could not add the distribution group '{request.GroupName}' because monitor have the maximum allowed of 20 groups");
+        }
+
+        await DataLayer.AddMonitorActionGroup(dbMonitor!, groupId);
+        _ = SetMonitorActionsCache(clusterReload: true);
     }
 
     public async Task<MonitorHookDetails> AddHook(AddHookRequest request)
@@ -112,7 +149,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException("filename", $"fail to execute hook health check. no response from hook");
         }
 
-        await ValidateHookDetails(details);
+        ValidateHookDetails(details);
         details.Path = path;
         var entity = Mapper.Map<MonitorHook>(details);
         await DataLayer.AddHook(entity);
@@ -120,6 +157,58 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         await Task.Delay(500);
         await ReloadHooks(clusterReload: true);
         return details;
+    }
+
+    public async Task AddMonitorHook(MonitorHookRequest request)
+    {
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
+
+        if (monitor.MonitorActionsHooks.Any(h => string.Equals(h.Hook, request.Hook, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new RestConflictException($"monitor {request.MonitorId} already have hook '{request.Hook}'");
+        }
+
+        if (monitor.MonitorActionsHooks.Count >= 5)
+        {
+            throw new RestValidationException("Hook", $"could not add the hook '{request.Hook}' because monitor have the maximum allowed of 5 hooks");
+        }
+
+        var requestHook = GetRequestHookName(request.Hook);
+        var entity = new MonitorActionsHook { Hook = requestHook, MonitorId = request.MonitorId };
+        await DataLayer.AddMonitorHook(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
+    }
+
+    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    {
+        // Convert to list of ApplyMonitorRequest
+        var requests = await GetApplyEntities<ApplyMonitorRequest>(yamls, kind, cancellationToken);
+
+        // Validation
+        ValidateDuplicateRequests(requests);
+        MonitorActionValidator.ValidateMonitorArguments(requests);
+        await ValidateGroupNamesExists(requests);
+        ValidateHooksExists(requests);
+
+        // Apply changes
+        var response = await ApplyChnges(requests);
+
+        // Save changes
+        await DataLayer.SaveChangesAsync();
+
+        // Clear cache
+        _ = Resolve<MonitorDurationCache>().Flush();
+        _ = SetMonitorActionsCache(clusterReload: true);
+
+        return response;
+    }
+
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        var result = await Apply(yamls, httpContext.RequestAborted);
+        return result;
     }
 
     public async Task Delete(int id)
@@ -158,9 +247,9 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
     public async Task<PagingResponse<MonitorItem>> GetAll(IPagingRequest request)
     {
-        var query = DataLayer.GetMonitorActionsQuery();
-        var result = await query.ProjectToWithPagingAsyc<MonitorAction, MonitorItem>(Mapper, request);
-        return result;
+        var list = await DataLayer.GetApiMonitorActions(request);
+        var result = list.Data?.Select(MonitorProfile.ToMonitorItem) ?? [];
+        return new PagingResponse<MonitorItem>(request, [.. result], list.TotalRows);
     }
 
     public async Task<List<MonitorItem>> GetByJob(string jobId)
@@ -184,18 +273,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     {
         var item = await DataLayer.GetMonitorAction(id);
         var monitor = ValidateExistingEntity(item, "monitor");
-        var result = Mapper.Map<MonitorItem>(monitor);
+        var result = MonitorProfile.ToMonitorItem(monitor);
         return result;
-    }
-
-    /// <summary>
-    /// **************** FOR INTERNAL USE ONLY - DO NOT EXPOSE TO THE OUTSIDE WORLD ****************
-    /// </summary>
-    /// <returns></returns>
-    internal async Task<IEnumerable<MonitorAction>> GetMonitorActions()
-    {
-        var data = await DataLayer.GetMonitorActions();
-        return data;
     }
 
     public async Task<List<MonitorItem>> GetMonitorActionsByGroup(string group)
@@ -279,70 +358,32 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return result;
     }
 
-    public async Task AddMonitorHook(MonitorHookRequest request)
+    public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
     {
-        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
-        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
-
-        if (monitor.MonitorActionsHooks.Any(h => h.Hook == request.Hook))
-        {
-            throw new RestConflictException($"monitor {request.MonitorId} already have hook '{request.Hook}'");
-        }
-
-        if (monitor.MonitorActionsHooks.Count >= 5)
-        {
-            throw new RestValidationException("Hook", $"could not add the hook '{request.Hook}' because monitor have the maximum allowed of 5 hooks");
-        }
-
-        var entity = new MonitorActionsHook { Hook = request.Hook, MonitorId = request.MonitorId };
-        await DataLayer.AddMonitorHook(entity);
-        _ = SetMonitorActionsCache(clusterReload: true);
+        TrimPropertyName(request);
+        var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
+        var monitor = ValidateExistingEntity(dbMonitor, "monitor");
+        ForbbidenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
+        var updateMonitor = MonitorProfile.ToUpdateMonitorRequest(monitor);
+        var validator = Resolve<IValidator<UpdateMonitorRequest>>();
+        await SetEntityProperties(updateMonitor, request, validator);
+        await Update(updateMonitor);
     }
 
-    public async Task RemoveMonitorHook(MonitorHookRequest request)
+    public async Task<string> ReloadHooks(bool clusterReload)
     {
-        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
-        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
-
-        if (!monitor.MonitorActionsHooks.Any(g => string.Equals(g.Hook, request.Hook, StringComparison.OrdinalIgnoreCase)))
+        var hooks = await DataLayer.GetAllMonitorHooks();
+        var hooksDetails = Mapper.Map<IEnumerable<MonitorHookDetails>>(hooks);
+        ServiceUtil.LoadMonitorHooks(ServiceProvider, hooksDetails, Logger);
+        if (clusterReload && AppSettings.Cluster.Clustering)
         {
-            throw new RestConflictException($"monitor {request.MonitorId} does not have hook '{request.Hook}'");
+            await ClusterUtil.LoadMonitorHooks();
         }
 
-        if (monitor.MonitorActionsHooks.Count == 1)
-        {
-            throw new RestValidationException("Hook", $"could not remove the hook '{request.Hook}' because monitor must have at least one hook");
-        }
+        var monitor = ServiceProvider.GetRequiredService<MonitorUtil>();
+        await monitor.Validate();
 
-        var entity = new MonitorActionsHook { Hook = request.Hook, MonitorId = request.MonitorId };
-        await DataLayer.RemoveMonitorHook(entity);
-        _ = SetMonitorActionsCache(clusterReload: true);
-    }
-
-    public async Task AddDistributionGroup(MonitorGroupRequest request)
-    {
-        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
-        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
-
-        var groupDal = Resolve<IGroupData>();
-        var groupId = await groupDal.GetGroupId(request.GroupName);
-        if (groupId == 0)
-        {
-            throw new RestNotFoundException($"distribution group '{request.GroupName}' could not be found");
-        }
-
-        if (monitor.Groups.Any(g => g.Id == groupId))
-        {
-            throw new RestConflictException($"monitor {request.MonitorId} already have distribution group '{request.GroupName}'");
-        }
-
-        if (monitor.Groups.Count >= 20)
-        {
-            throw new RestValidationException("GroupName", $"could not add the distribution group '{request.GroupName}' because monitor have the maximum allowed of 20 groups");
-        }
-
-        await DataLayer.AddMonitorActionGroup(dbMonitor!, groupId);
-        _ = SetMonitorActionsCache(clusterReload: true);
+        return $"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded";
     }
 
     public async Task RemoveDistributionGroup(MonitorGroupRequest request)
@@ -374,32 +415,25 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 
-    public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
+    public async Task RemoveMonitorHook(MonitorHookRequest request)
     {
-        TrimPropertyName(request);
-        var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
-        var monitor = ValidateExistingEntity(dbMonitor, "monitor");
-        ForbbidenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
-        var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
-        var validator = Resolve<IValidator<UpdateMonitorRequest>>();
-        await SetEntityProperties(updateMonitor, request, validator);
-        await Update(updateMonitor);
-    }
+        var dbMonitor = await DataLayer.GetMonitorAction(request.MonitorId);
+        var monitor = ValidateExistingEntity(dbMonitor, $"monitor {request.MonitorId}");
 
-    public async Task<string> ReloadHooks(bool clusterReload)
-    {
-        var hooks = await DataLayer.GetAllMonitorHooks();
-        var hooksDetails = Mapper.Map<IEnumerable<MonitorHookDetails>>(hooks);
-        ServiceUtil.LoadMonitorHooks(ServiceProvider, hooksDetails, Logger);
-        if (clusterReload && AppSettings.Cluster.Clustering)
+        if (!monitor.MonitorActionsHooks.Any(g => string.Equals(g.Hook, request.Hook, StringComparison.OrdinalIgnoreCase)))
         {
-            await ClusterUtil.LoadMonitorHooks();
+            throw new RestConflictException($"monitor {request.MonitorId} does not have hook '{request.Hook}'");
         }
 
-        var monitor = ServiceProvider.GetRequiredService<MonitorUtil>();
-        await monitor.Validate();
+        if (monitor.MonitorActionsHooks.Count == 1)
+        {
+            throw new RestValidationException("Hook", $"could not remove the hook '{request.Hook}' because monitor must have at least one hook");
+        }
 
-        return $"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded";
+        var requestHook = GetRequestHookName(request.Hook);
+        var entity = new MonitorActionsHook { Hook = requestHook, MonitorId = request.MonitorId };
+        await DataLayer.RemoveMonitorHook(entity);
+        _ = SetMonitorActionsCache(clusterReload: true);
     }
 
     public async Task<IEnumerable<string>> SearchNewHooks()
@@ -429,7 +463,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         var groupDal = Resolve<IGroupData>();
         var groupId = await groupDal.GetGroupId(request.GroupName ?? string.Empty);
         var group = await groupDal.GetGroupWithUsers(groupId);
-        var monitorEvent = Enum.Parse<MonitorEvents>(request.EventName.ToString());
+        var monitorEvent = MonitorEventsParser.Parse(request.EventName.ToString()) ?? MonitorEvents.CustomEvent1;
         var exception = new Exception("this is test exception");
 
         if (group == null)
@@ -438,7 +472,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException(field, $"{field} was not found");
         }
 
-        var hook = new MonitorActionsHook { Hook = request.Hook };
+        var requestHook = GetRequestHookName(request.Hook);
+        var hook = new MonitorActionsHook { Hook = requestHook };
         var action = new MonitorAction
         {
             Active = true,
@@ -505,7 +540,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
         var validator = new MonitorActionValidator();
         validator.ValidateMonitorArguments(request);
-        var monitor = Mapper.Map<MonitorAction>(request);
+        var monitor = MonitorProfile.ToMonitorAction(request);
         if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
         if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
         if (await DataLayer.IsMonitorExists(monitor, request.Id))
@@ -531,6 +566,16 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         // Check for manual muted monitor
         var muted = await DataLayer.IsMonitorMuted(jobId, monitorId);
         return muted;
+    }
+
+    /// <summary>
+    /// **************** FOR INTERNAL USE ONLY - DO NOT EXPOSE TO THE OUTSIDE WORLD ****************
+    /// </summary>
+    /// <returns></returns>
+    internal async Task<IEnumerable<MonitorAction>> GetMonitorActions()
+    {
+        var data = await DataLayer.GetMonitorActions();
+        return data;
     }
 
     internal async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
@@ -585,7 +630,85 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return type4;
     }
 
-    private async Task ValidateHookDetails(MonitorHookDetails details)
+    private static string GetMonitorDescription(MonitorAction monitor)
+    {
+        var eventDesc = ((MonitorEvents)monitor.EventId).GetEnumDescription();
+        if (MonitorEventsExtensions.IsSystemMonitorEvent(monitor.EventId))
+        {
+            return $"id {monitor.Id} for system event '{eventDesc}'";
+        }
+
+        string job;
+        if (string.IsNullOrWhiteSpace(monitor.JobName) && string.IsNullOrWhiteSpace(monitor.JobGroup))
+        {
+            job = "all jobs";
+        }
+        else if (string.IsNullOrWhiteSpace(monitor.JobName))
+        {
+            job = $"all jobs in group '{monitor.JobGroup}'";
+        }
+        else
+        {
+            job = $"job '{monitor.JobGroup}.{monitor.JobName}'";
+        }
+
+        return $"id {monitor.Id} for {job} with event '{eventDesc}'";
+    }
+
+    private static string GetMonitorKey(MonitorAction monitor)
+    {
+        var eventDesc = ((MonitorEvents)monitor.EventId).GetEnumDescription();
+        return $"{eventDesc}-{monitor.JobGroup}-{monitor.JobName}";
+    }
+
+    private static string GetRequestHookName(string name)
+    {
+        var hook = ServiceUtil.MonitorHooks.FirstOrDefault(h => string.Equals(h.Key, name, StringComparison.OrdinalIgnoreCase));
+        if (hook.Value == null)
+        {
+            throw new RestValidationException("Hook", $"monitor hook '{name}' could not be found");
+        }
+        return hook.Key;
+    }
+
+    private static List<string> GetRequestHookNames(IEnumerable<string> names)
+    {
+        var list = new List<string>();
+        foreach (var name in names)
+        {
+            var hook = ServiceUtil.MonitorHooks.FirstOrDefault(h => string.Equals(h.Key, name, StringComparison.OrdinalIgnoreCase));
+            if (hook.Value == null)
+            {
+                throw new RestValidationException("Hook", $"monitor hook '{name}' could not be found");
+            }
+            list.Add(hook.Key);
+        }
+        return list;
+    }
+
+    private static bool IsMonitorHookExists(string name)
+    {
+        return ServiceUtil.MonitorHooks.Any(h => string.Equals(h.Key, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void ValidateDuplicateRequests(IEnumerable<ApplyMonitorRequest> requests)
+    {
+        var query = requests
+            .GroupBy(r => new { r.Event, r.JobName, r.JobGroup })
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        if (query != null)
+        {
+            const string null_string = "[null]";
+            var jobname = string.IsNullOrWhiteSpace(query.JobName) ? null_string : query.JobName;
+            var groupname = string.IsNullOrWhiteSpace(query.JobGroup) ? null_string : query.JobGroup;
+            throw new RestValidationException("duplicate request", $"duplicate monitor request for event '{query.Event}' with job name '{jobname}' and job group '{groupname}'");
+        }
+    }
+
+    private static void ValidateHookDetails(MonitorHookDetails details)
     {
         // Empty string
         if (string.IsNullOrWhiteSpace(details.Name))
@@ -622,10 +745,163 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestValidationException("description", "hook description length must be less then or equals to 2000");
         }
 
-        var exists = await DataLayer.IsMonitorHookExists(details.Name);
+        var exists = IsMonitorHookExists(details.Name);
         if (exists)
         {
             throw new RestValidationException("name", $"hook with name '{details.Name}' already exists");
+        }
+    }
+
+    private static void ValidateHookExists(AddMonitorRequest request)
+    {
+        var exists = IsMonitorHookExists(request.Hook);
+        if (!exists)
+        {
+            throw new RestValidationException("Hook", $"monitor hook '{request.Hook}' could not be found");
+        }
+    }
+
+    private static void ValidateHooksExists(IEnumerable<ApplyMonitorRequest> requests)
+    {
+        var list = new List<string>();
+        var hooks = requests.SelectMany(r => r.Hooks).Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in hooks)
+        {
+            var exists = IsMonitorHookExists(name);
+            if (!exists) { list.Add(name); }
+        }
+
+        if (list.Count > 0)
+        {
+            var names = string.Join(",", list);
+            throw new RestValidationException("Hooks", $"monitor hook(s): {names} could not be found");
+        }
+    }
+
+    private async Task<ApplyResponse> ApplyChnges(IReadOnlyCollection<ApplyMonitorRequest> requests)
+    {
+        var response = new ApplyResponse();
+        if (requests.Count == 0) { return response; }
+        if (requests.Count == 1)
+        {
+            var request = requests.First();
+            var result = await ApplyInner(request);
+            response.AddItem(result);
+            return response;
+        }
+
+        foreach (var request in requests)
+        {
+            try
+            {
+                var result = await ApplyInner(request);
+                response.AddItem(result);
+            }
+            catch (Exception ex)
+            {
+                var action = MonitorProfile.ToMonitorAction(request);
+                var description = GetMonitorDescription(action);
+                response.AddItem(new ApplyResponseItem(GetMonitorKey(action), ApplyAction.Error, $"fail to handle monitor: {description}. {ex.Message}", Manifest.Monitor, request.Source));
+            }
+        }
+
+        return response;
+    }
+
+    private async Task<ApplyResponseItem> ApplyInner(ApplyMonitorRequest request)
+    {
+        var groupData = Resolve<IGroupData>();
+        var requestGroups = await groupData.GetGroups(request.DistributionGroups);
+        var requestHooks = GetRequestHookNames(request.Hooks);
+        var requestMonitor = MonitorProfile.ToMonitorAction(request);
+
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var monitorDal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
+        var currentMonitor = await monitorDal.GetMonitorAction(requestMonitor.EventId, request.JobName, request.JobGroup);
+        if (currentMonitor == null)
+        {
+            var groupIds = requestGroups.Select(g => g.Id);
+            monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
+
+            await monitorDal.SaveChangesAsync();
+            var message = $"add new monitor: {GetMonitorDescription(requestMonitor)}";
+            var result = new ApplyResponseItem(GetMonitorKey(requestMonitor), ApplyAction.Add, message, Manifest.Monitor, request.Source);
+            AuditSecuritySafe($"monitor was applied: {message}", true);
+            return result;
+        }
+        else
+        {
+            MonitorProfile.SetMonitorAction(currentMonitor, request);
+            var addGroups = requestGroups.Where(req_g => !currentMonitor.Groups.Any(current_g => string.Equals(req_g.Name.Trim(), current_g.Name, StringComparison.OrdinalIgnoreCase)));
+            var removeGroups = currentMonitor.Groups.Where(g => !requestGroups.Any(rg => string.Equals(rg.Name, g.Name, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            foreach (var group in addGroups)
+            {
+                monitorDal.AddGroupToMonitor(currentMonitor, group.Id);
+            }
+
+            foreach (var group in removeGroups)
+            {
+                currentMonitor.Groups.Remove(group);
+            }
+
+            var addHooks = requestHooks.Where(req_h => !currentMonitor.MonitorActionsHooks.Any(current_h => string.Equals(req_h, current_h.Hook, StringComparison.OrdinalIgnoreCase))).ToList();
+            var removeHooks = currentMonitor.MonitorActionsHooks.Where(h => !requestHooks.Any(rh => string.Equals(rh, h.Hook, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            foreach (var hook in addHooks)
+            {
+                monitorDal.AddHookToMonitor(currentMonitor, hook);
+            }
+
+            foreach (var hook in removeHooks)
+            {
+                currentMonitor.MonitorActionsHooks.Remove(hook);
+            }
+
+            var count = await monitorDal.SaveChangesAsync();
+            if (count == 0)
+            {
+                return new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Unchanged, $"no changes applied to monitor: {GetMonitorDescription(currentMonitor)}", Manifest.Monitor, request.Source);
+            }
+
+            var message = $"update existing monitor: {GetMonitorDescription(currentMonitor)}";
+            var result = new ApplyResponseItem(GetMonitorKey(currentMonitor), ApplyAction.Update, message, Manifest.Monitor, request.Source);
+            AuditSecuritySafe($"monitor was applied: {message}", true);
+            return result;
+        }
+    }
+
+    private async Task ValidateGroupNameExists(AddMonitorRequest request)
+    {
+        var groupDal = Resolve<IGroupData>();
+        var exists = await groupDal.IsGroupNameExists(request.GroupName);
+        if (!exists)
+        {
+            throw new RestValidationException("GroupName", $"distribution group '{request.GroupName}' could not be found");
+        }
+    }
+
+    private async Task ValidateGroupNamesExists(IEnumerable<ApplyMonitorRequest> requests)
+    {
+        var groups = requests.SelectMany(r => r.DistributionGroups);
+        await ValidateGroupNamesExistsInner(groups);
+    }
+
+    private async Task ValidateGroupNamesExistsInner(IEnumerable<string> distributionGroups)
+    {
+        var groupDal = Resolve<IGroupData>();
+        var list = new List<string>();
+        var groups = distributionGroups.Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in groups)
+        {
+            var exists = await groupDal.IsGroupNameExists(name);
+            if (!exists) { list.Add(name); }
+        }
+
+        if (list.Count > 0)
+        {
+            var names = string.Join(",", list);
+            throw new RestValidationException("DistributionGroups", $"distribution group(s): {names} could not be found");
         }
     }
 

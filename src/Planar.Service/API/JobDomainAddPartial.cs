@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -24,18 +25,12 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    private const int MaxNameLength = 50;
-
-    private const int MinNameLength = 3;
-
-    private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
-
+    private const string trigger = "trigger";
+    private const string group = "group";
+    private const string name = "name";
+    private const string props = "properties";
+    private const string global_config_keys = "global config keys";
     private static readonly string[] _cronValues = ["auto", "donothing", "fireandproceed", "ignoremisfires"];
-
-    private static readonly Regex _regex = new(
-            NameRegexTemplate
-            .Replace("@MinNameLength@", MinNameLength.ToString())
-            .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
     private static readonly string[] _simpleValues = ["auto", "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount"];
     private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
@@ -231,10 +226,10 @@ public partial class JobDomain
 
         var result = triggers.Select(t =>
         {
-            var trigger = GetBaseTriggerBuilder(t, jobId)
+            var the_trigger = GetBaseTriggerBuilder(t, jobId)
                 .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
 
-            return trigger.Build();
+            return the_trigger.Build();
         });
 
         return result;
@@ -246,31 +241,31 @@ public partial class JobDomain
 
         var result = triggers.Select(t =>
         {
-            var trigger = GetBaseTriggerBuilder(t, jobId);
+            var the_trigger = GetBaseTriggerBuilder(t, jobId);
 
             if (t.Start == null)
             {
-                trigger = trigger.StartAt(DelayStartTriggerDateTime);
+                the_trigger = the_trigger.StartAt(DelayStartTriggerDateTime);
             }
             else
             {
-                trigger = trigger.StartAt(new DateTimeOffset(t.Start.Value));
+                the_trigger = the_trigger.StartAt(new DateTimeOffset(t.Start.Value));
             }
 
             if (t.End != null)
             {
-                trigger = trigger.EndAt(new DateTimeOffset(t.End.Value));
+                the_trigger = the_trigger.EndAt(new DateTimeOffset(t.End.Value));
             }
 
-            trigger = trigger.WithSimpleSchedule(s => BuildSimpleSchedule(s, t));
+            the_trigger = the_trigger.WithSimpleSchedule(s => BuildSimpleSchedule(s, t));
 
-            return trigger.Build();
+            return the_trigger.Build();
         });
 
         return result;
     }
 
-    private static string CreateJobId(IJobDetail job)
+    private static string GenerateJobId(IJobDetail job)
     {
         // job id
         var id = ServiceUtil.GenerateId();
@@ -286,20 +281,20 @@ public partial class JobDomain
             ServiceUtil.GenerateId() :
             jobTrigger.Id;
 
-        var trigger = TriggerBuilder.Create();
+        var the_trigger = TriggerBuilder.Create();
         jobTrigger.Group = jobId;
-        trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
+        the_trigger = the_trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
 
         // Priority
         if (jobTrigger.Priority.HasValue)
         {
-            trigger = trigger.WithPriority(jobTrigger.Priority.Value);
+            the_trigger = the_trigger.WithPriority(jobTrigger.Priority.Value);
         }
 
         // Calendar
         if (jobTrigger.Calendar.HasValue())
         {
-            trigger = trigger.ModifiedByCalendar(jobTrigger.Calendar);
+            the_trigger = the_trigger.ModifiedByCalendar(jobTrigger.Calendar);
         }
 
         // Data
@@ -307,37 +302,37 @@ public partial class JobDomain
 
         if (jobTrigger.TriggerData.Count > 0)
         {
-            trigger = trigger.UsingJobData(new JobDataMap(jobTrigger.TriggerData));
+            the_trigger = the_trigger.UsingJobData(new JobDataMap(jobTrigger.TriggerData));
         }
 
         // Data --> TriggerId
-        trigger = trigger.UsingJobData(Consts.TriggerId, id);
+        the_trigger = the_trigger.UsingJobData(Consts.TriggerId, id);
 
         // Data --> TriggerTimeout
         if (jobTrigger.Timeout.HasValue)
         {
             var timeoutValue = jobTrigger.Timeout.Value.Ticks.ToString();
-            trigger = trigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
+            the_trigger = the_trigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
         }
 
         // Data --> Retry span, Max retries
         if (jobTrigger.RetrySpan.HasValue)
         {
-            trigger = trigger.UsingJobData(Consts.RetrySpan, jobTrigger.RetrySpan.Value.ToSimpleTimeString());
+            the_trigger = the_trigger.UsingJobData(Consts.RetrySpan, jobTrigger.RetrySpan.Value.ToSimpleTimeString());
         }
 
         // Data --> Max retries
         if (jobTrigger.MaxRetries.HasValue)
         {
-            trigger = trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
+            the_trigger = the_trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
         }
 
         if (!string.IsNullOrWhiteSpace(jobTrigger.PreferedNode))
         {
-            trigger = trigger.WithPreferredNode(jobTrigger.PreferedNode);
+            the_trigger = the_trigger.WithPreferredNode(jobTrigger.PreferedNode);
         }
 
-        return trigger;
+        return the_trigger;
     }
 
     private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
@@ -347,6 +342,7 @@ public partial class JobDomain
         try
         {
             dynamicRequest = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
+            ValidateUnmatched<SetJobDynamicRequest>(yml);
         }
         catch (Exception ex)
         {
@@ -472,7 +468,7 @@ public partial class JobDomain
 
         #region Mandatory
 
-        if (string.IsNullOrWhiteSpace(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
+        if (string.IsNullOrWhiteSpace(metadata.Name)) throw new RestValidationException(name, "job name is mandatory");
         if (string.IsNullOrWhiteSpace(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
 
         #endregion Mandatory
@@ -488,27 +484,12 @@ public partial class JobDomain
 
         #region Valid Name & Group
 
-        if (!IsRegexMatch(_regex, metadata.Name))
-        {
-            throw new RestValidationException("name", $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
-        }
-
-        if (!IsRegexMatch(_regex, metadata.Group))
-        {
-            throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
-        }
-
-        if (Consts.PreserveGroupNames.Contains(metadata.Group))
-        {
-            throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid (preserved value)");
-        }
+        ValidateNameAndGroup(metadata.Name, metadata.Group);
 
         #endregion Valid Name & Group
 
         #region Max Chars / Value
 
-        ValidateRange(metadata.Name, 5, 50, "name", "job");
-        ValidateRange(metadata.Group, 1, 50, "group", "job");
         ValidateRangeValue(metadata.LogRetentionDays, 1, 1000, "log retention days", "job");
         ValidateMaxLength(metadata.Author, 200, "author", "job");
         ValidateMaxLength(metadata.Description, 100, "description", "job");
@@ -531,7 +512,7 @@ public partial class JobDomain
 
         #endregion JobData
 
-        #region circuit breaker
+        #region Circuit Breaker
 
         if (metadata.CircuitBreaker.Enabled)
         {
@@ -547,7 +528,7 @@ public partial class JobDomain
             }
         }
 
-        #endregion circuit breaker
+        #endregion Circuit Breaker
 
         var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
         if (triggersCount == 0 && metadata.Durable == false)
@@ -564,12 +545,33 @@ public partial class JobDomain
         return jobKey;
     }
 
+    private static void ValidateNameAndGroup(string jobname, string? jobgroup)
+    {
+        if (!IsRegexMatch(JobConsts.JobNameRegex, jobname))
+        {
+            throw new RestValidationException(name, $"job name '{jobname}' is invalid. use only alphanumeric, dashes & underscore");
+        }
+
+        if (!IsRegexMatch(JobConsts.JobNameRegex, jobgroup))
+        {
+            throw new RestValidationException(group, $"job group '{jobgroup}' is invalid. use only alphanumeric, dashes & underscore");
+        }
+
+        if (Consts.PreserveGroupNames.Contains(jobgroup))
+        {
+            throw new RestValidationException(group, $"job group '{jobgroup}' is invalid (preserved value)");
+        }
+
+        ValidateRange(jobname, 5, 50, name, "job");
+        ValidateRange(jobgroup, 1, 50, group, "job");
+    }
+
     private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)
     {
         container.SimpleTriggers?.ForEach(t =>
         {
             t.TriggerData ??= [];
-            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException(name, "trigger name is mandatory");
 
             var emptyKeys = t.TriggerData.Any(item => string.IsNullOrWhiteSpace(item.Key));
             if (emptyKeys) throw new RestValidationException("key", "trigger data key must have value");
@@ -577,7 +579,7 @@ public partial class JobDomain
         container.CronTriggers?.ForEach(t =>
         {
             t.TriggerData ??= [];
-            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+            if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException(name, "trigger name is mandatory");
         });
     }
 
@@ -586,16 +588,10 @@ public partial class JobDomain
         foreach (var t in pool.Triggers)
         {
             t.TriggerData ??= [];
-            ValidateRange(t.Name, 5, 50, "name", "trigger");
-            ValidateRange(t.Group, 1, 50, "group", "trigger");
-            ValidateMaxLength(t.Calendar, 50, "calendar", "trigger");
-            ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", "trigger");
-
-            foreach (var item in t.TriggerData)
-            {
-                ValidateRange(item.Key, 1, 100, "key", "trigger data");
-                ValidateMaxLength(item.Value, 1000, "value", "trigger data");
-            }
+            ValidateRange(t.Name, 5, 50, name, trigger);
+            ValidateRange(t.Group, 1, 50, group, trigger);
+            ValidateMaxLength(t.Calendar, 50, "calendar", trigger);
+            ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", trigger);
         }
     }
 
@@ -604,9 +600,9 @@ public partial class JobDomain
         foreach (var t in pool.Triggers)
         {
             t.TriggerData ??= [];
-            if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
-            if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
-            ValidateDataMap(t.TriggerData, "trigger");
+            if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException(group, $"trigger group '{t.Group}' is invalid (preserved value)"); }
+            if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException(name, $"trigger name '{t.Name}' has invalid prefix"); }
+            ValidateDataMap(t.TriggerData, trigger);
         }
     }
 
@@ -708,9 +704,14 @@ public partial class JobDomain
     {
         foreach (var t in pool.Triggers)
         {
-            if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-            if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            ValidateTriggerName(t.Name, t.Group);
         }
+    }
+
+    private static void ValidateTriggerName(string? triggerName, string? triggerGroup)
+    {
+        if (!IsRegexMatch(JobConsts.JobNameRegex, triggerName)) throw new RestValidationException(name, $"trigger name '{triggerName}' is invalid. use only alphanumeric, dashes & underscore");
+        if (!IsRegexMatch(JobConsts.JobNameRegex, triggerGroup)) throw new RestValidationException(group, $"trigger group '{triggerGroup}' is invalid. use only alphanumeric, dashes & underscore");
     }
 
     private static void ValidateTriggerPriority(TriggerPool pool)
@@ -787,7 +788,7 @@ public partial class JobDomain
 
     private async Task<PlanarIdResponse> Add(string yml)
     {
-        var dynamicRequest = await GetDynamicRequest(yml);
+        var dynamicRequest = GetDynamicRequest(yml);
         return await Add(dynamicRequest);
     }
 
@@ -813,7 +814,7 @@ public partial class JobDomain
         BuildJobData(request, job);
 
         // Create Job Id
-        var id = CreateJobId(job);
+        var id = GenerateJobId(job);
 
         // Build Triggers
         var triggers = BuildTriggers(request, id);
@@ -829,6 +830,8 @@ public partial class JobDomain
             GlobalConfigKeys = jobGlobalConfigKeysYml,
             JobType = jobType
         };
+
+        ValidateJobProperty(property);
 
         await DataLayer.AddJobProperty(property);
 
@@ -852,6 +855,24 @@ public partial class JobDomain
 
         // Return Id
         return new PlanarIdResponse { Id = id };
+    }
+
+    private static void ValidateJobProperty(JobProperty property)
+    {
+        if (string.Equals(property.JobType, nameof(PlanarJob), StringComparison.OrdinalIgnoreCase)) { return; }
+        if (!string.IsNullOrWhiteSpace(property.GlobalConfigKeys))
+        {
+            throw new RestValidationException(global_config_keys, $"{global_config_keys} is not valid field of {property.JobType} job type");
+        }
+    }
+
+    private static void ValidateJobProperty(SetJobDynamicRequest request)
+    {
+        if (string.Equals(request.JobType, nameof(PlanarJob), StringComparison.OrdinalIgnoreCase)) { return; }
+        if (request.GlobalConfigKeys.Count > 0)
+        {
+            throw new RestValidationException(global_config_keys, $"{global_config_keys} is not valid field of {request.JobType} job type");
+        }
     }
 
     private async Task<string> GetJobFileContent(IJobFileRequest request)
@@ -907,11 +928,11 @@ public partial class JobDomain
     {
         if (yml == null)
         {
-            throw new RestValidationException("properties", "properties is null or empty");
+            throw new RestValidationException(props, "properties is null or empty");
         }
 
         var properties = YmlUtil.Deserialize<TProperties>(yml) ??
-            throw new RestValidationException("properties", "properties is null or empty");
+            throw new RestValidationException(props, "properties is null or empty");
 
         var validator = ServiceProvider.GetService<IValidator<TProperties>>();
 
@@ -938,7 +959,7 @@ public partial class JobDomain
         if (request.GlobalConfigKeys.Count == 0) { return; }
         if (request.GlobalConfigKeys.Count > 40)
         {
-            throw new RestValidationException("global config keys", $"total count of global config keys ({request.GlobalConfigKeys.Count}) must be up to 40 items");
+            throw new RestValidationException(global_config_keys, $"total count of {global_config_keys} ({request.GlobalConfigKeys.Count}) must be up to 40 items");
         }
 
         var longKeys = request.GlobalConfigKeys
@@ -947,7 +968,7 @@ public partial class JobDomain
         if (longKeys.Any())
         {
             var longKeysTitle = string.Join(',', longKeys);
-            throw new RestValidationException("global config keys", $"global config key(s) {longKeysTitle} has more the 50 chars");
+            throw new RestValidationException(global_config_keys, $"global config key(s) {longKeysTitle} has more the 50 chars");
         }
 
         var duplicates = request.GlobalConfigKeys
@@ -958,38 +979,45 @@ public partial class JobDomain
         if (duplicates.Any())
         {
             var duplicatesTitle = string.Join(',', duplicates);
-            throw new RestValidationException("global config keys", $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
+            throw new RestValidationException(global_config_keys, $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
         }
     }
 
     private async Task ValidatePropertiesInner(SetJobDynamicRequest request)
     {
         var yml = GetJopPropertiesYml(request);
+        if (yml == null) { return; }
 
         switch (request.JobType)
         {
             case nameof(PlanarJob):
                 await ValidateJobProperties<PlanarJobProperties>(yml);
+                ValidateUnmatched<PlanarJobProperties>(yml);
                 break;
 
             case nameof(ProcessJob):
                 await ValidateJobProperties<ProcessJobProperties>(yml);
+                ValidateUnmatched<ProcessJobProperties>(yml);
                 break;
 
             case nameof(SqlJob):
                 await ValidateJobProperties<SqlJobProperties>(yml);
+                ValidateUnmatched<SqlJobProperties>(yml);
                 break;
 
             case nameof(RestJob):
                 await ValidateJobProperties<RestJobProperties>(yml);
+                ValidateUnmatched<RestJobProperties>(yml);
                 break;
 
             case nameof(SqlTableReportJob):
                 await ValidateJobProperties<SqlTableReportJobProperties>(yml);
+                ValidateUnmatched<SqlTableReportJobProperties>(yml);
                 break;
 
             case nameof(SequenceJob):
                 await ValidateJobProperties<SequenceJobProperties>(yml);
+                ValidateUnmatched<SequenceJobProperties>(yml);
                 break;
 
             default:
@@ -1004,9 +1032,13 @@ public partial class JobDomain
         {
             await ValidatePropertiesInner(request);
         }
+        catch (ValidationException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
+            throw new RestValidationException(props, $"fail to read/validate properties section. error: {ex.Message}");
         }
     }
 
@@ -1018,7 +1050,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("properties", $"fail to read/validate global config keys section. error: {ex.Message}");
+            throw new RestValidationException(props, $"fail to read/validate global config keys section. error: {ex.Message}");
         }
     }
 

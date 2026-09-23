@@ -32,7 +32,7 @@ namespace Planar.Common
 
         private static Dictionary<string, string?> FilterGlobalSettings(Dictionary<string, string?> globalSettings, IEnumerable<string>? globalSettingsKeys)
         {
-            if (globalSettingsKeys == null) { return new Dictionary<string, string?>(globalSettings); }
+            if (globalSettingsKeys == null) { return globalSettings; }
             if (!globalSettingsKeys.Any()) { return []; }
 
             var final = new Dictionary<string, string?>();

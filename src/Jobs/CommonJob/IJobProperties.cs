@@ -4,5 +4,5 @@ namespace CommonJob;
 
 public interface IJobProperties
 {
-    void SetGlobalConfigPlaceholder(Dictionary<string, string?> parameters);
+    void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters);
 }

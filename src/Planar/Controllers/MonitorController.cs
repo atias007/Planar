@@ -17,6 +17,22 @@ namespace Planar.Controllers;
 [Route("monitor")]
 public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>(bl)
 {
+    [HttpPost("apply")]
+    [EditorAuthorize]
+    [EndpointName("post_monitor_apply")]
+    [EndpointDescription("Add/Update monitor")]
+    [EndpointSummary("Add/Update Monitor")]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
+    [MultiStatusJsonResponse(typeof(ApplyResponse))]
+    [BadRequestResponse]
+    public async Task<ActionResult<ApplyResponse>> Apply()
+    {
+        var result = await BusinesLayer.Apply(HttpContext);
+        var status = result.GetStatusCode();
+        return StatusCode((int)status, result);
+    }
+
     [HttpGet]
     [EditorAuthorize]
     [EndpointName("get_monitor")]

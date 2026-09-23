@@ -103,6 +103,32 @@ internal static class CliTableExtensions
         return table;
     }
 
+    public static List<CliTable> GetTable(CliApplyResponse? response)
+    {
+        var table1 = new CliTable();
+        if (response == null) { return [table1]; }
+        table1.Table.AddColumns(string.Empty, string.Empty);
+        table1.Table.HideHeaders();
+        table1.Table.AddRow("Add", CliTableFormat.FormatSummaryNumber(response.TotalAdd, CliFormat.OkColor));
+        table1.Table.AddRow("Update", CliTableFormat.FormatSummaryNumber(response.TotalUpdate, CliFormat.OkColor));
+        table1.Table.AddRow("Unchanged", CliTableFormat.FormatSummaryNumber(response.TotalUnchanged, "gray"));
+        table1.Table.AddRow("Errors", CliTableFormat.FormatSummaryNumber(response.TotalErrors, CliFormat.ErrorColor));
+
+        var table2 = new CliTable { Title = "Details" };
+        table2.Table.AddColumns("Action", "Source", "Description");
+        var grouped = response.Items.GroupBy(r => new { r.Action, r.ActionId }).OrderBy(g => g.Key.ActionId).ToList();
+        foreach (var g in grouped)
+        {
+            foreach (var item in g)
+            {
+                var action = item.ActionId == 99 ? $"[{CliFormat.ErrorColor}]{item.Action}[/]" : item.Action;
+                table2.Table.AddRow(action, SafeCliString(item.Source), SafeCliString(item.Description));
+            }
+        }
+
+        return [table1, table2];
+    }
+
     public static CliTable GetTable(ServiceHealthCheckResponse? response)
     {
         var table = new CliTable();
@@ -310,12 +336,13 @@ internal static class CliTableExtensions
         return table;
     }
 
-    public static CliTable GetTable(IEnumerable<KeyValueItem>? response)
+    public static CliTable GetTable(PagingResponse<KeyValueItem>? response)
     {
-        var table = new CliTable(showCount: true);
-        if (response == null) { return table; }
+        var table = new CliTable(paging: response);
         table.Table.AddColumns("Key", ColumnValue);
-        foreach (var item in response)
+
+        if (response == null || response.Data == null) { return table; }
+        foreach (var item in response.Data)
         {
             if (item == null) { continue; }
             table.Table.AddRow(SafeCliString(item.Key), LimitValue(item.Value));
@@ -725,7 +752,7 @@ internal static class CliTableExtensions
             r.Event.EscapeMarkup(),
             r.JobGroup.EscapeMarkup(),
             r.JobName.EscapeMarkup(),
-            r.EventArgument.EscapeMarkup(),
+            r.EventArguments.EscapeMarkup(),
             string.Join(", ", r.DistributionGroups).EscapeMarkup(),
             string.Join(", ", r.Hooks).EscapeMarkup(),
             CliTableFormat.GetBooleanMarkup(r.Active)));
@@ -785,13 +812,13 @@ internal static class CliTableExtensions
         return table;
     }
 
-    internal static CliTable GetTable(List<CliGlobalConfig>? response)
+    internal static CliTable GetTable(PagingResponse<CliGlobalConfig>? response)
     {
-        var table = new CliTable(showCount: true);
+        var table = new CliTable(paging: response);
         table.Table.AddColumns("Key", ColumnValue, "Type", "Source Url", "Is Secret", "Last Update");
 
-        if (response == null) { return table; }
-        response.ForEach(r => table.Table.AddRow(
+        if (response == null || response.Data == null) { return table; }
+        response.Data.ForEach(r => table.Table.AddRow(
             r.Key.EscapeMarkup(),
             SafeCliString(LimitValue(r.Value)),
             r.Type?.EscapeMarkup() ?? string.Empty,

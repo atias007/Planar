@@ -4,6 +4,7 @@ using Planar.API.Common.Entities;
 using RestSharp;
 using System.Text.RegularExpressions;
 using System;
+using Planar.API.Common;
 
 namespace Planar.CLI.General
 {
@@ -31,12 +32,25 @@ namespace Planar.CLI.General
             LastJobOrTriggerId = response.Data.Id;
         }
 
+        public static void SetLastJobOrTriggerId(RestResponse<PlanarIdResponseWrapper> response)
+        {
+            if (response == null) { return; }
+            if (!response.IsSuccessful) { return; }
+            if (response.Data == null) { return; }
+            if (string.IsNullOrEmpty(response.Data.PlanarId?.Id)) { return; }
+            LastJobOrTriggerId = response.Data.PlanarId.Id;
+        }
+
         public static bool IsJobId(string? value)
         {
             if (string.IsNullOrWhiteSpace(value)) { return false; }
-            const string pattern = "^[a-z0-9]{11}$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-            return regex.IsMatch(value);
+            return JobConsts.JobIdRegex.IsMatch(value);
+        }
+
+        public static bool IsJobKey(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) { return false; }
+            return JobConsts.JobKeyRegex.IsMatch(value);
         }
     }
 }

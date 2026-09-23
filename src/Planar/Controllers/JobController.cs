@@ -1,7 +1,6 @@
 ﻿using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
-using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,25 +37,21 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [EndpointName("post_job_apply")]
     [EndpointDescription("Add/Update job by yml file")]
     [EndpointSummary("Add/Update Job By Yml File")]
-    [JsonAndYamlConsumes]
-    [CreatedResponse(typeof(PlanarIdResponse))]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
     [BadRequestResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Apply()
+    public async Task<ActionResult<ApplyResponse>> Apply()
     {
-        var result = await BusinesLayer.ApplyRoute(HttpContext);
-        if (string.IsNullOrWhiteSpace(result.Id))
-        {
-            return Created();
-        }
-
-        return CreatedAtAction(nameof(Get), result, result);
+        var result = await BusinesLayer.Apply(HttpContext);
+        var status = result.GetStatusCode();
+        return StatusCode((int)status, result);
     }
 
     [HttpPost]
     [EditorAuthorize]
     [EndpointName("post_job")]
-    [EndpointDescription("Add job by yml file")]
-    [EndpointSummary("Add Job By Yml File")]
+    [EndpointDescription("Add job")]
+    [EndpointSummary("Add Job")]
     [JsonAndYamlConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
@@ -74,18 +68,18 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [EndpointDescription("Update job")]
     [EndpointSummary("Update Job")]
     [JsonAndYamlConsumes]
-    [CreatedResponse(typeof(PlanarIdResponse))]
+    [CreatedResponse(typeof(PlanarIdResponseWrapper))]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<PlanarIdResponse>> Update()
+    public async Task<ActionResult<PlanarIdResponseWrapper>> Update()
     {
         var result = await BusinesLayer.UpdateRoute(HttpContext);
-        if (string.IsNullOrWhiteSpace(result.Id))
+        if (result.Unchanged)
         {
             return Created();
         }
 
-        return CreatedAtAction(nameof(Get), result, result);
+        return CreatedAtAction(nameof(Get), result.PlanarId, result);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -505,33 +499,6 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         var serviceProvider = HttpContext.RequestServices;
         var sse = serviceProvider.GetRequiredService<JobDomainSse>();
         await sse.GetRunningLog(instanceId, cancellationToken);
-    }
-
-    [HttpGet("jobfile/{name}")]
-    [EditorAuthorize]
-    [EndpointName("get_job_jobfile_name")]
-    [EndpointDescription("Get JobFile.yml template")]
-    [EndpointSummary("Get JobFile.yml Template")]
-    [OkYmlResponse]
-    [BadRequestResponse]
-    [NotFoundResponse]
-    public ActionResult<string> GetJobFileTemplate([Required][FromRoute] string name)
-    {
-        name = WebUtility.UrlDecode(name);
-        var result = JobDomain.GetJobFileTemplate(name);
-        return Ok(result);
-    }
-
-    [HttpGet("types")]
-    [ViewerAuthorize]
-    [EndpointName("get_job_types")]
-    [EndpointDescription("Get all job types")]
-    [EndpointSummary("Get All Job Types")]
-    [OkJsonResponse(typeof(IEnumerable<string>))]
-    public ActionResult<IEnumerable<string>> GetJobTypes()
-    {
-        var result = ServiceUtil.JobTypeNames;
-        return Ok(result);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]

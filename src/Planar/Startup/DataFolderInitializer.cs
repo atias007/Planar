@@ -1,10 +1,8 @@
 ﻿using Planar.Service.General;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Twilio.Base;
 
 namespace Planar.Startup
 {
@@ -13,7 +11,8 @@ namespace Planar.Startup
         public static void CreateFolderAndFiles()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var names = assembly.GetManifestResourceNames();
+            var names = assembly.GetManifestResourceNames()
+                .Where(n => !n.Contains(".manifests.", System.StringComparison.OrdinalIgnoreCase));
 
             _ = CreateJobFiles();
 
@@ -63,7 +62,7 @@ namespace Planar.Startup
             try
             {
                 var root = FolderConsts.GetDataFolder(fullPath: true);
-                jobFileFolder = Path.Combine(root, "JobFiles");
+                jobFileFolder = Path.Combine(root, "Manifests");
                 EnsurePath(jobFileFolder);
             }
             catch
@@ -72,20 +71,12 @@ namespace Planar.Startup
                 return;
             }
 
-            var types = ServiceUtil.JobTypes;
-            foreach (var t in types)
+            foreach (var t in Manifest.All)
             {
                 try
                 {
-                    var path = Path.Combine(jobFileFolder, t.Name);
-                    EnsurePath(path);
-
-                    var assembly = t.Assembly;
-                    var resource = $"{t.Name}.JobFile.yml";
-                    using var stream = assembly.GetManifestResourceStream(resource);
-                    using var reader = new StreamReader(stream);
-                    var content = await reader.ReadToEndAsync();
-                    await File.WriteAllTextAsync(Path.Combine(path, "JobFile.yml"), content);
+                    var filename = Path.Combine(jobFileFolder, t.Key);
+                    await File.WriteAllTextAsync(filename, t.Value);
                 }
                 catch
                 {

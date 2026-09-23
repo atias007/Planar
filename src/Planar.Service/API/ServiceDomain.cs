@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -21,6 +22,58 @@ namespace Planar.Service.API;
 
 public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<ServiceDomain, IServiceData>(serviceProvider)
 {
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        // Read yaml body and
+        var yamls = await GetApplyYamls(httpContext);
+
+        // Group yamls by kind
+        var yamlGroups = yamls.GroupBy(y => y.Key, StringComparer.OrdinalIgnoreCase);
+
+        // Validate known kinds
+        foreach (var item in yamlGroups)
+        {
+            if (!Manifest.IsValid(item.Key))
+            {
+                throw new RestValidationException("kind", $"kind '{item.Key}' is not valid. valid kinds are: {string.Join(", ", Manifest.All)}");
+            }
+        }
+
+        var responses = new List<ApplyResponse>();
+
+        // Apply Jobs
+        var jobs = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Job, StringComparison.OrdinalIgnoreCase));
+        if (jobs != null)
+        {
+            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+            var response = await jobDomain.Apply([.. jobs], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
+        // Apply Job Data
+        var jobData = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.JobData, StringComparison.OrdinalIgnoreCase));
+        if (jobData != null)
+        {
+            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+            var response = await jobDomain.Apply([.. jobData], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
+        // Apply Monitors
+        var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
+        if (monitors != null)
+        {
+            var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
+            var monitorResponse = await monitorDomain.Apply([.. monitors], httpContext.RequestAborted);
+            responses.Add(monitorResponse);
+        }
+
+        // Merge all responses
+        var result = ApplyResponse.Merge(responses);
+
+        return result;
+    }
+
     public static string GetServiceVersion()
     {
         return ServiceVersion ?? Consts.Undefined;
@@ -258,6 +311,16 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
 
         return result;
+    }
+
+    public static string GetManifest(string manifestName)
+    {
+        if (!Manifest.All.TryGetValue(manifestName, out var manifest))
+        {
+            throw new RestNotFoundException($"manifest '{manifestName}' could not be found");
+        }
+
+        return manifest;
     }
 
     public WorkingHoursModel GetWorkingHours(string calendar)

@@ -1,23 +1,22 @@
 ﻿using RestSharp;
 using System;
 
-namespace Planar.CLI
+namespace Planar.CLI;
+
+public sealed class CliException : Exception
 {
-    public sealed class CliException : Exception
+    public CliException(string message, RestResponse restResponse) : base(message)
     {
-        public RestResponse? RestResponse { get; private set; }
-
-        public CliException(string message, RestResponse restResponse) : base(message)
-        {
-            RestResponse = restResponse;
-        }
-
-        public CliException(string message) : base(message)
-        {
-        }
-
-        public CliException(string message, Exception? innerException) : base(message, innerException)
-        {
-        }
+        RestResponse = restResponse;
     }
+
+    public CliException(string message) : base(message)
+    {
+    }
+
+    public CliException(string message, Exception? innerException) : base(message, innerException)
+    {
+    }
+
+    public RestResponse? RestResponse { get; private set; }
 }

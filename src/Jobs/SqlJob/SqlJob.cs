@@ -63,25 +63,31 @@ public abstract class SqlJob(
     {
         Properties.Steps ??= [];
 
+        if (Properties.Steps.Count == 0)
+        {
+            MessageBroker.AppendLog(LogLevel.Warning, "sql job has not steps");
+            return;
+        }
+
         var total = Properties.Steps.Count;
         MessageBroker.AppendLog(LogLevel.Information, $"start sql job with {total} steps");
 
-        DbConnection? defaultConnection = null;
+        DbConnection? singleConnection = null;
         DbTransaction? transaction = null;
 
         var connections = GetConnectionNames(Properties.Steps, Properties.DefaultConnectionName);
-        var singleConnection = connections.Count == 1;
+        var isSingleConnection = connections.Count == 1;
 
         try
         {
-            if (singleConnection)
+            if (isSingleConnection)
             {
-                defaultConnection = new SqlConnection(connections[0]);
-                await defaultConnection.OpenAsync(ExecutionCancellationToken);
+                var connString = ValidateConnectionName(connections[0]);
+                singleConnection = await OpenSqlConnection(connections[0], connString, ExecutionCancellationToken);
                 if (Properties.Transaction)
                 {
                     var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
-                    transaction = await defaultConnection.BeginTransactionAsync(isolation, ExecutionCancellationToken);
+                    transaction = await singleConnection.BeginTransactionAsync(isolation, ExecutionCancellationToken);
                 }
             }
             else
@@ -89,10 +95,11 @@ public abstract class SqlJob(
                 if (Properties.Transaction)
                 {
                     MessageBroker.AppendLog(LogLevel.Warning, "transaction is not allowed when using multiple connections. no transaction will be used.");
+                    return;
                 }
             }
 
-            await ExecuteSqlInner(context, defaultConnection, transaction, total);
+            await ExecuteSqlInner(context, singleConnection, transaction, total);
 
             if (transaction != null)
             {
@@ -112,14 +119,14 @@ public abstract class SqlJob(
         finally
         {
             await SafeInvoke(async () => { if (transaction != null) { await transaction.DisposeAsync(); } });
-            await SafeInvoke(async () => { if (defaultConnection != null) { await defaultConnection.CloseAsync(); } });
-            await SafeInvoke(async () => { if (defaultConnection != null) { await defaultConnection.DisposeAsync(); } });
+            await SafeInvoke(async () => { if (singleConnection != null) { await singleConnection.CloseAsync(); } });
+            await SafeInvoke(async () => { if (singleConnection != null) { await singleConnection.DisposeAsync(); } });
         }
     }
 
     private async Task ExecuteSqlInner(
         IJobExecutionContext context,
-        DbConnection? defaultConnection,
+        DbConnection? singleConnection,
         DbTransaction? transaction,
         int total)
     {
@@ -129,7 +136,7 @@ public abstract class SqlJob(
 
         foreach (var step in Properties.Steps)
         {
-            await ExecuteSqlStep(context, step, defaultConnection, transaction, ExecutionCancellationToken);
+            await ExecuteSqlStep(context, step, singleConnection, transaction, ExecutionCancellationToken);
             counter++;
             var progress = Convert.ToByte(counter * 100.0 / total);
 
@@ -150,11 +157,9 @@ public abstract class SqlJob(
         }
     }
 
-    private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection, DbTransaction? transaction, CancellationToken cancellationToken)
+    private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? singleConnection, DbTransaction? transaction, CancellationToken cancellationToken)
     {
-        var tuple = await GetDbConnection(step, defaultConnection, cancellationToken);
-        DbConnection connection = tuple.Item1;
-        var finalizeConnection = tuple.Item2;
+        var (connection, toBeDispose) = await GetDbConnection(step, singleConnection, cancellationToken);
 
         try
         {
@@ -197,7 +202,7 @@ public abstract class SqlJob(
         }
         finally
         {
-            if (finalizeConnection)
+            if (toBeDispose)
             {
                 await SafeInvoke(async () => { if (connection != null) { await connection.CloseAsync(); } });
                 await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
@@ -276,7 +281,7 @@ public abstract class SqlJob(
         return result;
     }
 
-    private async Task<Tuple<DbConnection, bool>> GetDbConnection(SqlStep step, DbConnection? defaultConnection, CancellationToken cancellationToken)
+    private async Task<(DbConnection Connection, bool toBeDispose)> GetDbConnection(SqlStep step, DbConnection? singleConnection, CancellationToken cancellationToken)
     {
         DbConnection? connection = null;
         var finalizeConnection = false;
@@ -284,23 +289,43 @@ public abstract class SqlJob(
         {
             if (string.IsNullOrWhiteSpace(step.ConnectionString))
             {
-                if (defaultConnection == null) { throw new SqlJobException($"no connection string defined for step name '{step.Name}' and no default connection"); }
-                connection = defaultConnection;
+                if (singleConnection == null) { throw new SqlJobException($"no connection string defined for step name '{step.Name}' and no default connection"); }
+                connection = singleConnection;
             }
             else
             {
                 finalizeConnection = true;
-                connection = new SqlConnection(step.ConnectionString);
-                MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {step.ConnectionName}");
-                await connection.OpenAsync(cancellationToken);
+                connection = await OpenSqlConnection(step.ConnectionName, step.ConnectionString, cancellationToken);
             }
 
-            return new Tuple<DbConnection, bool>(connection, finalizeConnection);
+            return new(connection, finalizeConnection);
         }
         catch (Exception)
         {
             await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
             throw;
+        }
+    }
+
+    private async Task<SqlConnection> OpenSqlConnection(string? name, string? connectionString, CancellationToken cancellationToken)
+    {
+        name ??= "[no name]";
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new SqlJobException($"connection string for connection name: {name} is empty");
+        }
+
+        try
+        {
+            var connection = new SqlConnection(connectionString);
+            MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {name}");
+            await connection.OpenAsync(cancellationToken);
+            return connection;
+        }
+        catch (Exception ex)
+        {
+            throw new SqlJobException($"fail to open sql connection with connection name: {name}", ex);
         }
     }
 
@@ -387,6 +412,7 @@ public abstract class SqlJob(
         try
         {
             ValidateMandatoryString(step.Filename, nameof(step.Filename));
+            if (string.IsNullOrWhiteSpace(step.ConnectionName)) { step.ConnectionName = Properties.DefaultConnectionName; }
             step.ConnectionString = ValidateConnectionName(step.ConnectionName);
             step.FullFilename = FolderConsts.GetSpecialFilePath(
                 PlanarSpecialFolder.Jobs,

@@ -18,8 +18,11 @@ public class CliBaseMonitorRequest
     [Required("event argument is required")]
     public string Event { get; set; } = null!;
 
-    [ActionProperty("a", "arguments")]
-    public string? EventArgument { get; set; }
+    [ActionProperty("ax", "arguments-x")]
+    public int? EventArgumentX { get; set; }
+
+    [ActionProperty("ay", "arguments-y")]
+    public int? EventArgumentY { get; set; }
 
     [ActionProperty("v", "active")]
     public bool Active { get; set; }

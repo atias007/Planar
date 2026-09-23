@@ -4,17 +4,23 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Model;
 using Quartz;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using Twilio.TwiML.Messaging;
 
 namespace Planar.Service.API;
 
@@ -248,9 +254,137 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         return _serviceProvider.GetRequiredService<T>();
     }
 
+    protected T? ResolveOptionally<T>()
+        where T : notnull
+    {
+        return _serviceProvider.GetService<T>();
+    }
+
     protected async Task<ITrigger> ValidateExistingTrigger(TriggerKey entity, string triggerId)
     {
         var scheduler = await GetScheduler();
         return await scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
+    }
+
+    protected static async Task<IEnumerable<KeyValuePair<string, string>>> GetApplyYamls(HttpContext httpContext, params List<string> kinds)
+    {
+        // Validate YAML content type
+        var contentType = httpContext.Request.ContentType ?? string.Empty;
+        if (!contentType.Contains("yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new RestValidationException("contentType", $"Unsupported content type: {contentType}");
+        }
+
+        // Read body content
+        using var reader = new StreamReader(httpContext.Request.Body);
+        var content = await reader.ReadToEndAsync(httpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new RestValidationException("request body", "request body is empty");
+        }
+
+        // Split content to individual YAML documents
+        List<KeyValuePair<string, string>> yamls;
+        try
+        {
+            yamls = YmlUtil.SplitByKind(content);
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("yaml", $"fail to convert content to yaml document(s)\r\n{ex.Message}");
+        }
+
+        // Convert YAML documents to key-value pairs and validate kind
+        var result = new List<KeyValuePair<string, string>>();
+        KeyValuePair<string, string> currentYaml = default;
+
+        try
+        {
+            for (var i = 0; i < yamls.Count; i++)
+            {
+                currentYaml = yamls[i];
+                ValidateKind(kinds, currentYaml.Key);
+                if (string.IsNullOrWhiteSpace(currentYaml.Value)) { continue; }
+                result.Add(new KeyValuePair<string, string>(currentYaml.Key, currentYaml.Value));
+            }
+        }
+        catch (Exception ex)
+        {
+            var source = YmlUtil.GetApplySource(content);
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                throw new RestValidationException("yaml", $"fail to map yaml to apply request\r\n{ex.Message}");
+            }
+            else
+            {
+                throw new RestValidationException(source, $"fail to map content of file: {source} to apply request\r\n{ex.Message}");
+            }
+        }
+
+        return result;
+    }
+
+    protected async Task<IReadOnlyCollection<T>> GetApplyEntities<T>(
+        IEnumerable<KeyValuePair<string, string>> yamls,
+        string kind,
+        CancellationToken cancellationToken,
+        bool withValidation = true)
+        where T : class, IApplyRequest, new()
+    {
+        var validator = withValidation ? ResolveOptionally<IValidator<T>>() : null;
+        var entities = new List<T>();
+
+        try
+        {
+            foreach (var y in yamls)
+            {
+                var entity = YmlUtil.Deserialize<T>(y.Value);
+                if (entity == null) { continue; }
+                if (validator != null)
+                {
+                    await validator.ValidateAndThrowAsync(entity, cancellationToken);
+                }
+
+                ValidateUnmatched<T>(y.Value);
+
+                entities.Add(entity);
+            }
+        }
+        catch (RestValidationException)
+        {
+            throw;
+        }
+        catch (ValidationException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new RestValidationException("yaml", $"Fail to map yaml body to {kind} request\r\n{ex.Message}");
+        }
+
+        return entities;
+    }
+
+    protected static void ValidateUnmatched<T>(string yaml)
+    {
+        var unmatched = YmlUtil.GetUnmatchedMessage<T>(yaml);
+        if (string.IsNullOrWhiteSpace(unmatched)) { return; }
+        throw new RestValidationException("yaml", unmatched);
+    }
+
+    private static void ValidateKind(List<string>? kinds, string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new RestValidationException("kind", "kind property is missing of empty");
+        }
+
+        if (kinds == null || kinds.Count == 0) { return; }
+
+        if (!kinds.Contains(key, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new RestValidationException("kind", $"Unexpected kind: {key}");
+        }
     }
 }

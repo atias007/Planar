@@ -23,6 +23,14 @@ namespace Planar.CLI.Actions;
 [Module("service", "operate service, check alive, list calendars and more")]
 public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 {
+    private const string c_service = "service";
+
+    [Action("apply")]
+    public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
+    {
+        return await Apply(c_service, request, cancellationToken);
+    }
+
     [Action("agents")]
     public static async Task<CliActionResponse> GetAgents(CancellationToken cancellationToken = default)
     {
@@ -51,7 +59,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("info")]
     public static async Task<CliActionResponse> GetInfo(CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("service", Method.Get);
+        var restRequest = new RestRequest(c_service, Method.Get);
         var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
 
         var data =
@@ -128,7 +136,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("env")]
     public static async Task<CliActionResponse> GetEnvironment(CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("service", Method.Get);
+        var restRequest = new RestRequest(c_service, Method.Get);
         var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Data?.General.Environment);
     }
@@ -136,7 +144,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("log-level")]
     public static async Task<CliActionResponse> GetLogLevel(CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("service", Method.Get);
+        var restRequest = new RestRequest(c_service, Method.Get);
         var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Data?.General.LogLevel);
     }
@@ -380,6 +388,53 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         await File.WriteAllTextAsync(filename, decrypted, cancellationToken);
         var response = CliActionResponse.GetGenericSuccessRestResponse();
         return await Task.FromResult(new CliActionResponse(response));
+    }
+
+    [Action("manifest")]
+    [NullRequest]
+    public static async Task<CliActionResponse> GetManifest(CliGetJobFileRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+        {
+            var wrapper = await GetCliGetJobTypesRequest(cancellationToken);
+            if (!wrapper.IsSuccessful || wrapper.Request == null)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            request = wrapper.Request;
+        }
+
+        var restRequest = new RestRequest("service/manifest/{name}", Method.Get)
+            .AddUrlSegment("name", request.Name);
+
+        var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+
+        return new CliActionResponse(result, result.Data);
+    }
+
+    [Action("manifests")]
+    public static async Task<CliActionResponse> GetAllManifets(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("service/manifests", Method.Get);
+
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        return new CliActionResponse(result, result.Data);
+    }
+
+    private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobTypesRequest(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("service/manifests", Method.Get);
+
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        if (!result.IsSuccessful)
+        {
+            return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
+        }
+
+        var selectedItem = PromptSelection(result.Data, "manifest name") ?? string.Empty;
+        var request = new CliGetJobFileRequest { Name = selectedItem };
+        return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
     }
 
     private static string Cryptographic(CliEncryptAppsettingsRequest request)

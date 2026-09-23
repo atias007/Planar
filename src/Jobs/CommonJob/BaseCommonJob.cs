@@ -382,9 +382,10 @@ where TProperties : class, IJobProperties, new()
         }
 
         Properties = YmlUtil.Deserialize<TProperties>(p.Properties);
-        Properties.SetGlobalConfigPlaceholder(Global.GlobalConfig);
+        Properties.FillGlobalConfigPlaceholder(Global.GlobalConfig); // set yml place holders
 
-        if (p.GlobalConfigKeys == null)
+        // Only planar job filters global config keys, other jobs will use all global config
+        if (p.GlobalConfigKeys == null || Properties is not IPlanarJobProperties)
         {
             _globalConfigKeys = null;
         }

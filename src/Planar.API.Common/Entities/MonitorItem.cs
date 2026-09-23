@@ -9,7 +9,7 @@ public class MonitorItem
     public string Event { get; set; } = string.Empty;
     public string? JobName { get; set; }
     public string? JobGroup { get; set; }
-    public string? EventArgument { get; set; }
+    public string? EventArguments { get; set; }
     public IEnumerable<string> Hooks { get; set; } = [];
     public bool Active { get; set; }
 

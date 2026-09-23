@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Actions;
+﻿using Planar.API.Common;
+using Planar.CLI.Actions;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Exceptions;
@@ -21,11 +22,9 @@ public class CliArgumentsUtil
 {
     private const string OutputTerm = "--inner-cli-output-filename";
     private const string NumericRegexTemplate = "^[1-9][0-9]{0,18}$";
-    private const string JobIdRegexTemplate = "^[a-z0-9]{11}$";
     private const string InstanceIdRegexTemplate = "^[A-Za-z0-9_-]{3,50}[0-9]{1,18}$";
 
     private static readonly Regex _numericRegex = new(NumericRegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(1));
-    private static readonly Regex _jobIdRegex = new(JobIdRegexTemplate, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     private static readonly Regex _instanceIdRegex = new(InstanceIdRegexTemplate, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     private readonly string? _outputFilename;
 
@@ -159,7 +158,7 @@ public class CliArgumentsUtil
         }
 
         // SPECIAL CASE: job id / trigger id
-        if (_jobIdRegex.IsMatch(args[0]))
+        if (JobConsts.JobIdRegex.IsMatch(args[0]))
         {
             var idType = await JobTriggerIdResolver.SafeGetIdType(args[0]);
             if (idType == IdType.JobId)

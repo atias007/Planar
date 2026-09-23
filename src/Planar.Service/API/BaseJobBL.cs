@@ -84,7 +84,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
-    protected void AuditTriggerSafe(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
+    public void AuditTriggerSafe(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
     {
         var context = Resolve<IHttpContextAccessor>();
         var audit = new AuditMessage(context)
@@ -183,7 +183,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             throw new RestValidationException("key", "key is required");
         }
 
-        ValidateRange(key, 1, 100, "key", string.Empty);
+        ValidateRange(key, 1, 200, "key", string.Empty);
 
         if (!Consts.IsDataKeyValid(key))
         {

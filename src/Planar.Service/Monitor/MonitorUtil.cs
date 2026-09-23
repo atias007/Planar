@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.General;
@@ -10,6 +11,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace Planar.Service.Monitor;
 
@@ -107,6 +109,12 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
         missingHooks.ForEach(h => _logger.LogWarning("monitor item with hook {Hook} is invalid. missing hook", h));
     }
 
+    internal static string GetMonitorEventTitle(int eventId)
+    {
+        var title = ((MonitorEvents)eventId).GetEnumDescription();
+        return title;
+    }
+
     internal static string GetMonitorEventTitle(MonitorAction monitorAction)
     {
         var title = ((MonitorEvents)monitorAction.EventId).GetEnumDescription();
@@ -118,34 +126,28 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
         return GetMonitorEventTitle(title, monitorAction.EventArgument);
     }
 
-    internal static string GetMonitorEventTitle(int eventId, string? arguments)
-    {
-        var title = ((MonitorEvents)eventId).GetEnumDescription();
-        if (string.IsNullOrWhiteSpace(arguments))
-        {
-            return title;
-        }
-
-        return GetMonitorEventTitle(title, arguments);
-    }
-
     internal static string GetMonitorEventTitle(string title, string? eventArguments)
     {
         if (string.IsNullOrWhiteSpace(eventArguments)) { return title; }
+        MonitorEventArguments? args = null;
 
-        var args = eventArguments.Split(',');
-        var argChar = 'x';
-        for (int i = 0; i < args.Length; i++)
+        try
         {
-            var arg = args[i];
-            var pharse = $"{{{argChar}}}";
-            if (title.Contains(pharse))
-            {
-                title = title.Replace(pharse, arg);
-            }
-
-            argChar++;
+            args = new Deserializer().Deserialize<MonitorEventArguments>(eventArguments);
         }
+        catch
+        {
+            //// *** DO NOTHING *** ////
+        }
+
+        if (args == null) { return title; }
+
+        const string pharseX = "{x}";
+        const string pharseY = "{y}";
+
+        title = title
+            .Replace(pharseX, args.X.GetValueOrDefault().ToString())
+            .Replace(pharseY, args.Y.GetValueOrDefault().ToString());
 
         return title;
     }

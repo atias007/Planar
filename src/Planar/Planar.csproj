@@ -34,6 +34,7 @@
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Certificate\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
+	  <None Remove="Data\Manifests\Monitor.yml" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
@@ -59,6 +60,12 @@
 	  <EmbeddedResource Include="Data\Certificate\readme.md">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Manifests\JobData.yml">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Manifests\Monitor.yml">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
 	  <EmbeddedResource Include="Data\Settings\AppSettings.yml">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
@@ -78,13 +85,13 @@
 		<PackageReference Include="NetEscapades.AspNetCore.SecurityHeaders" Version="1.3.1" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
 		<PackageReference Include="prometheus-net.AspNetCore.Grpc" Version="8.2.1" />
-		<PackageReference Include="Scalar.AspNetCore" Version="2.16.20" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.17.2" />
 		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="10.0.0" />
 		<PackageReference Include="Serilog.Sinks.SQLite.Microsoft" Version="1.0.0" />
 		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Mvc" Version="2.0.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.32.0.713">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.33.0.1635">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

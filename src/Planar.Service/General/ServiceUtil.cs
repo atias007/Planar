@@ -8,9 +8,12 @@ using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Threading;
 
 namespace Planar.Service.General;
