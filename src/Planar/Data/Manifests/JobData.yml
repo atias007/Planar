@@ -1,8 +1,8 @@
-kind: job data                      # The kind of manifest file
-version: 1.0.0                      # The version of manifest file
+kind: job data                        # The kind of manifest file
+version: 1.0.0                        # The version of manifest file
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
-job name: some job name             # The job name [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
-job group: some job group           # The job group [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+job name: some job name               # The job name [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+job group: some job group             # The job group [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 job data:                             # Key/Value pairs used by job code
   key1: value1                        # --------------------------------

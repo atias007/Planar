@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using CommonJob;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NetEscapades.Configuration.Yaml;
 using Planar.API.Common.Entities;
@@ -19,6 +21,15 @@ namespace Planar.Service.API;
 
 public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigDomain, IConfigData>(serviceProvider)
 {
+    private const string kind = "global config";
+
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        var result = await Apply(yamls, httpContext.RequestAborted);
+        return result;
+    }
+
     public async Task<PagingResponse<KeyValueItem>> GetAllFlat(PagingRequest request, CancellationToken stoppingToken = default)
     {
         var final = await LoadConfigFlat(decrypt: false, stoppingToken);
@@ -249,7 +260,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             content = await response.Content.ReadAsStringAsync();
         }
 
-        const int maxLength = 8_000;
+        const int maxLength = 4_000;
         if (content.Length > maxLength)
         {
             throw new RestValidationException("source url", $"source url '{sourceUrl}' content has more then {maxLength:N0} characters");
@@ -360,5 +371,26 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             Logger.LogWarning(ex, "invalid yml format at global config key '{Key}'", config.Key);
             return [];
         }
+    }
+
+    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    {
+        // Convert to list of ApplyMonitorRequest
+        var requests = await GetApplyEntities<GlobalConfigModelAddRequest>(yamls, kind, cancellationToken);
+
+        // Validation
+        ValidateDuplicateRequests(requests);
+        MonitorActionValidator.ValidateMonitorArguments(requests);
+
+        // Apply changes
+        var response = await ApplyChnges(requests);
+
+        // Save changes
+        await DataLayer.SaveChangesAsync();
+
+        // Clear cache
+        _ = Flush();
+
+        return response;
     }
 }

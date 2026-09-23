@@ -1,0 +1,10 @@
+kind: global config                   # The kind of manifest file
+version: 1.0.0                        # The version of manifest file
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
+- key: some key name 1                # The key name [only alphanumeric, dashes & underscore, 3 to 50 characters]
+  value: some value 1                 # The value [up to 4000 characters]
+  source url: http://some_source_url  # The source URL [up to 1000 characters]
+- key: some key name 2                
+  value: some value 2                 
+  source url: http://some_source_url  
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
