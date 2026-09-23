@@ -108,12 +108,12 @@ namespace Planar.Job
 #if NETSTANDARD2_0
             Exception initializeException = null;
             try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
-            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { if (initializeException != null) { initializeException = ex; } }
-            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { if (initializeException != null) { initializeException = ex; } }
+            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
+            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
 #else
             Exception? initializeException = null;
             try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
-            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex;  }
+            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex; }
             try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 #endif
 
