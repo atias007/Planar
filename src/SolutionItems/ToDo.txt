@@ -2,6 +2,7 @@
 PLAN FOR V 1.8.*
 ----------------
 *** error code for: job is running while apply changes
+*** apply to hooks
 
 * test 'global config keys' in jobfile.yml with json config value
 * test hosted job reading jobfile.yml or only appsettings.json
@@ -438,3 +439,4 @@ V 1.8.3
 - validate extra fields in yaml files
 - manifest directory and api/cli
 - add new manifest: jobdata.yaml
+- add apply command to all entitys
