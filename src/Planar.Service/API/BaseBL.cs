@@ -24,17 +24,17 @@ using Twilio.TwiML.Messaging;
 
 namespace Planar.Service.API;
 
-public abstract class BaseBL<TBusinesLayer, TDataLayer>(IServiceProvider serviceProvider) : BaseBL<TBusinesLayer>(serviceProvider)
+public abstract class BaseBL<TBusinessLayer, TDataLayer>(IServiceProvider serviceProvider) : BaseBL<TBusinessLayer>(serviceProvider)
     where TDataLayer : IBaseDataLayer
 {
     private readonly TDataLayer _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
     protected TDataLayer DataLayer => _dataLayer;
 }
 
-public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
+public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
 {
     private readonly IHttpContextAccessor _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
-    private readonly ILogger<TBusinesLayer> _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
+    private readonly ILogger<TBusinessLayer> _logger = serviceProvider.GetRequiredService<ILogger<TBusinessLayer>>();
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
     private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
 
@@ -49,7 +49,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
 
     protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
 
-    protected ILogger<TBusinesLayer> Logger => _logger;
+    protected ILogger<TBusinessLayer> Logger => _logger;
 
     protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
 
@@ -81,7 +81,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
         }
     }
 
-    protected static void ForbbidenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)
+    protected static void ForbiddenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)
     {
         var any = Array.Exists(properties, p => string.Equals(request.PropertyName, p, StringComparison.OrdinalIgnoreCase));
         if (any)
@@ -98,7 +98,7 @@ public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
 
     protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T>? validator = null)
     {
-        ForbbidenPartialUpdateProperties(request, null, "id");
+        ForbiddenPartialUpdateProperties(request, null, "id");
         if (request.PropertyValue == null) { return; }
 
         var type = typeof(T);

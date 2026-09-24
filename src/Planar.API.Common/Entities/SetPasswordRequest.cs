@@ -1,7 +1,6 @@
-﻿namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities;
+
+public class SetPasswordRequest
 {
-    public class SetPasswordRequest
-    {
-        public string Password { get; set; } = null!;
-    }
+    public string Password { get; set; } = null!;
 }

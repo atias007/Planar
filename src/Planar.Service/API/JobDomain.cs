@@ -291,7 +291,7 @@ public partial class JobDomain(
 
     public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        // split yaml to 2 kinks
+        // split yaml to 2 kinds
         var jobYamls = yamls.Where(y => string.Equals(y.Key, kind1, StringComparison.OrdinalIgnoreCase));
         var jobDataYamls = yamls.Where(y => string.Equals(y.Key, kind2, StringComparison.OrdinalIgnoreCase));
 

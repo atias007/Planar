@@ -16,23 +16,42 @@ namespace Planar.Service.Validation
 
         public SetPasswordRequestValidator()
         {
-            RuleFor(r => r.Password).NotEmpty().Length(8, 16);
-            RuleFor(r => r.Password).Must(r => r.Any(char.IsDigit)).WithMessage("{PropertyName} must contain at least one digit");
-            RuleFor(r => r.Password).Must(r => r.Any(char.IsUpper)).WithMessage("{PropertyName} must contain at least one uppercase letter");
-            RuleFor(r => r.Password).Must(r => r.Any(char.IsLower)).WithMessage("{PropertyName} must contain at least one lowercase letter");
-            RuleFor(r => r.Password).Must(r => !r.Any(char.IsWhiteSpace)).WithMessage("{PropertyName} must not contain space letter");
-            RuleFor(r => r.Password).Must(DoesNotContainThreeIdenticalCharsInARow).WithMessage("{PropertyName} must not contain 3 identical letters in a row");
-            RuleFor(r => r.Password).Must(r => Regex.IsMatch(r, validRegexTemplate, RegexOptions.None, TimeSpan.FromMilliseconds(500)))
-                .WithMessage($"{{PropertyName}} has invalid letters. use alphnumeric and special letters like: {special}");
-            RuleFor(r => r.Password).Must(r =>
-            {
-                foreach (char ch in specialChars)
-                {
-                    if (r.Contains(ch)) { return true; }
-                }
+            RuleFor(r => r.Password).NotEmpty().Length(8, 32);
+            RuleFor(r => r.Password).Must(r => r.Any(char.IsDigit))
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage("{PropertyName} must contain at least one digit");
 
-                return false;
-            }).WithMessage($"{{PropertyName}} must contains at least 1 special letter ({special})");
+            RuleFor(r => r.Password).Must(r => r.Any(char.IsUpper))
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage("{PropertyName} must contain at least one uppercase letter");
+
+            RuleFor(r => r.Password).Must(r => r.Any(char.IsLower))
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage("{PropertyName} must contain at least one lowercase letter");
+                
+            RuleFor(r => r.Password).Must(r => !r.Any(char.IsWhiteSpace))
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage("{PropertyName} must not contain space letter");
+
+            RuleFor(r => r.Password).Must(DoesNotContainThreeIdenticalCharsInARow)
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage("{PropertyName} must not contain 3 identical letters in a row");
+
+            RuleFor(r => r.Password).Must(r => Regex.IsMatch(r, validRegexTemplate, RegexOptions.None, TimeSpan.FromMilliseconds(500)))
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage($"{{PropertyName}} has invalid letters. use alphanumeric and special letters like: {special}");
+            
+            RuleFor(r => r.Password).Must(r =>
+                {
+                    foreach (char ch in specialChars)
+                    {
+                        if (r.Contains(ch)) { return true; }
+                    }
+
+                    return false;
+                })
+                .When(r => !string.IsNullOrWhiteSpace(r.Password))
+                .WithMessage($"{{PropertyName}} must contains at least 1 special letter ({special})");
         }
 
         private static bool DoesNotContainThreeIdenticalCharsInARow(string str)

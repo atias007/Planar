@@ -417,14 +417,14 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        // Convert to list of ApplyMonitorRequest
+        // Convert to list of GlobalConfigApplyRequest
         var requests = await GetApplyEntities<GlobalConfigApplyRequest>(yamls, kind, cancellationToken);
 
         // Validation
         ValidateDuplicateRequests(requests);
 
         // Apply changes
-        var response = await ApplyChnges(requests);
+        var response = await ApplyChanges(requests);
 
         // Save changes
         await DataLayer.SaveChangesAsync();
@@ -449,7 +449,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    private async Task<ApplyResponse> ApplyChnges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
@@ -492,14 +492,12 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
             var message = count > 0 ? $"global config '{request.Key}' was updated" : $"global config '{request.Key}' was not changed";
             var action = count > 0 ? ApplyAction.Update : ApplyAction.Unchanged;
-            AuditSecuritySafe($"global config was applied: {message}", false);
             return new ApplyResponseItem(request.Key, action, message, Manifest.GlobalConfig, request.Source);
         }
         else
         {
             await AddInner(request);
             var message = $"global config '{request.Key}' was added";
-            AuditSecuritySafe($"global config was applied: {message}", false);
             return new ApplyResponseItem(request.Key, ApplyAction.Add, message, Manifest.GlobalConfig, request.Source);
         }
     }

@@ -1,5 +1,5 @@
-kind: global config                   # The kind of manifest file
-version: 1.0.0                        # The version of manifest file
+kind: global config                 # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 key: some key name 1                # The key name [mandatory, only alphanumeric, dashes & underscore, 3 to 50 characters]
 value: some value 1                 # The value [up to 4000 characters]

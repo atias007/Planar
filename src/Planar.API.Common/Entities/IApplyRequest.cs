@@ -7,7 +7,7 @@ public interface IApplyRequest
     string Version { get; set; }
 }
 
-//// ===== APPLY REQUEST PROPERTIES ===== ////
+////// ===== APPLY REQUEST PROPERTIES ===== ////
 
 ////[YamlMember(Alias = "source")]
 ////public string Source { get; set; } = string.Empty;
@@ -18,4 +18,4 @@ public interface IApplyRequest
 ////[YamlMember(Alias = "version")]
 ////public string Version { get; set; } = string.Empty;
 
-//// ==================================== ////
+////// ==================================== ////

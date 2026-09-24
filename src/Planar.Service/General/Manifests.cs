@@ -16,10 +16,12 @@ public static class Manifest
     public const string Job = "job";
     public const string JobData = "job data";
     public const string GlobalConfig = "global config";
+    public const string User = "user";
+    public const string UserPassword = "user password";
 
     private static readonly Lock _locker = new();
 
-    public static IEnumerable<string> Names => [Monitor, Job, JobData, GlobalConfig];
+    public static IEnumerable<string> Names => [Monitor, Job, JobData, GlobalConfig, User, UserPassword];
 
     public static bool IsValid(string name) => Names.Contains(name, StringComparer.OrdinalIgnoreCase);
 

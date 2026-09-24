@@ -68,6 +68,24 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             responses.Add(response);
         }
 
+        // Apply Users
+        var users = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.User, StringComparison.OrdinalIgnoreCase));
+        if (users != null)
+        {
+            var userDomain = ServiceProvider.GetRequiredService<UserDomain>();
+            var response = await userDomain.Apply([.. users], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
+        // Apply User Passwords
+        var user_passwords = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.UserPassword, StringComparison.OrdinalIgnoreCase));
+        if (user_passwords != null)
+        {
+            var userDomain = ServiceProvider.GetRequiredService<UserDomain>();
+            var response = await userDomain.Apply([.. user_passwords], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
         // Apply Monitors
         var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
         if (monitors != null)

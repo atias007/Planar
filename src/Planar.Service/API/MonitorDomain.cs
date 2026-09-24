@@ -363,7 +363,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         TrimPropertyName(request);
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
         var monitor = ValidateExistingEntity(dbMonitor, "monitor");
-        ForbbidenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
+        ForbiddenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
         var updateMonitor = MonitorProfile.ToUpdateMonitorRequest(monitor);
         var validator = Resolve<IValidator<UpdateMonitorRequest>>();
         await SetEntityProperties(updateMonitor, request, validator);

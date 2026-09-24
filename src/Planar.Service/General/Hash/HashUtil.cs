@@ -10,58 +10,57 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Planar.Service.General.Hash
+namespace Planar.Service.General.Hash;
+
+internal static class HashUtil
 {
-    internal static class HashUtil
+    public static HashEntity CreateHash(string value)
     {
-        public static HashEntity CreateHash(string value)
+        using var hmac = new HMACSHA512();
+        var hashBytes = Encoding.UTF8.GetBytes(value);
+        var result = new HashEntity
         {
-            using var hmac = new HMACSHA512();
-            var hashBytes = Encoding.UTF8.GetBytes(value);
-            var result = new HashEntity
-            {
-                Value = value,
-                Salt = hmac.Key,
-                Hash = hmac.ComputeHash(hashBytes)
-            };
-            return result;
-        }
+            Value = value,
+            Salt = hmac.Key,
+            Hash = hmac.ComputeHash(hashBytes)
+        };
+        return result;
+    }
 
-        public static bool VerifyHash(string value, byte[] hash, byte[] salt)
+    public static bool VerifyHash(string value, byte[] hash, byte[] salt)
+    {
+        using var hmac = new HMACSHA512(salt);
+        var hashBytes = Encoding.UTF8.GetBytes(value);
+        var computedHash = hmac.ComputeHash(hashBytes);
+        var result = computedHash.SequenceEqual(hash);
+        return result;
+    }
+
+    public static string CreateToken(UserIdentity user)
+    {
+        var claims = new List<Claim>
         {
-            using var hmac = new HMACSHA512(salt);
-            var hashBytes = Encoding.UTF8.GetBytes(value);
-            var computedHash = hmac.ComputeHash(hashBytes);
-            var result = computedHash.SequenceEqual(hash);
-            return result;
-        }
+            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new (ClaimTypes.Role, user.Role),
+            new (ClaimTypes.Name, user.Username),
+            new (ClaimTypes.Surname, user.Surename ?? string.Empty),
+            new (ClaimTypes.GivenName, user.GivenName),
+        };
 
-        public static string CreateToken(UserIdentity user)
+        var signingCredentials = new SigningCredentials(AppSettings.Authentication.Key, SecurityAlgorithms.HmacSha256);
+        var expire = DateTime.UtcNow.Add(AppSettings.Authentication.TokenExpire);
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            var claims = new List<Claim>
-            {
-                new (ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new (ClaimTypes.Role, user.Role),
-                new (ClaimTypes.Name, user.Username),
-                new (ClaimTypes.Surname, user.Surename ?? string.Empty),
-                new (ClaimTypes.GivenName, user.GivenName),
-            };
+            Issuer = AuthenticationSettings.AuthenticationIssuer,
+            Audience = AuthenticationSettings.AuthenticationAudience,
+            Expires = expire,
+            SigningCredentials = signingCredentials,
+            Subject = new ClaimsIdentity(claims),
+        };
 
-            var signingCredentials = new SigningCredentials(AppSettings.Authentication.Key, SecurityAlgorithms.HmacSha256);
-            var expire = DateTime.UtcNow.Add(AppSettings.Authentication.TokenExpire);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Issuer = AuthenticationSettings.AuthenticationIssuer,
-                Audience = AuthenticationSettings.AuthenticationAudience,
-                Expires = expire,
-                SigningCredentials = signingCredentials,
-                Subject = new ClaimsIdentity(claims),
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var result = tokenHandler.WriteToken(token);
-            return result;
-        }
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        var result = tokenHandler.WriteToken(token);
+        return result;
     }
 }

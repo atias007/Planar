@@ -1,0 +1,17 @@
+kind: user                          # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
+username: some username 1           # Unique identifier [mandatory, only alphanumeric, dots, dashes & underscore, 2 to 50 characters]
+first name: some first name         # The user first name [mandatory, 2 to 50 characters]
+last name: some last name           # The user last name [only alphanumeric, dashes & underscore, 2 to 50 characters]
+email address 1: some email address 1   # First email address [mandatory, only alphanumeric, dashes & underscore, 5 to 250 characters]
+email address 2: some email address 2   # Second email address [mandatory, only alphanumeric, dashes & underscore, 5 to 250 characters]
+email address 3: some email address 3   # Third email address [mandatory, only alphanumeric, dashes & underscore, 5 to 250 characters]
+phone number 1: some phone number 1     # First phone number [mandatory, only digits]
+phone number 2: some phone number 2     # Second phone number [mandatory, only digits]
+phone number 3: some phone number 3     # Third phone number [mandatory, only digits]
+additional field 1: some additional field 1   # additional field [up to 500 characters]
+additional field 2: some additional field 2   # additional field [up to 500 characters]
+additional field 3: some additional field 3   # additional field [up to 500 characters]
+additional field 4: some additional field 4   # additional field [up to 500 characters]
+additional field 5: some additional field 5   # additional field [up to 500 characters]

@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using System.Net;
 using System.Threading.Tasks;
@@ -17,6 +15,22 @@ namespace Planar.Controllers;
 [Route("user")]
 public class UserController(UserDomain bl) : BaseController<UserDomain>(bl)
 {
+    [HttpPost("apply")]
+    [EditorAuthorize]
+    [EndpointName("post_user_apply")]
+    [EndpointDescription("Add/Update user")]
+    [EndpointSummary("Add/Update User")]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
+    [MultiStatusJsonResponse(typeof(ApplyResponse))]
+    [BadRequestResponse]
+    public async Task<ActionResult<ApplyResponse>> Apply()
+    {
+        var result = await BusinesLayer.Apply(HttpContext);
+        var status = result.GetStatusCode();
+        return StatusCode((int)status, result);
+    }
+
     [HttpPost]
     [EditorAuthorize]
     [JsonConsumes]

@@ -18,5 +18,6 @@ public class CliApplyResponseItem
     public required string Action { get; set; }
     public int ActionId { get; set; }
     public required string Description { get; set; }
+    public required string Kind { get; set; }
     public string? Source { get; set; }
 }

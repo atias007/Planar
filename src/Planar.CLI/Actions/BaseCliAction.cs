@@ -98,8 +98,11 @@ public abstract class BaseCliAction
         }
 
         var body = string.Join("\r\n---\r\n", sb).Trim();
+        if (counter > 0)
+        {
+            AnsiConsole.MarkupLine($"[gray] --- total {counter} file(s) ---[/]");
+        }
 
-        AnsiConsole.MarkupLine($"[gray] --- total {counter} file(s) ---[/]");
         AnsiConsole.MarkupLine("[gray] > send apply request...[/]");
         var restRequestAdd = new RestRequest($"{kind}/apply", Method.Post)
             .AddStringBody(body, CliConsts.YamlContentType);
