@@ -192,7 +192,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         ValidateHooksExists(requests);
 
         // Apply changes
-        var response = await ApplyChnges(requests);
+        var response = await ApplyChanges(requests);
 
         // Save changes
         await DataLayer.SaveChangesAsync();
@@ -778,7 +778,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
     }
 
-    private async Task<ApplyResponse> ApplyChnges(IReadOnlyCollection<ApplyMonitorRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyMonitorRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }

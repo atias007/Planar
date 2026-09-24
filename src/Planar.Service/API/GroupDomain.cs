@@ -1,28 +1,53 @@
 ﻿using AutoMapper;
+using CommonJob;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
+using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
 public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDomain, IGroupData>(serviceProvider)
 {
+    private const string kind = "group";
+
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        var result = await Apply(yamls, httpContext.RequestAborted);
+        return result;
+    }
+
     public static IEnumerable<string> GetAllGroupsRoles()
     {
         return Enum.GetNames<Roles>().Select(r => r.ToLower());
     }
 
     public async Task<EntityIdResponse> AddGroup(AddGroupRequest request)
+    {
+        if (await DataLayer.IsGroupNameExists(request.Name, 0))
+        {
+            throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
+        }
+
+        return await AddGroupInner(request);
+    }
+
+    private async Task<EntityIdResponse> AddGroupInner(AddGroupRequest request)
     {
         var group = Mapper.Map<Group>(request);
         var groupRoleValue = RoleHelper.GetRoleValue(group.Role) ?? throw new RestValidationException("role", $"role '{request.Role}' is not supported");
@@ -33,10 +58,6 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         group.Role = group.Role.ToLower();
-        if (await DataLayer.IsGroupNameExists(request.Name, 0))
-        {
-            throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
-        }
 
         try
         {
@@ -225,6 +246,115 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
             }
 
             throw;
+        }
+    }
+
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    {
+        // Convert to list of ApplyGroupRequest
+        var requests = await GetApplyEntities<ApplyGroupRequest>(yamls, kind, cancellationToken);
+
+        // Validation
+        ValidateDuplicateRequests(requests);
+        await ValidateUserNamesExists(requests);
+
+        // Apply changes
+        var response = await ApplyChanges(requests);
+
+        // Save changes
+        await DataLayer.SaveChangesAsync();
+
+        return response;
+    }
+
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyGroupRequest> requests)
+    {
+        var response = new ApplyResponse();
+        if (requests.Count == 0) { return response; }
+        if (requests.Count == 1)
+        {
+            var request = requests.First();
+            var result = await ApplyInner(request);
+            response.AddItem(result);
+            return response;
+        }
+
+        foreach (var request in requests)
+        {
+            try
+            {
+                var result = await ApplyInner(request);
+                response.AddItem(result);
+            }
+            catch (Exception ex)
+            {
+                response.AddItem(new ApplyResponseItem(request.Name, ApplyAction.Error, $"fail to handle group: {ex.Message}", Manifest.Group, request.Source));
+            }
+        }
+
+        return response;
+    }
+
+    private async Task<ApplyResponseItem> ApplyInner(ApplyGroupRequest request)
+    {
+        var dal = Resolve<IGroupData>();
+        var exists_group = await dal.GetGroupWithTrackChanges(request.Name);
+        if (exists_group == null)
+        {
+            await AddGroupInner(request);
+            return new ApplyResponseItem(request.Name, ApplyAction.Add, $"add new group {request.Name}", Manifest.Group, request.Source);
+        }
+    }
+
+    private async Task ValidateUserNamesExists(IEnumerable<ApplyGroupRequest> requests)
+    {
+        var users = requests.SelectMany(r => r.Users).Select(u => u.Username);
+        await ValidateUserNamesExistsInner(users);
+    }
+
+    private async Task ValidateUserNamesExistsInner(IEnumerable<string> users)
+    {
+        var userDal = Resolve<IUserData>();
+        var list = new List<string>();
+        var groups = users.Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in groups)
+        {
+            var exists = await userDal.IsUsernameExists(name);
+            if (!exists) { list.Add(name); }
+        }
+
+        if (list.Count > 0)
+        {
+            var names = string.Join(",", list);
+            throw new RestValidationException("Usernames", $"user(s): {names} could not be found");
+        }
+    }
+
+    private static void ValidateDuplicateRequests(IEnumerable<ApplyGroupRequest> requests)
+    {
+        var query = requests
+            .GroupBy(r => r.Name)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        if (query != null)
+        {
+            throw new RestValidationException("duplicate request", $"duplicate group request for group name '{query}'");
+        }
+
+        foreach (var item in requests)
+        {
+            query = item.Users
+            .GroupBy(r => r.Username)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+            if (query != null)
+            {
+                throw new RestValidationException("duplicate username", $"duplicate user '{query}' at group name '{item.Name}'");
+            }
         }
     }
 

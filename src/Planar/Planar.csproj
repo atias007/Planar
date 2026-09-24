@@ -60,6 +60,7 @@
 	  <EmbeddedResource Include="Data\Certificate\readme.md">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Manifests\Group.yml" />
 	  <EmbeddedResource Include="Data\Manifests\UserPassword.yml" />
 	  <EmbeddedResource Include="Data\Manifests\User.yml" />
 	  <EmbeddedResource Include="Data\Manifests\GlobalConfig.yml" />

@@ -18,6 +18,8 @@ public interface IGroupData : IGroupDataLayer, IBaseDataLayer
 
     Task<Group?> GetGroup(string name);
 
+    Task<Group?> GetGroupWithTrackChanges(string name);
+
     Task<int> GetGroupId(string name);
 
     Task<string?> GetGroupName(int id);
@@ -92,6 +94,14 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     {
         var result = await _context.Groups
             .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Name == name);
+
+        return result;
+    }
+
+    public async Task<Group?> GetGroupWithTrackChanges(string name)
+    {
+        var result = await _context.Groups
             .FirstOrDefaultAsync(g => g.Name == name);
 
         return result;

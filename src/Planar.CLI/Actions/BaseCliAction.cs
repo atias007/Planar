@@ -713,7 +713,7 @@ public abstract class BaseCliAction
 
     private static string AddSourceFilenameToYmlContent(string ymlContent, string sourceFilename)
     {
-        const string seperator = "---";
+        const string separator = "---";
         const string source = "source: ";
 
         var items = YmlUtil.SplitByKind(ymlContent);
@@ -722,18 +722,18 @@ public abstract class BaseCliAction
         {
             var content = item.Value.Trim();
             if (string.IsNullOrWhiteSpace(content)) { continue; }
-            if (content == seperator) { continue; }
-            if (content.StartsWith(seperator)) { content = content[seperator.Length..]; }
-            if (content.EndsWith(seperator)) { content = content[0..(content.Length - seperator.Length)]; }
+            if (content == separator) { continue; }
+            if (content.StartsWith(separator)) { content = content[separator.Length..]; }
+            if (content.EndsWith(separator)) { content = content[0..(content.Length - separator.Length)]; }
             final.AppendLine($"{source}{sourceFilename}");
             final.AppendLine(content.Trim());
-            final.AppendLine(seperator);
+            final.AppendLine(separator);
         }
 
         var result = final.ToString().Trim();
-        if (result.EndsWith(seperator))
+        if (result.EndsWith(separator))
         {
-            result = result[0..(result.Length - seperator.Length)];
+            result = result[0..(result.Length - separator.Length)];
         }
 
         return result;
@@ -758,16 +758,16 @@ public class BaseCliAction<T> : BaseCliAction
             if (actionAttributes == null || !actionAttributes.Any()) { continue; }
 
             var requestType = GetRequestType(act);
-            var comnmands = actionAttributes.Select(a => a.Name).Distinct().ToList();
+            var commands = actionAttributes.Select(a => a.Name).Distinct().ToList();
             var item = new CliActionMetadata
             {
                 Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
                 Method = act,
-                Commands = comnmands,
+                Commands = commands,
                 AllowNullRequest = nullRequestAttribute != null,
                 RequestType = requestType,
                 Arguments = GetArguments(requestType),
-                CommandDisplayName = string.Join('|', comnmands.OrderBy(c => c.Length)),
+                CommandDisplayName = string.Join('|', commands.OrderBy(c => c.Length)),
                 IgnoreHelp = ignoreHelpAttribute != null,
             };
 
