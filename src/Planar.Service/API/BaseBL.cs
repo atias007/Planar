@@ -360,7 +360,7 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("yaml", $"Fail to map yaml body to {kind} request\r\n{ex.Message}");
+            throw new RestValidationException("yaml", $"Fail to map yaml body to '{kind}'  request\r\n{ex.Message}");
         }
 
         return entities;

@@ -831,36 +831,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
     }
 
-    private static async Task AddUpdateApplyLocalFolderInner(RestRequest restRequest, string item, CancellationToken cancellationToken)
-    {
-        var fi = new FileInfo(item);
-        AnsiConsole.Markup($"[grey]     - found local file: {fi.Name}[/]");
-        var yml = await File.ReadAllTextAsync(item, cancellationToken);
-        var localRequest = new RestRequest(restRequest.Resource, restRequest.Method)
-            .AddStringBody(yml, CliConsts.YamlContentType);
-        var res = await RestProxy.Invoke<PlanarIdResponse>(localRequest, cancellationToken);
-        if (res.IsSuccessStatusCode)
-        {
-            if (string.IsNullOrWhiteSpace(res.Data?.Id))
-            {
-                AnsiConsole.MarkupLine($"[grey]   no change[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[grey]   {res.Data?.Id}[/]");
-            }
-        }
-        else
-        {
-            var hasText = string.Equals(res.ContentType, MediaTypeNames.Text.Plain, StringComparison.OrdinalIgnoreCase);
-            var error = hasText ? res.Content.EscapeMarkup() : null;
-            if (res.StatusCode == HttpStatusCode.BadRequest) { error = "validation error(s)"; }
-            if (res.StatusCode == HttpStatusCode.Unauthorized) { error = "unauthorized"; }
-            if (res.StatusCode == HttpStatusCode.Forbidden) { error = "forbidden"; }
-            AnsiConsole.MarkupLine($"[red]   Fail! {error}[/]");
-        }
-    }
-
     private static async Task<CliActionResponse> AddUpdateApplyRemoteFilename(PathAnalyzer.PathInfo pathInfo, RestRequest restRequest, OperationType operationType, CancellationToken cancellationToken)
     {
         var body = new SetJobPathRequest { JobFilePath = pathInfo.Path };
@@ -936,7 +906,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     /// <summary>
     /// Helper method to create a simple text-based progress bar representation using Markup.
-    /// You could also use a custom renderable that visually looks more like Spectre's standard progress bar.
+    /// You could also use a custom render able that visually looks more like Spectre's standard progress bar.
     /// </summary>
     private static Markup CreateProgressBarMarkup(int percentage, Color? color = null)
     {

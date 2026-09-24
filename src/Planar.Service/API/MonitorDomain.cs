@@ -768,13 +768,13 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         foreach (var name in hooks)
         {
             var exists = IsMonitorHookExists(name);
-            if (!exists) { list.Add(name); }
+            if (!exists) { list.Add($"'{name}'"); }
         }
 
         if (list.Count > 0)
         {
             var names = string.Join(",", list);
-            throw new RestValidationException("Hooks", $"monitor hook(s): {names} could not be found");
+            throw new RestValidationException("Hooks", $"monitor hook: {names} could not be found");
         }
     }
 
@@ -895,13 +895,13 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         foreach (var name in groups)
         {
             var exists = await groupDal.IsGroupNameExists(name);
-            if (!exists) { list.Add(name); }
+            if (!exists) { list.Add($"'{name}'"); }
         }
 
         if (list.Count > 0)
         {
             var names = string.Join(",", list);
-            throw new RestValidationException("DistributionGroups", $"distribution group(s): {names} could not be found");
+            throw new RestValidationException("DistributionGroups", $"distribution group: {names} could not be found");
         }
     }
 

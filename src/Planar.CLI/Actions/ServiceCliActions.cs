@@ -405,6 +405,11 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
             request = wrapper.Request;
         }
 
+        if (!request.Name.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
+        {
+            request.Name += ".yml";
+        }
+
         var restRequest = new RestRequest("service/manifest/{name}", Method.Get)
             .AddUrlSegment("name", request.Name);
 
@@ -565,16 +570,18 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
     private static CliSaveLoginRequest FillSaveLoginRequest()
     {
-        var request = new CliSaveLoginRequest();
-        request.DisplayName = CollectCliValue(new CollectCliValueParameters
+        var request = new CliSaveLoginRequest
         {
-            Field = "display name",
-            Required = true,
-            MinLength = 3,
-            MaxLength = 50
-        }) ?? string.Empty;
+            DisplayName = CollectCliValue(new CollectCliValueParameters
+            {
+                Field = "display name",
+                Required = true,
+                MinLength = 3,
+                MaxLength = 50
+            }) ?? string.Empty,
 
-        request.Expire = CliPromptUtil.PromptForDate("expire");
+            Expire = CliPromptUtil.PromptForDate("expire")
+        };
 
         return request;
     }

@@ -6,7 +6,7 @@ namespace Planar.API.Common.Entities;
 public class ApplyGroupRequest : AddGroupRequest, IApplyRequest
 {
     [YamlMember(Alias = "users")]
-    public List<ApplyGroupUser> Users { get; set; } = [];
+    public List<string> Users { get; set; } = [];
 
     // ===== APPLY REQUEST PROPERTIES ===== ////
 
@@ -20,10 +20,4 @@ public class ApplyGroupRequest : AddGroupRequest, IApplyRequest
     public string Version { get; set; } = string.Empty;
 
     // ==================================== ////
-}
-
-public class ApplyGroupUser
-{
-    [YamlMember(Alias = "username")]
-    public string Username { get; set; } = null!;
 }

@@ -8,6 +8,7 @@ public partial class ApplyGroupRequestValidator : AbstractValidator<ApplyGroupRe
     public ApplyGroupRequestValidator()
     {
         Include(new AddGroupRequestValidator());
-        RuleForEach(g => g.Users).SetValidator(new ApplyGroupUserValidator());
+        RuleForEach(g => g.Users).NotEmpty().Length(2, 50)
+            .Matches(AddUserRequestValidator.AllowedRegex()).WithMessage("Username can only contain letters, numbers, dots, spaces, underscores and hyphens");
     }
 }

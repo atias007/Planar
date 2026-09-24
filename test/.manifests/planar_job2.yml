@@ -1,0 +1,13 @@
+job type: PlanarJob
+name: HelloWorld2
+group: Demo
+description: Demo Hello World Job
+durable: true
+concurrent: false
+properties:
+  filename: HelloWorld\HelloWorld.exe
+simple triggers:
+  - name: default_trigger1
+    interval: 00:30:00
+    misfire behaviour: FireNow
+    

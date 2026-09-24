@@ -106,9 +106,9 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     private async Task<Dictionary<string, string?>> LoadConfigFlat(bool decrypt, CancellationToken stoppingToken = default)
     {
-        var prms = await DataLayer.GetAllGlobalConfig(stoppingToken);
+        var parameters = await DataLayer.GetAllGlobalConfig(stoppingToken);
         var final = new Dictionary<string, string?>();
-        foreach (var p in prms)
+        foreach (var p in parameters)
         {
             // string
             if (string.Equals(p.Type, GlobalConfigTypes.String.ToString(), StringComparison.OrdinalIgnoreCase))

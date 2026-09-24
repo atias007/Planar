@@ -221,12 +221,12 @@ public partial class JobDomain
         if (cbm == null) { return target; }
 
         target.CircuitBreaker = Mapper.Map<JobCircuitBreaker>(cbm);
-        var trigger = await SchedulerUtil.GetCircuitBreakerTrigger(source.Key);
-        if (trigger != null)
+        var d_trigger = await SchedulerUtil.GetCircuitBreakerTrigger(source.Key);
+        if (d_trigger != null)
         {
-            target.CircuitBreaker.WillBeResetAt = trigger.GetNextFireTimeUtc()?.LocalDateTime;
+            target.CircuitBreaker.WillBeResetAt = d_trigger.GetNextFireTimeUtc()?.LocalDateTime;
             if (
-                trigger.JobDataMap.TryGetString(AutoResumeJobUtil.Created, out var createdText) &&
+                d_trigger.JobDataMap.TryGetString(AutoResumeJobUtil.Created, out var createdText) &&
                 DateTime.TryParse(createdText, CultureInfo.CurrentCulture, out var created))
             {
                 target.CircuitBreaker.ActivatedAt = created;

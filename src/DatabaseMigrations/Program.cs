@@ -18,6 +18,7 @@ while (counter > 0)
     counter--;
 }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 static void Run(string[] args)
 {
     var executer = new Executer();
@@ -98,6 +99,7 @@ static void Run(string[] args)
 
     AssertStatus();
 }
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 static RunningMode GetRunningMode(string[] args)
 {
     string modeText;
@@ -136,10 +138,10 @@ static RunningMode GetRunningMode(string[] args)
 static void Validate()
 {
     ValidateAllSqlFiles();
-    ValidateAllEbbdedResource();
+    ValidateAllEbbedResource();
 }
 
-static void ValidateAllEbbdedResource()
+static void ValidateAllEbbedResource()
 {
     Console.WriteLine(" [x] validate all script files is embedded resource");
     var files = Directory.GetFiles(Current.ProjectPath, "*.sql", SearchOption.AllDirectories);
@@ -210,6 +212,7 @@ static string GetConnectionString(RunningEnvironment environment)
     return connectionString;
 }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 static void AddScript()
 {
     var name = AnsiConsole.Prompt(
@@ -241,7 +244,9 @@ static void AddScript()
     try
     {
         File.WriteAllText(filename, string.Empty);
+#pragma warning disable S4036 // OS commands should not rely on PATH resolution
         Process.Start("cmd.exe ", "/c \"" + filename + "\"");
+#pragma warning restore S4036 // OS commands should not rely on PATH resolution
     }
     catch (Exception ex)
     {
@@ -308,6 +313,7 @@ static void AddScript()
         WriteError(ex.Message);
     }
 }
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
 
 static void WriteError(string text)
 {

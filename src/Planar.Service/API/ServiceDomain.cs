@@ -86,6 +86,15 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             responses.Add(response);
         }
 
+        // Apply groups
+        var groups = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Group, StringComparison.OrdinalIgnoreCase));
+        if (groups != null)
+        {
+            var groupDomain = ServiceProvider.GetRequiredService<GroupDomain>();
+            var response = await groupDomain.Apply([.. groups], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
         // Apply Monitors
         var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
         if (monitors != null)
@@ -108,7 +117,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
     public async Task<AppSettingsInfo> GetServiceInfo()
     {
-        const string scrt = "********";
+        const string secret = "********";
         var result = new AppSettingsInfo
         {
             General = Mapper.Map<GeneralSettingsInfo>(AppSettings.General),
@@ -125,9 +134,9 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         result.General.InstanceIds = nodes.Select(n => n.InstanceId);
         if (UserRole != Roles.Administrator)
         {
-            result.Database.ConnectionString = scrt;
-            result.Smtp.Username = scrt;
-            result.Smtp.Password = scrt;
+            result.Database.ConnectionString = secret;
+            result.Smtp.Username = secret;
+            result.Smtp.Password = secret;
         }
 
         var currentProcess = Process.GetCurrentProcess();
@@ -165,10 +174,10 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
     public async Task<ServiceHealthCheckResponse> HealthCheck()
     {
-        var serviceUnavaliable = false;
+        var serviceUnavailable = false;
 
         var scheduler = await SchedulerUtil.IsHealthyAsync();
-        if (!scheduler) { serviceUnavaliable = true; }
+        if (!scheduler) { serviceUnavailable = true; }
 
         var database = false;
         try
@@ -178,7 +187,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
         catch (Exception ex)
         {
-            serviceUnavaliable = true;
+            serviceUnavailable = true;
             Logger.LogError(ex, "database health check failed");
         }
 
@@ -197,7 +206,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             else
             {
                 clusterDescription = "unhealthy";
-                serviceUnavaliable = true;
+                serviceUnavailable = true;
             }
         }
         else
@@ -213,7 +222,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             Cluster = new HealthCheckResponse { IsHealthy = cluster ?? true, Title = clusterDescription, NotRelevant = clusterNotRelevant }
         };
 
-        if (serviceUnavaliable)
+        if (serviceUnavailable)
         {
             throw new RestServiceUnavailableException(response);
         }
@@ -234,7 +243,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (audit == null || audit.IsAnonymous)
         {
             AuditSecuritySafe("scheduler was trying to halted by anonymous user. action aborted", isWarning: true);
-            throw new RestForbiddenException("halt scheduler is not allowd to anonymous user/api");
+            throw new RestForbiddenException("halt scheduler is not allowed to anonymous user/api");
         }
         else
         {
@@ -255,7 +264,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (audit == null || audit.IsAnonymous)
         {
             AuditSecuritySafe("scheduler was trying to start by anonymous user. action aborted", isWarning: true);
-            throw new RestForbiddenException("start scheduler is not allowd to anonymous user/api");
+            throw new RestForbiddenException("start scheduler is not allowed to anonymous user/api");
         }
         else
         {
@@ -274,7 +283,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
     {
         if (AppSettings.Authentication.NoAuthontication)
         {
-            throw new RestConflictException("login service is not avaliable when authentication mode is disabled (AllAnonymous)");
+            throw new RestConflictException("login service is not available when authentication mode is disabled (AllAnonymous)");
         }
 
         if (string.IsNullOrWhiteSpace(request.Username))

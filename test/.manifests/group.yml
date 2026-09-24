@@ -1,0 +1,12 @@
+kind: group
+version: 1.0.0
+name: demo group name
+role: editor                               # The group role [anonymous|viewer|tester|editor|administrator] the
+additional field 1: some additional field 11
+additional field 2: some additional field 22
+additional field 3: some additional field 33
+additional field 4: some additional field 44
+additional field 5: some additional field 55
+users:
+  - tsahi_aa
+  - yaki_j

@@ -1,12 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
 
-namespace Planar.API.Common.Entities
+namespace Planar.API.Common.Entities;
+
+public class UpdateGroupRequest : AddGroupRequest
 {
-    public class UpdateGroupRequest : AddGroupRequest
-    {
-        [JsonIgnore]
-        public int Id { get; set; }
+    public string CurrentName { get; set; } = null!;
 
-        public string CurrentName { get; set; } = null!;
-    }
+    public bool IsNameChanged => !string.Equals(CurrentName, Name, StringComparison.OrdinalIgnoreCase);
 }
