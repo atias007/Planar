@@ -1,0 +1,12 @@
+kind: monitor
+title: some monitor title - new
+event: execution fail {x} times in row
+job name: BankOfIsraelCurrency
+job group: Infrastructure
+event arguments:
+  x: 7
+distribution groups:
+  - admins
+hooks:
+  - planar.smtp
+active: false
