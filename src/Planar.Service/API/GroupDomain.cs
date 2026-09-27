@@ -1,28 +1,54 @@
 ﻿using AutoMapper;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
 public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDomain, IGroupData>(serviceProvider)
 {
+    private const string c_group = "group";
+    private const string kind = c_group;
+
+    public async Task<ApplyResponse> Apply(HttpContext httpContext)
+    {
+        var yamls = await GetApplyYamls(httpContext, kind);
+        var result = await Apply(yamls, httpContext.RequestAborted);
+        return result;
+    }
+
     public static IEnumerable<string> GetAllGroupsRoles()
     {
         return Enum.GetNames<Roles>().Select(r => r.ToLower());
     }
 
     public async Task<EntityIdResponse> AddGroup(AddGroupRequest request)
+    {
+        if (await DataLayer.IsGroupNameExists(request.Name, 0))
+        {
+            throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
+        }
+
+        var group = BuildNewGroup(request);
+        return await SaveNewGroup(group, DataLayer);
+    }
+
+    private Group BuildNewGroup(AddGroupRequest request)
     {
         var group = Mapper.Map<Group>(request);
         var groupRoleValue = RoleHelper.GetRoleValue(group.Role) ?? throw new RestValidationException("role", $"role '{request.Role}' is not supported");
@@ -33,33 +59,33 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         group.Role = group.Role.ToLower();
-        if (await DataLayer.IsGroupNameExists(request.Name, 0))
-        {
-            throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
-        }
+        return group;
+    }
 
+    private async Task<EntityIdResponse> SaveNewGroup(Group group, IGroupData dataLayer)
+    {
         try
         {
-            await DataLayer.AddGroup(group);
+            await dataLayer.AddGroup(group);
         }
         catch (DbUpdateException)
         {
-            if (await DataLayer.IsGroupNameExists(request.Name, 0))
+            if (await DataLayer.IsGroupNameExists(group.Name, 0))
             {
-                throw new RestConflictException($"group with {nameof(request.Name).ToLower()} '{request.Name}' already exists");
+                throw new RestConflictException($"group with {nameof(group.Name).ToLower()} '{group.Name}' already exists");
             }
 
             throw;
         }
 
-        AuditSecuritySafe($"group '{group.Name}' was created with role '{request.Role?.ToLower()}'");
+        AuditSecuritySafe($"group '{group.Name}' was created with role '{group.Role?.ToLower()}'");
         return new EntityIdResponse(group.Id);
     }
 
-    public async Task AddUserToGroup(string name, string username)
+    public async Task AddUserToGroup(string groupName, string username)
     {
-        var groupId = await DataLayer.GetGroupId(name);
-        if (groupId == 0) { throw new RestNotFoundException($"group '{name}' could not be found"); }
+        var groupId = await DataLayer.GetGroupId(groupName);
+        if (groupId == 0) { throw new RestNotFoundException($"group '{groupName}' could not be found"); }
 
         var userData = Resolve<IUserData>();
         var userId = await userData.GetUserId(username);
@@ -67,27 +93,41 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
         if (await DataLayer.IsUserExistsInGroup(userId, groupId))
         {
-            throw new RestValidationException("username", $"username '{username}' already in group '{name}'");
+            throw new RestValidationException("username", $"username '{username}' already in group '{groupName}'");
         }
 
+        var audits = await ValidatePermissionForAddUserToGroup(groupName, username, userId);
+        await DataLayer.AddUserToGroup(userId, groupId);
+
+        foreach (var audit in audits)
+        {
+            AuditSecuritySafe(audit);
+        }
+    }
+
+    private async Task<IReadOnlyCollection<SecurityMessage>> ValidatePermissionForAddUserToGroup(string groupName, string username, int userId)
+    {
+        var result = new List<SecurityMessage>();
         var currentUserRole = await Resolve<IUserData>().GetUserRole(userId);
-        var targetUserRole = await DataLayer.GetGroupRole(name);
+        var targetUserRole = await DataLayer.GetGroupRole(groupName);
         var targetUserRoleValue = RoleHelper.GetRoleValue(targetUserRole);
         var currentUserRoleValue = RoleHelper.GetRoleValue(currentUserRole);
 
         if (AppSettings.Authentication.HasAuthontication && targetUserRoleValue > (int)UserRole)
         {
-            AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRoleValue}' blocked because the current user role is '{UserRole}'", isWarning: true);
+            AuditSecuritySafe($"adding user '{username}' to group '{groupName}' with role '{(Roles)targetUserRoleValue}' blocked because the current user role is '{UserRole}'", isWarning: true);
             throw new RestForbiddenException();
         }
 
-        await DataLayer.AddUserToGroup(userId, groupId);
-
-        AuditSecuritySafe($"user '{username}' was joined to group '{name}'");
+        var msg1 = GetAuditSecurityMessage($"user '{username}' was joined to group '{groupName}'");
+        if (msg1 != null) { result.Add(msg1); }
         if (targetUserRoleValue > currentUserRoleValue)
         {
-            AuditSecuritySafe($"the user '{username}' elevate its role from '{currentUserRole}' to '{targetUserRole}' by joining group '{name}'", isWarning: true);
+            var msg2 = GetAuditSecurityMessage($"the user '{username}' elevate its role from '{currentUserRole}' to '{targetUserRole}' by joining group '{groupName}'", isWarning: true);
+            if (msg2 != null) { result.Add(msg2); }
         }
+
+        return result;
     }
 
     public async Task DeleteGroup(string name)
@@ -115,7 +155,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
     public async Task<GroupDetails> GetGroupByName(string name)
     {
         var group = await DataLayer.GetGroup(name);
-        ValidateExistingEntity(group, "group");
+        ValidateExistingEntity(group, c_group);
         var users = await DataLayer.GetUsersInGroup(group!.Id);
         var mapper = Resolve<IMapper>();
         var result = mapper.Map<GroupDetails>(group);
@@ -127,11 +167,11 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
     public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
     {
         TrimPropertyName(request);
-        ForbbidenPartialUpdateProperties(request, $"to update role use: planar-cli group set-role command {request.Name} {request.PropertyValue}", nameof(UpdateGroupRequest.Role));
-        ForbbidenPartialUpdateProperties(request, $"to join user to group use: planar-cli group join {request.Name} {request.PropertyValue}", nameof(GroupDetails.Users));
+        ForbiddenPartialUpdateProperties(request, $"to update role use: planar-cli group set-role command {request.Name} {request.PropertyValue}", nameof(UpdateGroupRequest.Role));
+        ForbiddenPartialUpdateProperties(request, $"to join user to group use: planar-cli group join {request.Name} {request.PropertyValue}", nameof(GroupDetails.Users));
 
         var group = await DataLayer.GetGroup(request.Name);
-        ValidateExistingEntity(group, "group");
+        ValidateExistingEntity(group, c_group);
         var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
         updateGroup.CurrentName = request.Name;
         var validator = Resolve<IValidator<UpdateGroupRequest>>();
@@ -161,7 +201,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
     public async Task SetRoleToGroup(string name, string role)
     {
         var entity = await DataLayer.GetGroup(name);
-        var group = ValidateExistingEntity(entity, "group");
+        var group = ValidateExistingEntity(entity, c_group);
 
         var clearGroupRole = RoleHelper.CleanRole(group.Role);
         var cleanTargetRole = RoleHelper.CleanRole(role);
@@ -194,37 +234,230 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
     }
 
-    public async Task Update(UpdateGroupRequest request)
+    public async Task<int> Update(UpdateGroupRequest request)
     {
-        var id = await DataLayer.GetGroupId(request.CurrentName);
-        if (id == 0) { throw new RestNotFoundException($"group '{request.CurrentName}' could not be found"); }
+        var exists = await DataLayer.GetGroupWithTrackChanges(request.CurrentName) ??
+            throw new RestNotFoundException($"group '{request.CurrentName}' could not be found");
 
-        var group = Mapper.Map<Group>(request);
+        if (request.IsNameChanged && await DataLayer.IsGroupNameExists(request.Name, exists.Id))
+        {
+            throw new RestConflictException($"group '{request.Name}' already exists");
+        }
+
+        MapInner(request, exists);
+
+        try
+        {
+            return await DataLayer.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            if (await DataLayer.IsGroupNameExists(request.Name, exists.Id))
+            {
+                throw new RestConflictException($"group '{request.Name}' already exists");
+            }
+
+            throw;
+        }
+    }
+
+    private void MapInner(AddGroupRequest request, Group exists)
+    {
+        var group = Mapper.Map(request, exists);
         var groupRoleValue = RoleHelper.GetRoleValue(group.Role);
         if (AppSettings.Authentication.HasAuthontication && (int)UserRole < groupRoleValue)
         {
             AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
             throw new RestForbiddenException();
         }
+    }
 
-        group.Id = id;
-        if (await DataLayer.IsGroupNameExists(request.Name, id))
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    {
+        // Convert to list of ApplyGroupRequest
+        var requests = await GetApplyEntities<ApplyGroupRequest>(yamls, kind, cancellationToken);
+
+        // Validation
+        ValidateDuplicateRequests(requests);
+        await ValidateUserNamesExists(requests);
+
+        // Apply changes
+        var response = await ApplyChanges(requests);
+
+        return response;
+    }
+
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyGroupRequest> requests)
+    {
+        var response = new ApplyResponse();
+        if (requests.Count == 0) { return response; }
+        if (requests.Count == 1)
         {
-            throw new RestConflictException($"group '{request.Name}' already exists");
+            var request = requests.First();
+            var result = await ApplyInner(request);
+            response.AddItem(result);
+            return response;
         }
 
-        try
+        foreach (var request in requests)
         {
-            await DataLayer.UpdateGroup(group);
-        }
-        catch (DbUpdateException)
-        {
-            if (await DataLayer.IsGroupNameExists(request.Name, id))
+            try
             {
-                throw new RestConflictException($"group '{request.Name}' already exists");
+                var result = await ApplyInner(request);
+                response.AddItem(result);
+            }
+            catch (Exception ex)
+            {
+                response.AddItem(new ApplyResponseItem(request.Name, ApplyAction.Error, $"fail to handle group: {ex.Message}", Manifest.Group, request.Source));
+            }
+        }
+
+        return response;
+    }
+
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
+    private async Task<ApplyResponseItem> ApplyInner(ApplyGroupRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
+
+    {
+        var all_audits = new List<SecurityMessage>();
+        request.Role = request.Role?.ToLower();
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IGroupData>();
+
+        // inline function
+        async Task AddUserToGroup(Group group, string username)
+        {
+            var userData = Resolve<IUserData>();
+            var user = await userData.GetUser(username);
+            if (user == null) { return; }
+            var audits = await ValidatePermissionForAddUserToGroup(request.Name, user.Username, user.Id);
+            group.Users.Add(user);
+            all_audits.AddRange(audits);
+        }
+
+        // inline function
+        void PublishAudits()
+        {
+            foreach (var item in all_audits)
+            {
+                AuditSecuritySafe(item);
+            }
+        }
+
+        // get group
+        var exists_group = await dataLayer.GetGroupWithTrackChanges(request.Name);
+
+        if (exists_group == null)
+        {
+            // new group
+            var group = BuildNewGroup(request);
+            foreach (var username in request.Users)
+            {
+                await AddUserToGroup(group, username);
             }
 
-            throw;
+            await SaveNewGroup(group, dataLayer);
+            PublishAudits();
+            return new ApplyResponseItem(request.Name, ApplyAction.Add, $"add new group {request.Name}", Manifest.Group, request.Source);
+        }
+        else
+        {
+            // map group
+            MapInner(request, exists_group);
+
+            // add new users
+            var count = 0;
+            foreach (var username in request.Users)
+            {
+                var exists = exists_group.Users.FirstOrDefault(u => u.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+                if (exists == null)
+                {
+                    await AddUserToGroup(exists_group, username);
+                    count += 1;
+                }
+            }
+
+            // remove users
+            var removed = new List<User>();
+            foreach (var user in exists_group.Users)
+            {
+                var exists = request.Users.FirstOrDefault(u => u.Equals(user.Username, StringComparison.OrdinalIgnoreCase));
+                if (exists == null)
+                {
+                    removed.Add(user);
+                }
+            }
+
+            foreach (var user in removed)
+            {
+                exists_group.Users.Remove(user);
+                var audit = GetAuditSecurityMessage($"user '{user.Username}' was removed from group '{request.Name}'");
+                if (audit != null) { all_audits.Add(audit); }
+            }
+
+            // save changes
+            count += await dataLayer.SaveChangesAsync();
+            if (count == 0)
+            {
+                return new ApplyResponseItem(request.Name, ApplyAction.Unchanged, $"group {request.Name} is unchanged", Manifest.Group, request.Source);
+            }
+
+            PublishAudits();
+            return new ApplyResponseItem(request.Name, ApplyAction.Update, $"update group {request.Name}", Manifest.Group, request.Source);
+        }
+    }
+
+    private async Task ValidateUserNamesExists(IEnumerable<ApplyGroupRequest> requests)
+    {
+        var users = requests.SelectMany(r => r.Users);
+        await ValidateUserNamesExistsInner(users);
+    }
+
+    private async Task ValidateUserNamesExistsInner(IEnumerable<string> users)
+    {
+        var userDal = Resolve<IUserData>();
+        var list = new List<string>();
+        var groups = users.Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in groups)
+        {
+            var exists = await userDal.IsUsernameExists(name);
+            if (!exists) { list.Add($"'{name}'"); }
+        }
+
+        if (list.Count > 0)
+        {
+            var names = string.Join(",", list);
+            throw new RestValidationException("Usernames", $"user: {names} could not be found");
+        }
+    }
+
+    private static void ValidateDuplicateRequests(IEnumerable<ApplyGroupRequest> requests)
+    {
+        var query = requests
+            .GroupBy(r => r.Name)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        if (query != null)
+        {
+            throw new RestValidationException("duplicate request", $"duplicate group request for group name '{query}'");
+        }
+
+        foreach (var item in requests)
+        {
+            query = item.Users
+            .GroupBy(r => r)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+            if (query != null)
+            {
+                throw new RestValidationException("duplicate username", $"duplicate user '{query}' at group name '{item.Name}'");
+            }
         }
     }
 

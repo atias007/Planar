@@ -18,6 +18,12 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 {
     private const string c_config = "config";
 
+    [Action("apply")]
+    public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
+    {
+        return await Apply(c_config, request, cancellationToken);
+    }
+
     [Action("add")]
     public static async Task<CliActionResponse> Add(CliAddConfigRequest request, CancellationToken cancellationToken = default)
     {

@@ -7,6 +7,14 @@ namespace Planar.Client.Api
 {
     public interface IGroupApi
     {
+        /// <summary>
+        /// Applies YAML group definitions, creating or updating the groups present in the definition and synchronizing their listed users.
+        /// </summary>
+        /// <param name="definition">The YAML string that contains the group definition to be applied.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the apply operation as an <see cref="ApplyResponse"/>.</returns>
+        Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default);
+
         Task AddAsync(Group group, CancellationToken cancellationToken = default);
 
         Task<GroupDetails> GetAsync(string name, CancellationToken cancellationToken = default);

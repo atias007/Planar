@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ namespace Planar.Service.Data;
 public interface IConfigData : IBaseDataLayer
 {
     Task AddGlobalConfig(GlobalConfig config);
+
+    Task AddGlobalConfigWithDelete(GlobalConfig config);
 
     Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default);
 
@@ -22,11 +25,13 @@ public interface IConfigData : IBaseDataLayer
 
     Task<GlobalConfig?> GetGlobalConfig(string key);
 
+    Task<GlobalConfig?> GetGlobalConfigForUpdate(string key);
+
     Task<bool> IsGlobalConfigExists(string key);
 
     Task<int> RemoveGlobalConfig(string key);
 
-    Task UpdateGlobalConfig(GlobalConfig config);
+    Task<int> UpdateGlobalConfig(GlobalConfig config);
 }
 
 public class ConfigDataSqlite(PlanarContext context) : ConfigData(context), IConfigData
@@ -43,6 +48,13 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
     {
         var result = await _context.GlobalConfigs
             .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == key);
+        return result;
+    }
+
+    public async Task<GlobalConfig?> GetGlobalConfigForUpdate(string key)
+    {
+        var result = await _context.GlobalConfigs
             .FirstOrDefaultAsync(c => c.Key == key);
         return result;
     }
@@ -99,10 +111,31 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateGlobalConfig(GlobalConfig config)
+    public async Task AddGlobalConfigWithDelete(GlobalConfig config)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+            await _context.GlobalConfigs
+                .Where(g => g.Key == config.Key)
+                .ExecuteDeleteAsync();
+
+            _context.ChangeTracker.Clear();
+            _context.GlobalConfigs.Add(config);
+            await _context.SaveChangesAsync();
+
+            await tx.CommitAsync();
+        });
+    }
+
+    public async Task<int> UpdateGlobalConfig(GlobalConfig config)
     {
         _context.GlobalConfigs.Update(config);
-        await _context.SaveChangesAsync();
+        var count = await _context.SaveChangesAsync();
+        return count;
     }
 
     public async Task<int> RemoveGlobalConfig(string key)

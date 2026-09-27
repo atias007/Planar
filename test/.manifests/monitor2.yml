@@ -1,0 +1,10 @@
+kkind: monitor
+title: some monitor title2
+event: execution fail
+job name: BankOfIsraelCurrency
+job group: Infrastructure
+distribution groups:
+  - admins
+hooks:
+  - planar.smtp
+active: true

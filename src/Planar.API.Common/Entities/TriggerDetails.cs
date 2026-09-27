@@ -25,7 +25,7 @@ public class TriggerDetails : PausedTriggerDetails
     public int? MaxRetries { get; set; }
 
     [YamlMember(Order = 26)]
-    public string? MisfireBehaviour { get; set; }
+    public string? MisfireBehavior { get; set; }
 
     [YamlMember(Order = 27)]
     public int Priority { get; set; }

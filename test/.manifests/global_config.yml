@@ -1,0 +1,5 @@
+kind: global config
+version: 1.0.0
+key: demo_key1
+value: some value 2
+is secret: false

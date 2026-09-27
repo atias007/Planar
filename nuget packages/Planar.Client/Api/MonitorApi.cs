@@ -13,6 +13,17 @@ namespace Planar.Client.Api
         {
         }
 
+        public async Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(definition, nameof(definition));
+
+            var restRequest = new RestRequest("monitor/apply", HttpMethod.Post)
+                .AddYamlStringBody(definition);
+
+            var result = await _proxy.InvokeAsync<ApplyResponse>(restRequest, cancellationToken);
+            return result;
+        }
+
         public async Task<int> AddAsync(AddMonitorRequest request, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(request, nameof(request));

@@ -8,6 +8,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
@@ -107,11 +108,11 @@ public partial class JobDomain
         job.JobDataMap[Consts.LogRetentionDays] = metadata.LogRetentionDays.Value.ToString();
     }
 
-    private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
+    private static void BuildCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
     {
-        if (string.IsNullOrWhiteSpace(trigger.MisfireBehaviour)) { return; }
+        if (string.IsNullOrWhiteSpace(trigger.MisfireBehavior)) { return; }
 
-        var value = trigger.MisfireBehaviour.ToLower().Replace(" ", string.Empty);
+        var value = trigger.MisfireBehavior.ToLower().Replace(" ", string.Empty);
         switch (value)
         {
             case "donothing":
@@ -173,10 +174,10 @@ public partial class JobDomain
             builder = builder.RepeatForever();
         }
 
-        // MisfireBehaviour
-        if (!string.IsNullOrEmpty(trigger.MisfireBehaviour))
+        // MisfireBehavior
+        if (!string.IsNullOrEmpty(trigger.MisfireBehavior))
         {
-            var value = trigger.MisfireBehaviour.ToLower().Replace(" ", string.Empty);
+            var value = trigger.MisfireBehavior.ToLower().Replace(" ", string.Empty);
             switch (value)
             {
                 case "firenow":
@@ -227,7 +228,7 @@ public partial class JobDomain
         var result = triggers.Select(t =>
         {
             var the_trigger = GetBaseTriggerBuilder(t, jobId)
-                .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
+                .WithCronSchedule(t.CronExpression, c => BuildCronSchedule(c, t));
 
             return the_trigger.Build();
         });
@@ -545,25 +546,25 @@ public partial class JobDomain
         return jobKey;
     }
 
-    private static void ValidateNameAndGroup(string jobname, string? jobgroup)
+    private static void ValidateNameAndGroup(string jobName, string? jobGroup)
     {
-        if (!IsRegexMatch(JobConsts.JobNameRegex, jobname))
+        ValidateRange(jobName, 2, 50, name, "job");
+        ValidateRange(jobGroup, 2, 50, group, "job");
+
+        if (!IsRegexMatch(JobConsts.JobNameRegex, jobName))
         {
-            throw new RestValidationException(name, $"job name '{jobname}' is invalid. use only alphanumeric, dashes & underscore");
+            throw new RestValidationException(name, $"job name '{jobName}' is invalid. use only alphanumeric, dashes & underscore");
         }
 
-        if (!IsRegexMatch(JobConsts.JobNameRegex, jobgroup))
+        if (!IsRegexMatch(JobConsts.JobNameRegex, jobGroup))
         {
-            throw new RestValidationException(group, $"job group '{jobgroup}' is invalid. use only alphanumeric, dashes & underscore");
+            throw new RestValidationException(group, $"job group '{jobGroup}' is invalid. use only alphanumeric, dashes & underscore");
         }
 
-        if (Consts.PreserveGroupNames.Contains(jobgroup))
+        if (Consts.PreserveGroupNames.Contains(jobGroup))
         {
-            throw new RestValidationException(group, $"job group '{jobgroup}' is invalid (preserved value)");
+            throw new RestValidationException(group, $"job group '{jobGroup}' is invalid (preserved value)");
         }
-
-        ValidateRange(jobname, 5, 50, name, "job");
-        ValidateRange(jobgroup, 1, 50, group, "job");
     }
 
     private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)
@@ -676,26 +677,26 @@ public partial class JobDomain
         ValidateTriggerRetry(pool);
         ValidateTriggerStartEnd(container);
         ValidateCronExpression(container);
-        ValidateTriggerMisfireBehaviour(container);
+        ValidateTriggerMisfireBehavior(container);
         ValidateTriggerCalendar(pool, scheduler);
         ValidateTriggerPreferedNode(pool);
     }
 
-    private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
+    private static void ValidateTriggerMisfireBehavior(ITriggersContainer container)
     {
         container.SimpleTriggers?.ForEach(t =>
         {
-            if (t.MisfireBehaviour.HasValue() && _simpleValues.NotContains(t.MisfireBehaviour?.ToLower()?.Replace(" ", string.Empty)))
+            if (t.MisfireBehavior.HasValue() && _simpleValues.NotContains(t.MisfireBehavior?.ToLower().Replace(" ", string.Empty)))
             {
-                throw new RestValidationException("misfire behaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
+                throw new RestValidationException("misfire behavior", $"value {t.MisfireBehavior} is not valid value for simple trigger misfire behavior");
             }
         });
 
         container.CronTriggers?.ForEach(t =>
         {
-            if (t.MisfireBehaviour.HasValue() && _cronValues.NotContains(t.MisfireBehaviour?.ToLower()?.Replace(" ", string.Empty)))
+            if (t.MisfireBehavior.HasValue() && _cronValues.NotContains(t.MisfireBehavior?.ToLower().Replace(" ", string.Empty)))
             {
-                throw new RestValidationException("misfire behaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
+                throw new RestValidationException("misfire behavior", $"value {t.MisfireBehavior} is not valid value for cron trigger misfire behavior");
             }
         });
     }
@@ -710,6 +711,8 @@ public partial class JobDomain
 
     private static void ValidateTriggerName(string? triggerName, string? triggerGroup)
     {
+        ValidateRange(triggerName, 2, 50, name, trigger);
+        ValidateRange(triggerName, 2, 50, group, trigger);
         if (!IsRegexMatch(JobConsts.JobNameRegex, triggerName)) throw new RestValidationException(name, $"trigger name '{triggerName}' is invalid. use only alphanumeric, dashes & underscore");
         if (!IsRegexMatch(JobConsts.JobNameRegex, triggerGroup)) throw new RestValidationException(group, $"trigger group '{triggerGroup}' is invalid. use only alphanumeric, dashes & underscore");
     }
@@ -833,7 +836,9 @@ public partial class JobDomain
 
         ValidateJobProperty(property);
 
-        await DataLayer.AddJobProperty(property);
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+        await dataLayer.AddJobProperty(property);
 
         try
         {
@@ -843,7 +848,7 @@ public partial class JobDomain
         catch (Exception ex)
         {
             // roll back
-            await DataLayer.DeleteJobProperty(id);
+            await dataLayer.DeleteJobProperty(id);
 
             ValidateTriggerNeverFire(ex);
 

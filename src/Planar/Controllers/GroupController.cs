@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Planar.API.Common.Entities;
@@ -18,6 +17,22 @@ namespace Planar.Controllers;
 [Route("group")]
 public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
 {
+    [HttpPost("apply")]
+    [EditorAuthorize]
+    [EndpointName("post_group_apply")]
+    [EndpointDescription("Add/Update group")]
+    [EndpointSummary("Add/Update Group")]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
+    [MultiStatusJsonResponse(typeof(ApplyResponse))]
+    [BadRequestResponse]
+    public async Task<ActionResult<ApplyResponse>> Apply()
+    {
+        var result = await BusinesLayer.Apply(HttpContext);
+        var status = result.GetStatusCode();
+        return StatusCode((int)status, result);
+    }
+
     [HttpPost]
     [EditorAuthorize]
     [EndpointName("post_group")]

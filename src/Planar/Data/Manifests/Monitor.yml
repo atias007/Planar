@@ -3,10 +3,10 @@ version: 1.0.0                      # The version of manifest file
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 title: some monitor title           # Monitor title [mandatory, 5 to 50 characters]
 event: execution fail               # The event that will trigger the monitor (see below list of events)
-job name: some job name             # The job name related to this monitor [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+job name: some job name             # The job name related to this monitor [only alphanumeric, dashes & underscore, 2 to 50 characters]. 
                                     # Default is null. Use to connect monitor to specific job
                                     # Must be null when event is a system event
-job group: some job group           # The job group related to this monitor [only alphanumeric, dashes & underscore, 5 to 50 characters]. 
+job group: some job group           # The job group related to this monitor [only alphanumeric, dashes & underscore, 2 to 50 characters]. 
                                     # Default is null. Use to connect monitor to job group
                                     # Must be null when event is a system event
 event arguments:                    # List of arguments for the event (if the event has arguments. The {x} and {y} placeholders will be replaced with these values)

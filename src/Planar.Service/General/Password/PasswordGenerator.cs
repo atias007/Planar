@@ -76,7 +76,9 @@ namespace Planar.Service.General.Password
 
                 if (moreThanTwoIdenticalInARow)
                 {
+#pragma warning disable S127 // "for" loop stop conditions should be invariant
                     characterPosition--;
+#pragma warning restore S127 // "for" loop stop conditions should be invariant
                 }
 #pragma warning restore S2583 // Conditionally executed code should be reachable
             }

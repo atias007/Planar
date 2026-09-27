@@ -49,7 +49,9 @@ public class CliArgumentsUtil
             {
                 item1.Value = item2.Key;
                 item2.Key = null;
+#pragma warning disable S127 // "for" loop stop conditions should be invariant
                 i++;
+#pragma warning restore S127 // "for" loop stop conditions should be invariant
             }
         }
 
@@ -183,7 +185,10 @@ public class CliArgumentsUtil
         }
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public async static Task<(CliActionMetadata? Action, string[] Args)> ValidateArgs(string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var list = args.ToList();
         await SpecialCase(list);

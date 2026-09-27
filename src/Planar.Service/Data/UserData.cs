@@ -80,7 +80,7 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
             query = query.AsNoTracking();
         }
 
-        var result = await query.SingleOrDefaultAsync(u => u.Username == username);
+        var result = await query.FirstOrDefaultAsync(u => u.Username == username);
         return result;
     }
 

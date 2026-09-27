@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
@@ -163,9 +164,11 @@ public partial class JobDomain
         };
 
         var scheduler = await GetScheduler();
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
         await scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
         await scheduler.PauseJob(metadata.JobKey);
-        await Resolve<IJobData>().UpdateJobProperty(property);
+        await dataLayer.UpdateJobProperty(property);
     }
 
     private async Task<PlanarIdResponseWrapper> Update(string yml)
@@ -206,7 +209,7 @@ public partial class JobDomain
         var hasChanges = await HasChanges(request, options);
         if (!hasChanges) { return new PlanarIdResponseWrapper(metadata.JobId, unchanged: true); }
 
-        // Validate job not runnning
+        // Validate job not running
         await ValidateJobNotRunning(metadata.JobKey);
 
         // save paused triggers before pause job
@@ -289,13 +292,16 @@ public partial class JobDomain
             JobType = jobType
         };
 
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+
         if (string.IsNullOrEmpty(metadata.OldJobProperties))
         {
-            await DataLayer.AddJobProperty(property);
+            await dataLayer.AddJobProperty(property);
         }
         else
         {
-            await DataLayer.UpdateJobProperty(property);
+            await dataLayer.UpdateJobProperty(property);
         }
     }
 

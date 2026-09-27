@@ -1,10 +1,8 @@
 ﻿using Planar.Client.Entities;
-
 using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Planar.Client.Api
 {
@@ -12,6 +10,17 @@ namespace Planar.Client.Api
     {
         public UserApi(RestProxy proxy) : base(proxy)
         {
+        }
+
+        public async Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(definition, nameof(definition));
+
+            var restRequest = new RestRequest("user/apply", HttpMethod.Post)
+                .AddYamlStringBody(definition);
+
+            var result = await _proxy.InvokeAsync<ApplyResponse>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<string> AddAsync(User user, CancellationToken cancellationToken = default)

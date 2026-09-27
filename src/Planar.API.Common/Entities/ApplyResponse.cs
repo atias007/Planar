@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Planar.API.Common.Entities;
@@ -52,7 +53,7 @@ public class ApplyResponse
         return HttpStatusCode.MultiStatus;
     }
 
-    public static ApplyResponse Merge(IEnumerable<ApplyResponse> responses)
+    public static ApplyResponse Merge(params IEnumerable<ApplyResponse> responses)
     {
         var result = new ApplyResponse();
         foreach (var response in responses)

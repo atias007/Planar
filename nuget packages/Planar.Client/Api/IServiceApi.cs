@@ -8,6 +8,14 @@ namespace Planar.Client.Api
 {
     public interface IServiceApi
     {
+        /// <summary>
+        /// Applies the given definition to the service. This method is used to update the service's configuration or state based on the provided definition.
+        /// </summary>
+        /// <param name="definition">The YAML string that contains the service definition to be applied.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the apply operation as an <see cref="ApplyResponse"/>.</returns>
+        Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default);
+
         Task<string> GetVersionAsync(CancellationToken cancellationToken = default);
 
         Task<AppSettingsInfo> GetInfoAsync(CancellationToken cancellationToken = default);

@@ -1,0 +1,31 @@
+kind: user                          # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+username: admin_c
+first name: admin
+last name: customs
+email address 1: my_x@gmail.com
+email address 2: my_y@yahoo.com
+email address 3: my_z@outlook.com
+phone number 1: 0508784541
+phone number 2: 0522848180
+phone number 3: 0547761236
+additional field 1: some additional field 1
+additional field 2: some additional field 2
+additional field 3: some additional field 3
+additional field 4: some additional field 4
+additional field 5: some additional field 5
+---
+kind: user password                 # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+username: admin_c
+password: RockyBalboa2026!@$%^
+---
+kind: user                          # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+username: admin_d
+first name: the admin
+last name: the customs
+email address 1: my_y@gmail.com
+email address 2: my_y@yahoo.com
+email address 3: my_y@outlook.com
+phone number 1: 0558784541

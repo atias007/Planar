@@ -14,6 +14,14 @@ namespace Planar.CLI.Actions;
 [Module("group", "handle groups", Synonyms = "groups")]
 public class GroupCliActions : BaseCliAction<GroupCliActions>
 {
+    private const string c_group = "group";
+
+    [Action("apply")]
+    public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
+    {
+        return await Apply(c_group, request, cancellationToken);
+    }
+
     [Action("add")]
     public static async Task<CliActionResponse> Add(CliAddGroupRequest request, CancellationToken cancellationToken = default)
     {
@@ -24,7 +32,7 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
         }
 
         var body = new { request.Name, Role = request.Role.ToString() };
-        var restRequest = new RestRequest("group", Method.Post)
+        var restRequest = new RestRequest(c_group, Method.Post)
             .AddBody(body);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -58,7 +66,7 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
     [Action("list")]
     public static async Task<CliActionResponse> Get(CliPagingRequest request, CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("group", Method.Get)
+        var restRequest = new RestRequest(c_group, Method.Get)
             .AddQueryPagingParameter(request);
 
         var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
@@ -127,7 +135,7 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
             request.AdditionalField5
         };
 
-        restRequest = new RestRequest("group", Method.Put)
+        restRequest = new RestRequest(c_group, Method.Put)
            .AddBody(body);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);

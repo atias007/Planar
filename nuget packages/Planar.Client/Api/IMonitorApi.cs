@@ -8,6 +8,14 @@ namespace Planar.Client.Api
 {
     public interface IMonitorApi
     {
+        /// <summary>
+        /// Applies monitor definitions to the system, adding or updating the monitors present in the definition.
+        /// </summary>
+        /// <param name="definition">The YAML string that contains the monitor definition to be applied.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the apply operation as an <see cref="ApplyResponse"/>.</returns>
+        Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default);
+
         Task<PagingResponse<MonitorDetails>> ListAsync(
             int? pageNumber = null,
             int? pageSize = null,

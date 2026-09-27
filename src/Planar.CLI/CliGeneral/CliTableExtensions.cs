@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.ServerSentEvents;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI;
@@ -115,14 +116,14 @@ internal static class CliTableExtensions
         table1.Table.AddRow("Errors", CliTableFormat.FormatSummaryNumber(response.TotalErrors, CliFormat.ErrorColor));
 
         var table2 = new CliTable { Title = "Details" };
-        table2.Table.AddColumns("Action", "Source", "Description");
+        table2.Table.AddColumns("Action", "Source", "Kind", "Description");
         var grouped = response.Items.GroupBy(r => new { r.Action, r.ActionId }).OrderBy(g => g.Key.ActionId).ToList();
         foreach (var g in grouped)
         {
             foreach (var item in g)
             {
                 var action = item.ActionId == 99 ? $"[{CliFormat.ErrorColor}]{item.Action}[/]" : item.Action;
-                table2.Table.AddRow(action, SafeCliString(item.Source), SafeCliString(item.Description));
+                table2.Table.AddRow(action, SafeCliString(item.Source), item.Kind ?? string.Empty, SafeCliString(item.Description));
             }
         }
 

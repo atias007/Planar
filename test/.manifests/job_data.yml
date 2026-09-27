@@ -1,0 +1,14 @@
+kind: job data                      # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+job name: HelloWorld With Data
+job group: Demo
+job data:
+  DurationSeconds: 55 
+  DurationSeconds2: 55577
+  key3: value3
+triggers data:
+  - name: default_trigger
+    data:                             # Key/Value pairs used by job code (merged with job data)
+      key4: value4                    # -------------------------------------------------------
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value8                    # value --> [up to 1000 characters]

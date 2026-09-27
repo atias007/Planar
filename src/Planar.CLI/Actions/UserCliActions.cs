@@ -13,13 +13,21 @@ namespace Planar.CLI.Actions;
 [Module("user", "handle users and groups", Synonyms = "users")]
 public class UserCliActions : BaseCliAction<UserCliActions>
 {
+    private const string c_user = "user";
+
+    [Action("apply")]
+    public static async Task<CliActionResponse> Apply(CliApplyRequest request, CancellationToken cancellationToken = default)
+    {
+        return await Apply(c_user, request, cancellationToken);
+    }
+
     [Action("add")]
     [NullRequest]
     public static async Task<CliActionResponse> AddUser(CliAddUserRequest request, CancellationToken cancellationToken = default)
     {
         request ??= GetCliAddUserRequest();
 
-        var restRequest = new RestRequest("user", Method.Post)
+        var restRequest = new RestRequest(c_user, Method.Post)
             .AddBody(request);
 
         return await ExecuteTable<AddUserResponse>(restRequest, CliTableExtensions.GetTable, cancellationToken);
@@ -106,7 +114,7 @@ public class UserCliActions : BaseCliAction<UserCliActions>
     [Action("list")]
     public static async Task<CliActionResponse> GetUsers(CliPagingRequest request, CancellationToken cancellationToken = default)
     {
-        var restRequest = new RestRequest("user", Method.Get)
+        var restRequest = new RestRequest(c_user, Method.Get)
             .AddQueryPagingParameter(request);
 
         return await ExecuteTable<PagingResponse<UserRowModel>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
@@ -189,7 +197,7 @@ public class UserCliActions : BaseCliAction<UserCliActions>
             request.AdditionalField5
         };
 
-        restRequest = new RestRequest("user", Method.Put)
+        restRequest = new RestRequest(c_user, Method.Put)
             .AddBody(body);
 
         return await Execute(restRequest, cancellationToken);

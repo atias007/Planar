@@ -6,6 +6,14 @@ namespace Planar.Client.Api
 {
     public interface IUserApi
     {
+        /// <summary>
+        /// Applies one or more YAML user or user-password manifests, adding or updating the users explicitly present in the definition.
+        /// </summary>
+        /// <param name="definition">The YAML manifest definition to apply.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the apply operation as an <see cref="ApplyResponse"/>.</returns>
+        Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default);
+
         Task<string> AddAsync(User user, CancellationToken cancellationToken = default);
 
 #if NETSTANDARD2_0

@@ -30,7 +30,7 @@ namespace DbUp.Builder
         }
 
         /// <summary>
-        /// Manages your database connections, allowing you to control the use of transactions and the behaviour of those transactions
+        /// Manages your database connections, allowing you to control the use of transactions and the behavior of those transactions
         /// </summary>
         public IConnectionManager ConnectionManager { get; set; }
 

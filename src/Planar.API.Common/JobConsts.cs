@@ -3,23 +3,18 @@ using System.Text.RegularExpressions;
 
 namespace Planar.API.Common;
 
-public static class JobConsts
+public static partial class JobConsts
 {
-    private const string JobNameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
-    private const string JobKeyRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}\.[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
-    private const int JobMaxNameLength = 50;
-    private const int JobMinNameLength = 3;
+    public const string NameRegex = @"^[A-Za-z0-9._ -]+$";
+    private const string JobNameRegexTemplate = @"^[A-Za-z0-9_ -]{2,50}$";
+    private const string JobKeyRegexTemplate = @"^[A-Za-z0-9_ -]{2,50}\.[A-Za-z0-9_ -]{2,50}$";
     private const string JobIdTemplate = "^[a-z0-9]{11}$";
 
     public static readonly Regex JobIdRegex = new(JobIdTemplate, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
     public static readonly Regex JobNameRegex = new(
-        JobNameRegexTemplate
-        .Replace("@MinNameLength@", JobMinNameLength.ToString())
-        .Replace("@MaxNameLength@", JobMaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+        JobNameRegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
     public static readonly Regex JobKeyRegex = new(
-        JobKeyRegexTemplate
-        .Replace("@MinNameLength@", JobMinNameLength.ToString())
-        .Replace("@MaxNameLength@", JobMaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+        JobKeyRegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 }

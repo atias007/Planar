@@ -126,7 +126,10 @@ public partial class JobDomain(
         }
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     internal async Task<ApplyResponseItem?> ApplyData(JobDataRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         if (request.JobDetail == null) { return null; }
         var info = new List<ApplyDataInfo>();
@@ -288,7 +291,7 @@ public partial class JobDomain(
 
     public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
     {
-        // split yaml to 2 kinks
+        // split yaml to 2 kinds
         var jobYamls = yamls.Where(y => string.Equals(y.Key, kind1, StringComparison.OrdinalIgnoreCase));
         var jobDataYamls = yamls.Where(y => string.Equals(y.Key, kind2, StringComparison.OrdinalIgnoreCase));
 

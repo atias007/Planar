@@ -18,6 +18,8 @@ public interface IGroupData : IGroupDataLayer, IBaseDataLayer
 
     Task<Group?> GetGroup(string name);
 
+    Task<Group?> GetGroupWithTrackChanges(string name);
+
     Task<int> GetGroupId(string name);
 
     Task<string?> GetGroupName(int id);
@@ -49,8 +51,6 @@ public interface IGroupData : IGroupDataLayer, IBaseDataLayer
     Task RemoveUserFromGroup(int userId, int groupId);
 
     Task SetRoleToGroup(int groupId, string role);
-
-    Task UpdateGroup(Group group);
 }
 
 public class GroupDataSqlite(PlanarContext context) : GroupData(context), IGroupData
@@ -72,6 +72,11 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
 
     public async Task AddGroup(Group group)
     {
+        foreach (var u in group.Users)
+        {
+            _context.Entry(u).State = EntityState.Unchanged;
+        }
+
         _context.Groups.Add(group);
         await _context.SaveChangesAsync();
     }
@@ -92,6 +97,15 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     {
         var result = await _context.Groups
             .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Name == name);
+
+        return result;
+    }
+
+    public async Task<Group?> GetGroupWithTrackChanges(string name)
+    {
+        var result = await _context.Groups
+            .Include(g => g.Users)
             .FirstOrDefaultAsync(g => g.Name == name);
 
         return result;
@@ -232,11 +246,5 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     public async Task SetRoleToGroup(int groupId, string role)
     {
         await _context.Groups.Where(g => g.Id == groupId).ExecuteUpdateAsync(u => u.SetProperty(g => g.Role, role));
-    }
-
-    public async Task UpdateGroup(Group group)
-    {
-        _context.Groups.Update(group);
-        await _context.SaveChangesAsync();
     }
 }

@@ -17,6 +17,22 @@ namespace Planar.Controllers;
 [Route("config")]
 public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl)
 {
+    [HttpPost("apply")]
+    [EditorAuthorize]
+    [EndpointName("post_config_apply")]
+    [EndpointDescription("Add/Update global configuration")]
+    [EndpointSummary("Add/Update Global Configuration")]
+    [YamlConsumes]
+    [OkJsonResponse(typeof(ApplyResponse))]
+    [MultiStatusJsonResponse(typeof(ApplyResponse))]
+    [BadRequestResponse]
+    public async Task<ActionResult<ApplyResponse>> Apply()
+    {
+        var result = await BusinesLayer.Apply(HttpContext);
+        var status = result.GetStatusCode();
+        return StatusCode((int)status, result);
+    }
+
     [HttpGet]
     [EditorAuthorize]
     [EndpointName("get_config")]
