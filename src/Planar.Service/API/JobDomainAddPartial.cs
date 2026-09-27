@@ -686,7 +686,7 @@ public partial class JobDomain
     {
         container.SimpleTriggers?.ForEach(t =>
         {
-            if (t.MisfireBehavior.HasValue() && _simpleValues.NotContains(t.MisfireBehavior?.ToLower()?.Replace(" ", string.Empty)))
+            if (t.MisfireBehavior.HasValue() && _simpleValues.NotContains(t.MisfireBehavior?.ToLower().Replace(" ", string.Empty)))
             {
                 throw new RestValidationException("misfire behavior", $"value {t.MisfireBehavior} is not valid value for simple trigger misfire behavior");
             }
@@ -694,7 +694,7 @@ public partial class JobDomain
 
         container.CronTriggers?.ForEach(t =>
         {
-            if (t.MisfireBehavior.HasValue() && _cronValues.NotContains(t.MisfireBehavior?.ToLower()?.Replace(" ", string.Empty)))
+            if (t.MisfireBehavior.HasValue() && _cronValues.NotContains(t.MisfireBehavior?.ToLower().Replace(" ", string.Empty)))
             {
                 throw new RestValidationException("misfire behavior", $"value {t.MisfireBehavior} is not valid value for cron trigger misfire behavior");
             }

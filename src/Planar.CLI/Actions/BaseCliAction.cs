@@ -98,7 +98,7 @@ public abstract class BaseCliAction
         }
 
         var body = string.Join("\r\n---\r\n", sb).Trim();
-        if (counter > 0)
+        if (counter > 1)
         {
             AnsiConsole.MarkupLine($"[gray] --- total {counter} file(s) ---[/]");
         }

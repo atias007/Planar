@@ -315,7 +315,11 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         return response;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     private async Task<ApplyResponseItem> ApplyInner(ApplyGroupRequest request)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
+
     {
         var all_audits = new List<SecurityMessage>();
         request.Role = request.Role?.ToLower();
