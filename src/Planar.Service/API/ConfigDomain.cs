@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetEscapades.Configuration.Yaml;
 using Planar.API.Common.Entities;
@@ -63,14 +64,17 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
         globalConfig.SecretKey = secretKey;
 
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IConfigData>();
+
         if (withDelete)
         {
-            await DataLayer.AddGlobalConfigWithDelete(globalConfig);
+            await dataLayer.AddGlobalConfigWithDelete(globalConfig);
             AuditSecuritySafe($"config key '{request.Key}' was updated");
         }
         else
         {
-            await DataLayer.AddGlobalConfig(globalConfig);
+            await dataLayer.AddGlobalConfig(globalConfig);
             AuditSecuritySafe($"config key '{request.Key}' was added");
         }
     }
@@ -486,7 +490,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             var count = 0;
             if (await NeedToUpdate(request))
             {
-                await AddInner(request, true);
+                await AddInner(request, withDelete: true);
                 count = 1;
             }
 

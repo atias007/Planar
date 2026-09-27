@@ -61,9 +61,9 @@ PLAN FOR V 1.8.*
 - allow job running with quiet mode
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
-- misfire behaviour should be enum in yml file
+- misfire behavior should be enum in yml file
 - job running data w10n-TsahiAti637964208165023851637964208471912498 should return 404
-- trigger get -> show misfirebehaviour as numeric
+- trigger get -> show misfire behavior as numeric
 - job settings <id> return empty
 - job add with only folder name
 - persistance system job write also the duration

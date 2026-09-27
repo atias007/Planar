@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -36,17 +37,17 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestConflictException($"user with username '{request.Username}' already exists");
         }
 
-        return await AddUserInner(request);
+        return await AddUserInner(request, DataLayer);
     }
 
-    private async Task<AddUserResponse> AddUserInner(AddUserRequest request)
+    private async Task<AddUserResponse> AddUserInner(AddUserRequest request, IUserData userData)
     {
         var hash = GeneratePassword();
         var user = Mapper.Map<User>(request);
         user.Password = hash.Hash;
         user.Salt = hash.Salt;
 
-        _ = await DataLayer.AddUser(user);
+        _ = await userData.AddUser(user);
 
         AuditSecuritySafe($"user '{user.Username}' was created");
 
@@ -133,14 +134,16 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
     public async Task<bool> SetPassword(string username, SetPasswordRequest request)
     {
-        var existsUser = await DataLayer.GetUser(username, withTracking: true);
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var userData = scope.ServiceProvider.GetRequiredService<IUserData>();
+        var existsUser = await userData.GetUser(username, withTracking: true);
         ValidateExistingEntity(existsUser, "user");
         if (existsUser == null) { return false; }
 
-        return await SetPasswordInner(username, request.Password, existsUser);
+        return await SetPasswordInner(username, request.Password, existsUser, userData);
     }
 
-    private async Task<bool> SetPasswordInner(string username, string password, User existsUser)
+    private async Task<bool> SetPasswordInner(string username, string password, User existsUser, IUserData userData)
     {
         var verify = HashUtil.VerifyHash(password, existsUser.Password, existsUser.Salt);
         if (verify) { return false; }
@@ -148,7 +151,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         var hash = HashUtil.CreateHash(password);
         existsUser.Password = hash.Hash;
         existsUser.Salt = hash.Salt;
-        await DataLayer.SaveChangesAsync();
+        await userData.SaveChangesAsync();
 
         AuditSecuritySafe($"password for user '{username}' was changed", isWarning: true);
         return true;
@@ -164,13 +167,13 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestConflictException($"user with username '{request.Username}' already exists");
         }
 
-        await UpdateInner(request, current);
+        await UpdateInner(request, current, DataLayer);
     }
 
-    private async Task<int> UpdateInner(AddUserRequest request, User current)
+    private async Task<int> UpdateInner(AddUserRequest request, User current, IUserData userData)
     {
         Mapper.Map(request, current);
-        var count = await DataLayer.SaveChangesAsync();
+        var count = await userData.SaveChangesAsync();
         if (count > 0)
         {
             AuditSecuritySafe($"user '{current.Username}' was updated");
@@ -264,15 +267,18 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestValidationException("invalid request", "username is required");
         }
 
-        var exists = await DataLayer.GetUser(request.Username, withTracking: true);
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IUserData>();
+
+        var exists = await dataLayer.GetUser(request.Username, withTracking: true);
         if (exists == null)
         {
-            await AddUserInner(request);
+            await AddUserInner(request, dataLayer);
             return new ApplyResponseItem(request.Username, ApplyAction.Add, $"user '{request.Username}' was added", Manifest.User, request.Source);
         }
         else
         {
-            var count = await UpdateInner(request, exists);
+            var count = await UpdateInner(request, exists, dataLayer);
             var message = count > 0 ? $"user '{request.Username}' was updated" : $"user '{request.Username}' was not changed";
             var action = count > 0 ? ApplyAction.Update : ApplyAction.Unchanged;
             return new ApplyResponseItem(request.Username, action, message, Manifest.User, request.Source);
@@ -287,14 +293,16 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestValidationException("invalid request", "username is required");
         }
 
-        var exists = await DataLayer.GetUser(request.Username, withTracking: true);
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IUserData>();
+        var exists = await dataLayer.GetUser(request.Username, withTracking: true);
         if (exists == null)
         {
             return new ApplyResponseItem(request.Username, ApplyAction.Error, $"user '{request.Username}' does not exist", Manifest.UserPassword, request.Source);
         }
         else
         {
-            var success = await SetPasswordInner(request.Username, request.Password, exists);
+            var success = await SetPasswordInner(request.Username, request.Password, exists, dataLayer);
             var message = success ? $"password for user '{request.Username}' was updated" : $"password for user '{request.Username}' was not changed";
             var action = success ? ApplyAction.Update : ApplyAction.Unchanged;
             return new ApplyResponseItem(request.Username, action, message, Manifest.UserPassword, request.Source);

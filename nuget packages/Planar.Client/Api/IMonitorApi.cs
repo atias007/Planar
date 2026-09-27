@@ -9,7 +9,7 @@ namespace Planar.Client.Api
     public interface IMonitorApi
     {
         /// <summary>
-        /// Applies the monitor definition to the system. This method will add, update, or delete monitors based on the provided definition.
+        /// Applies monitor definitions to the system, adding or updating the monitors present in the definition.
         /// </summary>
         /// <param name="definition">The YAML string that contains the monitor definition to be applied.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>

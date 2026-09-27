@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
-using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -20,8 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -193,9 +190,6 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
         // Apply changes
         var response = await ApplyChanges(requests);
-
-        // Save changes
-        await DataLayer.SaveChangesAsync();
 
         // Clear cache
         _ = Resolve<MonitorDurationCache>().Flush();
@@ -703,8 +697,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         {
             const string null_string = "[null]";
             var jobname = string.IsNullOrWhiteSpace(query.JobName) ? null_string : query.JobName;
-            var groupname = string.IsNullOrWhiteSpace(query.JobGroup) ? null_string : query.JobGroup;
-            throw new RestValidationException("duplicate request", $"duplicate monitor request for event '{query.Event}' with job name '{jobname}' and job group '{groupname}'");
+            var groupName = string.IsNullOrWhiteSpace(query.JobGroup) ? null_string : query.JobGroup;
+            throw new RestValidationException("duplicate request", $"duplicate monitor request for event '{query.Event}' with job name '{jobname}' and job group '{groupName}'");
         }
     }
 
@@ -926,7 +920,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             var eventId = await DataLayer.GetMonitorEventId(request.MonitorId.GetValueOrDefault());
             if (MonitorEventsExtensions.IsSystemMonitorEvent(eventId) && hasJobId)
             {
-                throw new RestValidationException(nameof(request.JobId), $"job id is invalid for monitor id '{request.MonitorId}'. this monitor has system event so job id is not relevand");
+                throw new RestValidationException(nameof(request.JobId), $"job id is invalid for monitor id '{request.MonitorId}'. this monitor has system event so job id is not relevant");
             }
         }
 

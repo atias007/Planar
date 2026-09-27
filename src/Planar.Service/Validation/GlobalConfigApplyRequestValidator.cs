@@ -7,6 +7,6 @@ public class GlobalConfigApplyRequestValidator : AbstractValidator<GlobalConfigA
 {
     public GlobalConfigApplyRequestValidator()
     {
-        Include(new GlobalConfigDataUpdateValidator());
+        Include(new GlobalConfigModelAddRequestValidator());
     }
 }

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Planar.API.Common;
 using Planar.API.Common.Entities;
 using System.Text.RegularExpressions;
 
@@ -9,7 +10,7 @@ public partial class AddUserRequestValidator : AbstractValidator<AddUserRequest>
     public AddUserRequestValidator()
     {
         RuleFor(r => r.Username).NotEmpty().Length(2, 50)
-            .Matches(AllowedRegex()).WithMessage("Username can only contain letters, numbers, dots, spaces, underscores and hyphens");
+            .Matches(AllowedRegex()).WithMessage(AllowedCharactersMessage);
         RuleFor(r => r.FirstName).NotEmpty().Length(2, 50);
         RuleFor(r => r.LastName).Length(2, 50);
         RuleFor(r => r.EmailAddress1).Length(5, 250).EmailAddress();
@@ -25,6 +26,8 @@ public partial class AddUserRequestValidator : AbstractValidator<AddUserRequest>
         RuleFor(u => u.AdditionalField5).MaximumLength(500);
     }
 
-    [GeneratedRegex(@"^[A-Za-z0-9._ -]+$")]
+    [GeneratedRegex(JobConsts.NameRegex)]
     public static partial Regex AllowedRegex();
+
+    public const string AllowedCharactersMessage = "Username can only contain letters, numbers, dots, spaces, underscores and hyphens";
 }

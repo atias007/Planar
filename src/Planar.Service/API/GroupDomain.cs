@@ -45,7 +45,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         var group = BuildNewGroup(request);
-        return await SaveNewGroup(group);
+        return await SaveNewGroup(group, DataLayer);
     }
 
     private Group BuildNewGroup(AddGroupRequest request)
@@ -62,11 +62,11 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         return group;
     }
 
-    private async Task<EntityIdResponse> SaveNewGroup(Group group)
+    private async Task<EntityIdResponse> SaveNewGroup(Group group, IGroupData dataLayer)
     {
         try
         {
-            await DataLayer.AddGroup(group);
+            await dataLayer.AddGroup(group);
         }
         catch (DbUpdateException)
         {
@@ -244,7 +244,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
             throw new RestConflictException($"group '{request.Name}' already exists");
         }
 
-        await UpdateInner(request, exists);
+        MapInner(request, exists);
 
         try
         {
@@ -261,7 +261,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
     }
 
-    private async Task UpdateInner(AddGroupRequest request, Group exists)
+    private void MapInner(AddGroupRequest request, Group exists)
     {
         var group = Mapper.Map(request, exists);
         var groupRoleValue = RoleHelper.GetRoleValue(group.Role);
@@ -283,9 +283,6 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
         // Apply changes
         var response = await ApplyChanges(requests);
-
-        // Save changes
-        await DataLayer.SaveChangesAsync();
 
         return response;
     }
@@ -322,12 +319,14 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
     {
         var all_audits = new List<SecurityMessage>();
         request.Role = request.Role?.ToLower();
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IGroupData>();
 
         // inline function
         async Task AddUserToGroup(Group group, string username)
         {
             var userData = Resolve<IUserData>();
-            var user = await userData.GetUser(username, withTracking: true);
+            var user = await userData.GetUser(username);
             if (user == null) { return; }
             var audits = await ValidatePermissionForAddUserToGroup(request.Name, user.Username, user.Id);
             group.Users.Add(user);
@@ -344,8 +343,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         // get group
-        var dal = Resolve<IGroupData>();
-        var exists_group = await dal.GetGroupWithTrackChanges(request.Name);
+        var exists_group = await dataLayer.GetGroupWithTrackChanges(request.Name);
 
         if (exists_group == null)
         {
@@ -356,14 +354,14 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
                 await AddUserToGroup(group, username);
             }
 
-            await SaveNewGroup(group);
+            await SaveNewGroup(group, dataLayer);
             PublishAudits();
             return new ApplyResponseItem(request.Name, ApplyAction.Add, $"add new group {request.Name}", Manifest.Group, request.Source);
         }
         else
         {
-            // update group
-            await UpdateInner(request, exists_group);
+            // map group
+            MapInner(request, exists_group);
 
             // add new users
             var count = 0;
@@ -382,16 +380,21 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
             foreach (var user in exists_group.Users)
             {
                 var exists = request.Users.FirstOrDefault(u => u.Equals(user.Username, StringComparison.OrdinalIgnoreCase));
-                if(exists == null)
+                if (exists == null)
                 {
                     removed.Add(user);
                 }
             }
 
-            removed.ForEach(r => exists_group.Users.Remove(r));
+            foreach (var user in removed)
+            {
+                exists_group.Users.Remove(user);
+                var audit = GetAuditSecurityMessage($"user '{user.Username}' was removed from group '{request.Name}'");
+                if (audit != null) { all_audits.Add(audit); }
+            }
 
             // save changes
-            count += await dal.SaveChangesAsync();
+            count += await dataLayer.SaveChangesAsync();
             if (count == 0)
             {
                 return new ApplyResponseItem(request.Name, ApplyAction.Unchanged, $"group {request.Name} is unchanged", Manifest.Group, request.Source);

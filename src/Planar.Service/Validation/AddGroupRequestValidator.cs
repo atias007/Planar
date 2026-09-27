@@ -10,7 +10,7 @@ public partial class AddGroupRequestValidator : AbstractValidator<AddGroupReques
     public AddGroupRequestValidator()
     {
         RuleFor(g => g.Name).NotEmpty().Length(2, 50)
-            .Matches(AddUserRequestValidator.AllowedRegex()).WithMessage("Name can only contain letters, numbers, dots, spaces, underscores and hyphens");
+            .Matches(AddUserRequestValidator.AllowedRegex()).WithMessage(AddUserRequestValidator.AllowedCharactersMessage);
         RuleFor(u => u.AdditionalField1).MaximumLength(500);
         RuleFor(u => u.AdditionalField2).MaximumLength(500);
         RuleFor(u => u.AdditionalField3).MaximumLength(500);

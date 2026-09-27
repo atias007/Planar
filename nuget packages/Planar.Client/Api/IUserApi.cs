@@ -7,9 +7,9 @@ namespace Planar.Client.Api
     public interface IUserApi
     {
         /// <summary>
-        /// Apply user definition to the system. The definition is a JSON string that contains an array of user objects. Each user object can have the following properties: username, password, roles, and groups. The method will add new users, update existing users, and delete users that are not in the definition.
+        /// Applies one or more YAML user or user-password manifests, adding or updating the users explicitly present in the definition.
         /// </summary>
-        /// <param name="definition">The JSON string that contains the user definition to be applied.</param>
+        /// <param name="definition">The YAML manifest definition to apply.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>The result of the apply operation as an <see cref="ApplyResponse"/>.</returns>
         Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default);

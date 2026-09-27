@@ -14,8 +14,8 @@ namespace Planar.API.Common.Entities
 
         public string? Name { get; set; }
 
-        [YamlMember(Alias = "misfire behaviour")]
-        public string? MisfireBehaviour { get; set; }
+        [YamlMember(Alias = "misfire behavior")]
+        public string? MisfireBehavior { get; set; }
 
         public int? Priority { get; set; }
 

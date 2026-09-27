@@ -14,6 +14,6 @@ public partial class ApplyPasswordRequestValidator : AbstractValidator<ApplyPass
             .NotEmpty()
             .Length(2, 50)
             .Matches(AddUserRequestValidator.AllowedRegex())
-            .WithMessage("Username can only contain letters, numbers, dots, underscores and hyphens");
+            .WithMessage(AddUserRequestValidator.AllowedCharactersMessage);
     }
 }

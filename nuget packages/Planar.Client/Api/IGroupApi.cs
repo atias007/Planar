@@ -8,7 +8,7 @@ namespace Planar.Client.Api
     public interface IGroupApi
     {
         /// <summary>
-        /// Apply group definition to the system. It will create, update or delete groups based on the definition.
+        /// Applies YAML group definitions, creating or updating the groups present in the definition and synchronizing their listed users.
         /// </summary>
         /// <param name="definition">The YAML string that contains the group definition to be applied.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
