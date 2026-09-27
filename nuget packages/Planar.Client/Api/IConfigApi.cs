@@ -6,6 +6,14 @@ namespace Planar.Client.Api
 {
     public interface IConfigApi
     {
+        /// <summary>
+        /// Applies the configuration definition to the system. The definition is a YAML string that contains the configuration settings to be applied.
+        /// </summary>
+        /// <param name="definition">The YAML string that contains the configuration settings to be applied.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the apply operation as an <see cref="ApplyResponse"/>.</returns>
+        Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default);
+
         Task<PagingResponse<GlobalConfig>> ListAsync(
             int? pageNumber = null,
             int? pageSize = null,

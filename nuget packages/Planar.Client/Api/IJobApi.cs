@@ -65,7 +65,7 @@ namespace Planar.Client
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get Job Detaild
+        /// Get Job Details
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>JobDetails</returns>
@@ -83,7 +83,7 @@ namespace Planar.Client
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get Job Peripheral Detials
+        /// Get Job Peripheral Details
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>JobDescription</returns>
@@ -110,7 +110,7 @@ namespace Planar.Client
         Task<IEnumerable<RunningJobDetails>> GetRunningAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get Runnig Job Info
+        /// Get Running Job Info
         /// </summary>
         /// <param name="instanceId"></param>
         /// <returns>RunningJobDetails</returns>
@@ -255,7 +255,7 @@ namespace Planar.Client
         Task CancelAutoResumeAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Queue Invokation Of Job Queue invokation of job
+        /// Queue Invoke command for specific date and time. This method is useful when you want to schedule a job invocation for a specific date and time in the future. The job will be queued and executed at the specified due date.
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="dueDate">Invocation due date</param>
@@ -343,41 +343,16 @@ namespace Planar.Client
         /// updated definition.</returns>
         Task<string> UpdateAsync(
             string definition,
-            bool updateJobData = false,
-            bool updateTriggersData = false,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Add or update job by job id or job key (Group.Name)
-        /// If updateJobData is true, job data will be updated too.
-        /// If updateTriggersData is true, triggers data will be updated too.
-        /// This method is useful when you want to update a job with a new definition.
-        /// Attention: the job definition must be at job folder in yml file: JobFile.yml
+        /// Applies the specified job definition to the system, creating or updating jobs as necessary. This method is useful for batch updates or initial setup of jobs based on a provided definition.
         /// </summary>
-        /// <param name="id">The unique identifier of the entity to update. Cannot be null or empty.</param>
-        /// <param name="updateJobData">true to update the job data associated with the entity; otherwise, false.</param>
-        /// <param name="updateTriggersData">true to update the trigger data associated with the entity; otherwise, false.</param>
+        /// <param name="definition">The yml definition to apply. Cannot be null or empty.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the ID of the updated entity.</returns>
-        Task<string> ApplyByIdAsync(
-            string id,
-            bool updateJobData = false,
-            bool updateTriggersData = false,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Add or update job by specified yml definition and optionally updates associated job and trigger data.
-        /// </summary>
-        /// <param name="definition">The yml definition to update. Cannot be null or empty.</param>
-        /// <param name="updateJobData">true to update the job data associated with the definition; otherwise, false.</param>
-        /// <param name="updateTriggersData">true to update the triggers data associated with the definition; otherwise, false.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-        /// <returns>A task that represents the asynchronous update operation. The task result contains the identifier of the
-        /// updated definition.</returns>
-        Task<string> ApplyAsync(
+        /// <returns>A task that represents the asynchronous apply operation. The task result contains the response of the apply operation.</returns>
+        Task<ApplyResponse> ApplyAsync(
             string definition,
-            bool updateJobData = false,
-            bool updateTriggersData = false,
             CancellationToken cancellationToken = default);
 
         /// <summary>

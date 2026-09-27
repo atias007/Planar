@@ -20,6 +20,7 @@ internal static class ErrorCodes
         public const string JobDataKeyInvalid = "J0003";
         public const string YamlFileInvalid = "J0004";
         public const string JobTypeNotSupported = "J0005";
+        public const string JobIsRunning = "J0006";
     }
 
     public static class Trigger

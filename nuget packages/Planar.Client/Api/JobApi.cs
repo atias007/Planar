@@ -20,8 +20,8 @@ namespace Planar.Client
         {
             ValidateMandatory(definition, nameof(definition));
 
-            var restRequest = new RestRequest("job/folder", HttpMethod.Post)
-                .AddStringBody(definition);
+            var restRequest = new RestRequest("job", HttpMethod.Post)
+                .AddYamlStringBody(definition);
 
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
@@ -290,7 +290,7 @@ namespace Planar.Client
 
         public async Task PutDataAsync(string id, string key, string value, CancellationToken cancellationToken = default)
 #else
-		public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
+        public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
 #endif
         {
             ValidateMandatory(id, nameof(id));
@@ -475,46 +475,26 @@ namespace Planar.Client
             return result.Id;
         }
 
-        public async Task<string> UpdateAsync(string definition, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateAsync(string definition, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(definition, nameof(definition));
 
             var restRequest = new RestRequest("job", HttpMethod.Put)
-                .AddStringBody(definition);
+                .AddYamlStringBody(definition);
 
             var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
         }
 
-        public async Task<string> ApplyByIdAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-            var body = new
-            {
-                id,
-                options = new
-                {
-                    updateJobData,
-                    updateTriggersData
-                }
-            };
-
-            var restRequest = new RestRequest("job/apply", HttpMethod.Post)
-                .AddBody(body);
-
-            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
-            return result.Id;
-        }
-
-        public async Task<string> ApplyAsync(string definition, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        public async Task<ApplyResponse> ApplyAsync(string definition, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(definition, nameof(definition));
 
             var restRequest = new RestRequest("job/apply", HttpMethod.Post)
-                .AddStringBody(definition);
+                .AddYamlStringBody(definition);
 
-            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
-            return result.Id;
+            var result = await _proxy.InvokeAsync<ApplyResponse>(restRequest, cancellationToken);
+            return result;
         }
 
 #if NETSTANDARD2_0
@@ -697,7 +677,7 @@ namespace Planar.Client
 
         private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string> data, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #else
-        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string?>? data, TimeSpan? timeout = null,CancellationToken cancellationToken = default)
+        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string?>? data, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
 #endif
         {
             var restRequest = new RestRequest("job/invoke", HttpMethod.Post)

@@ -283,7 +283,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         if (isRunning)
         {
             var title = KeyHelper.GetKeyTitle(jobKey);
-            throw new RestValidationException($"{title}", $"job with key '{title}' is currently running");
+            throw new RestValidationException($"{title}", $"job with key '{title}' is currently running", ErrorCodes.Job.JobIsRunning);
         }
     }
 

@@ -12,7 +12,7 @@ internal class CliApplyResponse
     public List<CliApplyResponseItem> Items { get; set; } = [];
 }
 
-public class CliApplyResponseItem
+internal class CliApplyResponseItem
 {
     public required string Key { get; set; }
     public required string Action { get; set; }

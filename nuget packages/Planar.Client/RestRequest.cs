@@ -2,16 +2,25 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json.Nodes;
 
 namespace Planar.Client
 {
     internal class RestRequest
     {
+        private const string Json = "application/json";
+        private const string Yaml = "application/yaml";
+
         public RestRequest(string resource, HttpMethod method)
         {
             Resource = resource;
             Method = method;
+        }
+
+        public RestRequest(string resource, HttpMethod method, string contentType)
+        {
+            Resource = resource;
+            Method = method;
+            ContentType = contentType;
         }
 
         private readonly Dictionary<string, object> _queryString = new Dictionary<string, object>();
@@ -19,6 +28,7 @@ namespace Planar.Client
 
         public string Resource { get; private set; }
         public HttpMethod Method { get; private set; }
+        public string ContentType { get; set; } = Json;
 
 #if NETSTANDARD2_0
         public object Body { get; private set; }
@@ -47,15 +57,23 @@ namespace Planar.Client
             return this;
         }
 
-        public RestRequest AddStringBody(string body)
+        public RestRequest AddJsonStringBody(string body)
         {
             StringBody = body;
+            ContentType = Json;
             return this;
         }
 
-        public RestRequest SetTimeoutSeconds(int secondes)
+        public RestRequest AddYamlStringBody(string body)
         {
-            return SetTimeout(TimeSpan.FromSeconds(secondes));
+            StringBody = body;
+            ContentType = Yaml;
+            return this;
+        }
+
+        public RestRequest SetTimeoutSeconds(int seconds)
+        {
+            return SetTimeout(TimeSpan.FromSeconds(seconds));
         }
 
         public RestRequest SetTimeout(TimeSpan timeout)
@@ -122,25 +140,26 @@ namespace Planar.Client
         {
             var url = GetUrl();
             var request = new HttpRequestMessage(Method, url);
+            string body;
 
             if (!string.IsNullOrWhiteSpace(StringBody))
             {
-                var content = new StringContent(StringBody, Encoding.UTF8, Consts.YamlContentType);
-                request.Content = content;
-                if (request.Content.Headers.ContentType != null)
-                {
-                    request.Content.Headers.ContentType.MediaType = Consts.YamlContentType;
-                }
+                body = StringBody;
             }
             else if (Body != null)
             {
-                var jsonBody = CoreSerializer.Serialize(Body) ?? string.Empty;
-                var content = new StringContent(jsonBody, Encoding.UTF8, Consts.JsonContentType);
-                request.Content = content;
-                if (request.Content.Headers.ContentType != null)
-                {
-                    request.Content.Headers.ContentType.MediaType = Consts.JsonContentType;
-                }
+                body = CoreSerializer.Serialize(Body) ?? string.Empty;
+            }
+            else
+            {
+                return request;
+            }
+
+            var content = new StringContent(body, Encoding.UTF8, ContentType);
+            request.Content = content;
+            if (request.Content.Headers.ContentType != null)
+            {
+                request.Content.Headers.ContentType.MediaType = ContentType;
             }
 
             return request;
