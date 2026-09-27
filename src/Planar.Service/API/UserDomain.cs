@@ -85,7 +85,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
     public async Task<PagingResponse<UserRowModel>> GetAll(IPagingRequest request)
     {
         var query = DataLayer.GetUsers();
-        var result = await query.ProjectToWithPagingAsyc<User, UserRowModel>(Mapper, request);
+        var result = await query.ProjectToWithPagingAsync<User, UserRowModel>(Mapper, request);
         return result;
     }
 

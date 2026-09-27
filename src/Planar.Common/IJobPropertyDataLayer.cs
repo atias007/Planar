@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace Planar.Common
+namespace Planar.Common;
+
+public interface IJobPropertyDataLayer
 {
-    public interface IJobPropertyDataLayer
-    {
-        Task<(string? Properties, string? GlobalConfigKeys)> GetJobProperty(string jobId);
-    }
+    Task<(string? Properties, string? GlobalConfigKeys)> GetJobProperty(string jobId);
 }

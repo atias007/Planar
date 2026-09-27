@@ -61,7 +61,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            await using var scope = _serviceScopeFactory.CreateAsyncScope();
             var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
             await func.Invoke(dal);
         }

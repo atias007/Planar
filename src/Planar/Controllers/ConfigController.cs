@@ -39,6 +39,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [EndpointDescription("Get all global configuration")]
     [EndpointSummary("Get All Global Configurations")]
     [OkJsonResponse(typeof(PagingResponse<GlobalConfigModel>))]
+    [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<GlobalConfigModel>>> GetAll([FromQuery] PagingRequest request)
     {
         var result = await BusinesLayer.GetAll(request);

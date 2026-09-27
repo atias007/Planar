@@ -1,12 +1,8 @@
-﻿using Dapper;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
-using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
-using StackExchange.Redis;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -91,7 +87,7 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
             .Select(u => new UserIdentity
             {
                 Id = u.Id,
-                Surename = u.LastName,
+                Surname = u.LastName,
                 GivenName = u.FirstName,
                 Username = u.Username,
                 Password = u.Password,

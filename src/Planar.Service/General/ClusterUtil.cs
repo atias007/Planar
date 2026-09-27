@@ -53,7 +53,7 @@ public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil>
 
     public async Task<IEnumerable<ClusterNode>> GetAllNodes()
     {
-        using var scope = serviceScope.CreateScope();
+        await using var scope = serviceScope.CreateAsyncScope();
         var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
         var tempNode = GetCurrentClusterNode();
         var result = await dal.GetClusterNodes();

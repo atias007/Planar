@@ -322,7 +322,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             Role = role,
             Token = token,
             FirstName = user.GivenName,
-            LastName = user.Surename,
+            LastName = user.Surname,
         };
 
         return result;
@@ -331,7 +331,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
     public async Task<PagingResponse<SecurityAuditModel>> GetSecurityAudits(SecurityAuditsFilter request)
     {
         var query = DataLayer.GetSecurityAudits(request);
-        var data = await query.ProjectToWithPagingAsyc<SecurityAudit, SecurityAuditModel>(Mapper, request);
+        var data = await query.ProjectToWithPagingAsync<SecurityAudit, SecurityAuditModel>(Mapper, request);
         var result = new PagingResponse<SecurityAuditModel>(data);
         return result;
     }

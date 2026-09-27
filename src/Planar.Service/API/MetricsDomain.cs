@@ -55,7 +55,7 @@ public class MetricsDomain(IServiceProvider serviceProvider) : BaseJobBL<Metrics
     {
         ResetRequestHours(request);
         var query = DataLayer.GetConcurrentExecution(request);
-        var result = await query.ProjectToWithPagingAsyc<ConcurrentExecution, ConcurrentExecutionModel>(Mapper, request);
+        var result = await query.ProjectToWithPagingAsync<ConcurrentExecution, ConcurrentExecutionModel>(Mapper, request);
         return result;
     }
 

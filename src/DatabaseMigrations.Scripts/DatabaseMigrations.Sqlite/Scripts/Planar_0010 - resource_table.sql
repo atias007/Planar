@@ -1,0 +1,4 @@
+CREATE TABLE Resources (
+    Name  TEXT NOT NULL PRIMARY KEY,
+    Value TEXT NOT NULL
+);

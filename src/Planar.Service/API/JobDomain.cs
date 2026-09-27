@@ -603,7 +603,7 @@ public partial class JobDomain(
     public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
     {
         var query = DataLayer.GetAudits();
-        var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, request);
+        var result = await query.ProjectToWithPagingAsync<JobAudit, JobAuditDto>(Mapper, request);
         return result;
     }
 
@@ -674,7 +674,7 @@ public partial class JobDomain(
         var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
         var firstId = await DataLayer.GetJobFirstAudit(jobId) ?? 0;
         var query = DataLayer.GetJobAudits(jobId, firstId);
-        var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, paging);
+        var result = await query.ProjectToWithPagingAsync<JobAudit, JobAuditDto>(Mapper, paging);
         return result;
     }
 

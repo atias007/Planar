@@ -138,7 +138,7 @@ public abstract class BaseReportJob(IServiceScopeFactory serviceScope, ILogger l
             throw new InvalidOperationException($"job data key '{ReportConsts.GroupTriggerDataKey}' (name of distribution group) could not found");
         }
 
-        using var scope = _serviceScope.CreateScope();
+        await using var scope = _serviceScope.CreateAsyncScope();
         var groupData = scope.ServiceProvider.GetRequiredService<IGroupData>();
         if (string.IsNullOrEmpty(groupName))
         {

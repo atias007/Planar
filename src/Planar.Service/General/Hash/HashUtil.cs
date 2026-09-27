@@ -43,7 +43,7 @@ internal static class HashUtil
             new (ClaimTypes.NameIdentifier, user.Id.ToString()),
             new (ClaimTypes.Role, user.Role),
             new (ClaimTypes.Name, user.Username),
-            new (ClaimTypes.Surname, user.Surename ?? string.Empty),
+            new (ClaimTypes.Surname, user.Surname ?? string.Empty),
             new (ClaimTypes.GivenName, user.GivenName),
         };
 

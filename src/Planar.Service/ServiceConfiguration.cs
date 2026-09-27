@@ -36,6 +36,7 @@ namespace Planar.Service
             services.AddScoped<UserDomain>();
             services.AddScoped<ClusterDomain>();
             services.AddScoped<MetricsDomain>();
+            services.AddScoped<ResourceDomain>();
 
             services.AddScoped<IJobActions, JobDomain>(p => p.GetRequiredService<JobDomain>());
 
@@ -79,8 +80,8 @@ namespace Planar.Service
             services.AddSingleton<MonitorScanProducer>();
 
             // AutoMapper
-            var assemply = typeof(ServiceConfiguration).Assembly;
-            services.AddAutoMapperProfiles([assemply]);
+            var assembly = typeof(ServiceConfiguration).Assembly;
+            services.AddAutoMapperProfiles(new[] { assembly });
 
             return services;
         }
@@ -92,12 +93,12 @@ namespace Planar.Service
             return services;
         }
 
-        internal static IServiceCollection AddTransientWithLazy<TService, TImplementation>(this IServiceCollection services)
+        internal static IServiceCollection AddScopedWithLazy<TService, TImplementation>(this IServiceCollection services)
             where TService : class
             where TImplementation : class, TService
         {
-            services.AddTransient<TService, TImplementation>();
-            services.AddTransient(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
+            services.AddScoped<TService, TImplementation>();
+            services.AddScoped(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
             return services;
         }
     }
