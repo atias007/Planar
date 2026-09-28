@@ -425,7 +425,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         var requests = await GetApplyEntities<GlobalConfigApplyRequest>(yamls, kind, cancellationToken);
 
         // Validation
-        ValidateDuplicateRequests(requests);
+        ValidateDuplicateApplyRequests(requests, r => r.Key, kind, "key");
 
         // Apply changes
         var response = await ApplyChanges(requests);
@@ -437,20 +437,6 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         _ = Flush(cancellationToken);
 
         return response;
-    }
-
-    private static void ValidateDuplicateRequests(IEnumerable<GlobalConfigApplyRequest> requests)
-    {
-        var query = requests
-            .GroupBy(r => r.Key)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .FirstOrDefault();
-
-        if (query != null)
-        {
-            throw new RestValidationException("duplicate request", $"duplicate global config request for key '{query}'");
-        }
     }
 
     private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)

@@ -283,7 +283,7 @@ public abstract class PlanarJob(
         if (!success)
         {
             await OnRabbitMqCancel(context);
-            MessageBroker.AppendLog(LogLevel.Error, $"rabbitmq job invoke timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
+            MessageBroker.AppendLog(LogLevel.Error, $"RabbitMQ job invoke timeout expire. timeout was {timeout:hh\\:mm\\:ss}");
         }
     }
 
@@ -385,11 +385,11 @@ public abstract class PlanarJob(
 
     private void ValidateExeFile()
     {
-        if (!FileExtentionIsExe(Filename))
+        if (!FileExtensionIsExe(Filename))
         {
-            _logger.LogError("process filename '{Filename}' must have 'exe' extention", Filename);
-            MessageBroker.AppendLog(LogLevel.Error, $"process filename '{Filename}' must have 'exe' extention");
-            throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
+            _logger.LogError("process filename '{Filename}' must have 'exe' extension", Filename);
+            MessageBroker.AppendLog(LogLevel.Error, $"process filename '{Filename}' must have 'exe' extension");
+            throw new PlanarException($"process filename '{Filename}' must have 'exe' extension");
         }
     }
 
@@ -424,7 +424,7 @@ public abstract class PlanarJob(
     {
         if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.RoutingKey))
         {
-            const string message = "planar job with rabbitmq invoke method must have routing key";
+            const string message = "planar job with RabbitMQ invoke method must have routing key";
             _logger.LogError(message);
             MessageBroker.AppendLog(LogLevel.Error, message);
             throw new PlanarException(message);
@@ -432,14 +432,14 @@ public abstract class PlanarJob(
 
         if (string.IsNullOrWhiteSpace(Properties.RabbitMq?.Exchange))
         {
-            const string message = "planar job with rabbitmq invoke method must have exchange";
+            const string message = "planar job with RabbitMQ invoke method must have exchange";
             _logger.LogError(message);
             MessageBroker.AppendLog(LogLevel.Error, message);
             throw new PlanarException(message);
         }
     }
 
-    private static bool FileExtentionIsExe(string filename)
+    private static bool FileExtensionIsExe(string filename)
     {
         const string exe = ".exe";
         var fi = new FileInfo(filename);
@@ -525,7 +525,7 @@ public abstract class PlanarJob(
             MessageBroker.AppendLogRaw(FinalOutputText.ToString());
         }
 
-        throw new PlanarJobException($"WARNING! Abnormal process exit code {_process.ExitCode}. this may cause by unwaited tasks\\threads");
+        throw new PlanarJobException($"WARNING! Abnormal process exit code {_process.ExitCode}. this may cause by un-waited tasks\\threads");
     }
 
     private void ValidateHealthCheck()
@@ -718,6 +718,8 @@ public abstract class PlanarJob(
 
     private void InterceptingPublishAsyncInner(CloudEventArgs e)
     {
+        SetHealthCheckSignal();
+
         if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
         {
             _logger.LogError("message broker channels '{Type}' is not valid", e.CloudEvent.Type);
@@ -800,8 +802,7 @@ public abstract class PlanarJob(
                 break;
 
             case MessageBrokerChannels.HealthCheck:
-                _healthCheckResetEvent?.Set();
-                SafeUnsubscribeOutput();
+                // *** DO NOTHING *** //
                 break;
 
             case MessageBrokerChannels.MonitorCustomEvent:
@@ -827,6 +828,12 @@ public abstract class PlanarJob(
                 _logger.LogWarning("PlanarJob intercepting published message with unsupported channel {Channel}", channel);
                 break;
         }
+    }
+
+    private void SetHealthCheckSignal()
+    {
+        _healthCheckResetEvent?.Set();
+        SafeUnsubscribeOutput();
     }
 
     private async Task RunInvokeJob(InvokeJobModel invokeJob)

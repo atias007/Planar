@@ -76,7 +76,7 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
     }
 
     [HttpGet("{name}")]
-    [ViewerAuthorize]
+    [EditorAuthorize]
     [EndpointName("get_resource_name")]
     [EndpointDescription("Get resource by name")]
     [EndpointSummary("Get Resource By Name")]

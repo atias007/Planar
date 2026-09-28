@@ -19,10 +19,11 @@ public static class Manifest
     public const string User = "user";
     public const string UserPassword = "user password";
     public const string Group = "group";
+    public const string Resource = "resource";
 
     private static readonly Lock _locker = new();
 
-    public static IEnumerable<string> Names => [Monitor, Job, JobData, GlobalConfig, User, UserPassword, Group];
+    public static IEnumerable<string> Names => [Monitor, Job, JobData, GlobalConfig, User, UserPassword, Group, Resource];
 
     public static bool IsValid(string name) => Names.Contains(name, StringComparer.OrdinalIgnoreCase);
 

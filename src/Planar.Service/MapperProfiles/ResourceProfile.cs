@@ -8,6 +8,7 @@ namespace Planar.Service.MapperProfiles
         public ResourceProfile()
         {
             CreateMap<Resource, ResourceModel>().ReverseMap();
+            CreateMap<Resource, ApplyResourceRequest>().ReverseMap();
         }
     }
 }

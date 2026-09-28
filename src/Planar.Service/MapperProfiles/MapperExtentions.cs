@@ -15,7 +15,7 @@ internal static class MapperExtentions
         var result = mapper.Map<SimpleTriggerDetails>(simpleTrigger);
 
         var abs = ((Quartz.Impl.Triggers.AbstractTrigger)simpleTrigger);
-        result.PreferedNode = abs.IsPreferredNodeAuto ? "[Auto]" : abs.PreferredNode;
+        result.PreferredNode = abs.IsPreferredNodeAuto ? "[Auto]" : abs.PreferredNode;
 
         result.State = await GetTriggerState(simpleTrigger.Key, scheduler);
         result.Active = await GetTriggerActive(simpleTrigger.Key, scheduler);
@@ -27,7 +27,7 @@ internal static class MapperExtentions
         var result = mapper.Map<CronTriggerDetails>(cronTrigger);
 
         var abs = ((Quartz.Impl.Triggers.AbstractTrigger)cronTrigger);
-        result.PreferedNode = abs.IsPreferredNodeAuto ? "[Auto]" : abs.PreferredNode;
+        result.PreferredNode = abs.IsPreferredNodeAuto ? "[Auto]" : abs.PreferredNode;
 
         result.State = await GetTriggerState(cronTrigger.Key, scheduler);
         result.Active = await GetTriggerActive(cronTrigger.Key, scheduler);

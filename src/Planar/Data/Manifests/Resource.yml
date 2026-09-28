@@ -1,0 +1,8 @@
+kind: resource                      # The kind of manifest file
+version: 1.0.0                      # The version of manifest file
+# --------------------------------------------------------------------------------------------------------------------------------------------------------- #
+name: some name                     # Unique identifier [mandatory, only alphanumeric, dots, dashes & underscore, 2 to 100 characters]
+value: |                            # Value of the resource [mandatory, up to 1,000,000 characters]
+ This is line one.
+ This is line two.
+ This is line three.

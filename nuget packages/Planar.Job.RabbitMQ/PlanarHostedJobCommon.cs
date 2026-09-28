@@ -116,26 +116,20 @@ namespace Planar.Job
 
             if (_jobInstances.IsEmpty)
             {
-                for (int i = 0; i < 3; i++)
+                await SafeSendFinishInvokeJobSignal(fireInstanceId);
+            }
+        }
+
+        private static async Task SafeSendFinishInvokeJobSignal(string fireInstanceId)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
+                catch
                 {
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
-                    catch
-                    {
-                        // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
-                    }
-                    await Task.Delay(50, _mainCancellationTokenSource.Token);
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
-                    catch
-                    {
-                        // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
-                    }
-                    await Task.Delay(50, _mainCancellationTokenSource.Token);
-                    try { await MqttClient.PublishAsync(fireInstanceId, MessageBrokerChannels.FinishInvokeJob); }
-                    catch
-                    {
-                        // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
-                    }
+                    // *** DO NOTHING, just try best effort to publish the finish message, we will try 3 times with 50ms delay in between *** //
                 }
+                await Task.Delay(50, CancellationToken.None);
             }
         }
     }

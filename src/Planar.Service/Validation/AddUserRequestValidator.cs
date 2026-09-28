@@ -29,5 +29,5 @@ public partial class AddUserRequestValidator : AbstractValidator<AddUserRequest>
     [GeneratedRegex(JobConsts.NameRegex)]
     public static partial Regex AllowedRegex();
 
-    public const string AllowedCharactersMessage = "Username can only contain letters, numbers, dots, spaces, underscores and hyphens";
+    public const string AllowedCharactersMessage = "{PropertyName} can only contain letters, numbers, dots, spaces, underscores and hyphens";
 }

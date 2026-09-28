@@ -32,7 +32,7 @@ namespace Planar.API.Common.Entities
 
         public TimeSpan? Timeout { get; set; }
 
-        [YamlMember(Alias = "prefered node")]
-        public string? PreferedNode { get; set; }
+        [YamlMember(Alias = "preferred node")]
+        public string? PreferredNode { get; set; }
     }
 }

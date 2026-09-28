@@ -297,11 +297,11 @@ public partial class JobDomain(
 
         // build & validate request for kind: job
         var jobRequests = jobYamls.Select(y => GetJobDynamicRequest(y.Value)).ToList();
-        ValidateDuplicates(jobRequests);
+        ValidateDuplicateApplyRequests(jobRequests, r => new JobKey(r.Name, r.Group), kind1, "key");
 
         // build & validate request for kind: job data
         var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, cancellationToken);
-        ValidateDuplicates(dataRequests);
+        ValidateDuplicateApplyRequests(dataRequests, r => new JobKey(r.JobName, r.JobGroup), kind2, "job group/name");
         ValidateJobDataRequest(dataRequests);
         await FillDetails(dataRequests, cancellationToken);
 
@@ -344,34 +344,6 @@ public partial class JobDomain(
             {
                 throw new RestNotFoundException($"trigger with name '{any.Name}' does not exist for job '{dataRequest.JobGroup}.{dataRequest.JobName}'");
             }
-        }
-    }
-
-    private static void ValidateDuplicates(IReadOnlyCollection<SetJobDynamicRequest> requests)
-    {
-        var query = requests
-           .GroupBy(r => new { r.Name, r.Group })
-           .Where(g => g.Count() > 1)
-           .Select(g => g.Key)
-           .FirstOrDefault();
-
-        if (query != null)
-        {
-            throw new RestValidationException("duplicate request", $"duplicate job request for name '{query.Name}' and group '{query.Group}'");
-        }
-    }
-
-    private static void ValidateDuplicates(IReadOnlyCollection<JobDataRequest> requests)
-    {
-        var query = requests
-           .GroupBy(r => new { r.JobName, r.JobGroup })
-           .Where(g => g.Count() > 1)
-           .Select(g => g.Key)
-           .FirstOrDefault();
-
-        if (query != null)
-        {
-            throw new RestValidationException("duplicate request", $"duplicate job data request for name '{query.JobName}' and group '{query.JobGroup}'");
         }
     }
 
@@ -701,11 +673,11 @@ public partial class JobDomain(
         if (!propDic.TryGetValue("path", out var pathObj)) { throw NotFound(id); }
         var path = Convert.ToString(pathObj);
         if (string.IsNullOrWhiteSpace(path)) { throw NotFound(id); }
-        var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
+        var fullPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
 
         var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
 
-        var files = Directory.EnumerateFiles(fullpath, "*.yml", SearchOption.TopDirectoryOnly);
+        var files = Directory.EnumerateFiles(fullPath, "*.yml", SearchOption.TopDirectoryOnly);
         var validFiles = files.Where(f =>
         {
             try
@@ -723,16 +695,16 @@ public partial class JobDomain(
 
         var count = validFiles.Count;
         if (count == 0) { throw NotFound(id, path); }
-        if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml jobfile found in '{path}' folder"); }
+        if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml job file found in '{path}' folder"); }
 
-        var jobfile = Path.GetRelativePath(jobsFolder, validFiles[0]);
-        return jobfile;
+        var jobFile = Path.GetRelativePath(jobsFolder, validFiles[0]);
+        return jobFile;
 
         static Exception NotFound(string id, string? path = null)
         {
             var message = string.IsNullOrWhiteSpace(path) ?
-                $"no valid yml jobfile found for '{id}' job" :
-                $"no valid yml jobfile found for '{id}' job in '{path}' folder";
+                $"no valid yml job file found for '{id}' job" :
+                $"no valid yml job file found for '{id}' job in '{path}' folder";
 
             return new RestNotFoundException(message);
         }
@@ -1202,8 +1174,8 @@ public partial class JobDomain(
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var monitordal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
-            await DeleteMonitorOfJob(monitordal, jobKey);
+            var monitorDal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
+            await DeleteMonitorOfJob(monitorDal, jobKey);
         }
         catch (Exception ex)
         {
@@ -1214,8 +1186,8 @@ public partial class JobDomain(
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var merticsdal = scope.ServiceProvider.GetRequiredService<IMetricsData>();
-            await DeleteJobStatistics(merticsdal, jobId);
+            var metricsDal = scope.ServiceProvider.GetRequiredService<IMetricsData>();
+            await DeleteJobStatistics(metricsDal, jobId);
         }
         catch (Exception ex)
         {
@@ -1226,8 +1198,8 @@ public partial class JobDomain(
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var historydal = scope.ServiceProvider.GetRequiredService<IHistoryData>();
-            await historydal.ClearJobHistory(jobId);
+            var historyDal = scope.ServiceProvider.GetRequiredService<IHistoryData>();
+            await historyDal.ClearJobHistory(jobId);
         }
         catch (Exception ex)
         {

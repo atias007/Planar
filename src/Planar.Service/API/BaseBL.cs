@@ -81,6 +81,24 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
         }
     }
 
+    protected static void ValidateDuplicateApplyRequests<TSource, TKey>(
+      IEnumerable<TSource> requests,
+      Func<TSource, TKey> keySelector,
+      string resourceName,
+      string keyName)
+    {
+        var query = requests
+            .GroupBy(keySelector)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (query.Count == 0) { return; }
+
+        var names = string.Join(", ", query.Select(q => $"'{q}'"));
+        throw new RestValidationException("duplicate request", $"duplicate '{resourceName}' definition. {keyName}: {names}");
+    }
+
     protected static void ForbiddenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)
     {
         var any = Array.Exists(properties, p => string.Equals(request.PropertyName, p, StringComparison.OrdinalIgnoreCase));
