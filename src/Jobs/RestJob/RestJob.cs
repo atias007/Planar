@@ -8,15 +8,15 @@ using RestSharp.Authenticators;
 using System.Diagnostics;
 using System.Net;
 using System.Text.RegularExpressions;
-using YamlDotNet.Core.Tokens;
 
 namespace Planar;
 
 public partial class RestJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
-    JobMonitorUtil jobMonitorUtil
-    , IClusterUtil clusterUtil) : BaseCommonJob<RestJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
+    Lazy<IJobResourceDataLayer> resourceDal,
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseCommonJob<RestJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
     public override async Task Execute(Quartz.IJobExecutionContext context)
     {
@@ -24,8 +24,9 @@ public partial class RestJob(
         {
             await Initialize(context);
             ValidateRestJob();
+            var resources = await ValidateResources(Properties, resourceDal);
             _ = SafeStartMonitorDuration(context);
-            var task = ExecuteRest(context);
+            var task = ExecuteRest(context, resources);
             await WaitForJobTask(context, task);
             StopMonitorDuration();
         }
@@ -39,18 +40,16 @@ public partial class RestJob(
         }
     }
 
-    private async Task ExecuteRest(Quartz.IJobExecutionContext context)
+    private async Task ExecuteRest(Quartz.IJobExecutionContext context, IReadOnlyDictionary<string, string> resources)
     {
-        await Task.Yield();
-
         var options = InitializeOptions(context);
         SetProxy(options);
         SetAuthentication(options);
         using var client = new RestClient(options);
-        RestRequest request = InitializeRequest();
+        var request = InitializeRequest();
         SetHeaders(request);
         SetFormData(request);
-        await SetBody(context, request);
+        await SetBody(context, request, resources);
 
         // Execute Rest
         var stopwatch = new Stopwatch();
@@ -107,11 +106,17 @@ public partial class RestJob(
         }
     }
 
-    private async Task SetBody(Quartz.IJobExecutionContext context, RestRequest request)
+    private async Task SetBody(Quartz.IJobExecutionContext context, RestRequest request, IReadOnlyDictionary<string, string> resources)
     {
-        if (string.IsNullOrWhiteSpace(Properties.BodyFile)) { return; }
-        var filename = Path.Combine(Properties.Path, Properties.BodyFile);
-        var body = await File.ReadAllTextAsync(filename, context.CancellationToken);
+        if (string.IsNullOrWhiteSpace(Properties.BodyResource)) { return; }
+        if (!resources.TryGetValue(Properties.BodyResource, out var body))
+        {
+            MessageBroker.AppendLog(LogLevel.Warning, $"resource '{Properties.BodyResource}' was not found");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(body)) { return; }
+
         body = BodyPlaceHolders().Replace(body, m =>
         {
             var k = m.Groups[1].Value;
@@ -123,7 +128,7 @@ public partial class RestJob(
             return result;
         });
 
-        request.AddJsonBody(body);
+        request.AddStringBody(body, DataFormat.Json);
     }
 
     private void SetFormData(RestRequest request)
@@ -216,12 +221,6 @@ public partial class RestJob(
 
             if (!Enum.TryParse<Method>(Properties.Method, ignoreCase: true, out _))
                 throw new RestJobException($"method '{Properties.Method}' is not a valid http method");
-
-            var bodyFullname = Path.Combine(Properties.Path ?? string.Empty, Properties.BodyFile ?? string.Empty);
-            if (!string.IsNullOrEmpty(Properties.BodyFile) && !File.Exists(bodyFullname))
-            {
-                throw new RestJobException($"body file '{bodyFullname}' could not be found");
-            }
         }
         catch (Exception ex)
         {

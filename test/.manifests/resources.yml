@@ -1,0 +1,20 @@
+kind: resource                      # The kind of manifest file
+name: res1
+value: |                            # Value of the resource [mandatory, up to 1,000,000 characters]
+  This is the president as a relentless, square-jawed strongman, in unambiguous monochrome, 
+  in a video featuring an echoing voice track in which he vows “a final battle” against communists, 
+  the deep state and “fake news” media.
+  But the most provocative aspect of the 30-second spot that aired during NFL broadcasts Sunday is the tagline: “Paid for by the U.S. Government.”
+---
+kind: resource                      # The kind of manifest file
+name: res2
+value: |                            # Value of the resource [mandatory, up to 1,000,000 characters]
+  Is the video, similar to one Trump posted on social media during his 2024 campaign, a legitimate use of public money, in what the White House says is a public service announcement? Or does it represent another blow to good governance by a president who recognizes few limits on his power? 
+  In this instance, using taxpayer funds — inevitably including those of citizens who oppose his agenda — for a hyper-political message pre-midterm election message?
+---
+kind: resource                      # The kind of manifest file
+name: res3
+value: |                            # Value of the resource [mandatory, up to 1,000,000 characters]
+  A supporter of the White House position might argue there is some subjectivity in what constitutes a political ad as distinct from a video that purportedly seeks to highlight higher national interests. But this controversy is playing out in an administration that has repeatedly challenged norms and taboos regarding politics and nonpartisan governance. And there will be deep skepticism over whether a president who has purged inspectors general, ethics officials and civil servants from his own government cares about such concerns.
+
+  The furor is a classic example of provocative behavior Trump uses to draw establishment forces into showdowns that bolster his image as an insurgent, a move that was instrumental to his two presidential election triumphs. At times, this seems like trolling for trolling’s sake. But it feeds a narrative that he’s under perpetual attack from a sinister deep state and that only strongman leadership by Trump can save the nation. The idea that the spot is deliberately provocative is bolstered by the fact that Trump, with a war chest worth hundreds of millions of dollars, doesn’t need to use taxpayer cash.

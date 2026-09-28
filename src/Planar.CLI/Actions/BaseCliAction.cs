@@ -122,6 +122,64 @@ public abstract class BaseCliAction
         }
     }
 
+    protected static void ValidateFileSize(string filename, int maxSizeBytes = 1024 * 1000)
+    {
+        var fi = new FileInfo(filename);
+
+        if (fi.Length > maxSizeBytes)
+        {
+            throw new CliException($"file '{fi.FullName}' size ({fi.Length:N0}) is over the allowed max file size ({maxSizeBytes:N0})");
+        }
+    }
+
+    protected static void ValidateTextFile(string filename, int maxSizeBytes = 1024 * 1000)
+    {
+        var valid = IsProbablyText(filename);
+
+        if (!valid)
+        {
+            throw new CliException($"file '{filename}' is not a valid simple text format (binary file)");
+        }
+    }
+
+    protected static bool IsProbablyText(string filename, int sampleSize = 8192)
+    {
+        using FileStream fs = File.OpenRead(filename);
+        byte[] buffer = new byte[sampleSize];
+        int read = fs.Read(buffer, 0, buffer.Length);
+        if (read == 0) return true;                  // empty → treat as text
+
+        ReadOnlySpan<byte> data = buffer.AsSpan(0, read);
+
+        // 1. BOM → definitely text
+        if (HasBom(data)) return true;
+
+        // 2. NUL byte → almost certainly binary (git's rule)
+        if (data.IndexOf((byte)0) >= 0) return false;
+
+        // 3. Must decode as valid UTF-8
+        try
+        {
+            new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(data);
+        }
+        catch (DecoderFallbackException)
+        {
+            return false;
+        }
+
+        // 4. Too many control chars → binary
+        int control = 0;
+        foreach (byte b in data)
+            if (b < 0x20 && b != 0x09 && b != 0x0A && b != 0x0D) control++;
+
+        return control * 100 / read < 5;
+    }
+
+    private static bool HasBom(ReadOnlySpan<byte> d) =>
+       (d.Length >= 3 && d[0] == 0xEF && d[1] == 0xBB && d[2] == 0xBF) ||  // UTF-8
+       (d.Length >= 2 && d[0] == 0xFF && d[1] == 0xFE) ||                  // UTF-16 LE
+       (d.Length >= 2 && d[0] == 0xFE && d[1] == 0xFF);                    // UTF-16 BE
+
     protected static async Task<CliActionResponse> Execute(RestRequest request, CancellationToken cancellationToken = default)
     {
         var result = await RestProxy.Invoke(request, cancellationToken);
@@ -507,7 +565,8 @@ public abstract class BaseCliAction
             GetModule<ClusterCliActions>(),
             GetModule<MonitorCliActions>(),
             GetModule<MetricsCliActions>(),
-            GetModule<ReportCliActions>()
+            GetModule<ReportCliActions>(),
+            GetModule<ResourceCliActions>()
         }
         .OrderBy(m => m.Name);
 

@@ -71,6 +71,12 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         return Mapper.Map<ResourceModel>(item);
     }
 
+    public async Task<IEnumerable<string>> GetAllNames()
+    {
+        var items = await DataLayer.GetAllResourceNames();
+        return items;
+    }
+
     public async Task Delete([FromRoute][Range(1, 100)] string name)
     {
         var count = await DataLayer.RemoveResource(name);

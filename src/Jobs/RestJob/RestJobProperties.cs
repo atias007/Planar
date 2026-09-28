@@ -18,36 +18,10 @@ public class RestJobJwtAuthentication
     public string Token { get; set; } = null!;
 }
 
-public class RestJobProperties : BaseProperties, IJobProperties, IPathJobProperties, IJobPropertiesWithFiles
+public class RestJobProperties : BaseProperties, IJobProperties, IResourceJobProperties
 {
-    [YamlIgnore]
-    public string Path { get; private set; } = null!;
-
-    [YamlMember(Alias = "body file", Order = 0)]
-#pragma warning disable CS9264 // Non-nullable property must contain a non-null value when exiting constructor. Consider adding the 'required' modifier, or declaring the property as nullable, or safely handling the case where 'field' is null in the 'get' accessor.
-    public string? BodyFile
-#pragma warning restore CS9264 // Non-nullable property must contain a non-null value when exiting constructor. Consider adding the 'required' modifier, or declaring the property as nullable, or safely handling the case where 'field' is null in the 'get' accessor.
-    {
-        get;
-        set
-        {
-            field = value;
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                Path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-            }
-            else
-            {
-                var fullname =
-                    System.IO.Path.IsPathFullyQualified(value) ?
-                    value :
-                    FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, value);
-
-                var fi = new FileInfo(fullname);
-                Path = fi.DirectoryName ?? string.Empty;
-            }
-        }
-    }
+    [YamlMember(Alias = "body resource", Order = 0)]
+    public string? BodyResource { get; set; }
 
     [YamlMember(Alias = "basic authentication", Order = 1)]
     public RestJobBasicAuthentication? BasicAuthentication { get; set; }
@@ -89,17 +63,7 @@ public class RestJobProperties : BaseProperties, IJobProperties, IPathJobPropert
     public bool LogResponseContent { get; set; }
 
     [YamlIgnore]
-    public IEnumerable<string> Files
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(BodyFile)) { return []; }
-            return
-            [
-                string.IsNullOrWhiteSpace(Path) ? BodyFile : System.IO.Path.Combine(Path, BodyFile)
-            ];
-        }
-    }
+    public IEnumerable<string> ResourceNames => string.IsNullOrWhiteSpace(BodyResource) ? [] : [BodyResource];
 
     public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {

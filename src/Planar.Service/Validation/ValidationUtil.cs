@@ -8,6 +8,7 @@ using System;
 using System.Data.SqlTypes;
 using System.Dynamic;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 

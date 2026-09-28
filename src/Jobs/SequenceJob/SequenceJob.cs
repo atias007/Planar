@@ -74,9 +74,9 @@ public abstract class SequenceJob(
         if (_logs.Count == 0) { return; }
 
         AppendInfoLog("  ");
-        AppendInfoLog(Seperator);
+        AppendInfoLog(Separator);
         AppendInfoLog(" sequence steps summary");
-        AppendInfoLog(Seperator);
+        AppendInfoLog(Separator);
         AppendInfoLog("[job key] --> [fire instance id] --> [status]");
         AppendInfoLog(string.Empty);
         foreach (var log in _logs)
@@ -91,7 +91,7 @@ public abstract class SequenceJob(
             }
         }
 
-        AppendInfoLog(Seperator);
+        AppendInfoLog(Separator);
     }
 
     private static JobDataMap GetJobDataMap(IJobExecutionContext context, SequenceJobStep step)

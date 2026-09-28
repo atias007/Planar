@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using FluentValidation;
 using Planar.Common.Exceptions;
+using Planar.Service.Data;
 using Planar.Service.General;
 using System;
 using System.Text;
@@ -19,6 +20,16 @@ namespace Planar.Service.Validation
             }
 
             return any;
+        }
+
+        public static async Task<bool> ResourceExists<T>(string propertyName, string? resourceName, IResourceData resourceData, ValidationContext<T> context)
+        {
+            if (string.IsNullOrWhiteSpace(resourceName)) { return true; }
+            var exists = await resourceData.Exists(resourceName);
+            if (exists) { return true; }
+
+            context.AddFailure(propertyName, $"resource '{resourceName}' does not exist");
+            return false;
         }
 
         public static async Task<bool> FilenameExists<T>(string propertyName, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)

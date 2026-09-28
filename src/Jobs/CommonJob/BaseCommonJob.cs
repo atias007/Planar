@@ -18,7 +18,7 @@ namespace CommonJob;
 
 public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger) : IDisposable
 {
-    protected readonly string Seperator = string.Empty.PadLeft(40, '-');
+    protected readonly string Separator = string.Empty.PadLeft(40, '-');
     protected CancellationTokenSource? _executionTokenSource;
     private bool _disposed;
     private CancellationTokenSource? _durationTokenSource;
@@ -138,10 +138,10 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         if (minutes.Count > maxMonitor)
         {
             minutes = [.. minutes.Take(maxMonitor)];
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
             MessageBroker.AppendLog(LogLevel.Warning, $"this job has more then {maxMonitor} duration limit monitors");
-            MessageBroker.AppendLog(LogLevel.Warning, $"only following limits (in minutes) will be monitord: {string.Join(",", minutes.OrderBy(m => m))}");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Warning, $"only following limits (in minutes) will be monitored: {string.Join(",", minutes.OrderBy(m => m))}");
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
         }
 
         _durationTokenSource = new();
@@ -223,6 +223,18 @@ where TProperties : class, IJobProperties, new()
     protected CancellationToken ExecutionCancellationToken => _executionTokenSource?.Token ?? default;
 
     public abstract Task Execute(IJobExecutionContext context);
+
+    protected async Task<IReadOnlyDictionary<string, string>> ValidateResources(IResourceJobProperties properties, Lazy<IJobResourceDataLayer> dal)
+    {
+        if (properties.ResourceNames == null || !properties.ResourceNames.Any()) { return new Dictionary<string, string>(); }
+
+        var resources = await dal.Value.GetResources(properties.ResourceNames, ExecutionCancellationToken);
+        var missing = properties.ResourceNames.Except(resources.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+        if (missing.Count == 0) { return resources; }
+
+        var message = $"job '{GetType().FullName}' has missing resources: {string.Join(", ", missing)}";
+        throw new PlanarException(message);
+    }
 
     protected async Task FinalizeJob(IJobExecutionContext context)
     {
@@ -350,13 +362,13 @@ where TProperties : class, IJobProperties, new()
 
             var triggerId = JobHelper.GetSequenceTriggerId(context.MergedJobDataMap);
             var jobKey = JobHelper.GetSequenceJobKey(context.MergedJobDataMap);
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
             MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by sequence");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
             MessageBroker.AppendLog(LogLevel.Information, $" key: {jobKey}");
             MessageBroker.AppendLog(LogLevel.Information, $" trigger: {triggerId}");
             MessageBroker.AppendLog(LogLevel.Information, $" fire instance id: {instanceId}");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
         }
         catch (Exception ex)
         {

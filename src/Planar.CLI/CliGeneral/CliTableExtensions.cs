@@ -263,6 +263,21 @@ internal static class CliTableExtensions
         return table;
     }
 
+    public static CliTable GetTable(PagingResponse<ResourceDetails>? response)
+    {
+        var table = new CliTable(paging: response, "resource");
+        table.Table.AddColumns("Name", "Value");
+        if (response == null || response.Data == null) { return table; }
+
+        foreach (var item in response.Data)
+        {
+            if (item == null) { continue; }
+            table.Table.AddRow(item.Name, item.Value);
+        }
+
+        return table;
+    }
+
     public static CliTable GetTable(PagingResponse<JobAuditDto>? response, bool withJobId = false)
     {
         var table = new CliTable(paging: response, "audit");

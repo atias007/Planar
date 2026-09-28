@@ -110,6 +110,8 @@ internal static class DbFactory
                 services.AddScopedWithLazy<IMetricsData, MetricsDataSqlServer>();
                 services.AddScopedWithLazy<IJobData, JobDataSqlServer>();
                 services.AddScopedWithLazy<IResourceData, ResourceDataSqlServer>();
+
+                services.AddScopedWithLazy<IJobResourceDataLayer, ResourceDataSqlServer>();
                 services.AddScoped<IJobPropertyDataLayer, JobDataSqlServer>();
                 services.AddScoped<IGroupDataLayer, GroupDataSqlServer>();
                 services.AddScoped<IMonitorDurationDataLayer, MonitorDataSqlServer>();
@@ -126,6 +128,8 @@ internal static class DbFactory
                 services.AddScopedWithLazy<IMetricsData, MetricsDataSqlite>();
                 services.AddScopedWithLazy<IJobData, JobDataSqlite>();
                 services.AddScopedWithLazy<IResourceData, ResourceDataSqlite>();
+
+                services.AddScopedWithLazy<IJobResourceDataLayer, ResourceDataSqlite>();
                 services.AddScoped<IJobPropertyDataLayer, JobDataSqlite>();
                 services.AddScoped<IGroupDataLayer, GroupDataSqlite>();
                 services.AddScoped<IMonitorDurationDataLayer, MonitorDataSqlite>();
