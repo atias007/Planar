@@ -37,15 +37,13 @@ body:
 
     \    interval: 00:20:00\r
 
-    \    misfire behaviour: FireNow\r
+    \    misfire behavior: FireNow\r
 
     \  - name: default_trigger3\r
 
     \    interval: 5:00:00\r
 
-    \    misfire behaviour: FireNow\r
-
-    \    "
+    \    misfire behavior: FireNow\r\n"
 auth:
   type: noauth
 scripts:

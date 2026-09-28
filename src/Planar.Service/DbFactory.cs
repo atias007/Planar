@@ -70,11 +70,11 @@ internal static class DbFactory
         switch (AppSettings.Database.ProviderName)
         {
             case DbProviders.SqlServer:
-                services.AddTransientWithLazy<IMonitorData, MonitorDataSqlServer>();
+                services.AddScopedWithLazy<IMonitorData, MonitorDataSqlServer>();
                 break;
 
             case DbProviders.Sqlite:
-                services.AddTransientWithLazy<IMonitorData, MonitorDataSqlite>();
+                services.AddScopedWithLazy<IMonitorData, MonitorDataSqlite>();
                 break;
         }
 
@@ -88,33 +88,35 @@ internal static class DbFactory
         switch (AppSettings.Database.ProviderName)
         {
             case DbProviders.SqlServer:
-                services.AddTransientWithLazy<IUserData, UserDataSqlServer>();
-                services.AddTransientWithLazy<IGroupData, GroupDataSqlServer>();
-                services.AddTransientWithLazy<IConfigData, ConfigDataSqlServer>();
-                services.AddTransientWithLazy<IClusterData, ClusterDataSqlServer>();
-                services.AddTransientWithLazy<IHistoryData, HistoryDataSqlServer>();
-                services.AddTransientWithLazy<ITraceData, TraceDataSqlServer>();
-                services.AddTransientWithLazy<IServiceData, ServiceDataSqlServer>();
-                services.AddTransientWithLazy<IMetricsData, MetricsDataSqlServer>();
-                services.AddTransientWithLazy<IJobData, JobDataSqlServer>();
-                services.AddTransient<IJobPropertyDataLayer, JobDataSqlServer>();
-                services.AddTransient<IGroupDataLayer, GroupDataSqlServer>();
-                services.AddTransient<IMonitorDurationDataLayer, MonitorDataSqlServer>();
+                services.AddScopedWithLazy<IUserData, UserDataSqlServer>();
+                services.AddScopedWithLazy<IGroupData, GroupDataSqlServer>();
+                services.AddScopedWithLazy<IConfigData, ConfigDataSqlServer>();
+                services.AddScopedWithLazy<IClusterData, ClusterDataSqlServer>();
+                services.AddScopedWithLazy<IHistoryData, HistoryDataSqlServer>();
+                services.AddScopedWithLazy<ITraceData, TraceDataSqlServer>();
+                services.AddScopedWithLazy<IServiceData, ServiceDataSqlServer>();
+                services.AddScopedWithLazy<IMetricsData, MetricsDataSqlServer>();
+                services.AddScopedWithLazy<IJobData, JobDataSqlServer>();
+                services.AddScopedWithLazy<IResourceData, ResourceDataSqlServer>();
+                services.AddScoped<IJobPropertyDataLayer, JobDataSqlServer>();
+                services.AddScoped<IGroupDataLayer, GroupDataSqlServer>();
+                services.AddScoped<IMonitorDurationDataLayer, MonitorDataSqlServer>();
                 break;
 
             case DbProviders.Sqlite:
-                services.AddTransientWithLazy<IUserData, UserDataSqlite>();
-                services.AddTransientWithLazy<IGroupData, GroupDataSqlite>();
-                services.AddTransientWithLazy<IConfigData, ConfigDataSqlite>();
-                services.AddTransientWithLazy<IClusterData, ClusterDataSqlite>();
-                services.AddTransientWithLazy<IHistoryData, HistoryDataSqlite>();
-                services.AddTransientWithLazy<ITraceData, TraceDataSqlite>();
-                services.AddTransientWithLazy<IServiceData, ServiceDataSqlite>();
-                services.AddTransientWithLazy<IMetricsData, MetricsDataSqlite>();
-                services.AddTransientWithLazy<IJobData, JobDataSqlite>();
-                services.AddTransient<IJobPropertyDataLayer, JobDataSqlite>();
-                services.AddTransient<IGroupDataLayer, GroupDataSqlite>();
-                services.AddTransient<IMonitorDurationDataLayer, MonitorDataSqlite>();
+                services.AddScopedWithLazy<IUserData, UserDataSqlite>();
+                services.AddScopedWithLazy<IGroupData, GroupDataSqlite>();
+                services.AddScopedWithLazy<IConfigData, ConfigDataSqlite>();
+                services.AddScopedWithLazy<IClusterData, ClusterDataSqlite>();
+                services.AddScopedWithLazy<IHistoryData, HistoryDataSqlite>();
+                services.AddScopedWithLazy<ITraceData, TraceDataSqlite>();
+                services.AddScopedWithLazy<IServiceData, ServiceDataSqlite>();
+                services.AddScopedWithLazy<IMetricsData, MetricsDataSqlite>();
+                services.AddScopedWithLazy<IJobData, JobDataSqlite>();
+                services.AddScopedWithLazy<IResourceData, ResourceDataSqlite>();
+                services.AddScoped<IJobPropertyDataLayer, JobDataSqlite>();
+                services.AddScoped<IGroupDataLayer, GroupDataSqlite>();
+                services.AddScoped<IMonitorDurationDataLayer, MonitorDataSqlite>();
                 break;
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ public interface IBaseDataLayer
     Task<int> SaveChangesAsync();
 
     Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess);
+
+    bool IsDuplicateKey(DbUpdateException ex);
 }
 
 public abstract class BaseDataLayer(PlanarContext context) : IBaseDataLayer
@@ -29,6 +32,10 @@ public abstract class BaseDataLayer(PlanarContext context) : IBaseDataLayer
     }
 
     public DbConnection DbConnection => _context.Database.GetDbConnection();
+
+    // 2627 = PK / unique constraint violation, 2601 = unique index violation
+    public bool IsDuplicateKey(DbUpdateException ex) =>
+        ex.InnerException is SqlException { Number: 2627 or 2601 };
 }
 
 public abstract class BaseTraceDataLayer(PlanarTraceContext context) : IBaseDataLayer
@@ -46,4 +53,7 @@ public abstract class BaseTraceDataLayer(PlanarTraceContext context) : IBaseData
     }
 
     public DbConnection DbConnection => _context.Database.GetDbConnection();
+
+    public bool IsDuplicateKey(DbUpdateException ex) =>
+       ex.InnerException is SqlException { Number: 2627 or 2601 };
 }

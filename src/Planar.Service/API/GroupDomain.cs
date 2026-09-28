@@ -278,8 +278,9 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         var requests = await GetApplyEntities<ApplyGroupRequest>(yamls, kind, cancellationToken);
 
         // Validation
-        ValidateDuplicateRequests(requests);
+        ValidateDuplicateApplyRequests(requests, r => r.Name, kind, "name");
         await ValidateUserNamesExists(requests);
+        ValidateDuplicateUsers(requests);
 
         // Apply changes
         var response = await ApplyChanges(requests);
@@ -433,31 +434,20 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
     }
 
-    private static void ValidateDuplicateRequests(IEnumerable<ApplyGroupRequest> requests)
+    private static void ValidateDuplicateUsers(IEnumerable<ApplyGroupRequest> requests)
     {
-        var query = requests
-            .GroupBy(r => r.Name)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .FirstOrDefault();
-
-        if (query != null)
-        {
-            throw new RestValidationException("duplicate request", $"duplicate group request for group name '{query}'");
-        }
-
         foreach (var item in requests)
         {
-            query = item.Users
-            .GroupBy(r => r)
+            var query = item.Users
+            .GroupBy(u => u)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
-            .FirstOrDefault();
+            .ToList();
 
-            if (query != null)
-            {
-                throw new RestValidationException("duplicate username", $"duplicate user '{query}' at group name '{item.Name}'");
-            }
+            if (query.Count == 0) { continue; }
+
+            var names = string.Join(", ", query.Select(q => $"'{q}'"));
+            throw new RestValidationException("duplicate users", $"duplicate users in group '{item.Name}' definition. usernames: {names}");
         }
     }
 

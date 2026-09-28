@@ -37,7 +37,8 @@ public static class DatabaseMigrationInitializer
 
     public static async Task FixPlanarJobPropertiesForV182(IServiceProvider provider)
     {
-        var dal = provider.GetRequiredService<IJobData>();
+        await using var scope = provider.CreateAsyncScope();
+        var dal = scope.ServiceProvider.GetRequiredService<IJobData>();
 
         var items = await dal.GetAllPropertiesForFixVersion182();
         var logger = provider.GetRequiredService<ILogger<IDatabaseMigrationInitializerLogger>>();
@@ -89,7 +90,8 @@ public static class DatabaseMigrationInitializer
     {
         try
         {
-            var dal = provider.GetRequiredService<IJobData>();
+            await using var scope = provider.CreateAsyncScope();
+            var dal = scope.ServiceProvider.GetRequiredService<IJobData>();
             var ids = await dal.GetUnknownJobProperties();
             if (!ids.Any()) { return; }
 

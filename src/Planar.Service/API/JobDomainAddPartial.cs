@@ -328,9 +328,9 @@ public partial class JobDomain
             the_trigger = the_trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
         }
 
-        if (!string.IsNullOrWhiteSpace(jobTrigger.PreferedNode))
+        if (!string.IsNullOrWhiteSpace(jobTrigger.PreferredNode))
         {
-            the_trigger = the_trigger.WithPreferredNode(jobTrigger.PreferedNode);
+            the_trigger = the_trigger.WithPreferredNode(jobTrigger.PreferredNode);
         }
 
         return the_trigger;
@@ -393,7 +393,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            throw new RestGeneralException($"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
+            throw new RestGeneralException($"fail to get type {job.JobType} from assembly {assembly.FullName} ({ex.Message})");
         }
     }
 
@@ -460,7 +460,7 @@ public partial class JobDomain
 
         #region Trim
 
-        metadata.Name = metadata.Name.SafeTrim();
+        metadata.Name = metadata.Name.SafeTrim() ?? string.Empty;
         metadata.Group = metadata.Group.SafeTrim();
         metadata.Description = metadata.Description.SafeTrim();
         metadata.JobType = metadata.JobType.SafeTrim();
@@ -632,21 +632,21 @@ public partial class JobDomain
         }
     }
 
-    private static void ValidateTriggerPreferedNode(TriggerPool pool)
+    private static void ValidateTriggerPreferredNode(TriggerPool pool)
     {
         foreach (var t in pool.Triggers)
         {
-            if (string.IsNullOrWhiteSpace(t.PreferedNode))
+            if (string.IsNullOrWhiteSpace(t.PreferredNode))
             {
-                t.PreferedNode = null;
+                t.PreferredNode = null;
                 continue;
             }
 
-            t.PreferedNode = t.PreferedNode.Trim();
-            if (t.PreferedNode == "*") { continue; }
-            if (!Common.Validation.ValidationUtil.IsValidNodeInstanceId(t.PreferedNode))
+            t.PreferredNode = t.PreferredNode.Trim();
+            if (t.PreferredNode == "*") { continue; }
+            if (!Common.Validation.ValidationUtil.IsValidNodeInstanceId(t.PreferredNode))
             {
-                throw new RestValidationException(nameof(t.PreferedNode), $"prefered node '{t.PreferedNode}' is not valid. must be 3 to 50 characters. valid values are: a-z, A-Z, 0-9, -, _");
+                throw new RestValidationException(nameof(t.PreferredNode), $"preferred node '{t.PreferredNode}' is not valid. must be 3 to 50 characters. valid values are: a-z, A-Z, 0-9, -, _");
             }
         }
     }
@@ -679,7 +679,7 @@ public partial class JobDomain
         ValidateCronExpression(container);
         ValidateTriggerMisfireBehavior(container);
         ValidateTriggerCalendar(pool, scheduler);
-        ValidateTriggerPreferedNode(pool);
+        ValidateTriggerPreferredNode(pool);
     }
 
     private static void ValidateTriggerMisfireBehavior(ITriggersContainer container)

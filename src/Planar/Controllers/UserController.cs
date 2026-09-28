@@ -98,6 +98,7 @@ public class UserController(UserDomain bl) : BaseController<UserDomain>(bl)
     [EndpointDescription("Get all users")]
     [EndpointSummary("Get All Users")]
     [OkJsonResponse(typeof(PagingResponse<UserRowModel>))]
+    [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<UserRowModel>>> GetAll([FromQuery] PagingRequest request)
     {
         var result = await BusinesLayer.GetAll(request);

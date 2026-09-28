@@ -139,7 +139,8 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
 
     private async Task<int> FillAnomaly(IServiceProvider serviceProvider)
     {
-        var data = serviceProvider.GetRequiredService<IMetricsData>();
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
         var logsQuery = data.GetNullAnomaly();
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MetricsProfile>(), LoggerFactory.Create(b => b.AddConsole()));
         var mapper = config.CreateMapper();

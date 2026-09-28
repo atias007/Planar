@@ -294,7 +294,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     public async Task<PagingResponse<MonitorAlertRowModel>> GetMonitorsAlerts(GetMonitorsAlertsRequest request)
     {
         var query = DataLayer.GetMonitorAlerts(request);
-        var data = await query.ProjectToWithPagingAsyc<MonitorAlert, MonitorAlertRowModel>(Mapper, request);
+        var data = await query.ProjectToWithPagingAsync<MonitorAlert, MonitorAlertRowModel>(Mapper, request);
         var result = new PagingResponse<MonitorAlertRowModel>(data);
         return result;
     }

@@ -30,7 +30,7 @@ public static class DataExtensions
             .Take(size);
     }
 
-    public static async Task<PagingResponse<TDestination>> ProjectToWithPagingAsyc<TSource, TDestination>
+    public static async Task<PagingResponse<TDestination>> ProjectToWithPagingAsync<TSource, TDestination>
         (this IQueryable<TSource> source, IMapper mapper, IPagingRequest pagingRequest)
         where TDestination : class
     {

@@ -38,7 +38,7 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     public async Task<PagingResponse<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
     {
         var query = DataLayer.GetHistory(request);
-        var data = await query.ProjectToWithPagingAsyc<JobInstanceLog, JobInstanceLogRow>(Mapper, request);
+        var data = await query.ProjectToWithPagingAsync<JobInstanceLog, JobInstanceLogRow>(Mapper, request);
         var result = new PagingResponse<JobInstanceLogRow>(data);
         return result;
     }

@@ -68,6 +68,7 @@ public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
     [EndpointDescription("Get all groups")]
     [EndpointSummary("Get All Groups")]
     [OkJsonResponse(typeof(PagingResponse<GroupInfo>))]
+    [BadRequestResponse]
     public async Task<ActionResult<PagingResponse<GroupInfo>>> GetAllGroups([FromQuery] PagingRequest request)
     {
         var result = await BusinesLayer.GetAllGroups(request);

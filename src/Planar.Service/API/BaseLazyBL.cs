@@ -4,7 +4,7 @@ using System;
 
 namespace Planar.Service.API;
 
-public abstract class BaseLazyBL<TBusinesLayer, TDataLayer>(IServiceProvider serviceProvider) : BaseBL<TBusinesLayer>(serviceProvider)
+public abstract class BaseLazyBL<TBusinessLayer, TDataLayer>(IServiceProvider serviceProvider) : BaseBL<TBusinessLayer>(serviceProvider)
     where TDataLayer : IBaseDataLayer
 {
     private readonly Lazy<TDataLayer> _dataLayer = serviceProvider.GetRequiredService<Lazy<TDataLayer>>();

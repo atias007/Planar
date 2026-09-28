@@ -85,7 +85,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
     public async Task<PagingResponse<UserRowModel>> GetAll(IPagingRequest request)
     {
         var query = DataLayer.GetUsers();
-        var result = await query.ProjectToWithPagingAsyc<User, UserRowModel>(Mapper, request);
+        var result = await query.ProjectToWithPagingAsync<User, UserRowModel>(Mapper, request);
         return result;
     }
 
@@ -192,8 +192,8 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         var password_requests = await GetApplyEntities<ApplyPasswordRequest>(pass_yaml, kind_pass, cancellationToken, withValidation: true);
 
         // Validation
-        ValidateDuplicateRequests(user_requests);
-        ValidateDuplicateRequests(password_requests);
+        ValidateDuplicateApplyRequests(user_requests, r => r.Username, kind, "username");
+        ValidateDuplicateApplyRequests(password_requests, r => r.Username, kind_pass, "username");
 
         // Apply changes
         var user_response = await ApplyChanges(user_requests);
@@ -306,34 +306,6 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             var message = success ? $"password for user '{request.Username}' was updated" : $"password for user '{request.Username}' was not changed";
             var action = success ? ApplyAction.Update : ApplyAction.Unchanged;
             return new ApplyResponseItem(request.Username, action, message, Manifest.UserPassword, request.Source);
-        }
-    }
-
-    private static void ValidateDuplicateRequests(IEnumerable<ApplyUserRequest> requests)
-    {
-        var query = requests
-            .GroupBy(r => r.Username)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .FirstOrDefault();
-
-        if (query != null)
-        {
-            throw new RestValidationException("duplicate request", $"duplicate user request for username '{query}'");
-        }
-    }
-
-    private static void ValidateDuplicateRequests(IEnumerable<ApplyPasswordRequest> requests)
-    {
-        var query = requests
-            .GroupBy(r => r.Username)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .FirstOrDefault();
-
-        if (query != null)
-        {
-            throw new RestValidationException("duplicate request", $"duplicate user password request for username '{query}'");
         }
     }
 
