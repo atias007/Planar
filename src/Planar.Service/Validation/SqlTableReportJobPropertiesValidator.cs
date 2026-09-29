@@ -18,6 +18,7 @@ public class SqlTableReportJobPropertiesValidator : AbstractValidator<SqlTableRe
         this.scopeFactory = scopeFactory;
 
         RuleFor(s => s.ConnectionName)
+            .NotEmpty()
             .Length(3, 50)
             .WithMessage(e => $"the length of 'connection name' must be between 3 and 50 characters. You entered {e.ConnectionName?.Length ?? 0} characters");
 
