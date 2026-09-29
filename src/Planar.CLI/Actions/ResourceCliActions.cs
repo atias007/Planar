@@ -28,8 +28,8 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
     public static async Task<CliActionResponse> LoadResourceFile(CliLoadResourceFileRequest request, CancellationToken cancellationToken = default)
     {
         request ??= new CliLoadResourceFileRequest();
-        FillRequiredString(request, nameof(request.Name));
-        FillRequiredString(request, nameof(request.File));
+        FillRequiredString(request, nameof(request.Name), 1, 100);
+        FillRequiredFilename(request, nameof(request.File), allowFolder: false);
         return await LoadResource(request, cancellationToken);
     }
 
@@ -52,7 +52,7 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
 
     [Action("ls")]
     [Action("list")]
-public static async Task<CliActionResponse> GetResources(CliPagingRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetResources(CliPagingRequest request, CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest(c_resource, Method.Get)
             .AddQueryPagingParameter(request);

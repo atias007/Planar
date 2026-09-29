@@ -634,7 +634,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             Id = await ChooseJob(null, false, writeSelection: true, cancellationToken)
         };
 
-        FillRequiredString(request, nameof(request.Author));
+        FillRequiredString(request, nameof(request.Author), 1, 100);
 
         var restRequest = new RestRequest("job/author", Method.Patch)
             .AddBody(request);

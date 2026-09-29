@@ -114,7 +114,7 @@ public class TriggerCliActions : BaseCliAction<TriggerCliActions>
     [Action("set-cronexpr")]
     public static async Task<CliActionResponse> UpdateCron(CliUpdateCronRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.CronExpression));
+        FillRequiredString(request, nameof(request.CronExpression), 1, 50);
         var restRequest = new RestRequest("trigger/cron-expression", Method.Patch)
             .AddBody(request);
 
@@ -154,7 +154,7 @@ public class TriggerCliActions : BaseCliAction<TriggerCliActions>
     [Action("cronexpr")]
     public static async Task<CliActionResponse> GetCronExpression(CliCronExpression request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Expression));
+        FillRequiredString(request, nameof(request.Expression), 1, 50);
 
         var restRequest = new RestRequest("trigger/cron", Method.Get)
             .AddQueryParameter("expression", request.Expression);

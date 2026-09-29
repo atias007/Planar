@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -134,11 +135,11 @@ public abstract class BaseCliAction
 
     protected static void ValidateTextFile(string filename, int maxSizeBytes = 1024 * 1000)
     {
-        var valid = IsProbablyText(filename);
+        var valid = IsProbablyText(filename, maxSizeBytes);
 
         if (!valid)
         {
-            throw new CliException($"file '{filename}' is not a valid simple text format (binary file)");
+            throw new CliException($"file '{filename}' is not a valid simple text format (file is binary)");
         }
     }
 
@@ -236,10 +237,10 @@ public abstract class BaseCliAction
         info.SetValue(entity, result);
     }
 
-    protected static void FillOptionalString<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+    protected static void FillOptionalString<T>(T entity, string propertyName, int maxValue, string? defaultValue = null, bool secret = false)
         where T : class
     {
-        var tuple = CollectText(entity, propertyName, false, -1, defaultValue, secret);
+        var tuple = CollectText(entity, propertyName, false, -1, maxValue, defaultValue, secret);
         if (tuple.Item1)
         {
             if (string.IsNullOrWhiteSpace(tuple.Item2)) { tuple.Item2 = null; }
@@ -247,20 +248,80 @@ public abstract class BaseCliAction
         }
     }
 
-    protected static void FillRequiredString<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+    protected static void FillRequiredString<T>(T entity, string propertyName, int minValue, int maxValue, string? defaultValue = null, bool secret = false)
         where T : class
     {
-        var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret);
+        var tuple = CollectText(entity, propertyName, true, minValue, maxValue, defaultValue, secret);
         if (tuple.Item1)
         {
             tuple.Item3.SetValue(entity, tuple.Item2);
         }
     }
 
+    protected static void FillRequiredFilename<T>(T entity, string propertyName, bool allowFolder, params string[] allowedExtensions)
+        where T : class
+    {
+        var tuple = CollectText(entity, propertyName,
+            required: true,
+            minLength: 1,
+            maxLength: 500,
+            defaultValue: null,
+            secret: false,
+            validation: (value) => ValidateFile(value, allowFolder, allowedExtensions));
+
+        if (tuple.Item1)
+        {
+            tuple.Item3.SetValue(entity, tuple.Item2);
+        }
+
+        static ValidationResult ValidateFile(string value, bool allowFolder, string[] allowedExtensions)
+        {
+            string path;
+            try
+            {
+                path = NormalizePath(value);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return GetValidationResultError("invalid path format");
+            }
+
+            if (!allowFolder && Directory.Exists(path))
+            {
+                return GetValidationResultError("that's a directory, not a file");
+            }
+
+            if (!File.Exists(path))
+            {
+                return GetValidationResultError($"file not found: {Markup.Escape(path)}");
+            }
+
+            if (allowedExtensions.Length > 0 &&
+                !allowedExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+            {
+                return GetValidationResultError($"expected: {string.Join(", ", allowedExtensions)}");
+            }
+
+            return ValidationResult.Success();
+        }
+
+        static string NormalizePath(string input)
+        {
+            var p = input.Trim().Trim('"', '\'');
+            p = Environment.ExpandEnvironmentVariables(p); // %USERPROFILE%\...
+            if (p.StartsWith('~'))
+            {
+                p = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), p[1..].TrimStart('/', '\\'));
+            }
+
+            return Path.GetFullPath(p); // resolves relative paths
+        }
+    }
+
     protected static void FillRequiredInt<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
         where T : class
     {
-        var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret,
+        var tuple = CollectText(entity, propertyName, true, 1, 10, defaultValue, secret,
             v =>
             {
                 if (!int.TryParse(v, out _))
@@ -281,7 +342,7 @@ public abstract class BaseCliAction
     protected static void FillRequiredLong<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
         where T : class
     {
-        var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret,
+        var tuple = CollectText(entity, propertyName, true, 1, 25, defaultValue, secret,
             v =>
             {
                 if (!long.TryParse(v, out _))
@@ -302,7 +363,7 @@ public abstract class BaseCliAction
     protected static void FillRequiredTimeSpan<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
         where T : class
     {
-        var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret,
+        var tuple = CollectText(entity, propertyName, true, 1, 20, defaultValue, secret,
             v =>
             {
                 if (!TimeSpan.TryParse(v, CultureInfo.CurrentCulture, out _))
@@ -320,7 +381,7 @@ public abstract class BaseCliAction
         }
     }
 
-    private static (bool, string?, PropertyInfo) CollectText<T>(T entity, string propertyName, bool required, int minLength, string? defaultValue, bool secret, Func<string, ValidationResult>? validation = null)
+    private static (bool, string?, PropertyInfo) CollectText<T>(T entity, string propertyName, bool required, int minLength, int maxLength, string? defaultValue, bool secret, Func<string, ValidationResult>? validation = null)
     where T : class
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
@@ -339,7 +400,7 @@ public abstract class BaseCliAction
                 Field = displayName.ToLower(),
                 Required = required,
                 MinLength = minLength,
-                MaxLength = int.MaxValue,
+                MaxLength = maxLength,
                 DefaultValue = defaultValue,
                 Secret = secret,
                 Validation = validation

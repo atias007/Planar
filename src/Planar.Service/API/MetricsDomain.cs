@@ -30,7 +30,7 @@ public class MetricsDomain(IServiceProvider serviceProvider) : BaseJobBL<Metrics
         using var scope3 = ServiceProvider.CreateScope();
         var query1 = scope1.ServiceProvider.GetRequiredService<IMetricsData>().GetJobDurationStatistics(id!);
         var query2 = scope2.ServiceProvider.GetRequiredService<IMetricsData>().GetJobEffectedRowsStatistics(id!);
-        var s3 = scope2.ServiceProvider.GetRequiredService<IMetricsData>().GetJobCounters(id!);
+        var s3 = scope3.ServiceProvider.GetRequiredService<IMetricsData>().GetJobCounters(id!);
 
         var s1 = Mapper.ProjectTo<JobDurationStatisticDto>(query1).FirstOrDefaultAsync();
         var s2 = Mapper.ProjectTo<JobEffectedRowsStatisticDto>(query2).FirstOrDefaultAsync();

@@ -116,12 +116,12 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
         var detailsResponse = await RestProxy.Invoke<GroupDetails>(restRequest, cancellationToken);
         var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : new GroupDetails();
 
-        FillOptionalString(request, nameof(request.Name), defaultValue: details.Name);
-        FillOptionalString(request, nameof(request.AdditionalField1), defaultValue: details.AdditionalField1);
-        FillOptionalString(request, nameof(request.AdditionalField2), defaultValue: details.AdditionalField2);
-        FillOptionalString(request, nameof(request.AdditionalField3), defaultValue: details.AdditionalField3);
-        FillOptionalString(request, nameof(request.AdditionalField4), defaultValue: details.AdditionalField4);
-        FillOptionalString(request, nameof(request.AdditionalField5), defaultValue: details.AdditionalField5);
+        FillOptionalString(request, nameof(request.Name), 50, defaultValue: details.Name);
+        FillOptionalString(request, nameof(request.AdditionalField1), 1_000, defaultValue: details.AdditionalField1);
+        FillOptionalString(request, nameof(request.AdditionalField2), 1_000, defaultValue: details.AdditionalField2);
+        FillOptionalString(request, nameof(request.AdditionalField3), 1_000, defaultValue: details.AdditionalField3);
+        FillOptionalString(request, nameof(request.AdditionalField4), 1_000, defaultValue: details.AdditionalField4);
+        FillOptionalString(request, nameof(request.AdditionalField5), 1_000, defaultValue: details.AdditionalField5);
 
         var body = new
         {
@@ -220,7 +220,7 @@ public class GroupCliActions : BaseCliAction<GroupCliActions>
         return CliPromptWrapper.Success;
     }
 
-    private static async Task<CliPromptWrapper> FillGetRequest(ICliByNameRequest request, CancellationToken cancellationToken)
+    private static async Task<CliPromptWrapper> FillGetRequest(CliByNameRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {

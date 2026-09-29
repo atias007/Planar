@@ -159,24 +159,24 @@ public class UserCliActions : BaseCliAction<UserCliActions>
         var details = detailsResponse.IsSuccessful && detailsResponse.Data != null ? detailsResponse.Data : null;
         if (details == null) { return new CliActionResponse(detailsResponse); }
 
-        FillOptionalString(request, nameof(request.Username), defaultValue: details.Username);
+        FillOptionalString(request, nameof(request.Username), 50, defaultValue: details.Username);
 
-        FillOptionalString(request, nameof(request.FirstName), defaultValue: details.FirstName);
-        FillOptionalString(request, nameof(request.LastName), defaultValue: details.LastName);
+        FillOptionalString(request, nameof(request.FirstName), 50, defaultValue: details.FirstName);
+        FillOptionalString(request, nameof(request.LastName), 50, defaultValue: details.LastName);
 
-        FillOptionalString(request, nameof(request.PhoneNumber1), defaultValue: details.PhoneNumber1);
-        FillOptionalString(request, nameof(request.PhoneNumber2), defaultValue: details.PhoneNumber2);
-        FillOptionalString(request, nameof(request.PhoneNumber3), defaultValue: details.PhoneNumber3);
+        FillOptionalString(request, nameof(request.PhoneNumber1), 50, defaultValue: details.PhoneNumber1);
+        FillOptionalString(request, nameof(request.PhoneNumber2), 50, defaultValue: details.PhoneNumber2);
+        FillOptionalString(request, nameof(request.PhoneNumber3), 50, defaultValue: details.PhoneNumber3);
 
-        FillOptionalString(request, nameof(request.EmailAddress1), defaultValue: details.EmailAddress1);
-        FillOptionalString(request, nameof(request.EmailAddress2), defaultValue: details.EmailAddress2);
-        FillOptionalString(request, nameof(request.EmailAddress3), defaultValue: details.EmailAddress3);
+        FillOptionalString(request, nameof(request.EmailAddress1), 250, defaultValue: details.EmailAddress1);
+        FillOptionalString(request, nameof(request.EmailAddress2), 250, defaultValue: details.EmailAddress2);
+        FillOptionalString(request, nameof(request.EmailAddress3), 250, defaultValue: details.EmailAddress3);
 
-        FillOptionalString(request, nameof(request.AdditionalField1), defaultValue: details.AdditionalField1);
-        FillOptionalString(request, nameof(request.AdditionalField2), defaultValue: details.AdditionalField2);
-        FillOptionalString(request, nameof(request.AdditionalField3), defaultValue: details.AdditionalField3);
-        FillOptionalString(request, nameof(request.AdditionalField4), defaultValue: details.AdditionalField4);
-        FillOptionalString(request, nameof(request.AdditionalField5), defaultValue: details.AdditionalField5);
+        FillOptionalString(request, nameof(request.AdditionalField1), 500, defaultValue: details.AdditionalField1);
+        FillOptionalString(request, nameof(request.AdditionalField2), 500, defaultValue: details.AdditionalField2);
+        FillOptionalString(request, nameof(request.AdditionalField3), 500, defaultValue: details.AdditionalField3);
+        FillOptionalString(request, nameof(request.AdditionalField4), 500, defaultValue: details.AdditionalField4);
+        FillOptionalString(request, nameof(request.AdditionalField5), 500, defaultValue: details.AdditionalField5);
 
         var body = new
         {

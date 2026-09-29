@@ -72,7 +72,7 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     [Action("get")]
     public static async Task<CliActionResponse> GetHistoryById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Id));
+        FillRequiredString(request, nameof(request.Id), 1, 50);
         if (IsOnlyDigits(request.Id))
         {
             return await GetHistoryById(request.Id, cancellationToken);

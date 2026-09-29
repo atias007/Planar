@@ -4,6 +4,7 @@ using Planar.Common;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
@@ -50,6 +51,16 @@ public class MonitorProfile : Profile
         };
 
         return item;
+    }
+
+    public static List<MonitorItem> ToMonitorItems(IEnumerable<MonitorAction> actions)
+    {
+        var items = new List<MonitorItem>();
+        foreach (var action in actions)
+        {
+            items.Add(ToMonitorItem(action));
+        }
+        return items;
     }
 
     public static void SetMonitorAction(MonitorAction action, ApplyMonitorRequest request)

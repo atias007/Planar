@@ -251,7 +251,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         var jobKey = await JobKeyHelper.GetJobKey(jobId);
         if (jobKey == null) { return []; }
         var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
-        var result = Mapper.Map<List<MonitorItem>>(items);
+        var result = MonitorProfile.ToMonitorItems(items);
         return result;
     }
 
@@ -279,7 +279,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
 
         var items = await DataLayer.GetMonitorActionsByGroup(group);
-        var result = Mapper.Map<List<MonitorItem>>(items);
+        var result = MonitorProfile.ToMonitorItems(items);
         return result;
     }
 

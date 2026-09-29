@@ -121,8 +121,8 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     [Action("load-json")]
     public static async Task<CliActionResponse> LoadJson(CliConfigFileRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Key));
-        FillRequiredString(request, nameof(request.Filename));
+        FillRequiredString(request, nameof(request.Key), 3, 50);
+        FillRequiredString(request, nameof(request.Filename), 1, 500);
 
         return await LoadConfig(request, GlobalConfigTypes.Json, cancellationToken);
     }
@@ -130,8 +130,8 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     [Action("load-yml")]
     public static async Task<CliActionResponse> LoadYml(CliConfigFileRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Key));
-        FillRequiredString(request, nameof(request.Filename));
+        FillRequiredString(request, nameof(request.Key), 3, 50);
+        FillRequiredString(request, nameof(request.Filename), 1, 500);
 
         return await LoadConfig(request, GlobalConfigTypes.Yml, cancellationToken);
     }
@@ -185,12 +185,12 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         if (string.IsNullOrWhiteSpace(request.Key))
         {
-            FillRequiredString(request, nameof(request.Key));
+            FillRequiredString(request, nameof(request.Key), 3, 50);
         }
 
         if (string.IsNullOrWhiteSpace(request.Value))
         {
-            FillOptionalString(request, nameof(request.Value));
+            FillOptionalString(request, nameof(request.Value), 4_000);
         }
 
         if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
@@ -202,12 +202,12 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         if (string.IsNullOrWhiteSpace(request.Key))
         {
-            FillRequiredString(request, nameof(request.Key));
+            FillRequiredString(request, nameof(request.Key), 3, 50);
         }
 
         if (string.IsNullOrWhiteSpace(request.SourceUrl))
         {
-            FillOptionalString(request, nameof(request.SourceUrl));
+            FillOptionalString(request, nameof(request.SourceUrl), 1_000);
         }
 
         if (string.IsNullOrWhiteSpace(request.SourceUrl)) { request.SourceUrl = null; }
@@ -242,14 +242,14 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
             {
                 var currentValue = result.Data.Value ?? string.Empty;
                 var defaultValue = currentValue.Length > 50 ? currentValue[..50] : currentValue;
-                FillRequiredString(request, nameof(request.Value), defaultValue);
+                FillRequiredString(request, nameof(request.Value), 1, 4_000, defaultValue);
             }
         }
         else // this is url config
         {
             if (string.IsNullOrWhiteSpace(request.SourceUrl))
             {
-                FillRequiredString(request, nameof(request.SourceUrl));
+                FillRequiredString(request, nameof(request.SourceUrl), 1, 1_000);
             }
         }
 

@@ -20,7 +20,7 @@ properties:                                   # Job Properties
       query resource: step1.sql               # Resource name contains the sql script [1 to 100 characters]
       connection name: <name>                 # 'global config' key contains the connection string to sql server database [mandatory if any step has no connection string, 3 to 50 characters]
       timeout: 00:00:30                       # Timeout span for step. The default is 30 seconds
-      effected rows source: default           # Source of effected rows count [default | scalar | none
+      effected rows source: default           # Source of effected rows count [default | scalar | none]
       log result set: false                   # Boolean [true/false]. Log the result set of the script execution. The default is false
     - name: Step2
       query resource: step2.sql

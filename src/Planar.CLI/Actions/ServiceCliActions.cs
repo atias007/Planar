@@ -106,7 +106,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("health-check")]
     public static async Task<CliActionResponse> HealthCheck(CancellationToken cancellationToken = default)
     {
-        const string seperator = "-------------------";
+        const string separator = "-------------------";
         var restRequest = new RestRequest("service/health-check", Method.Get);
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         var content = result.Content ?? string.Empty;
@@ -115,11 +115,11 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
         {
             if (result.IsSuccessful)
             {
-                AnsiConsole.MarkupLine($"[green]{seperator}\r\nplanar is healthy\r\n{seperator}[/]");
+                AnsiConsole.MarkupLine($"[green]{separator}\r\nplanar is healthy\r\n{separator}[/]");
             }
             else
             {
-                AnsiConsole.MarkupLine($"[red]{seperator}\r\nplanar is unhealthy\r\n{seperator}[/]");
+                AnsiConsole.MarkupLine($"[red]{separator}\r\nplanar is unhealthy\r\n{separator}[/]");
             }
 
             if (stringJson) { content = JsonSerializer.Deserialize<string>(content); }
@@ -352,7 +352,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("encrypt-settings")]
     public static async Task<CliActionResponse> EncryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Filename));
+        FillRequiredFilename(request, nameof(request.Filename), allowFolder: false);
         cancellationToken.ThrowIfCancellationRequested();
         var filename = request.Filename ?? string.Empty;
         var text = await File.ReadAllTextAsync(filename, cancellationToken);
@@ -372,7 +372,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     [Action("decrypt-settings")]
     public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
     {
-        FillRequiredString(request, nameof(request.Filename));
+        FillRequiredFilename(request, nameof(request.Filename), allowFolder: false);
         cancellationToken.ThrowIfCancellationRequested();
         var filename = request.Filename ?? string.Empty;
         var text = await File.ReadAllTextAsync(filename, cancellationToken);
@@ -419,7 +419,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     }
 
     [Action("manifests")]
-    public static async Task<CliActionResponse> GetAllManifets(CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetAllManifest(CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("service/manifests", Method.Get);
 
@@ -588,7 +588,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
 
     private static async Task<CliLoginRequest> FillLoginRequest()
     {
-        const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
+        const string regexTemplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
 
         var request = new CliLoginRequest();
         var savedLogin = await SelectLogin();
@@ -623,7 +623,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
                 Required = true,
                 MinLength = 1,
                 MaxLength = 5,
-                Regex = regexTepmplate,
+                Regex = regexTemplate,
                 RegexErrorMessage = "invalid port",
                 DefaultValue = ConnectUtil.DefaultPort.ToString()
             }) ?? ConnectUtil.DefaultPort.ToString());

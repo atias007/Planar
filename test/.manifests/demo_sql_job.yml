@@ -1,0 +1,49 @@
+kind: global config
+version: 1.0.0
+key: LocalPlanarDb
+value: Password=CustomsDev123!;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=localhost;Encrypt=False
+is secret: true
+---
+kind: resource
+name: demo_sql.step1
+value: SELECT TOP (1) [Name] FROM [dbo].[Groups]
+---
+kind: resource
+name: demo_sql.step2
+value: SELECT TOP (1) [InstanceId] FROM [dbo].[JobInstanceLog]
+---
+kind: resource
+name: demo_sql.step3
+value: SELECT TOP (1) [Description] FROM [dbo].[JobAudit]
+---
+kind: Job
+version: 1.0.0
+job type: SqlJob
+name: DemoSqlJob
+group: Demo
+description: Run 3 steps of sql queries
+author: tsahi atias (owner)
+durable: true
+concurrent: false
+log retention days: 7
+properties:
+  default connection name: LocalPlanarDb
+  transaction: false
+  transaction isolation level: Unspecified
+  continue on error: false
+  steps:
+    - name: Step1
+      query resource: demo_sql.step1
+      effected rows source: none
+      log result set: true
+    - name: Step2
+      query resource: demo_sql.step2
+      effected rows source: none
+      log result set: true
+    - name: Step3
+      query resource: demo_sql.step3
+      effected rows source: none
+      log result set: true
+simple triggers:
+  - name: every-10minute-trigger
+    interval: 00:10:00
