@@ -5,6 +5,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Quartz;
+using SQLitePCL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -223,6 +224,25 @@ where TProperties : class, IJobProperties, new()
     protected CancellationToken ExecutionCancellationToken => _executionTokenSource?.Token ?? default;
 
     public abstract Task Execute(IJobExecutionContext context);
+
+    protected static string? ValidateConnectionName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) { return null; }
+
+        var settingsKey = Global.GlobalConfig.Keys
+            .FirstOrDefault(k =>
+                string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase))
+            ?? throw new PlanarException($"connection string name '{name}' could not be found in global config");
+
+        var value = Global.GlobalConfig[settingsKey];
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new PlanarException($"connection string name '{name}' in global config has null or empty value");
+        }
+
+        return value;
+    }
 
     protected async Task<IReadOnlyDictionary<string, string>> ValidateResources(IResourceJobProperties properties, Lazy<IJobResourceDataLayer> dal)
     {

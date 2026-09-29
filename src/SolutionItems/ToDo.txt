@@ -445,3 +445,4 @@ V 1.8.3
 - manifest directory and api/cli
 - add new manifest: jobdata.yaml
 - add apply command to all entitys
+- resource module

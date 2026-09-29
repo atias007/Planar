@@ -9,7 +9,6 @@ using SqlTableReportJob;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Text;
 
 namespace Planar;
 
@@ -19,6 +18,7 @@ public abstract class SqlTableReportJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
     IGroupDataLayer groupData,
+    Lazy<IJobResourceDataLayer> resourceDal,
     JobMonitorUtil jobMonitorUtil,
     IClusterUtil clusterUtil) : BaseCommonJob<SqlTableReportJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
@@ -29,9 +29,10 @@ public abstract class SqlTableReportJob(
         try
         {
             await Initialize(context);
-            ValidateSqlJob();
+            var resources = await ValidateResources(Properties, resourceDal);
+            ValidateSqlTableReportJob(resources);
             _ = SafeStartMonitorDuration(context);
-            var task = Task.Run(() => Generate(context), context.CancellationToken);
+            var task = Generate(context);
             await WaitForJobTask(context, task);
             StopMonitorDuration();
         }
@@ -47,25 +48,17 @@ public abstract class SqlTableReportJob(
 
     private async Task Generate(IJobExecutionContext context)
     {
-        await Task.Yield();
-        DbConnection? connection = null;
-
-        try
         {
-            connection = new SqlConnection(Properties.ConnectionString);
+            var attendees = await GetUsers(Properties.Group);
+
+            using var connection = new SqlConnection(Properties.ConnectionString);
             MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {Properties.ConnectionName}");
             await connection.OpenAsync(ExecutionCancellationToken);
 
-            var attendees = await GetUsers(Properties.Group);
             var table = await ExecuteSql(context, Properties, connection);
             var html = GenerateHtml(Properties, table);
             html = HtmlUtil.MinifyHtml(html);
             await SendReport(html, attendees, ExecutionCancellationToken);
-        }
-        finally
-        {
-            await SafeInvoke(async () => { if (connection != null) { await connection.CloseAsync(); } });
-            await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
         }
     }
 
@@ -118,7 +111,7 @@ public abstract class SqlTableReportJob(
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
-                throw new SqlTableReportJobException("No distibution group is defined is this job");
+                throw new SqlTableReportJobException("No distribution group is defined is this job");
             }
 
             var users = await GetUsersInner(groupName);
@@ -211,14 +204,12 @@ public abstract class SqlTableReportJob(
         }
     }
 
-    // convert reader to data table
-
     private string GetScript(IJobExecutionContext context, SqlTableReportJobProperties properties)
     {
         var result = properties.Script;
         if (string.IsNullOrEmpty(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{properties.Filename}' has no content");
+            MessageBroker.AppendLog(LogLevel.Warning, $"query resource '{properties.QueryResource}' is empty");
             return string.Empty;
         }
 
@@ -235,54 +226,32 @@ public abstract class SqlTableReportJob(
 
         if (string.IsNullOrWhiteSpace(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{properties.Filename}' has no content after placeholder replace");
+            MessageBroker.AppendLog(LogLevel.Warning, $"query resource '{properties.QueryResource}' has no content after placeholder replace");
         }
 
         return result;
     }
 
-    private string? ValidateConnectionName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) { return null; }
-
-        var settingsKey = Settings.Keys
-            .FirstOrDefault(k =>
-                string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase))
-            ?? throw new SqlTableReportJobException($"connection string name '{name}' could not be found in global config");
-
-        var value = Settings[settingsKey];
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new SqlTableReportJobException($"connection string name '{name}' in global config has null or empty value");
-        }
-
-        return value;
-    }
-
-    private void ValidateSqlJob()
+    private void ValidateSqlTableReportJob(IReadOnlyDictionary<string, string> resources)
     {
         try
         {
-            ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
+            ValidateMandatoryString(Properties.ConnectionName, nameof(Properties.ConnectionName));
+            ValidateMandatoryString(Properties.QueryResource, nameof(Properties.QueryResource));
             ValidateMandatoryString(Properties.Group, nameof(Properties.Group));
+            ValidateMandatoryString(Properties.Title, nameof(Properties.Title));
             Properties.ConnectionString = ValidateConnectionName(Properties.ConnectionName);
 
-            Properties.FullFilename = FolderConsts.GetSpecialFilePath(
-                PlanarSpecialFolder.Jobs,
-                Properties.Path ?? string.Empty,
-                Properties.Filename ?? string.Empty);
-
-            if (!File.Exists(Properties.FullFilename))
+            if (!resources.TryGetValue(Properties.QueryResource ?? string.Empty, out var resource))
             {
-                throw new SqlTableReportJobException($"filename '{Properties.FullFilename}' could not be found");
+                throw new SqlTableReportJobException($"query resource '{Properties.QueryResource}' could not be found");
             }
 
-            Properties.Script = File.ReadAllText(Properties.FullFilename, encoding: Encoding.UTF8);
+            Properties.Script = resource;
         }
         catch (Exception ex)
         {
-            var source = nameof(ValidateSqlJob);
+            var source = nameof(ValidateSqlTableReportJob);
             MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw;
         }

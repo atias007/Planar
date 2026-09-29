@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
-using Planar.Service.General;
+using Microsoft.Extensions.DependencyInjection;
+using Planar.Service.Data;
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,24 +9,22 @@ namespace Planar.Service.Validation;
 
 public class SqlJobPropertiesValidator : AbstractValidator<SqlJobProperties>
 {
-    private readonly ClusterUtil _cluster;
+    private readonly IServiceScopeFactory scopeFactory;
 
-    public SqlJobPropertiesValidator(ClusterUtil cluster)
+    public SqlJobPropertiesValidator(IServiceScopeFactory scopeFactory)
     {
-        _cluster = cluster;
-
-        RuleFor(s => s.Path)
-            .NotEmpty()
-            .WithMessage("'path' must not be empty");
+        this.scopeFactory = scopeFactory;
 
         RuleFor(j => j.DefaultConnectionName)
-            .Length(1, 50)
-            .WithMessage(e => $"the length of 'default connection name' must be between 1 and 50 characters. You entered {e.DefaultConnectionName?.Length ?? 0} characters");
+            .Length(3, 50)
+            .WithMessage(e => $"the length of 'default connection name' must be between 3 and 50 characters. You entered {e.DefaultConnectionName?.Length ?? 0} characters");
 
         RuleFor(j => j.DefaultConnectionName)
             .NotEmpty()
             .When(j => j.Steps != null && j.Steps.Exists(s => string.IsNullOrWhiteSpace(s.ConnectionName)))
             .WithMessage("'default connection name' must have value when any step has no connection name");
+
+        RuleFor(j => j.DefaultConnectionName).Must(ValidateGlobalConfigExists);
 
         RuleFor(s => s.Transaction)
             .Equal(false)
@@ -53,12 +51,20 @@ public class SqlJobPropertiesValidator : AbstractValidator<SqlJobProperties>
             .When(p => string.IsNullOrWhiteSpace(p.DefaultConnectionName))
             .WithMessage("'connection name' on any step must have value when no 'default connection name' defined");
 
-        RuleForEach(j => j.Steps).MustAsync(FilenameExists);
+        RuleForEach(j => j.Steps).MustAsync(ValidateResourceExists);
     }
 
-    private async Task<bool> FilenameExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
+    private async Task<bool> ValidateResourceExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
     {
-        var fullFilename = Path.Combine(properties.Path, step.Filename ?? string.Empty);
-        return await CommonValidations.FilenameExists("filename", fullFilename, _cluster, context);
+        if (string.IsNullOrEmpty(step.QueryResource)) { return true; }
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var dal = scope.ServiceProvider.GetRequiredService<IResourceData>();
+        return await CommonValidations.ResourceExists("query resource", step.QueryResource, dal, context);
+    }
+
+    private static bool ValidateGlobalConfigExists(SqlJobProperties properties, string? value, ValidationContext<SqlJobProperties> context)
+    {
+        var result = CommonValidations.GlobalConfigExists("default connection name", value, context);
+        return result;
     }
 }

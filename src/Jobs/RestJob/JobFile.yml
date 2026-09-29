@@ -13,7 +13,7 @@ log retention days: null              # How many days the running logs will reta
 properties:                           # Job Properties
   url: http://google.com              # The url address to make rest call [mandatory, up to 1000 characters]
   method: GET                         # The http method: POST, GET, PUT, DELETE, PATCH, HEAD [mandatory]
-  body resource: body.json            # The body text resource for the request (only for POST, PUT, PATCH methods). The resource is managed by resource module
+  body resource: body.json            # Resource name contains the request body content (only for POST, PUT, PATCH methods)
   ignore ssl errors: false            # Ignore certificate error
   user agent: my.agent                # (*) Initialize the user agent header [up to 100 characters]
   follow redirects: false             # Allow client redirection 

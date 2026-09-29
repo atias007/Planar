@@ -11,7 +11,8 @@ namespace Planar;
 public class SqlJobNoConcurrent(
     ILogger<SqlJobNoConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
+    Lazy<IJobResourceDataLayer> resourceDal,
     JobMonitorUtil jobMonitorUtil,
-    IClusterUtil clusterUtil) : SqlJob(logger, dataLayer, jobMonitorUtil, clusterUtil)
+    IClusterUtil clusterUtil) : SqlJob(logger, dataLayer, resourceDal, jobMonitorUtil, clusterUtil)
 {
 }

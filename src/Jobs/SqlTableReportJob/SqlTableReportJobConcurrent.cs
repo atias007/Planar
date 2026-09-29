@@ -11,7 +11,8 @@ public class SqlTableReportJobConcurrent(
     ILogger<SqlTableReportJobConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
     IGroupDataLayer groupData,
+    Lazy<IJobResourceDataLayer> resourceDal,
     JobMonitorUtil jobMonitorUtil,
-    IClusterUtil clusterUtil) : SqlTableReportJob(logger, dataLayer, groupData, jobMonitorUtil, clusterUtil)
+    IClusterUtil clusterUtil) : SqlTableReportJob(logger, dataLayer, groupData, resourceDal, jobMonitorUtil, clusterUtil)
 {
 }

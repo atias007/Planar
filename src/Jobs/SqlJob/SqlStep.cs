@@ -14,8 +14,12 @@ public sealed class SqlStep
     [YamlMember(Alias = "connection name")]
     public string? ConnectionName { get; set; }
 
+    [YamlMember(Alias = "name")]
     public string? Name { get; set; }
-    public string? Filename { get; set; }
+
+    [YamlMember(Alias = "query resource")]
+    public string? QueryResource { get; set; }
+
     public TimeSpan? Timeout { get; set; }
 
     [YamlMember(Alias = "effected rows source")]
@@ -23,9 +27,6 @@ public sealed class SqlStep
 
     [YamlMember(Alias = "log result set")]
     public bool LogResultSet { get; set; } = false;
-
-    [YamlIgnore]
-    public string FullFilename { get; set; } = null!;
 
     [YamlIgnore]
     public string Script { get; set; } = string.Empty;
