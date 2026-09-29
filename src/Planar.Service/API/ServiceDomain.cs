@@ -28,10 +28,10 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         var yamls = await GetApplyYamls(httpContext);
 
         // Group yamls by kind
-        var yamlGroups = yamls.GroupBy(y => y.Key, StringComparer.OrdinalIgnoreCase);
+        var yamlKinds = yamls.GroupBy(y => y.Key, StringComparer.OrdinalIgnoreCase);
 
         // Validate known kinds
-        foreach (var item in yamlGroups)
+        foreach (var item in yamlKinds)
         {
             if (!Manifest.IsValid(item.Key))
             {
@@ -42,7 +42,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         var responses = new List<ApplyResponse>();
 
         // Apply Resources
-        var resources = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Resource, StringComparison.OrdinalIgnoreCase));
+        var resources = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.Resource, StringComparison.OrdinalIgnoreCase));
         if (resources != null)
         {
             var resourceDomain = ServiceProvider.GetRequiredService<ResourceDomain>();
@@ -51,7 +51,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
 
         // Apply Global Config
-        var globalConfig = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.GlobalConfig, StringComparison.OrdinalIgnoreCase));
+        var globalConfig = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.GlobalConfig, StringComparison.OrdinalIgnoreCase));
         if (globalConfig != null)
         {
             var configDomain = ServiceProvider.GetRequiredService<ConfigDomain>();
@@ -59,26 +59,8 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             responses.Add(response);
         }
 
-        // Apply Jobs
-        var jobs = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Job, StringComparison.OrdinalIgnoreCase));
-        if (jobs != null)
-        {
-            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
-            var response = await jobDomain.Apply([.. jobs], httpContext.RequestAborted);
-            responses.Add(response);
-        }
-
-        // Apply Job Data
-        var jobData = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.JobData, StringComparison.OrdinalIgnoreCase));
-        if (jobData != null)
-        {
-            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
-            var response = await jobDomain.Apply([.. jobData], httpContext.RequestAborted);
-            responses.Add(response);
-        }
-
         // Apply Users
-        var users = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.User, StringComparison.OrdinalIgnoreCase));
+        var users = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.User, StringComparison.OrdinalIgnoreCase));
         if (users != null)
         {
             var userDomain = ServiceProvider.GetRequiredService<UserDomain>();
@@ -87,7 +69,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
 
         // Apply User Passwords
-        var user_passwords = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.UserPassword, StringComparison.OrdinalIgnoreCase));
+        var user_passwords = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.UserPassword, StringComparison.OrdinalIgnoreCase));
         if (user_passwords != null)
         {
             var userDomain = ServiceProvider.GetRequiredService<UserDomain>();
@@ -96,7 +78,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         }
 
         // Apply groups
-        var groups = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Group, StringComparison.OrdinalIgnoreCase));
+        var groups = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.Group, StringComparison.OrdinalIgnoreCase));
         if (groups != null)
         {
             var groupDomain = ServiceProvider.GetRequiredService<GroupDomain>();
@@ -104,8 +86,26 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             responses.Add(response);
         }
 
+        // Apply Jobs
+        var jobs = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.Job, StringComparison.OrdinalIgnoreCase));
+        if (jobs != null)
+        {
+            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+            var response = await jobDomain.Apply([.. jobs], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
+        // Apply Job-Data
+        var jobData = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.JobData, StringComparison.OrdinalIgnoreCase));
+        if (jobData != null)
+        {
+            var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+            var response = await jobDomain.Apply([.. jobData], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
         // Apply Monitors
-        var monitors = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
+        var monitors = yamlKinds.FirstOrDefault(g => g.Key.Equals(Manifest.Monitor, StringComparison.OrdinalIgnoreCase));
         if (monitors != null)
         {
             var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();

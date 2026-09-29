@@ -165,7 +165,10 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             {
                 var updatedConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
                 await DataLayer.UpdateGlobalConfig(updatedConfig);
-                Logger.LogInformation("config key '{Key}' was reloaded", updatedConfig.Key);
+                if (Logger.IsEnabled(LogLevel.Information))
+                {
+                    Logger.LogInformation("config key '{Key}' was reloaded", updatedConfig.Key);
+                }
             }
         }
 
@@ -434,7 +437,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         await DataLayer.SaveChangesAsync();
 
         // Clear cache
-        _ = Flush(cancellationToken);
+        await Flush(cancellationToken);
 
         return response;
     }
