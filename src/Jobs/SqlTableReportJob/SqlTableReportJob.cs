@@ -48,18 +48,16 @@ public abstract class SqlTableReportJob(
 
     private async Task Generate(IJobExecutionContext context)
     {
-        {
-            var attendees = await GetUsers(Properties.Group);
+        var attendees = await GetUsers(Properties.Group);
 
-            using var connection = new SqlConnection(Properties.ConnectionString);
-            MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {Properties.ConnectionName}");
-            await connection.OpenAsync(ExecutionCancellationToken);
+        using var connection = new SqlConnection(Properties.ConnectionString);
+        MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {Properties.ConnectionName}");
+        await connection.OpenAsync(ExecutionCancellationToken);
 
-            var table = await ExecuteSql(context, Properties, connection);
-            var html = GenerateHtml(Properties, table);
-            html = HtmlUtil.MinifyHtml(html);
-            await SendReport(html, attendees, ExecutionCancellationToken);
-        }
+        var table = await ExecuteSql(context, Properties, connection);
+        var html = GenerateHtml(Properties, table);
+        html = HtmlUtil.MinifyHtml(html);
+        await SendReport(html, attendees, ExecutionCancellationToken);
     }
 
     private async Task<DataTable> ExecuteSql(IJobExecutionContext context, SqlTableReportJobProperties properties, DbConnection connection)

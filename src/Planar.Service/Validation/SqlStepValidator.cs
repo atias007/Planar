@@ -23,10 +23,6 @@ public class SqlStepValidator : AbstractValidator<SqlStep>
             .Length(3, 50)
             .WithMessage(e => $"the length of 'connection name' must be between 3 and 50 characters. You entered {e.ConnectionName?.Length ?? 0} characters");
 
-        RuleFor(s => s.ConnectionName)
-        .Length(3, 50)
-        .WithMessage(e => $"the length of 'connection name' must be between 3 and 50 characters. You entered {e.ConnectionName?.Length ?? 0} characters");
-
         RuleFor(j => j.ConnectionName).Must(ValidateGlobalConfigExists);
 
         RuleFor(s => s.EffectedRowsSource)

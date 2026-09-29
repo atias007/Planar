@@ -45,7 +45,9 @@ public class ResourceData(PlanarContext context) : BaseDataLayer(context), IReso
 
     public async Task<Resource?> GetResource(string name)
     {
-        return await _context.Resources.AsNoTracking().FirstOrDefaultAsync(r => r.Name == name);
+        return await _context.Resources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Name == name);
     }
 
     public async Task<IEnumerable<string>> GetAllResourceNames()
@@ -59,11 +61,14 @@ public class ResourceData(PlanarContext context) : BaseDataLayer(context), IReso
 
     public IQueryable<Resource> GetResources(PagingRequest request)
     {
-        return _context.Resources.AsNoTracking().Select(r => new Resource
-        {
-            Name = r.Name,
-            Value = r.Value.Substring(0, 101)
-        });
+        return _context.Resources
+            .AsNoTracking()
+            .OrderBy(r => r.Name)
+            .Select(r => new Resource
+            {
+                Name = r.Name,
+                Value = r.Value.Substring(0, 101)
+            });
     }
 
     public async Task<int> RemoveResource(string name)
