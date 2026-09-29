@@ -11,11 +11,11 @@ concurrent: false                     # Boolean [true/false]. Concurrent job can
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 properties:                           # Job Properties
-  connection name: <name>             # Configuration key for connection string to sql server database [mandatory if any step has no connection string, 1 to 50 characters]
-  filename: fetch_sales.sql           # Script filename [mandatory, 1 to 100 characters]
-  timeout: 00:00:30                   # Timeout span for sql query. The default is 30 seconds
-  title: Daily Sales                  # The report title
-  group: admins                       # The distribution group [mandatory, 1 to 50 characters]
+  connection name: <name>             # 'global config' key contains the connection string to sql server database [mandatory if any step has no connection string, 3 to 50 characters]
+  query resource: fetch_sales.sql     # Resource name contains the sql script [mandatory, 1 to 100 characters]
+  timeout: 00:00:30                   # Timeout span for sql query. The default is 30 seconds, [value between 00:00:05 to 02:00:00]
+  title: Daily Sales                  # The report title [mandatory, 1 to 100 characters]
+  group: admins                       # The distribution group [mandatory, 2 to 50 characters]
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 job data:                             # Key/Value pairs used by job code
   key1: value1                        # --------------------------------

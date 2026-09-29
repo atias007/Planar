@@ -142,9 +142,9 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
         if (_process == null) { return; }
         if (!_process.HasExited) { return; }
 
-        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Separator);
         MessageBroker.AppendLog(LogLevel.Information, " process information:");
-        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Separator);
         MessageBroker.AppendLog(LogLevel.Information, $"exit Code: {_process.ExitCode}");
 
         var username = string.IsNullOrWhiteSpace(FileProperties.UserName) ?
@@ -152,7 +152,7 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
             GetUsername(FileProperties.Domain, FileProperties.UserName);
 
         MessageBroker.AppendLog(LogLevel.Information, $"username: {username}");
-        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Separator);
         Thread.Sleep(500);
     }
 
@@ -203,8 +203,8 @@ public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 
     protected void SafeUnsubscribeOutput()
     {
-        if (_process == null) { return; }
         if (!_listenOutput) { return; }
+        if (_process == null) { return; }
         SafeInvoke(() => _process.ErrorDataReceived -= ProcessOutputDataReceived);
         SafeInvoke(() => _process.OutputDataReceived -= ProcessOutputDataReceived);
         _listenOutput = false;

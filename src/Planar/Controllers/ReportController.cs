@@ -15,7 +15,7 @@ namespace Planar.Controllers;
 
 [ApiController]
 [Route("report")]
-public class ReportController(ReportDomain businesLayer) : BaseController<ReportDomain>(businesLayer)
+public class ReportController(ReportDomain businessLayer) : BaseController<ReportDomain>(businessLayer)
 {
     [HttpPatch("{name}")]
     [EditorAuthorize]

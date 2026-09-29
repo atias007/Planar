@@ -262,6 +262,8 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     private static async Task<CliActionResponse> LoadConfig(CliConfigFileRequest request, GlobalConfigTypes configType, CancellationToken cancellationToken)
     {
         ValidateFileExists(request.Filename);
+        ValidateFileSize(request.Filename);
+        ValidateTextFile(request.Filename);
         var value = await File.ReadAllTextAsync(request.Filename, cancellationToken);
         var type = configType.ToString().ToLower();
 

@@ -11,19 +11,19 @@ concurrent: false                     # Boolean [true/false]. Concurrent job can
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 # --------------------------------------------------------------------------------------------------------------------------------------------------------- #
 properties:                                   # Job Properties
-  default connection name: <name>             # Default configuration key for connection string to sql server database [mandatory if any step has no connection string, 1 to 50 characters]
+  default connection name: <name>             # 'global config' key, contains the default connection string to sql server database [mandatory if any step has no connection string, 3 to 50 characters]
   transaction: false                          # Use transaction for all steps
   transaction isolation level: Unspecified    # The isolation level of transaction. The default is Unspecified [Unspecified, Chaos, ReadUncommitted, ReadCommitted, RepeatableRead, Serializable, Snapshot]
   continue on error: false                    # Continue to next step if error occur. The defualt is false
   steps:                                      # list of scripts to execute
     - name: Step1                             # Name of step [1 to 50 characters]
-      filename: step1.sql                     # Script filename [1 to 100 characters]
-      connection name: <name>                 # Specific connection string to sql server database [mandatory if no default connection name, 1 to 500 characters]
+      query resource: step1.sql               # Resource name contains the sql script [1 to 100 characters]
+      connection name: <name>                 # 'global config' key contains the connection string to sql server database [mandatory if any step has no connection string, 3 to 50 characters]
       timeout: 00:00:30                       # Timeout span for step. The default is 30 seconds
       effected rows source: default           # Source of effected rows count [default | scalar | none
       log result set: false                   # Boolean [true/false]. Log the result set of the script execution. The default is false
     - name: Step2
-      filename: step2.sql
+      query resource: step2.sql
       connection name: <name>
       timeout: 00:00:30
       effected rows source: default

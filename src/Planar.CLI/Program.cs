@@ -84,7 +84,7 @@ internal static class Program
     {
         if (string.IsNullOrEmpty(LoginProxy.Token)) { return; }
         InnerCliActions.Clear().Wait();
-        var markup = CliFormat.GetWarningMarkup($"automaticaly log out after period of {_timerSpan.Minutes} minutes without any operation");
+        var markup = CliFormat.GetWarningMarkup($"automatically log out after period of {_timerSpan.Minutes} minutes without any operation");
         AnsiConsole.MarkupLine(markup);
         AnsiConsole.WriteLine("press [enter] to continue");
         ServiceCliActions.Logout().Wait();

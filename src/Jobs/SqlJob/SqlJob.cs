@@ -16,6 +16,7 @@ namespace Planar;
 public abstract class SqlJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
+    Lazy<IJobResourceDataLayer> resourceDal,
     JobMonitorUtil jobMonitorUtil,
     IClusterUtil clusterUtil) : BaseCommonJob<SqlJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
@@ -26,7 +27,8 @@ public abstract class SqlJob(
         try
         {
             await Initialize(context);
-            ValidateSqlJob();
+            var resources = await ValidateResources(Properties, resourceDal);
+            ValidateSqlJob(resources);
             _ = SafeStartMonitorDuration(context);
             var task = ExecuteSql(context);
             await WaitForJobTask(context, task);
@@ -243,9 +245,9 @@ public abstract class SqlJob(
             {
                 if (!await reader.ReadAsync(cancellationToken)) { continue; }
                 var strResult = Convert.ToString(reader.GetValue(0));
-                if (int.TryParse(strResult, CultureInfo.CurrentCulture, out var iresult))
+                if (int.TryParse(strResult, CultureInfo.CurrentCulture, out var iResult))
                 {
-                    result = iresult;
+                    result = iResult;
                 }
             } while (await reader.NextResultAsync(cancellationToken));
 
@@ -266,9 +268,9 @@ public abstract class SqlJob(
         {
             var (_, scalar) = data.LastOrDefault();
             var strLast = Convert.ToString(scalar);
-            if (int.TryParse(strLast, CultureInfo.CurrentCulture, out var iresult))
+            if (int.TryParse(strLast, CultureInfo.CurrentCulture, out var iResult))
             {
-                result = iresult;
+                result = iResult;
             }
         }
 
@@ -334,7 +336,7 @@ public abstract class SqlJob(
         var result = step.Script;
         if (string.IsNullOrEmpty(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{step.Filename}' in step '{step.Name}' has no content");
+            MessageBroker.AppendLog(LogLevel.Warning, $"query resource '{step.QueryResource}' in step '{step.Name}' is empty");
             return string.Empty;
         }
 
@@ -351,7 +353,7 @@ public abstract class SqlJob(
 
         if (string.IsNullOrWhiteSpace(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{step.Filename}' in step '{step.Name}' has no content after placeholder replace");
+            MessageBroker.AppendLog(LogLevel.Warning, $"query resource '{step.QueryResource}' in step '{step.Name}' has no content after placeholder replace");
         }
 
         return result;
@@ -372,31 +374,12 @@ public abstract class SqlJob(
         }
     }
 
-    private string? ValidateConnectionName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) { return null; }
-
-        var settingsKey = Settings.Keys
-            .FirstOrDefault(k =>
-                string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase))
-            ?? throw new SqlJobException($"connection string name '{name}' could not be found in global config");
-
-        var value = Settings[settingsKey];
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new SqlJobException($"connection string name '{name}' in global config has null or empty value");
-        }
-
-        return value;
-    }
-
-    private void ValidateSqlJob()
+    private void ValidateSqlJob(IReadOnlyDictionary<string, string> resources)
     {
         try
         {
             Properties.DefaultConnectionString = ValidateConnectionName(Properties.DefaultConnectionName);
-            Properties.Steps?.ForEach(ValidateSqlStep);
+            Properties.Steps?.ForEach(step => ValidateSqlStep(step, resources));
         }
         catch (Exception ex)
         {
@@ -407,24 +390,21 @@ public abstract class SqlJob(
         }
     }
 
-    private void ValidateSqlStep(SqlStep step)
+    private void ValidateSqlStep(SqlStep step, IReadOnlyDictionary<string, string> resources)
     {
         try
         {
-            ValidateMandatoryString(step.Filename, nameof(step.Filename));
+            ValidateMandatoryString(step.Name, nameof(step.Name));
+            ValidateMandatoryString(step.QueryResource, nameof(step.QueryResource));
             if (string.IsNullOrWhiteSpace(step.ConnectionName)) { step.ConnectionName = Properties.DefaultConnectionName; }
             step.ConnectionString = ValidateConnectionName(step.ConnectionName);
-            step.FullFilename = FolderConsts.GetSpecialFilePath(
-                PlanarSpecialFolder.Jobs,
-                Properties.Path ?? string.Empty,
-                step.Filename ?? string.Empty);
 
-            if (!File.Exists(step.FullFilename))
+            if (!resources.TryGetValue(step.QueryResource ?? string.Empty, out var resource))
             {
-                throw new SqlJobException($"step '{step.Name}' filename '{step.FullFilename}' could not be found");
+                throw new SqlJobException($"step '{step.Name}' query resource '{step.QueryResource}' could not be found");
             }
 
-            step.Script = File.ReadAllText(step.FullFilename, encoding: Encoding.UTF8);
+            step.Script = resource;
         }
         catch (Exception ex)
         {

@@ -7,6 +7,7 @@ using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Service.Model;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
@@ -84,6 +85,18 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
     public async Task<ActionResult<ResourceModel>> GetByName([FromRoute][Length(1, 100)] string name)
     {
         var result = await BusinesLayer.GetByName(name);
+        return Ok(result);
+    }
+
+    [HttpGet("names")]
+    [EditorAuthorize]
+    [EndpointName("get_resource_names")]
+    [EndpointDescription("Get all resource names")]
+    [EndpointSummary("Get All Resource Names")]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetAllNames()
+    {
+        var result = await BusinesLayer.GetAllNames();
         return Ok(result);
     }
 

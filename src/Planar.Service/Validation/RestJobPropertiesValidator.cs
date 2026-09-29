@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
-using Planar.Service.General;
+using Microsoft.Extensions.DependencyInjection;
+using Planar.Service.Data;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,12 +11,10 @@ namespace Planar.Service.Validation
     public class RestJobPropertiesValidator : AbstractValidator<RestJobProperties>
     {
         private static readonly string[] _methods = ["POST", "GET", "PUT", "DELETE", "PATCH", "HEAD", "QUERY"];
-        private readonly ClusterUtil _cluster;
+        private readonly IServiceScopeFactory scopeFactory;
 
-        public RestJobPropertiesValidator(ClusterUtil cluster)
+        public RestJobPropertiesValidator(IServiceScopeFactory scopeFactory)
         {
-            _cluster = cluster;
-
             RuleFor(r => r.Url)
                 .NotEmpty()
                 .WithMessage("'url' must not be empty");
@@ -37,17 +35,17 @@ namespace Planar.Service.Validation
                 .Must(r => Array.Exists(_methods, m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
                 .WithMessage("'method' '{PropertyValue}' is invalid. available options are: " + string.Join(',', _methods));
 
-            RuleFor(r => r.BodyFile)
-                .MaximumLength(1000)
-                .WithMessage(e => $"the length of 'body file' must be 1000 characters or fewer. You entered {e.BodyFile?.Length ?? 0} characters");
+            RuleFor(r => r.BodyResource)
+                .MaximumLength(100)
+                .WithMessage(e => $"the length of 'body resource' must be 100 characters or fewer. You entered {e.BodyResource?.Length ?? 0} characters");
 
-            RuleFor(r => r.BodyFile)
-                .MustAsync(FilenameExists);
+            RuleFor(r => r.BodyResource)
+                .MustAsync(ValidateResourceExists);
 
-            RuleFor(r => r.BodyFile)
+            RuleFor(r => r.BodyResource)
                 .Empty()
-                .When(r => r.Method == "GET" || r.Method == "HEAD" || r.Method == "DELETE")
-                .WithMessage("'body file' must be null when method is GET or HEAD or DELETE");
+.When(r => string.Equals(r.Method, "GET", StringComparison.OrdinalIgnoreCase) || string.Equals(r.Method, "HEAD", StringComparison.OrdinalIgnoreCase) || string.Equals(r.Method, "DELETE", StringComparison.OrdinalIgnoreCase))
+                .WithMessage("'body resource' must be null when method is GET or HEAD or DELETE");
 
             RuleFor(r => r.UserAgent)
                 .MaximumLength(1000)
@@ -110,12 +108,15 @@ namespace Planar.Service.Validation
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListValueLength(kvp))
                 .WithMessage("'headers' value maximum length is 1000 chars");
+            this.scopeFactory = scopeFactory;
         }
 
-        private async Task<bool> FilenameExists(RestJobProperties properties, string? filename, ValidationContext<RestJobProperties> context, CancellationToken cancellationToken = default)
+        private async Task<bool> ValidateResourceExists(RestJobProperties properties, string? name, ValidationContext<RestJobProperties> context, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(filename)) { return true; }
-            return await CommonValidations.FilenameExists("body file", filename, _cluster, context);
+            if (string.IsNullOrEmpty(name)) { return true; }
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dal = scope.ServiceProvider.GetRequiredService<IResourceData>();
+            return await CommonValidations.ResourceExists("body resource", name, dal, context);
         }
 
         private static bool RestListKeyNotEmpty(KeyValuePair<string, string>? kvp)

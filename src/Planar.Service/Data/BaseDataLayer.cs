@@ -34,8 +34,7 @@ public abstract class BaseDataLayer(PlanarContext context) : IBaseDataLayer
     public DbConnection DbConnection => _context.Database.GetDbConnection();
 
     // 2627 = PK / unique constraint violation, 2601 = unique index violation
-    public bool IsDuplicateKey(DbUpdateException ex) =>
-        ex.InnerException is SqlException { Number: 2627 or 2601 };
+    public bool IsDuplicateKey(DbUpdateException ex) => DbFactory.IsDuplicateKey(ex);
 }
 
 public abstract class BaseTraceDataLayer(PlanarTraceContext context) : IBaseDataLayer
@@ -54,6 +53,5 @@ public abstract class BaseTraceDataLayer(PlanarTraceContext context) : IBaseData
 
     public DbConnection DbConnection => _context.Database.GetDbConnection();
 
-    public bool IsDuplicateKey(DbUpdateException ex) =>
-       ex.InnerException is SqlException { Number: 2627 or 2601 };
+    public bool IsDuplicateKey(DbUpdateException ex) => DbFactory.IsDuplicateKey(ex);
 }

@@ -296,11 +296,11 @@ public abstract class PlanarJob(
             {
                 var jobId = jobIdObj?.ToString() ?? "[no job id]";
                 var instanceId = instanceIdObj?.ToString() ?? "[no instance id]";
-                MessageBroker.AppendLog(LogLevel.Information, Seperator);
+                MessageBroker.AppendLog(LogLevel.Information, Separator);
                 MessageBroker.AppendLog(LogLevel.Information, "job was invoked from another planar job");
                 MessageBroker.AppendLog(LogLevel.Information, $"invoker job key: {jobId}");
                 MessageBroker.AppendLog(LogLevel.Information, $"invoker instance id: {instanceId}");
-                MessageBroker.AppendLog(LogLevel.Information, Seperator);
+                MessageBroker.AppendLog(LogLevel.Information, Separator);
             }
         }
         catch (Exception ex)
@@ -726,8 +726,6 @@ public abstract class PlanarJob(
             return;
         }
 
-        _isHealthCheck = true;
-
         int iValue;
         KeyValueObject kv;
         switch (channel)
@@ -832,6 +830,7 @@ public abstract class PlanarJob(
 
     private void SetHealthCheckSignal()
     {
+        _isHealthCheck = true;
         _healthCheckResetEvent?.Set();
         SafeUnsubscribeOutput();
     }

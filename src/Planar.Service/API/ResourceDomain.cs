@@ -65,10 +65,16 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
 
     public async Task<ResourceModel?> GetByName([FromRoute] string name)
     {
-        var item = await DataLayer.GetResource(name);
-        if (item == null) { return null; }
+        var item = await DataLayer.GetResource(name)
+             ?? throw new RestNotFoundException($"resource '{name}' not found");
 
         return Mapper.Map<ResourceModel>(item);
+    }
+
+    public async Task<IEnumerable<string>> GetAllNames()
+    {
+        var items = await DataLayer.GetAllResourceNames();
+        return items;
     }
 
     public async Task Delete([FromRoute][Range(1, 100)] string name)

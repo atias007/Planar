@@ -41,6 +41,15 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
         var responses = new List<ApplyResponse>();
 
+        // Apply Resources
+        var resources = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.Resource, StringComparison.OrdinalIgnoreCase));
+        if (resources != null)
+        {
+            var resourceDomain = ServiceProvider.GetRequiredService<ResourceDomain>();
+            var response = await resourceDomain.Apply([.. resources], httpContext.RequestAborted);
+            responses.Add(response);
+        }
+
         // Apply Global Config
         var globalConfig = yamlGroups.FirstOrDefault(g => g.Key.Equals(Manifest.GlobalConfig, StringComparison.OrdinalIgnoreCase));
         if (globalConfig != null)

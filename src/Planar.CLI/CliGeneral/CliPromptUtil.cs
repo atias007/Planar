@@ -16,9 +16,9 @@ namespace Planar.CLI.CliGeneral;
 internal static class CliPromptUtil
 {
     private const string group = "group";
-    private const string noAvaliableUsers = "no available users to perform the opertaion";
-    private const string noAvaliableGroups = "no available groups to perform the opertaion";
-    private const string noAvaliableConfigs = "no available configs to perform the opertaion";
+    private const string noAvailableUsers = "no available users to perform the operation";
+    private const string noAvailableGroups = "no available groups to perform the operation";
+    private const string noAvailableConfigs = "no available configs to perform the operation";
 
     internal static string? PromptSelection(IEnumerable<string>? items, string title, bool writeSelection = true)
     {
@@ -145,7 +145,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException(noAvaliableGroups);
+            throw new CliWarningException(noAvailableGroups);
         }
 
         var items = data.Select(g => g.Name ?? string.Empty);
@@ -166,7 +166,7 @@ internal static class CliPromptUtil
         var items = userResult.Data?.Groups;
         if (items == null || items.Count == 0)
         {
-            throw new CliWarningException(noAvaliableGroups);
+            throw new CliWarningException(noAvailableGroups);
         }
 
         var select = PromptSelection(items, group);
@@ -187,7 +187,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException(noAvaliableGroups);
+            throw new CliWarningException(noAvailableGroups);
         }
 
         restRequest = new RestRequest("user/{username}", Method.Get)
@@ -198,15 +198,15 @@ internal static class CliPromptUtil
             return new CliPromptWrapper<string>(userResult);
         }
 
-        var groupsincludeUser = userResult.Data?.Groups;
+        var groupsIncludeUser = userResult.Data?.Groups;
         var items =
-            groupsincludeUser == null ?
+            groupsIncludeUser == null ?
             data.Select(g => g.Name ?? string.Empty) :
-            data.Select(g => g.Name ?? string.Empty).Except(groupsincludeUser);
+            data.Select(g => g.Name ?? string.Empty).Except(groupsIncludeUser);
 
         if (!items.Any())
         {
-            throw new CliWarningException(noAvaliableGroups);
+            throw new CliWarningException(noAvailableGroups);
         }
 
         var select = PromptSelection(items, group);
@@ -226,12 +226,33 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException(noAvaliableUsers);
+            throw new CliWarningException(noAvailableUsers);
         }
 
         var items = data.Select(g => new CliSelectItem<UserRowModel> { DisplayName = g.ToString(), Value = g });
         var select = PromptSelection(items, "user");
         return new CliPromptWrapper<string>(select?.Value?.Username ?? string.Empty);
+    }
+
+    internal static async Task<CliPromptWrapper<string>> Resources(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("resource/names", Method.Get)
+            .AddQueryPagingParameter(1000);
+        var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
+        if (!result.IsSuccessful)
+        {
+            return new CliPromptWrapper<string>(result);
+        }
+
+        var data = result.Data;
+        if (data == null || data.Count == 0)
+        {
+throw new CliWarningException("no available resources to perform the operation");
+        }
+
+        var items = data.Select(g => new CliSelectItem<string> { DisplayName = g.ToString(), Value = g });
+        var select = PromptSelection(items, "resource");
+        return new CliPromptWrapper<string>(select?.Value ?? string.Empty);
     }
 
     internal static async Task<CliPromptWrapper<string>> UsersInGroup(string groupName, CancellationToken cancellationToken)
@@ -248,7 +269,7 @@ internal static class CliPromptUtil
         var items = result.Data?.Users.Select(u => u.Username);
         if (items == null || !items.Any())
         {
-            throw new CliWarningException(noAvaliableUsers);
+            throw new CliWarningException(noAvailableUsers);
         }
 
         var select = PromptSelection(items, "user");
@@ -268,7 +289,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException(noAvaliableUsers);
+            throw new CliWarningException(noAvailableUsers);
         }
 
         restRequest = new RestRequest("group/{name}", Method.Get)
@@ -288,7 +309,7 @@ internal static class CliPromptUtil
 
         if (!items.Any())
         {
-            throw new CliWarningException(noAvaliableUsers);
+            throw new CliWarningException(noAvailableUsers);
         }
 
         var select = PromptSelection(items, "user");
@@ -307,7 +328,7 @@ internal static class CliPromptUtil
         var data = result.Data;
         if (data == null || !data.Any())
         {
-            throw new CliWarningException(noAvaliableConfigs);
+            throw new CliWarningException(noAvailableConfigs);
         }
 
         var items = data.Select(g => new CliSelectItem<string> { DisplayName = g, Value = g });
@@ -327,7 +348,7 @@ internal static class CliPromptUtil
         var data = result.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available reports to perform the opertaion");
+            throw new CliWarningException("no available reports to perform the operation");
         }
 
         var select = PromptSelection(data, "report");
@@ -347,7 +368,7 @@ internal static class CliPromptUtil
         var data = result.Data?.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available monitors to perform the opertaion");
+            throw new CliWarningException("no available monitors to perform the operation");
         }
 
         var prompt = data.Select(data => $"{data.Id} - {data.Title}");
@@ -370,7 +391,7 @@ internal static class CliPromptUtil
         var data = result.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException("no available periods to perform the opertaion");
+            throw new CliWarningException("no available periods to perform the operation");
         }
 
         var select = PromptSelection(data, "period");
@@ -388,7 +409,7 @@ internal static class CliPromptUtil
 
         if (result.Data == null || result.Data.Count == 0)
         {
-            throw new CliWarningException("no available roles to perform the opertaion");
+            throw new CliWarningException("no available roles to perform the operation");
         }
 
         var items = result.Data.Select(g => g ?? string.Empty);
@@ -471,7 +492,7 @@ internal static class CliPromptUtil
         if (string.IsNullOrWhiteSpace(value)) { return null; }
 
         value = value.Trim();
-        var parseTs = ParseTimeSpanPharse(value);
+        var parseTs = ParseTimeSpanPhrase(value);
         if (parseTs != null) { return parseTs; }
 
         if (TimeSpan.TryParse(value, CultureInfo.CurrentCulture, out var newTs))
@@ -482,7 +503,7 @@ internal static class CliPromptUtil
         return null;
     }
 
-    private static TimeSpan? ParseTimeSpanPharse(string value)
+    private static TimeSpan? ParseTimeSpanPhrase(string value)
     {
         var regex = new Regex("^(\\d+)(\\s)?(sec|second|seconds|min|minute|minutes|hour|hours|day|days)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
         var match = regex.Matches(value);

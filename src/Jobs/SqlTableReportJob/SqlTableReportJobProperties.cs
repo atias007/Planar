@@ -3,16 +3,13 @@ using YamlDotNet.Serialization;
 
 namespace Planar;
 
-public class SqlTableReportJobProperties : IJobProperties, IPathJobProperties, IJobPropertiesWithFiles
+public class SqlTableReportJobProperties : IJobProperties, IResourceJobProperties
 {
-    [YamlMember(Alias = "path", Order = 0)]
-    public string Path { get; set; } = string.Empty;
-
     [YamlMember(Alias = "connection name", Order = 1)]
     public string? ConnectionName { get; set; }
 
-    [YamlMember(Alias = "filename", Order = 2)]
-    public string Filename { get; set; } = null!;
+    [YamlMember(Alias = "query resource", Order = 2)]
+    public string QueryResource { get; set; } = null!;
 
     [YamlMember(Alias = "group", Order = 3)]
     public string Group { get; set; } = null!;
@@ -24,18 +21,12 @@ public class SqlTableReportJobProperties : IJobProperties, IPathJobProperties, I
     public string? Title { get; set; }
 
     [YamlIgnore]
-    public string FullFilename { get; set; } = null!;
-
-    [YamlIgnore]
     public string Script { get; set; } = string.Empty;
 
     [YamlIgnore]
     internal string? ConnectionString { get; set; }
 
-    public IEnumerable<string> Files =>
-    [
-        string.IsNullOrWhiteSpace(Path) ? Filename : System.IO.Path.Combine(Path, Filename)
-    ];
+    public IEnumerable<string> ResourceNames => [QueryResource];
 
     public void FillGlobalConfigPlaceholder(Dictionary<string, string?> parameters)
     {

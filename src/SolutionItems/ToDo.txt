@@ -6,6 +6,8 @@ PLAN FOR V 1.8.*
 *** resource module
 
 - limit each module to maximum entities (such as 1000 jobs, 1000 triggers, 2000 monitors, 100 hooks, 10,000 resources, 10,000 users, 1000 groups)
+- move restjob to httpclient - no restsharp
+
 
 * test 'global config keys' in jobfile.yml with json config value
 * test hosted job reading jobfile.yml or only appsettings.json
@@ -443,3 +445,4 @@ V 1.8.3
 - manifest directory and api/cli
 - add new manifest: jobdata.yaml
 - add apply command to all entitys
+- resource module

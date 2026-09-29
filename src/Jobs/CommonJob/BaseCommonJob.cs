@@ -5,6 +5,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Quartz;
+using SQLitePCL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace CommonJob;
 
 public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger) : IDisposable
 {
-    protected readonly string Seperator = string.Empty.PadLeft(40, '-');
+    protected readonly string Separator = string.Empty.PadLeft(40, '-');
     protected CancellationTokenSource? _executionTokenSource;
     private bool _disposed;
     private CancellationTokenSource? _durationTokenSource;
@@ -138,10 +139,10 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         if (minutes.Count > maxMonitor)
         {
             minutes = [.. minutes.Take(maxMonitor)];
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
             MessageBroker.AppendLog(LogLevel.Warning, $"this job has more then {maxMonitor} duration limit monitors");
-            MessageBroker.AppendLog(LogLevel.Warning, $"only following limits (in minutes) will be monitord: {string.Join(",", minutes.OrderBy(m => m))}");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Warning, $"only following limits (in minutes) will be monitored: {string.Join(",", minutes.OrderBy(m => m))}");
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
         }
 
         _durationTokenSource = new();
@@ -223,6 +224,39 @@ where TProperties : class, IJobProperties, new()
     protected CancellationToken ExecutionCancellationToken => _executionTokenSource?.Token ?? default;
 
     public abstract Task Execute(IJobExecutionContext context);
+
+    protected static string? ValidateConnectionName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) { return null; }
+
+        var settingsKey = Global.GlobalConfig.Keys
+            .FirstOrDefault(k =>
+                string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase))
+            ?? throw new PlanarException($"connection string name '{name}' could not be found in global config");
+
+        var value = Global.GlobalConfig[settingsKey];
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new PlanarException($"connection string name '{name}' in global config has null or empty value");
+        }
+
+        return value;
+    }
+
+    protected async Task<IReadOnlyDictionary<string, string>> ValidateResources(IResourceJobProperties properties, Lazy<IJobResourceDataLayer> dal)
+    {
+        if (properties.ResourceNames == null || !properties.ResourceNames.Any()) { return new Dictionary<string, string>(); }
+
+var resources = new Dictionary<string, string>(
+    await dal.Value.GetResources(properties.ResourceNames, ExecutionCancellationToken),
+    StringComparer.OrdinalIgnoreCase);
+var missing = properties.ResourceNames.Except(resources.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+if (missing.Count == 0) { return resources; }
+
+        var message = $"job '{GetType().FullName}' has missing resources: {string.Join(", ", missing)}";
+        throw new PlanarException(message);
+    }
 
     protected async Task FinalizeJob(IJobExecutionContext context)
     {
@@ -350,13 +384,13 @@ where TProperties : class, IJobProperties, new()
 
             var triggerId = JobHelper.GetSequenceTriggerId(context.MergedJobDataMap);
             var jobKey = JobHelper.GetSequenceJobKey(context.MergedJobDataMap);
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
             MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by sequence");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
             MessageBroker.AppendLog(LogLevel.Information, $" key: {jobKey}");
             MessageBroker.AppendLog(LogLevel.Information, $" trigger: {triggerId}");
             MessageBroker.AppendLog(LogLevel.Information, $" fire instance id: {instanceId}");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, Separator);
         }
         catch (Exception ex)
         {
