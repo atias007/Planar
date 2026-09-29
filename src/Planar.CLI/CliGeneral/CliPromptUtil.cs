@@ -247,7 +247,7 @@ internal static class CliPromptUtil
         var data = result.Data;
         if (data == null || data.Count == 0)
         {
-            throw new CliWarningException(noAvailableUsers);
+throw new CliWarningException("no available resources to perform the operation");
         }
 
         var items = data.Select(g => new CliSelectItem<string> { DisplayName = g.ToString(), Value = g });

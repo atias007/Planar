@@ -52,7 +52,7 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
 
     [Action("ls")]
     [Action("list")]
-    public static async Task<CliActionResponse> GetUsers(CliPagingRequest request, CancellationToken cancellationToken = default)
+public static async Task<CliActionResponse> GetResources(CliPagingRequest request, CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest(c_resource, Method.Get)
             .AddQueryPagingParameter(request);

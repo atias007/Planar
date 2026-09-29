@@ -248,9 +248,11 @@ where TProperties : class, IJobProperties, new()
     {
         if (properties.ResourceNames == null || !properties.ResourceNames.Any()) { return new Dictionary<string, string>(); }
 
-        var resources = await dal.Value.GetResources(properties.ResourceNames, ExecutionCancellationToken);
-        var missing = properties.ResourceNames.Except(resources.Keys, StringComparer.OrdinalIgnoreCase).ToList();
-        if (missing.Count == 0) { return resources; }
+var resources = new Dictionary<string, string>(
+    await dal.Value.GetResources(properties.ResourceNames, ExecutionCancellationToken),
+    StringComparer.OrdinalIgnoreCase);
+var missing = properties.ResourceNames.Except(resources.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+if (missing.Count == 0) { return resources; }
 
         var message = $"job '{GetType().FullName}' has missing resources: {string.Join(", ", missing)}";
         throw new PlanarException(message);

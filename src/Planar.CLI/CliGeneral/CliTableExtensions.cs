@@ -272,7 +272,7 @@ internal static class CliTableExtensions
         foreach (var item in response.Data)
         {
             if (item == null) { continue; }
-            table.Table.AddRow(item.Name, item.Value);
+table.Table.AddRow(SafeCliString(item.Name), SafeCliString(item.Value));
         }
 
         return table;

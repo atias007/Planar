@@ -111,7 +111,7 @@ public abstract class SqlTableReportJob(
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
-                throw new SqlTableReportJobException("No distribution group is defined is this job");
+throw new SqlTableReportJobException("No distribution group is defined in this job");
             }
 
             var users = await GetUsersInner(groupName);

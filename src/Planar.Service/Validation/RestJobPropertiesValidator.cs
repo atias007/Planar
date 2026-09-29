@@ -44,7 +44,7 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.BodyResource)
                 .Empty()
-                .When(r => r.Method == "GET" || r.Method == "HEAD" || r.Method == "DELETE")
+.When(r => string.Equals(r.Method, "GET", StringComparison.OrdinalIgnoreCase) || string.Equals(r.Method, "HEAD", StringComparison.OrdinalIgnoreCase) || string.Equals(r.Method, "DELETE", StringComparison.OrdinalIgnoreCase))
                 .WithMessage("'body resource' must be null when method is GET or HEAD or DELETE");
 
             RuleFor(r => r.UserAgent)

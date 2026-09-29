@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CommonJob;
 
-// TOOD: to be removed
+// TODO: to be removed
 public interface IPathJobProperties
 {
     public string Path { get; }
