@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
@@ -14,6 +16,9 @@ namespace Planar.Filters;
 public sealed partial class FluentValidationActionFilter(ProblemDetailsFactory problemDetailsFactory)
     : IAsyncActionFilter
 {
+    // Argument type -> IValidator<ArgumentType>. Built once per type for the process lifetime.
+    private static readonly ConcurrentDictionary<Type, Type> ValidatorTypeCache = new();
+
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var services = context.HttpContext.RequestServices;
@@ -24,7 +29,10 @@ public sealed partial class FluentValidationActionFilter(ProblemDetailsFactory p
         {
             if (argument is null) { continue; }
 
-            var validatorType = typeof(IValidator<>).MakeGenericType(argument.GetType());
+            var validatorType = ValidatorTypeCache.GetOrAdd(
+                argument.GetType(),
+                static t => typeof(IValidator<>).MakeGenericType(t));
+
             if (services.GetService(validatorType) is not IValidator validator) { continue; }
 
             var result = await validator.ValidateAsync(new ValidationContext<object>(argument), ct);
