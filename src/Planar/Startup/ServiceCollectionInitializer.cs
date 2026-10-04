@@ -35,19 +35,21 @@ public static class ServiceCollectionInitializer
         {
             options.Filters.Add<ValidateModelStateAttribute>();
             options.Filters.Add<HttpResponseExceptionFilter>();
+            options.Filters.Add<FluentValidationActionFilter>();
         });
 
         services.AddHttpContextAccessor();
         services.UseHttpClientMetrics();
-        services.AddFluentValidationAutoValidation();
+        services.AddProblemDetails();
+        ////services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblies([typeof(Program).Assembly, typeof(MainService).Assembly]);
 
-        var mvcBuilder = services.AddControllers()
-            .AddJsonOptions(o =>
-            {
-                o.JsonSerializerOptions.Converters.Add(new SystemTextTimeSpanConverter());
-                o.JsonSerializerOptions.Converters.Add(new SystemTextNullableTimeSpanConverter());
-            });
+        var mvcBuilder = services.AddControllers();
+        ////.AddJsonOptions(o =>
+        ////{
+        ////    o.JsonSerializerOptions.Converters.Add(new SystemTextTimeSpanConverter());
+        ////    o.JsonSerializerOptions.Converters.Add(new SystemTextNullableTimeSpanConverter());
+        ////});
 
         services.AddOpenApi(options =>
         {

@@ -22,7 +22,7 @@ namespace Planar.Service.Validation
             RuleFor(r => r.Group)
                 .Must(string.IsNullOrEmpty)
                 .When(r => r.JobCategory == AllJobsMembers.AllSystemJobs)
-                .WithMessage("group property must be null when filter is: system jobs");
+                .WithMessage("'group' must be null when category is: system jobs");
         }
     }
 }
