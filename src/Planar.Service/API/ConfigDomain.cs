@@ -103,6 +103,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             {
                 Key = config.Key,
                 SourceUrl = config.SourceUrl,
+                Type = config.Type,
             };
 
             try
