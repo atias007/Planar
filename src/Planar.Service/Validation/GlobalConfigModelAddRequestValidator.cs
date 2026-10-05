@@ -21,16 +21,13 @@ public class GlobalConfigModelAddRequestValidator : AbstractValidator<GlobalConf
            .WithMessage("{PropertyName} has invalid value '{PropertyValue}'. valid values are: " + string.Join(',', _types));
 
         RuleFor(f => f.Value)
-            .NotEmpty()
-            .When(f =>
-                string.Equals(f.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(f.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase))
-            .WithMessage(f => "{PropertyName} is required when config type is " + f.Type?.ToLower());
-
-        RuleFor(f => f.Value)
            .Empty()
            .When(f => !string.IsNullOrWhiteSpace(f.SourceUrl))
            .WithMessage(f => "{PropertyName} must be empty when SourceUrl is provided");
+
+        RuleFor(f => f.Value)
+         .NotEmpty()
+         .When(f => string.IsNullOrWhiteSpace(f.SourceUrl));
 
         RuleFor(f => f.Value)
             .Must(ValidationUtil.IsYmlValid)

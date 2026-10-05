@@ -173,9 +173,9 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             if (!string.IsNullOrWhiteSpace(request.Value)) { throw new RestValidationException(nameof(request.Value), $"config key '{request.Key}' has source url '{exists.SourceUrl}' and cannot be updated with value"); }
             if (string.IsNullOrWhiteSpace(request.SourceUrl)) { throw new RestValidationException(nameof(request.SourceUrl), $"config key '{request.Key}' has source url '{exists.SourceUrl} and your update request must have source url value"); }
             if (exists.SourceUrl == request.SourceUrl) { return 0; }
-            var content = await SafeGetSourceUrlContent(request.SourceUrl);
+            request.Value = await SafeGetSourceUrlContent(request.SourceUrl);
             exists.SourceUrl = request.SourceUrl;
-            exists.Value = content;
+            exists.Value = request.Value;
         }
         else
         {
@@ -188,8 +188,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         ValidateContentMatchTheType(request, exists.Type);
 
         // encrypt the value if needed and get the secret key
-        var secretKey = EncryptConfigValueIfNeeded(request, exists.IsSecret);
-        exists.SecretKey = secretKey;
+        EncryptConfigValueIfNeeded(exists);
 
         var count = await DataLayer.SaveChangesAsync();
         if (count > 0)
@@ -396,6 +395,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request)
     {
         TrimConfigKey(request);
+        SetDefaultConfigType(request);
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key);
         if (exists == null)
         {
@@ -524,6 +524,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     {
         if (exists.SourceUrl != request.SourceUrl) { return true; }
         if (exists.IsSecret != request.IsSecret) { return true; }
+        if (exists.Type != request.Type) { return true; }
         if (exists.IsSecret)
         {
             var existsValue = GetGlobalConfigValue(exists, decrypt: true);
