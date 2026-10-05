@@ -16,7 +16,7 @@ public class GlobalConfigModelUpdateRequest
 
 public class GlobalConfigModelAddRequest : GlobalConfigModelUpdateRequest
 {
-    [YamlIgnore]
+    [YamlMember(Alias = "type")]
     public string? Type { get; set; }
 
     [YamlMember(Alias = "is secret")]

@@ -52,7 +52,8 @@ internal static class CliPromptUtil
             prompt.EnableSearch();
             prompt.SearchHighlightStyle = new Style(foreground: Color.White, background: Color.DeepSkyBlue4_2);
         }
-        var selectedItem = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var selectedItem = console.Prompt(prompt);
 
         if (writeSelection)
         {
@@ -247,7 +248,7 @@ internal static class CliPromptUtil
         var data = result.Data;
         if (data == null || data.Count == 0)
         {
-throw new CliWarningException("no available resources to perform the operation");
+            throw new CliWarningException("no available resources to perform the operation");
         }
 
         var items = data.Select(g => new CliSelectItem<string> { DisplayName = g.ToString(), Value = g });
@@ -434,7 +435,8 @@ throw new CliWarningException("no available resources to perform the operation")
 
     internal static DateTime? PromptForDate(string title)
     {
-        var select = AnsiConsole.Prompt(
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var select = console.Prompt(
             new TextPrompt<string>($"[turquoise2]  > {title.EscapeMarkup()} [grey]({CliActionMetadata.GetCurrentDateTimeFormat()}):[/][/]")
             .AllowEmpty()
             .Validate(date =>
@@ -463,7 +465,8 @@ throw new CliWarningException("no available resources to perform the operation")
 
     internal static TimeSpan? PromptForTimeSpan(string title, bool required = false)
     {
-        var select = AnsiConsole.Prompt(
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var select = console.Prompt(
             new TextPrompt<string>($"[turquoise2]  > {title.EscapeMarkup()} [grey]([[days.]]hh:mm:ss):[/][/]")
             .AllowEmpty()
             .Validate(ts =>

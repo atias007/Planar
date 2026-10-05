@@ -970,7 +970,8 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             prompt.DefaultValue(defaultValue);
         }
 
-        var title = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var title = console.Prompt(prompt);
         return title;
     }
 

@@ -79,7 +79,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [OkJsonResponse(typeof(GlobalConfigModel))]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<GlobalConfigModel>> Get([FromRoute][Required] string key)
+    public async Task<ActionResult<GlobalConfigModel>> Get([FromRoute][Required][MaxLength(50)] string key)
     {
         key = WebUtility.UrlDecode(key);
         var result = await BusinesLayer.Get(key);
@@ -123,7 +123,8 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [EndpointSummary("Delete Global Configuration")]
     [NoContentResponse]
     [NotFoundResponse]
-    public async Task<ActionResult> Delete([FromRoute] string key)
+    [BadRequestResponse]
+    public async Task<ActionResult> Delete([FromRoute][Required][MaxLength(50)] string key)
     {
         key = WebUtility.UrlDecode(key);
         await BusinesLayer.Delete(key);
@@ -139,6 +140,20 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     public async Task<ActionResult> Flush()
     {
         await BusinesLayer.FlushWithReloadExternalSourceUrl();
+        return NoContent();
+    }
+
+    [HttpPatch("{key}/convert-to-secret")]
+    [EditorAuthorize]
+    [EndpointName("patch_config_convert_to_secret")]
+    [EndpointDescription("Convert existing global configuration to secret")]
+    [EndpointSummary("Convert Global Configuration To Secret")]
+    [NoContentResponse]
+    [NotFoundResponse]
+    [BadRequestResponse]
+    public async Task<ActionResult> ConvertToSecret([FromRoute][Required][MaxLength(50)] string key)
+    {
+        await BusinesLayer.ConvertToSecret(key);
         return NoContent();
     }
 }

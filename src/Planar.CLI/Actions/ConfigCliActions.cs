@@ -41,6 +41,21 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         return new CliActionResponse(result);
     }
 
+    [Action("convert-to-secret")]
+    public static async Task<CliActionResponse> ConvertToSecret(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
+    {
+        var wrapper = await FillCliConfigKeyRequest(request, cancellationToken);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var restRequest = new RestRequest("config/{key}/convert-to-secret", Method.Patch)
+            .AddUrlSegment("key", request.Key);
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
     [Action("add-secret")]
     public static async Task<CliActionResponse> AddSecret(CliAddConfigRequest request, CancellationToken cancellationToken = default)
     {
@@ -118,7 +133,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         return new CliActionResponse(result, message: result.Data?.Value);
     }
 
-    [Action("load-json")]
+    [Action("load-json-file")]
     public static async Task<CliActionResponse> LoadJson(CliConfigFileRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredString(request, nameof(request.Key), 3, 50);
@@ -127,13 +142,22 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         return await LoadConfig(request, GlobalConfigTypes.Json, cancellationToken);
     }
 
-    [Action("load-yml")]
+    [Action("load-yml-file")]
     public static async Task<CliActionResponse> LoadYml(CliConfigFileRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredString(request, nameof(request.Key), 3, 50);
         FillRequiredString(request, nameof(request.Filename), 1, 500);
 
         return await LoadConfig(request, GlobalConfigTypes.Yml, cancellationToken);
+    }
+
+    [Action("load-text-file")]
+    public static async Task<CliActionResponse> LoadText(CliConfigFileRequest request, CancellationToken cancellationToken = default)
+    {
+        FillRequiredString(request, nameof(request.Key), 3, 50);
+        FillRequiredString(request, nameof(request.Filename), 1, 500);
+
+        return await LoadConfig(request, GlobalConfigTypes.String, cancellationToken);
     }
 
     [Action("remove")]

@@ -466,14 +466,16 @@ public abstract class BaseCliAction
             prompt.DefaultValue(defaultValue.GetValueOrDefault().ToString(CultureInfo.CurrentCulture));
         }
 
-        var result = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var result = console.Prompt(prompt);
         return int.Parse(result);
     }
 
     protected static bool ConfirmCliValue(CollectCliValueParameters parameters)
     {
         var prompt = new ConfirmationPrompt($"[turquoise2]  > {parameters.Field.EscapeMarkup()?.Trim()}:[/]");
-        var result = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var result = console.Prompt(prompt);
         return result;
     }
 
@@ -483,7 +485,8 @@ public abstract class BaseCliAction
         {
             DefaultValue = defaultValue
         };
-        var result = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var result = console.Prompt(prompt);
         return result;
     }
 
@@ -493,7 +496,8 @@ public abstract class BaseCliAction
         {
             DefaultValue = defaultValue
         };
-        var result = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var result = console.Prompt(prompt);
         return result;
     }
 
@@ -543,7 +547,8 @@ public abstract class BaseCliAction
             prompt.DefaultValue(parameters.DefaultValue);
         }
 
-        var result = AnsiConsole.Prompt(prompt);
+        var console = new EscCancelConsole(AnsiConsole.Console);
+        var result = console.Prompt(prompt);
 
         return string.IsNullOrEmpty(result) ? null : result;
     }

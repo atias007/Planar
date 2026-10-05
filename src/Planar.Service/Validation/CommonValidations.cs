@@ -24,18 +24,18 @@ public static class CommonValidations
 
     public static bool GlobalConfigExists<T>(string propertyName, string? configKey, ValidationContext<T> context)
     {
-if (string.IsNullOrWhiteSpace(configKey)) { return true; }
-foreach (var key in Global.GlobalConfig.Keys)
-{
-    if (string.Equals(key, configKey, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(key, $"ConnectionStrings:{configKey}", StringComparison.OrdinalIgnoreCase))
-    {
-        return true;
-    }
-}
+        if (string.IsNullOrWhiteSpace(configKey)) { return true; }
+        foreach (var key in Global.GlobalConfig.Keys)
+        {
+            if (string.Equals(key, configKey, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(key, $"ConnectionStrings:{configKey}", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
 
-context.AddFailure(propertyName, $"global config key '{configKey}', defined at '{propertyName}', does not exist");
-return false;
+        context.AddFailure(propertyName, $"global config key '{configKey}', defined at '{propertyName}', does not exist");
+        return false;
     }
 
     public static async Task<bool> ResourceExists<T>(string propertyName, string? resourceName, IResourceData resourceData, ValidationContext<T> context)

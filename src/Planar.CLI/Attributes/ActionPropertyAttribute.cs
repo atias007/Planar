@@ -1,20 +1,26 @@
-﻿using System;
+﻿using Planar.Common;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace Planar.CLI.Attributes;
 
 [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
 public class ActionPropertyAttribute : Attribute
 {
-    public ActionPropertyAttribute()
+    private readonly string decoratePropertyName;
+
+    public ActionPropertyAttribute([CallerMemberName] string propertyName = "")
     {
         ShortName = string.Empty;
         LongName = string.Empty;
+        decoratePropertyName = propertyName;
     }
 
-    public ActionPropertyAttribute(string shortName, string longName)
+    public ActionPropertyAttribute(string shortName, string longName, [CallerMemberName] string propertyName = "")
     {
         ShortName = shortName;
         LongName = longName;
+        decoratePropertyName = propertyName;
     }
 
     public string? Name { get; set; }
@@ -38,7 +44,7 @@ public class ActionPropertyAttribute : Attribute
             Default = true;
         }
     }
-    
+
     public string InputDisplayName
     {
         get
@@ -55,14 +61,14 @@ public class ActionPropertyAttribute : Attribute
 
             if (string.IsNullOrEmpty(LongName) && string.IsNullOrEmpty(ShortName))
             {
-                return "error: no name";
+                return string.IsNullOrWhiteSpace(decoratePropertyName) ? "<no name>" : decoratePropertyName.SplitWords().ToLower();
             }
 
             if (string.IsNullOrEmpty(LongName))
             {
                 return ShortName;
             }
-            
+
             return LongName;
         }
     }
