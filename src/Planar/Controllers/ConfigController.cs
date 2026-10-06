@@ -95,7 +95,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [CreatedResponse]
     [BadRequestResponse]
     [ConflictResponse]
-    public async Task<ActionResult> Add([FromBody] GlobalConfigModelAddRequest request)
+    public async Task<ActionResult> Add([FromBody] GlobalConfigModelRequest request)
     {
         await BusinesLayer.Add(request);
         return CreatedAtAction(nameof(Get), new { key = request.Key }, null);
@@ -110,7 +110,7 @@ public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl
     [NoContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult> Update([FromBody] GlobalConfigModelUpdateRequest request)
+    public async Task<ActionResult> Update([FromBody] GlobalConfigModelRequest request)
     {
         await BusinesLayer.Update(request);
         return NoContent();

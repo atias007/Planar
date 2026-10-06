@@ -9,7 +9,16 @@ public partial class GlobalConfig
 {
     public bool IsEncrypted => IsSecret && !string.IsNullOrWhiteSpace(SecretKey);
 
-    public static GlobalConfig FromGlobalConfigModelAddRequest(GlobalConfigModelAddRequest entity)
+    public static void UpdateGlobalConfig(GlobalConfig entity, GlobalConfigModelRequest request)
+    {
+        entity.Value = request.Value;
+        entity.Type = string.IsNullOrWhiteSpace(request.Type) ? nameof(GlobalConfigTypes.String).ToLower() : request.Type;
+        entity.SourceUrl = request.SourceUrl;
+        entity.IsSecret = request.IsSecret.GetValueOrDefault();
+        entity.LastUpdate = DateTime.Now;
+    }
+
+    public static GlobalConfig FromGlobalConfigModelRequest(GlobalConfigModelRequest entity)
     {
         return new GlobalConfig
         {

@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities;
 
-public class GlobalConfigModel : GlobalConfigModelAddRequest
+public class GlobalConfigModel : GlobalConfigModelRequest
 {
     public DateTime? LastUpdate { get; set; }
 }

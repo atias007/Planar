@@ -6,13 +6,25 @@ using System.Linq;
 
 namespace Planar.Service.Validation;
 
-public class GlobalConfigModelAddRequestValidator : AbstractValidator<GlobalConfigModelAddRequest>
+public class GlobalConfigModelAddRequestValidator : AbstractValidator<GlobalConfigModelRequest>
 {
     private static readonly IEnumerable<string> _types = Enum.GetNames<GlobalConfigTypes>().Select(n => n.ToLower());
 
     public GlobalConfigModelAddRequestValidator()
     {
-        Include(new GlobalConfigDataUpdateValidator());
+        RuleFor(f => f.Key).NotEmpty().MinimumLength(3).MaximumLength(50);
+        RuleFor(f => f.Value).MaximumLength(4000);
+        RuleFor(f => f.SourceUrl).MaximumLength(1000).IsUri();
+
+        RuleFor(f => f.Value)
+           .NotEmpty()
+           .When(f => string.IsNullOrWhiteSpace(f.SourceUrl))
+           .WithMessage(f => "{PropertyName} must have value when SourceUrl is empty");
+
+        RuleFor(f => f.Value)
+           .Empty()
+           .When(f => !string.IsNullOrWhiteSpace(f.SourceUrl))
+           .WithMessage(f => "{PropertyName} must be empty when SourceUrl is provided");
 
         RuleFor(f => f.Type)
            .MaximumLength(10)
