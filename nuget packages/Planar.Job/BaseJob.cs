@@ -109,12 +109,12 @@ namespace Planar.Job
             Exception initializeException = null;
             try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
             try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
-            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
+            try { InitializeDependencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { if (initializeException == null) { initializeException = ex; } }
 #else
             Exception? initializeException = null;
             try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
             try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex; }
-            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
+            try { InitializeDependencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 #endif
 
             await OpenMqttConnection();
@@ -275,8 +275,8 @@ namespace Planar.Job
         {
             if (!_isHosted)
             {
-                var timeoutms = timeout.Add(TimeSpan.FromMinutes(2)).TotalMilliseconds;
-                _timeoutTimer = new Timer(timeoutms);
+                var timeoutMs = timeout.Add(TimeSpan.FromMinutes(2)).TotalMilliseconds;
+                _timeoutTimer = new Timer(timeoutMs);
                 _timeoutTimer.Elapsed += async (s, e) => await TimerElapsed();
                 _timeoutTimer.Start();
             }
@@ -367,7 +367,7 @@ namespace Planar.Job
             InitializeBaseJobFactory(json);
             ValidateJobExecutionContext(_context);
             InitializeConfiguration(_context, configureAction);
-            InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
+            InitializeDependencyInjection(_context, _baseJobFactory, registerServicesAction);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
             LogVersion();
@@ -425,9 +425,9 @@ namespace Planar.Job
             await _baseJobFactory.AddAggregateExceptionAsync(ex, maxItems);
         }
 
-        public void CheckAggragateException()
+        public void CheckAggregateException()
         {
-            _baseJobFactory.CheckAggragateException();
+            _baseJobFactory.CheckAggregateException();
         }
 
         public async Task RaiseCustomEventAsync(CustomMonitorEvents customMonitorEvents, string message)
@@ -616,12 +616,6 @@ namespace Planar.Job
 
         private async Task HandleException(Exception ex)
         {
-            if (ex is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
-            {
-                await HandleException(aggregateException.InnerExceptions[0]);
-                return;
-            }
-
             var text = await _baseJobFactory.ReportException(ex);
             if (PlanarJob.Mode == RunningMode.Debug)
             {
@@ -712,12 +706,12 @@ namespace Planar.Job
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
 
-            if (_isHosted) // load configuration from jobsettings.yml file in hosted mode
+            if (_isHosted) // load configuration from job settings.yml file in hosted mode
             {
                 const string settingsFilename = "JobSettings.yml";
-                var environmntSettingsFilename = $"JobSettings.{context.Environment}.yml";
+                var environmentSettingsFilename = $"JobSettings.{context.Environment}.yml";
                 builder.AddYamlFile(settingsFilename, optional: true, reloadOnChange: false);
-                builder.AddYamlFile(environmntSettingsFilename, optional: true, reloadOnChange: false);
+                builder.AddYamlFile(environmentSettingsFilename, optional: true, reloadOnChange: false);
             }
 
             try
@@ -735,7 +729,7 @@ namespace Planar.Job
             }
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, BaseJobFactory baseJobFactory, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
+        private void InitializeDependencyInjection(JobExecutionContext context, BaseJobFactory baseJobFactory, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
         {
             var services = new ServiceCollection();
             services.AddSingleton(Configuration);

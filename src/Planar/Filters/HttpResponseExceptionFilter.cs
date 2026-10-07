@@ -36,7 +36,8 @@ public class HttpResponseExceptionFilter : IActionFilter, IOrderedFilter
     private static void HandleValidationException(ActionExecutedContext context, RestValidationException exception)
     {
         const string ProblemType = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-        const string MultipleErrors = "One or more validation errors occurred.";
+
+        var title = BadRequestUtil.GetTitle(exception);
 
         RestBadRequestResult problem;
         if (exception.TotalErrors == 1)
@@ -47,7 +48,7 @@ public class HttpResponseExceptionFilter : IActionFilter, IOrderedFilter
                 Detail = error.Detail.FirstOrDefault(),
                 Instance = context.HttpContext.Request.Path,
                 Status = StatusCodes.Status400BadRequest,
-                Title = error.Field,
+                Title = title,
                 Type = ProblemType,
                 ErrorCode = error.ErrorCode,
             };
@@ -58,7 +59,7 @@ public class HttpResponseExceptionFilter : IActionFilter, IOrderedFilter
             {
                 Instance = context.HttpContext.Request.Path,
                 Status = StatusCodes.Status400BadRequest,
-                Title = MultipleErrors,
+                Title = title,
                 Type = ProblemType,
                 Errors = exception.Errors
                     .Select(e => new RestBadRequestError { Field = e.Field, Detail = e.Detail })
@@ -86,7 +87,8 @@ public class HttpResponseExceptionFilter : IActionFilter, IOrderedFilter
     private static void HandleValidationException(ActionExecutedContext context, FluentValidation.ValidationException exception)
     {
         const string ProblemType = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-        const string MultipleErrors = "One or more validation errors occurred.";
+
+        var title = BadRequestUtil.GetTitle(exception);
 
         RestBadRequestResult problem;
         if (exception.Errors.Count() == 1)
@@ -97,7 +99,7 @@ public class HttpResponseExceptionFilter : IActionFilter, IOrderedFilter
                 Detail = error.ErrorMessage,
                 Instance = context.HttpContext.Request.Path,
                 Status = StatusCodes.Status400BadRequest,
-                Title = error.PropertyName,
+                Title = title,
                 Type = ProblemType,
             };
         }
@@ -107,7 +109,7 @@ public class HttpResponseExceptionFilter : IActionFilter, IOrderedFilter
             {
                 Instance = context.HttpContext.Request.Path,
                 Status = StatusCodes.Status400BadRequest,
-                Title = MultipleErrors,
+                Title = title,
                 Type = ProblemType,
                 Errors = exception.Errors
                     .Select(e => new RestBadRequestError { Field = e.PropertyName, Detail = [e.ErrorMessage] })

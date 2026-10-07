@@ -32,20 +32,16 @@ namespace Planar.Client.Api
             string key,
             string value,
             string sourceUrl = null,
-            ConfigType? configType = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
             CancellationToken cancellationToken = default);
 
         Task UpdateAsync(
             string key,
             string value,
             string sourceUrl = null,
-            CancellationToken cancellationToken = default);
-
-        Task AddSecretAsync(
-            string key,
-            string value,
-            string sourceUrl = null,
-            ConfigType? configType = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
             CancellationToken cancellationToken = default);
 
 #else
@@ -53,21 +49,18 @@ namespace Planar.Client.Api
             string key,
             string? value,
             string? sourceUrl = null,
-            ConfigType? configType = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
             CancellationToken cancellationToken = default);
 
         Task UpdateAsync(
             string key,
             string? value,
             string? sourceUrl = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
             CancellationToken cancellationToken = default);
 
-        Task AddSecretAsync(
-            string key,
-            string? value,
-            string? sourceUrl = null,
-            ConfigType? configType = null,
-            CancellationToken cancellationToken = default);
 #endif
 
         Task DeleteAsync(string key, CancellationToken cancellationToken = default);

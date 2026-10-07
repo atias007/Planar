@@ -231,7 +231,7 @@ public abstract class BaseCliAction
     {
         var info = ReflectionHelper.GetPropertyInfo<T>(propertyName);
         var attribute = ReflectionHelper.GetActionPropertyAttribute<T>(propertyName);
-        var displayName = attribute.DisplayName ?? string.Empty;
+        var displayName = attribute.InputDisplayName ?? attribute.DisplayName ?? string.Empty;
         if (string.IsNullOrWhiteSpace(displayName)) { displayName = propertyName; }
         var result = CollectBoolCliValue(displayName, defaultValue);
         info.SetValue(entity, result);
@@ -248,10 +248,10 @@ public abstract class BaseCliAction
         }
     }
 
-    protected static void FillRequiredString<T>(T entity, string propertyName, int minValue, int maxValue, string? defaultValue = null, bool secret = false)
+    protected static void FillRequiredString<T>(T entity, string propertyName, int minLength, int maxLength, string? defaultValue = null, bool secret = false)
         where T : class
     {
-        var tuple = CollectText(entity, propertyName, true, minValue, maxValue, defaultValue, secret);
+        var tuple = CollectText(entity, propertyName, true, minLength, maxLength, defaultValue, secret);
         if (tuple.Item1)
         {
             tuple.Item3.SetValue(entity, tuple.Item2);

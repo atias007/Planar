@@ -78,6 +78,7 @@ namespace Planar.Job
         public async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
         {
             if (ex == null) { return; }
+            Guards.ThrowIfGreaterThan(maxItems, 1000, nameof(maxItems));
 
             await _semaphoreSlim.WaitAsync(_context.CancellationToken);
             try
@@ -88,9 +89,9 @@ namespace Planar.Job
 
                 if (_exceptions.Count >= maxItems)
                 {
-                    var topEx = new PlanarJobAggragateException($"Aggregate exception items exceeded maximum limit of {maxItems} exceptions");
+                    var topEx = new PlanarJobAggragateException($"Aggregate exception items exceeded maximum limit of {maxItems:N0} exceptions");
                     _exceptions.Insert(0, topEx);
-                    CheckAggragateException();
+                    CheckAggregateException();
                 }
             }
             finally
@@ -99,7 +100,7 @@ namespace Planar.Job
             }
         }
 
-        public void CheckAggragateException()
+        public void CheckAggregateException()
         {
             lock (Locker)
             {
@@ -250,7 +251,15 @@ namespace Planar.Job
                 .Select(l => l?.TrimEnd());
 
             var text = string.Join(Environment.NewLine, filterLines);
-            return text.Trim();
+            text = text.Trim();
+            const int maxChars = 100_000;
+
+            if (text.Length > maxChars)
+            {
+                text = $"{text.Substring(0, maxChars)}...\r\n(exception text truncated because its contains more than {maxChars:N0} characters)";
+            }
+
+            return text;
         }
 
         public static bool HideStackTrace(Exception ex)

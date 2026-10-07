@@ -168,9 +168,6 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         // trim the key
         TrimConfigKey(request);
 
-        // Set default type to string if not provided
-        SetDefaultConfigType(request);
-
         // validate that the content matches the specified type (yml, json, string)
         ValidateContentMatchTheType(request, request.Type);
 
@@ -184,7 +181,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         if (!NeedToUpdate(request, exists)) { return; }
 
         // update the config with the new values
-        GlobalConfig.UpdateGlobalConfig(exists, request);
+        exists.Update(request);
 
         // encrypt the value if needed and get the secret key
         EncryptConfigValueIfNeeded(exists);
@@ -402,7 +399,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             if (NeedToUpdate(request, exists))
             {
                 // update the config with the new values
-                GlobalConfig.UpdateGlobalConfig(exists, request);
+                exists.Update(request);
 
                 // encrypt the value if needed and get the secret key
                 EncryptConfigValueIfNeeded(exists);
@@ -516,8 +513,8 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     private bool NeedToUpdate(GlobalConfigModelRequest request, GlobalConfig exists)
     {
         if (exists.SourceUrl != request.SourceUrl) { return true; }
-        if (exists.IsSecret != request.IsSecret) { return true; }
-        if (exists.Type != request.Type) { return true; }
+        if (request.IsSecret.HasValue && exists.IsSecret != request.IsSecret) { return true; }
+        if (!string.IsNullOrWhiteSpace(request.Type) && exists.Type != request.Type) { return true; }
         if (exists.IsSecret)
         {
             var existsValue = GetGlobalConfigValue(exists, decrypt: true);

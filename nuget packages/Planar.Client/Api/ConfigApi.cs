@@ -28,45 +28,22 @@ namespace Planar.Client.Api
             string key,
             string value,
             string sourceUrl = null,
-            ConfigType? configType = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
             CancellationToken cancellationToken = default)
 #else
         public async Task AddAsync(
             string key,
             string? value,
             string? sourceUrl = null,
-            ConfigType? configType = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
             CancellationToken cancellationToken = default)
 #endif
         {
             ValidateMandatory(key, nameof(key));
 
-            var data = new { key, value, sourceUrl, Type = configType?.ToString().ToLower(), IsSecret = false };
-            var restRequest = new RestRequest("config", HttpMethod.Post)
-                    .AddBody(data);
-            await _proxy.InvokeAsync(restRequest, cancellationToken);
-        }
-
-#if NETSTANDARD2_0
-
-        public async Task AddSecretAsync(
-            string key,
-            string value,
-            string sourceUrl = null,
-            ConfigType? configType = null,
-            CancellationToken cancellationToken = default)
-#else
-        public async Task AddSecretAsync(
-            string key,
-            string? value,
-            string? sourceUrl = null,
-            ConfigType? configType = null,
-            CancellationToken cancellationToken = default)
-#endif
-        {
-            ValidateMandatory(key, nameof(key));
-
-            var data = new { key, value, sourceUrl, Type = configType?.ToString().ToLower(), IsSecret = true };
+            var data = new { key, value, sourceUrl, type = configType.ToString().ToLower(), isSecret = isSecret };
             var restRequest = new RestRequest("config", HttpMethod.Post)
                     .AddBody(data);
             await _proxy.InvokeAsync(restRequest, cancellationToken);
@@ -124,14 +101,26 @@ namespace Planar.Client.Api
 
 #if NETSTANDARD2_0
 
-        public async Task UpdateAsync(string key, string value, string sourceUrl = null, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(
+            string key,
+            string value,
+            string sourceUrl = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
+            CancellationToken cancellationToken = default)
 #else
-        public async Task UpdateAsync(string key, string? value, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(
+            string key,
+            string? value,
+            string? sourceUrl = null,
+            ConfigType configType = ConfigType.String,
+            bool isSecret = false,
+            CancellationToken cancellationToken = default)
 #endif
         {
             ValidateMandatory(key, nameof(key));
 
-            var data = new { key, value, sourceUrl };
+            var data = new { key, value, sourceUrl, type = configType.ToString().ToLower(), isSecret = isSecret };
             var restRequest = new RestRequest("config", HttpMethod.Put)
                 .AddBody(data);
 

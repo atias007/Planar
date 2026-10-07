@@ -1,6 +1,5 @@
 ﻿using Planar.API.Common.Entities;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Planar.Service.Model;
@@ -9,13 +8,21 @@ public partial class GlobalConfig
 {
     public bool IsEncrypted => IsSecret && !string.IsNullOrWhiteSpace(SecretKey);
 
-    public static void UpdateGlobalConfig(GlobalConfig entity, GlobalConfigModelRequest request)
+    public void Update(GlobalConfigModelRequest request)
     {
-        entity.Value = request.Value;
-        entity.Type = string.IsNullOrWhiteSpace(request.Type) ? nameof(GlobalConfigTypes.String).ToLower() : request.Type;
-        entity.SourceUrl = request.SourceUrl;
-        entity.IsSecret = request.IsSecret.GetValueOrDefault();
-        entity.LastUpdate = DateTime.Now;
+        Value = request.Value;
+        SourceUrl = request.SourceUrl;
+        LastUpdate = DateTime.Now;
+
+        if (request.IsSecret.HasValue)
+        {
+            IsSecret = request.IsSecret.Value;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Type))
+        {
+            Type = string.IsNullOrWhiteSpace(request.Type) ? nameof(GlobalConfigTypes.String).ToLower() : request.Type;
+        }
     }
 
     public static GlobalConfig FromGlobalConfigModelRequest(GlobalConfigModelRequest entity)

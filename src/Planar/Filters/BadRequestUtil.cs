@@ -1,6 +1,7 @@
 ﻿using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Planar.Service.Exceptions;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -18,6 +19,26 @@ internal static class BadRequestUtil
         if (failures.Count == 1)
         {
             return $"{failures[0].PropertyName} is invalid";
+        }
+
+        return MultipleErrors;
+    }
+
+    public static string GetTitle(RestValidationException exception)
+    {
+        if (exception.TotalErrors == 1)
+        {
+            return $"{exception.Errors.First().Field} is invalid";
+        }
+
+        return MultipleErrors;
+    }
+
+    public static string GetTitle(FluentValidation.ValidationException exception)
+    {
+        if (exception.Errors.Count() == 1)
+        {
+            return $"{exception.Errors.First().PropertyName} is invalid";
         }
 
         return MultipleErrors;

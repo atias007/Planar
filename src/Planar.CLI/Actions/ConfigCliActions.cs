@@ -10,6 +10,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions;
 
@@ -177,15 +178,32 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     }
 
     [Action("update")]
-    public static async Task<CliActionResponse> Update(CliUpdateConfigRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> UpdateValue(CliUpdateValueConfigRequest request, CancellationToken cancellationToken = default)
     {
-        var wrapper = await FillCliUpdateConfigRequest(request, cancellationToken);
+        var wrapper = await FillCliUpdateValueConfigRequest(request, cancellationToken);
         if (!wrapper.IsSuccessful)
         {
             return new CliActionResponse(wrapper.FailResponse);
         }
 
-        var data = new { request.Key, request.Value, request.SourceUrl };
+        var data = new { request.Key, request.Value };
+        var restRequest = new RestRequest(c_config, Method.Put)
+            .AddBody(data);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("update-url")]
+    public static async Task<CliActionResponse> UpdateUrl(CliUpdateUrlConfigRequest request, CancellationToken cancellationToken = default)
+    {
+        var wrapper = await FillCliUpdateUrlConfigRequest(request, cancellationToken);
+        if (!wrapper.IsSuccessful)
+        {
+            return new CliActionResponse(wrapper.FailResponse);
+        }
+
+        var data = new { request.Key, sourceUrl = request.Url };
         var restRequest = new RestRequest(c_config, Method.Put)
             .AddBody(data);
 
@@ -239,46 +257,34 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         return CliPromptWrapper.Success;
     }
 
-    private static async Task<CliPromptWrapper> FillCliUpdateConfigRequest(CliUpdateConfigRequest request, CancellationToken cancellationToken)
+    private static async Task<CliPromptWrapper> FillCliUpdateValueConfigRequest(CliUpdateValueConfigRequest request, CancellationToken cancellationToken)
     {
-        RestResponse<CliGlobalConfig> result;
-
         // Key
         var response = await FillCliConfigKeyRequest(request, cancellationToken);
         if (!response.IsSuccessful) { return response; }
 
-        // Get db config
-        try
+        if (string.IsNullOrWhiteSpace(request.Value))
         {
-            var restRequest = new RestRequest("config/{key}", Method.Get)
-                .AddParameter("key", request.Key, ParameterType.UrlSegment);
-            result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
-            if (!result.IsSuccessful || result.Data == null) { return new CliPromptWrapper<string>(result); }
-        }
-        catch (Exception ex)
-        {
-            throw new CliException($"fail to get data for config key '{request.Key}'. {ex.Message}");
-        }
-
-        if (string.IsNullOrWhiteSpace(result.Data.SourceUrl)) // this is value config
-        {
-            if (string.IsNullOrWhiteSpace(request.Value))
-            {
-                var currentValue = result.Data.Value ?? string.Empty;
-                var defaultValue = currentValue.Length > 50 ? currentValue[..50] : currentValue;
-                FillRequiredString(request, nameof(request.Value), 1, 4_000, defaultValue);
-            }
-        }
-        else // this is url config
-        {
-            if (string.IsNullOrWhiteSpace(request.SourceUrl))
-            {
-                FillRequiredString(request, nameof(request.SourceUrl), 1, 1_000);
-            }
+            FillRequiredString(request, nameof(request.Value), 1, 4_000);
         }
 
         if (string.IsNullOrWhiteSpace(request.Value)) { request.Value = null; }
-        if (string.IsNullOrWhiteSpace(request.SourceUrl)) { request.SourceUrl = null; }
+
+        return CliPromptWrapper.Success;
+    }
+
+    private static async Task<CliPromptWrapper> FillCliUpdateUrlConfigRequest(CliUpdateUrlConfigRequest request, CancellationToken cancellationToken)
+    {
+        // Key
+        var response = await FillCliConfigKeyRequest(request, cancellationToken);
+        if (!response.IsSuccessful) { return response; }
+
+        if (string.IsNullOrWhiteSpace(request.Url))
+        {
+            FillRequiredString(request, nameof(request.Url), 1, 1_000);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Url)) { request.Url = null; }
 
         return CliPromptWrapper.Success;
     }
