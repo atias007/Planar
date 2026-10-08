@@ -5,12 +5,10 @@ using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions;
 
@@ -83,7 +81,7 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
             return new CliActionResponse(wrapper.FailResponse);
         }
 
-        var data = new { request.Key, request.SourceUrl, IsSecret = false };
+        var data = new { request.Key, request.SourceUrl, IsSecret = false, Type = request.Type?.ToString().ToLower() };
         var restRequest = new RestRequest(c_config, Method.Post)
             .AddBody(data);
 
@@ -130,35 +128,24 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         var restRequest = new RestRequest("config/{key}", Method.Get)
             .AddParameter("key", request.Key, ParameterType.UrlSegment);
         var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
+        ValidateNotFound(result, request.Key);
+        if (result.Data?.IsSecret ?? false)
+        {
+            throw new CliWarningException($"key '{request.Key}' is a secret and can't be displayed");
+        }
 
         return new CliActionResponse(result, message: result.Data?.Value);
     }
 
-    [Action("load-json-file")]
+    [Action("load-file")]
     public static async Task<CliActionResponse> LoadJson(CliConfigFileRequest request, CancellationToken cancellationToken = default)
     {
         FillRequiredString(request, nameof(request.Key), 3, 50);
         FillRequiredString(request, nameof(request.Filename), 1, 500);
 
-        return await LoadConfig(request, GlobalConfigTypes.Json, cancellationToken);
-    }
+        var type = request.Type ?? GlobalConfigTypes.String;
 
-    [Action("load-yml-file")]
-    public static async Task<CliActionResponse> LoadYml(CliConfigFileRequest request, CancellationToken cancellationToken = default)
-    {
-        FillRequiredString(request, nameof(request.Key), 3, 50);
-        FillRequiredString(request, nameof(request.Filename), 1, 500);
-
-        return await LoadConfig(request, GlobalConfigTypes.Yml, cancellationToken);
-    }
-
-    [Action("load-text-file")]
-    public static async Task<CliActionResponse> LoadText(CliConfigFileRequest request, CancellationToken cancellationToken = default)
-    {
-        FillRequiredString(request, nameof(request.Key), 3, 50);
-        FillRequiredString(request, nameof(request.Filename), 1, 500);
-
-        return await LoadConfig(request, GlobalConfigTypes.String, cancellationToken);
+        return await LoadConfig(request, type, cancellationToken);
     }
 
     [Action("remove")]
@@ -174,7 +161,10 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
 
         var restRequest = new RestRequest("config/{key}", Method.Delete)
             .AddParameter("key", request.Key, ParameterType.UrlSegment);
-        return await Execute(restRequest, cancellationToken);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        ValidateNotFound(result, request.Key);
+        return new CliActionResponse(result);
     }
 
     [Action("update")]
@@ -186,11 +176,19 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
             return new CliActionResponse(wrapper.FailResponse);
         }
 
+        var exists = await GetConfig(request.Key, cancellationToken);
+        if(!exists.IsSuccessful || exists.Data == null) { return new CliActionResponse(exists); }
+        if(!string.IsNullOrWhiteSpace(exists.Data.SourceUrl))
+        {
+            throw new CliException($"key '{request.Key}' has value from url '{exists.Data.SourceUrl}' and can't be update");
+        }
+
         var data = new { request.Key, request.Value };
         var restRequest = new RestRequest(c_config, Method.Put)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        ValidateNotFound(result, request.Key);
         return new CliActionResponse(result);
     }
 
@@ -203,12 +201,26 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
             return new CliActionResponse(wrapper.FailResponse);
         }
 
+        var exists = await GetConfig(request.Key, cancellationToken);
+        if (!exists.IsSuccessful || exists.Data == null) { return new CliActionResponse(exists); }
+        if (string.IsNullOrWhiteSpace(exists.Data.SourceUrl))
+        {
+            throw new CliException($"key '{request.Key}' has no url value to be update");
+        }
+
         var data = new { request.Key, sourceUrl = request.Url };
         var restRequest = new RestRequest(c_config, Method.Put)
             .AddBody(data);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        ValidateNotFound(result, request.Key);
         return new CliActionResponse(result);
+    }
+
+    private static void ValidateNotFound(RestResponse response, string key)
+    {
+        if (response.StatusCode != HttpStatusCode.NotFound) { return; }
+        throw new CliException($"key '{key}' was not found");
     }
 
     private static async Task<CliPromptWrapper> FillCliConfigKeyRequest(CliConfigKeyRequest request, CancellationToken cancellationToken)
@@ -309,5 +321,13 @@ public class ConfigCliActions : BaseCliAction<ConfigCliActions>
         }
 
         return new CliActionResponse(result);
+    }
+
+    private static async Task<RestResponse<CliGlobalConfig>> GetConfig(string key, CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("config/{key}", Method.Get)
+            .AddParameter("key", key, ParameterType.UrlSegment);
+        var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
+        return result;
     }
 }

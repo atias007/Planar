@@ -5,10 +5,8 @@ PLAN FOR V 1.8.*
 *** apply to hooks
 *** resource module
 
-cancel running:
-------------------
-[17:16:10 ERR] fail to save monitor alert for monitor lala bla with event Execution Fail
-System.OperationCanceledException: The operation was canceled.
+cancel running: System.OperationCanceledException
+
 
 update parameter
 -----------------

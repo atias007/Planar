@@ -835,7 +835,7 @@ internal static class CliTableExtensions
         if (response == null || response.Data == null) { return table; }
         response.Data.ForEach(r => table.Table.AddRow(
             r.Key.EscapeMarkup(),
-            SafeCliString(LimitValue(r.Value)),
+            r.IsSecret ? CliFormat.FormattedSecret : SafeCliString(LimitValue(r.Value)),
             r.Type?.EscapeMarkup() ?? string.Empty,
             SafeCliString(LimitValue(r.SourceUrl)),
             CliTableFormat.GetBooleanYesNoMarkup(r.IsSecret),

@@ -43,12 +43,12 @@ public class GlobalConfigModelAddRequestValidator : AbstractValidator<GlobalConf
 
         RuleFor(f => f.Value)
             .Must(ValidationUtil.IsYmlValid)
-            .When(f => string.Equals(f.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase))
+            .When(f => string.Equals(f.Type, GlobalConfigTypes.Yml.ToString(), StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(f.SourceUrl))
             .WithMessage(f => "{PropertyName} has invalid yml format");
 
         RuleFor(f => f.Value)
             .Must(ValidationUtil.IsJsonValid)
-            .When(f => string.Equals(f.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase))
+            .When(f => string.Equals(f.Type, GlobalConfigTypes.Json.ToString(), StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(f.SourceUrl))
             .WithMessage(f => "{PropertyName} has invalid json format");
 
         RuleFor(f => f.SourceUrl)
