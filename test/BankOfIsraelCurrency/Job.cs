@@ -44,7 +44,7 @@ namespace BankOfIsraelCurrency
             var client = new RestClient(url);
             var request = new RestRequest("PublicApi/GetExchangeRates", Method.Get);
 
-            Logger.LogInformation("Call bank of israel at: {Uri}", client.BuildUri(request));
+            Logger.LogInformation("Call bank of Israel at: {Uri}", client.BuildUri(request));
             var response = await client.ExecuteAsync<Currencies>(request);
             if (response.IsSuccessful)
             {
@@ -62,7 +62,7 @@ namespace BankOfIsraelCurrency
             }
             else
             {
-                throw new InvalidOperationException($"Requst to bank of israel return error. StatusCode: {response.StatusCode}");
+                throw new InvalidOperationException($"Request to bank of Israel return error. StatusCode: {response.StatusCode}");
             }
         }
     }

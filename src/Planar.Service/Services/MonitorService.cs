@@ -472,9 +472,9 @@ internal partial class MonitorService(IServiceProvider serviceProvider, IService
         var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
         if (@event == MonitorEvents.ExecutionProgressChanged)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
+                _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
             }
         }
         else
