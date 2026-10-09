@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
@@ -7,5 +8,8 @@ namespace Planar.CLI.Entities
         [ActionProperty(DefaultOrder = 1)]
         [Required("filename argument is required")]
         public string Filename { get; set; } = null!;
+
+        [ActionProperty("t", "type")]
+        public GlobalConfigTypes? Type { get; set; }
     }
 }

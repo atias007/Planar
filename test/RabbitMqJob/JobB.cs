@@ -21,7 +21,7 @@ internal class JobB : BaseJob
                 break;
             }
             Logger.LogInformation("N: {I}", i);
-            await Task.Delay(500);
+            await Task.Delay(500, context.CancellationToken);
         }
     }
 

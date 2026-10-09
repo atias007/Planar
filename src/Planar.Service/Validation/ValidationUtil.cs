@@ -1,4 +1,5 @@
-﻿using NetEscapades.Configuration.Yaml;
+﻿using Microsoft.Extensions.Configuration;
+using NetEscapades.Configuration.Yaml;
 using Newtonsoft.Json.Linq;
 using Planar.API.Common;
 using Planar.Service.API.Helpers;
@@ -102,7 +103,16 @@ public static class ValidationUtil
         {
             try
             {
-                _ = JToken.Parse(json);
+                using var stream = new MemoryStream();
+                using var writer = new StreamWriter(stream);
+                writer.Write(json);
+                writer.Flush();
+                stream.Position = 0;
+
+                _ = new ConfigurationBuilder()
+                    .AddJsonStream(stream)
+                    .Build()
+                    .AsEnumerable();
                 return true;
             }
             catch

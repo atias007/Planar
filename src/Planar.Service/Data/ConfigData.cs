@@ -13,8 +13,6 @@ public interface IConfigData : IBaseDataLayer
 {
     Task AddGlobalConfig(GlobalConfig config);
 
-    Task AddGlobalConfigWithDelete(GlobalConfig config);
-
     Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default);
 
     Task<PagingResponse<GlobalConfig>> GetAllGlobalConfigWithPaging(PagingRequest request);
@@ -109,26 +107,6 @@ public class ConfigData(PlanarContext context) : BaseDataLayer(context)
     {
         _context.GlobalConfigs.Add(config);
         await _context.SaveChangesAsync();
-    }
-
-    public async Task AddGlobalConfigWithDelete(GlobalConfig config)
-    {
-        var strategy = _context.Database.CreateExecutionStrategy();
-
-        await strategy.ExecuteAsync(async () =>
-        {
-            await using var tx = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-
-            await _context.GlobalConfigs
-                .Where(g => g.Key == config.Key)
-                .ExecuteDeleteAsync();
-
-            _context.ChangeTracker.Clear();
-            _context.GlobalConfigs.Add(config);
-            await _context.SaveChangesAsync();
-
-            await tx.CommitAsync();
-        });
     }
 
     public async Task<int> UpdateGlobalConfig(GlobalConfig config)

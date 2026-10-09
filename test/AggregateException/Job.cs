@@ -27,7 +27,7 @@ namespace AggregateException
                 await UpdateProgressAsync(i + 1, 10);
             }
 
-            CheckAggragateException();
+            CheckAggregateException();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

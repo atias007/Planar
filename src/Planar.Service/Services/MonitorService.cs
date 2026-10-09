@@ -16,6 +16,7 @@ using Planar.Service.Monitor;
 using Planar.Service.Validation;
 using PlanarJob;
 using Polly;
+using Polly.Retry;
 using Quartz;
 using Quartz.Util;
 using System;
@@ -28,11 +29,15 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Services;
 
-internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
+internal partial class MonitorService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
+    private const string nullText = "[null]";
     private readonly Channel<MonitorScanMessage> _channel = serviceProvider.GetRequiredService<Channel<MonitorScanMessage>>();
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
-    private const string nullText = "[null]";
+
+    private readonly AsyncRetryPolicy _retryPolicy = Policy
+        .Handle<Exception>()
+        .WaitAndRetryAsync(3, c => TimeSpan.FromSeconds(Math.Pow(2, c)));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -75,279 +80,182 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         _channel.Writer.TryComplete();
     }
 
+    private static MonitorAlert? CloneMonitorAlert(MonitorAlert source)
+    {
+        var json = JsonConvert.SerializeObject(source);
+        var clone = JsonConvert.DeserializeObject<MonitorAlert>(json);
+        return clone;
+    }
+
+    private static void FillException(Monitor.Monitor monitor, Exception? exception)
+    {
+        if (exception == null) { return; }
+        if (exception is PlanarJobExecutionException jobException)
+        {
+            monitor.Exception = jobException.ExceptionText;
+            monitor.MostInnerException = jobException.MostInnerExceptionText;
+            monitor.MostInnerExceptionMessage = jobException.MostInnerMessage;
+            return;
+        }
+
+        if (exception is PlanarJobCustomMonitorException monitorException)
+        {
+            monitor.Exception = monitorException.Message;
+            monitor.MostInnerException = monitorException.Message;
+            monitor.MostInnerExceptionMessage = monitorException.Message;
+            return;
+        }
+
+        exception = GetTopRelevantException(exception);
+        if (exception == null) { return; }
+
+        monitor.Exception = exception.ToString();
+        var inner = GetMostInnerException(exception);
+        if (inner != null)
+        {
+            monitor.MostInnerException = inner.ToString();
+            monitor.MostInnerExceptionMessage = inner.Message;
+        }
+    }
+
+    private static void FillMonitor(Monitor.Monitor monitor, MonitorAction action, Exception? exception)
+    {
+        monitor.EventId = action.EventId;
+        monitor.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
+        monitor.Groups = action.Groups.Select(ag => new MonitorGroup(ag));
+        monitor.MonitorTitle = action.Title;
+        monitor.GlobalConfig = Global.GlobalConfig;
+        monitor.Environment = AppSettings.General.Environment;
+
+        FillException(monitor, exception);
+    }
+
+    private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
+    {
+        var result = new MonitorDetails
+        {
+            Calendar = context.Trigger.CalendarName,
+            Durable = context.JobDetail.Durable,
+            FireInstanceId = context.FireInstanceId,
+            FireTime = context.FireTimeUtc.LocalDateTime,
+            JobDescription = context.JobDetail.Description,
+            JobGroup = context.JobDetail.Key.Group,
+            JobId = JobKeyHelper.GetJobId(context.JobDetail),
+            Author = JobHelper.GetJobAuthor(context.JobDetail),
+            JobName = context.JobDetail.Key.Name,
+            JobRunTime = context.JobRunTime,
+            MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
+            Recovering = context.JobDetail.RequestsRecovery,
+            TriggerDescription = context.Trigger.Description,
+            TriggerGroup = context.Trigger.Key.Group,
+            TriggerId = TriggerHelper.GetTriggerId(context.Trigger),
+            TriggerName = context.Trigger.Key.Name,
+        };
+
+        FillMonitor(result, action, exception);
+
+        return result;
+    }
+
+    private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception? exception)
+    {
+        var result = new MonitorSystemDetails
+        {
+            MessageTemplate = details.MessageTemplate,
+            MessagesParameters = details.MessagesParameters,
+        };
+
+        result.MessagesParameters ??= [];
+
+        result.Message = result.MessageTemplate;
+        foreach (var item in result.MessagesParameters)
+        {
+            result.Message = result.Message.Replace($"{{{{{item.Key}}}}}", item.Value);
+        }
+
+        FillMonitor(result, action, exception);
+        return result;
+    }
+
+    private static Exception GetMostInnerException(Exception ex)
+    {
+        var innerException = ex;
+        while (innerException.InnerException != null)
+        {
+            innerException = innerException.InnerException;
+        }
+
+        return innerException;
+    }
+
+    private static Exception? GetTopRelevantException(Exception ex)
+    {
+        var innerException = ex;
+        do
+        {
+            if (IsRelevantException(innerException))
+            {
+                if (innerException.InnerException is TargetInvocationException)
+                {
+                    return innerException.InnerException.InnerException;
+                }
+
+                return innerException.InnerException;
+            }
+            innerException = innerException?.InnerException;
+        } while (innerException != null);
+
+        return ex;
+    }
+
     private static bool IsInternalEvent(MonitorScanMessage message)
     {
         if (message.JobExecutionContext != null && JobKeyHelper.IsSystemJobKey(message.JobExecutionContext.JobDetail.Key)) { return true; }
         return false;
     }
 
-    private async Task SafeScanInner(MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
+    private static bool IsRelevantException(Exception? ex)
     {
-        try
-        {
-            await ScanInner(@event, info, exception, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item(s)");
-        }
+        const string source = $"{nameof(Planar)}.{nameof(Job)}";
+        if (ex == null) { return false; }
+        if (ex is AggregateException && ex.Source == source) { return true; }
+        return false;
     }
 
-    private async Task SafeScanInner(MonitorEvents @event, IJobExecutionContext? context, Exception? exception, CancellationToken cancellationToken)
+    private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
     {
-        try
-        {
-            await ScanInner(@event, context, exception, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item(s)");
-        }
+        alert.MonitorId = action.Id;
+        alert.EventArgument = action.EventArgument;
+        alert.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
     }
 
-    private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
+    private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
     {
-        if (info == null)
-        {
-            _logger.LogWarning("MonitorSystemInfo is null in {MethodName}. Scan skipped", $"{nameof(MonitorService)}.{nameof(ScanInner)}");
-            return;
-        }
-
-        IEnumerable<MonitorAction> items;
-
-        try
-        {
-            items = await LoadMonitorItems(@event);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item(s) --> LoadMonitorItems");
-            return;
-        }
-
-        foreach (var action in items)
-        {
-            _ = SafeExecuteMonitor(action, @event, info, exception, cancellationToken);
-        }
+        MapMonitorToMonitorAlert(details, alert);
+        alert.JobGroup = details.JobGroup;
+        alert.JobName = details.JobName;
+        alert.JobId = details.JobId;
+        alert.AlertPayload = JsonConvert.SerializeObject(details);
     }
 
-    private async Task ScanInner(MonitorEvents @event, IJobExecutionContext? context, Exception? exception = default, CancellationToken cancellationToken = default)
+    private static void MapDetailsToMonitorAlert(MonitorSystemDetails details, MonitorAlert alert)
     {
-        if (context == null)
-        {
-            _logger.LogWarning("IJobExecutionContext is null in {MethodName}. Scan skipped", $"{nameof(MonitorService)}.{nameof(ScanInner)}");
-            return;
-        }
-
-        if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
-        {
-            return;
-        }
-
-        PlanarBrokerService.OnInterceptingMessage(@event, context, exception);
-
-        IEnumerable<MonitorAction> items;
-
-        try
-        {
-            items = await LoadMonitorItems(@event, context);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item(s) --> LoadMonitorItems");
-            return;
-        }
-
-        foreach (var action in items)
-        {
-            _ = SafeExecuteMonitor(action, @event, context, exception, cancellationToken);
-        }
+        MapMonitorToMonitorAlert(details, alert);
+        alert.AlertPayload = JsonConvert.SerializeObject(details);
     }
 
-    #region Load Monitor Items
-
-    private async Task<IEnumerable<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
+    private static void MapExceptionMonitorAlert(Exception? exception, MonitorAlert alert)
     {
-        // Check Cache
-        if (!MonitorServiceCache.IsCacheValid)
-        {
-            var items = await LoadAllMonitorItems();
-            await MonitorServiceCache.SetCache(items);
-        }
-
-        var result = await MonitorServiceCache.GetMonitorActions(@event, context);
-        return result;
+        alert.Exception = exception?.ToString();
+        alert.HasError = exception != null;
     }
 
-    private async Task<IEnumerable<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
+    private static void MapMonitorToMonitorAlert(Monitor.Monitor monitor, MonitorAlert alert)
     {
-        // Check Cache
-        if (!MonitorServiceCache.IsCacheValid)
-        {
-            var items = await LoadAllMonitorItems();
-            await MonitorServiceCache.SetCache(items);
-        }
-
-        var result = await MonitorServiceCache.GetMonitorActions(@event);
-        return result;
-    }
-
-    private async Task<IEnumerable<MonitorAction>> LoadAllMonitorItems()
-    {
-        using var scope = serviceScopeFactory.CreateScope();
-        var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
-        var data = await bl.GetMonitorActions();
-        return data;
-    }
-
-    #endregion Load Monitor Items
-
-    #region Execute Monitor
-
-    private async Task SafeExecuteMonitor(MonitorAction? action, MonitorEvents @event, IJobExecutionContext? context, Exception? exception, CancellationToken cancellationToken)
-    {
-        MonitorDetails? details = null;
-        if (action == null) { return; }
-        if (context == null) { return; }
-        Exception? monitorException = null;
-
-        try
-        {
-            // Analyze
-            var toBeContinue = await Analyze(@event, action, context);
-            if (!toBeContinue) { return; }
-
-            // Get hooks
-            var hookInstances = await GetHookInstances(action);
-            if (hookInstances.Count == 0) { return; }
-
-            // Create the monitor details
-            details = GetMonitorDetails(action, context, exception);
-
-            // Check for mute
-            if (await CheckForMutedMonitor(details, action.Id))
-            {
-                _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
-                return;
-            }
-
-            // Log the start of the monitor
-            var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
-            var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
-            if (@event == MonitorEvents.ExecutionProgressChanged)
-            {
-                _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
-            }
-            else
-            {
-                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
-            }
-
-            // Handle the monitor
-            await Parallel.ForEachAsync(hookInstances, cancellationToken, async (hookInstance, ct) =>
-            {
-                try
-                {
-                    await hookInstance.Handle(details, ct);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, hookInstance.Name, groupNames);
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title}", action.Id, action.Title);
-            monitorException = ex;
-        }
-
-        try
-        {
-            // Save the monitor alert
-            await SafeSaveMonitorAlert(action, details, context, monitorException);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail save monitor alert. monitor item id: {Id}, title: {Title}", action.Id, action.Title);
-        }
-
-        try
-        {
-            // Save the monitor counter
-            await SaveMonitorCounter(action, details);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail save monitor counter. monitor item id: {Id}, title: {Title}", action.Id, action.Title);
-        }
-    }
-
-    private async Task SafeExecuteMonitor(MonitorAction? action, MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
-    {
-        MonitorSystemDetails? details = null;
-        if (action == null) { return; }
-        if (info == null) { return; }
-        Exception? monitorException = null;
-
-        try
-        {
-            var toBeContinue = await Analyze(@event, action, null);
-            if (!toBeContinue) { return; }
-
-            var hookInstances = await GetHookInstances(action);
-            if (hookInstances.Count == 0) { return; }
-
-            var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
-            var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
-
-            details = GetMonitorDetails(action, info, exception);
-            _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
-
-            await Parallel.ForEachAsync(hookInstances, cancellationToken, async (hookInstance, ct) =>
-            {
-                try
-                {
-                    await hookInstance.HandleSystem(details, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, hookInstance.Name, groupNames);
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title}", action.Id, action.Title);
-            monitorException = ex;
-        }
-
-        try
-        {
-            // Save the monitor alert
-            await SafeSaveMonitorAlert(action, details, monitorException);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail save monitor alert. monitor item id: {Id}, title: {Title}", action.Id, action.Title);
-        }
-    }
-
-    private async Task<List<HookWrapper>> GetHookInstances(MonitorAction monitorAction)
-    {
-        var result = new List<HookWrapper>();
-        foreach (var hook in monitorAction.MonitorActionsHooks)
-        {
-            if (string.IsNullOrWhiteSpace(hook.Hook)) { continue; }
-            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(hook.Hook);
-            if (hookInstance == null)
-            {
-                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist", hook.Hook, monitorAction.Id, monitorAction.Title);
-                continue;
-            }
-            result.Add(hookInstance);
-        }
-        return result;
+        // ATTENTION: alert.EventTitle => copy from action and not from monitor (See below)
+        alert.AlertDate = DateTime.Now;
+        alert.EventId = monitor.EventId;
+        alert.MonitorTitle = monitor.MonitorTitle;
     }
 
     private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
@@ -436,153 +344,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
     }
 
-    private MonitorArguments GetAndValidateArgs(MonitorAction action)
-    {
-        var result = new MonitorArguments { Handle = true };
-
-        try
-        {
-            var validator = new MonitorActionValidator(_logger);
-            var args = validator.ValidateMonitorArguments(action);
-            result.Args = args;
-        }
-        catch (RestValidationException)
-        {
-            return MonitorArguments.Empty;
-        }
-
-        return result;
-    }
-
-    private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
-    {
-        var result = new MonitorDetails
-        {
-            Calendar = context.Trigger.CalendarName,
-            Durable = context.JobDetail.Durable,
-            FireInstanceId = context.FireInstanceId,
-            FireTime = context.FireTimeUtc.LocalDateTime,
-            JobDescription = context.JobDetail.Description,
-            JobGroup = context.JobDetail.Key.Group,
-            JobId = JobKeyHelper.GetJobId(context.JobDetail),
-            Author = JobHelper.GetJobAuthor(context.JobDetail),
-            JobName = context.JobDetail.Key.Name,
-            JobRunTime = context.JobRunTime,
-            MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
-            Recovering = context.JobDetail.RequestsRecovery,
-            TriggerDescription = context.Trigger.Description,
-            TriggerGroup = context.Trigger.Key.Group,
-            TriggerId = TriggerHelper.GetTriggerId(context.Trigger),
-            TriggerName = context.Trigger.Key.Name,
-        };
-
-        FillMonitor(result, action, exception);
-
-        return result;
-    }
-
-    private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception? exception)
-    {
-        var result = new MonitorSystemDetails
-        {
-            MessageTemplate = details.MessageTemplate,
-            MessagesParameters = details.MessagesParameters,
-        };
-
-        result.MessagesParameters ??= [];
-
-        result.Message = result.MessageTemplate;
-        foreach (var item in result.MessagesParameters)
-        {
-            result.Message = result.Message.Replace($"{{{{{item.Key}}}}}", item.Value);
-        }
-
-        FillMonitor(result, action, exception);
-        return result;
-    }
-
-    private static void FillMonitor(Monitor.Monitor monitor, MonitorAction action, Exception? exception)
-    {
-        monitor.EventId = action.EventId;
-        monitor.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
-        monitor.Groups = action.Groups.Select(ag => new MonitorGroup(ag));
-        monitor.MonitorTitle = action.Title;
-        monitor.GlobalConfig = Global.GlobalConfig;
-        monitor.Environment = AppSettings.General.Environment;
-
-        FillException(monitor, exception);
-    }
-
-    private static void FillException(Monitor.Monitor monitor, Exception? exception)
-    {
-        if (exception == null) { return; }
-        if (exception is PlanarJobExecutionException jobException)
-        {
-            monitor.Exception = jobException.ExceptionText;
-            monitor.MostInnerException = jobException.MostInnerExceptionText;
-            monitor.MostInnerExceptionMessage = jobException.MostInnerMessage;
-            return;
-        }
-
-        if (exception is PlanarJobCustomMonitorException monitorException)
-        {
-            monitor.Exception = monitorException.Message;
-            monitor.MostInnerException = monitorException.Message;
-            monitor.MostInnerExceptionMessage = monitorException.Message;
-            return;
-        }
-
-        exception = GetTopRelevantException(exception);
-        if (exception == null) { return; }
-
-        monitor.Exception = exception.ToString();
-        var inner = GetMostInnerException(exception);
-        if (inner != null)
-        {
-            monitor.MostInnerException = inner.ToString();
-            monitor.MostInnerExceptionMessage = inner.Message;
-        }
-    }
-
-    private static Exception GetMostInnerException(Exception ex)
-    {
-        var innerException = ex;
-        while (innerException.InnerException != null)
-        {
-            innerException = innerException.InnerException;
-        }
-
-        return innerException;
-    }
-
-    private static Exception? GetTopRelevantException(Exception ex)
-    {
-        var innerException = ex;
-        do
-        {
-            if (IsRelevantException(innerException))
-            {
-                if (innerException.InnerException is TargetInvocationException)
-                {
-                    return innerException.InnerException.InnerException;
-                }
-
-                return innerException.InnerException;
-            }
-            innerException = innerException?.InnerException;
-        } while (innerException != null);
-
-        return ex;
-    }
-
-    private static bool IsRelevantException(Exception? ex)
-    {
-        const string source = $"{nameof(Planar)}.{nameof(Job)}";
-        if (ex == null) { return false; }
-        if (ex is AggregateException && ex.Source == source) { return true; }
-        return false;
-    }
-
     private async Task<bool> CheckForMutedMonitor(MonitorDetails? details, int monitorId)
     {
         if (details == null) { return false; }
@@ -606,46 +367,258 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         return false;
     }
 
+    private MonitorArguments GetAndValidateArgs(MonitorAction action)
+    {
+        var result = new MonitorArguments { Handle = true };
+
+        try
+        {
+            var validator = new MonitorActionValidator(_logger);
+            var args = validator.ValidateMonitorArguments(action);
+            result.Args = args;
+        }
+        catch (RestValidationException)
+        {
+            return MonitorArguments.Empty;
+        }
+
+        return result;
+    }
+
+    private async Task<List<HookWrapper>> GetHookInstances(MonitorAction monitorAction)
+    {
+        var result = new List<HookWrapper>();
+        foreach (var hook in monitorAction.MonitorActionsHooks)
+        {
+            if (string.IsNullOrWhiteSpace(hook.Hook)) { continue; }
+            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(hook.Hook);
+            if (hookInstance == null)
+            {
+                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist", hook.Hook, monitorAction.Id, monitorAction.Title);
+                continue;
+            }
+            result.Add(hookInstance);
+        }
+        return result;
+    }
+
+    private async Task<IEnumerable<MonitorAction>> LoadAllMonitorItems()
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+        var data = await bl.GetMonitorActions();
+        return data;
+    }
+
+    private async Task<IEnumerable<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext? context)
+    {
+        // Check Cache
+        if (!MonitorServiceCache.IsCacheValid)
+        {
+            var items = await LoadAllMonitorItems();
+            await MonitorServiceCache.SetCache(items);
+        }
+
+        var result =
+            context == null ?
+            await MonitorServiceCache.GetMonitorActions(@event) :
+            await MonitorServiceCache.GetMonitorActions(@event, context);
+
+        return result;
+    }
+
+    private async Task<PrepareSystemMonitorWrapper?> Prepare(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
+    {
+        var toBeContinue = await Analyze(@event, action, null);
+        if (!toBeContinue) { return null; }
+
+        var hookInstances = await GetHookInstances(action);
+        if (hookInstances.Count == 0) { return null; }
+
+        var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
+        var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
+
+        var details = GetMonitorDetails(action, info, exception);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
+        }
+
+        return new PrepareSystemMonitorWrapper(details, hookInstances, groupNames);
+    }
+
+    private async Task<PrepareMonitorWrapper?> Prepare(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
+    {
+        // Analyze
+        var toBeContinue = await Analyze(@event, action, context);
+        if (!toBeContinue) { return null; }
+
+        // Get hooks
+        var hookInstances = await GetHookInstances(action);
+        if (hookInstances.Count == 0) { return null; }
+
+        // Create the monitor details
+        var details = GetMonitorDetails(action, context, exception);
+
+        // Check for mute
+        if (await CheckForMutedMonitor(details, action.Id) && _logger.IsEnabled(LogLevel.Warning))
+        {
+            _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
+            return null;
+        }
+
+        // Log the start of the monitor
+        var groupNames = string.Join(", ", action.Groups.Select(g => g.Name).Distinct().OrderBy(n => n));
+        var hookNames = string.Join(", ", hookInstances.Select(h => h.Name).Distinct().OrderBy(n => n));
+        if (@event == MonitorEvents.ExecutionProgressChanged)
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
+            }
+        }
+        else
+        {
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook(s): {Hooks} and distribution group(s) {Groups}", action.Id, action.Title, @event, hookNames, groupNames);
+            }
+        }
+
+        return new PrepareMonitorWrapper(details, hookInstances, groupNames);
+    }
+
+    private async Task SafeExecuteMonitor(MonitorAction? action, MonitorEvents @event, IJobExecutionContext? context, Exception? exception, CancellationToken cancellationToken)
+    {
+        if (action == null) { return; }
+        if (context == null) { return; }
+
+        // 1. Prepare the monitor
+        var prepareResult = await SafePrepare(action, @event, context, exception);
+        if (prepareResult == null) { return; }
+
+        // 2. Handle the monitor
+        var ex = await SafeHandle(prepareResult, action, cancellationToken);
+
+        // 3. Save the monitor alert
+        await SafeSaveMonitorAlert(action, prepareResult.Details, context, ex);
+
+        // 4. Save the monitor counter
+        await SafeSaveMonitorCounter(action, prepareResult.Details);
+    }
+
+    private async Task SafeExecuteMonitor(MonitorAction? action, MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
+    {
+        if (action == null) { return; }
+        if (info == null) { return; }
+
+        // 1. Prepare the monitor
+        var prepareResult = await SafePrepare(action, @event, info, exception);
+        if (prepareResult == null) { return; }
+
+        // 2. Handle the monitor
+        var ex = await SafeHandle(prepareResult, action, cancellationToken);
+
+        // 3. Save the monitor alert
+        await SafeSaveMonitorAlert(action, prepareResult.Details, ex);
+    }
+
+    private async Task<Exception?> SafeHandle(PrepareMonitorWrapper prepareResult, MonitorAction action, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Parallel.ForEachAsync(prepareResult.HookInstances, cancellationToken, async (hookInstance, ct) =>
+            {
+                try
+                {
+                    await _retryPolicy.ExecuteAsync(() => hookInstance.Handle(prepareResult.Details, ct));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, hookInstance.Name, prepareResult.groupNames);
+                }
+            });
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            LogGeneralMonitorError(_logger, ex, action.Id, action.Title);
+            return ex;
+        }
+    }
+
+    private async Task<Exception?> SafeHandle(PrepareSystemMonitorWrapper prepareResult, MonitorAction action, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Parallel.ForEachAsync(prepareResult.HookInstances, cancellationToken, async (hookInstance, ct) =>
+            {
+                try
+                {
+                    await _retryPolicy.ExecuteAsync(() => hookInstance.HandleSystem(prepareResult.Details, ct));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group(s) {Groups}", action.Id, action.Title, hookInstance.Name, prepareResult.GroupNames);
+                }
+            });
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            LogGeneralMonitorError(_logger, ex, action.Id, action.Title);
+            return ex;
+        }
+    }
+
+    private async Task<IEnumerable<MonitorAction>> SafeLoadMonitorItems(MonitorEvents @event, IJobExecutionContext? context)
+    {
+        try
+        {
+            var items = await _retryPolicy.ExecuteAsync(() => LoadMonitorItems(@event, context));
+            return items;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail to handle monitor item(s) --> LoadMonitorItems");
+            return [];
+        }
+    }
+
+    private async Task<PrepareSystemMonitorWrapper?> SafePrepare(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
+    {
+        try
+        {
+            return await _retryPolicy.ExecuteAsync(() => Prepare(action, @event, info, exception));
+        }
+        catch (Exception ex)
+        {
+            LogGeneralMonitorError(_logger, ex, action.Id, action.Title);
+            return null;
+        }
+    }
+
+    private async Task<PrepareMonitorWrapper?> SafePrepare(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
+    {
+        try
+        {
+            var prepareResult = await _retryPolicy.ExecuteAsync(() => Prepare(action, @event, context, exception));
+            return prepareResult;
+        }
+        catch (Exception ex)
+        {
+            LogGeneralMonitorError(_logger, ex, action.Id, action.Title);
+            return null;
+        }
+    }
+
     private async Task SafeSaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
     {
         try
         {
-            if (details == null) { return; }
-            if (action.Id == 0) { return; }
-            if (action.Groups.Count == 0) { return; }
-
-            var alert = new MonitorAlert();
-            MapDetailsToMonitorAlert(details, alert);
-            MapActionToMonitorAlert(action, alert);
-            MapExceptionMonitorAlert(exception, alert);
-            alert.LogInstanceId = context.FireInstanceId;
-
-            var items = new List<MonitorAlert>();
-            var cartesian =
-                from @group in action.Groups
-                from hook in action.MonitorActionsHooks
-                select (@group, hook);
-
-            foreach (var (group, hook) in cartesian)
-            {
-                if (group == null) { continue; }
-                if (hook == null) { continue; }
-
-                group.Users ??= [];
-
-                var i = CloneMonitorAlert(alert);
-                if (i == null) { continue; }
-                i.GroupId = group.Id;
-                i.GroupName = group.Name;
-                i.UsersCount = group.Users.Count;
-                i.Hook = hook.Hook;
-                items.Add(i);
-            }
-
-            using var scope = serviceScopeFactory.CreateScope();
-            var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-            dbcontext.MonitorAlerts.AddRange(items);
-            await dbcontext.SaveChangesAsync(context.CancellationToken);
+            await _retryPolicy.ExecuteAsync(() => SaveMonitorAlert(action, details, context, exception));
         }
         catch (Exception ex)
         {
@@ -660,39 +633,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     {
         try
         {
-            if (details == null) { return; }
-
-            var alert = new MonitorAlert();
-            MapDetailsToMonitorAlert(details, alert);
-            MapActionToMonitorAlert(action, alert);
-            MapExceptionMonitorAlert(exception, alert);
-
-            var items = new List<MonitorAlert>();
-            var cartesian =
-                from @group in action.Groups
-                from hook in action.MonitorActionsHooks
-                select (@group, hook);
-
-            foreach (var (group, hook) in cartesian)
-            {
-                if (group == null) { continue; }
-                if (hook == null) { continue; }
-
-                if (group.Users == null || group.Users.Count == 0) { continue; }
-
-                var i = CloneMonitorAlert(alert);
-                if (i == null) { continue; }
-                i.GroupId = group.Id;
-                i.GroupName = group.Name;
-                i.UsersCount = group.Users.Count;
-                i.Hook = hook.Hook;
-                items.Add(i);
-            }
-
-            using var scope = serviceScopeFactory.CreateScope();
-            var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-            dbcontext.MonitorAlerts.AddRange(items);
-            await dbcontext.SaveChangesAsync();
+            await _retryPolicy.ExecuteAsync(() => SaveMonitorAlert(action, details, exception));
         }
         catch (Exception ex)
         {
@@ -703,70 +644,181 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
     }
 
-    private static MonitorAlert? CloneMonitorAlert(MonitorAlert source)
+    private async Task SafeSaveMonitorCounter(MonitorAction action, MonitorDetails? details)
     {
-        var json = JsonConvert.SerializeObject(source);
-        var clone = JsonConvert.DeserializeObject<MonitorAlert>(json);
-        return clone;
+        try
+        {
+            await _retryPolicy.ExecuteAsync(() => SaveMonitorCounter(action, details));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "fail to save monitor counter for monitor {Title} ({Id}) with event {Event}",
+                details?.MonitorTitle ?? nullText,
+                action.Id,
+                details?.EventTitle ?? nullText);
+        }
     }
 
-    private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
+    private async Task SafeScanInner(MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
     {
-        MapMonitorToMonitorAlert(details, alert);
-        alert.JobGroup = details.JobGroup;
-        alert.JobName = details.JobName;
-        alert.JobId = details.JobId;
-        alert.AlertPayload = JsonConvert.SerializeObject(details);
+        try
+        {
+            await ScanInner(@event, info, exception, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail to handle monitor item(s)");
+        }
     }
 
-    private static void MapDetailsToMonitorAlert(MonitorSystemDetails details, MonitorAlert alert)
+    private async Task SafeScanInner(MonitorEvents @event, IJobExecutionContext? context, Exception? exception, CancellationToken cancellationToken)
     {
-        MapMonitorToMonitorAlert(details, alert);
-        alert.AlertPayload = JsonConvert.SerializeObject(details);
+        try
+        {
+            await ScanInner(@event, context, exception, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail to handle monitor item(s)");
+        }
     }
 
-    private static void MapExceptionMonitorAlert(Exception? exception, MonitorAlert alert)
+    private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
     {
-        alert.Exception = exception?.ToString();
-        alert.HasError = exception != null;
+        if (details == null) { return; }
+        if (action.Id == 0) { return; }
+        if (action.Groups.Count == 0) { return; }
+
+        var alert = new MonitorAlert();
+        MapDetailsToMonitorAlert(details, alert);
+        MapActionToMonitorAlert(action, alert);
+        MapExceptionMonitorAlert(exception, alert);
+        alert.LogInstanceId = context.FireInstanceId;
+
+        var items = new List<MonitorAlert>();
+        var cartesian =
+            from @group in action.Groups
+            from hook in action.MonitorActionsHooks
+            select (@group, hook);
+
+        foreach (var (group, hook) in cartesian)
+        {
+            if (group == null) { continue; }
+            if (hook == null) { continue; }
+
+            group.Users ??= [];
+
+            var i = CloneMonitorAlert(alert);
+            if (i == null) { continue; }
+            i.GroupId = group.Id;
+            i.GroupName = group.Name;
+            i.UsersCount = group.Users.Count;
+            i.Hook = hook.Hook;
+            items.Add(i);
+        }
+
+        using var scope = serviceScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+        dbContext.MonitorAlerts.AddRange(items);
+        await dbContext.SaveChangesAsync(context.CancellationToken);
     }
 
-    private static void MapMonitorToMonitorAlert(Monitor.Monitor monitor, MonitorAlert alert)
+    private async Task SaveMonitorAlert(MonitorAction action, MonitorSystemDetails? details, Exception? exception = null)
     {
-        // ATTENTION: alert.EventTitle => copy from action and not from monitor (See below)
-        alert.AlertDate = DateTime.Now;
-        alert.EventId = monitor.EventId;
-        alert.MonitorTitle = monitor.MonitorTitle;
-    }
+        if (details == null) { return; }
 
-    private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
-    {
-        alert.MonitorId = action.Id;
-        alert.EventArgument = action.EventArgument;
-        alert.EventTitle = MonitorUtil.GetMonitorEventTitle(action);
+        var alert = new MonitorAlert();
+        MapDetailsToMonitorAlert(details, alert);
+        MapActionToMonitorAlert(action, alert);
+        MapExceptionMonitorAlert(exception, alert);
+
+        var items = new List<MonitorAlert>();
+        var cartesian =
+            from @group in action.Groups
+            from hook in action.MonitorActionsHooks
+            select (@group, hook);
+
+        foreach (var (group, hook) in cartesian)
+        {
+            if (group == null) { continue; }
+            if (hook == null) { continue; }
+
+            if (group.Users == null || group.Users.Count == 0) { continue; }
+
+            var i = CloneMonitorAlert(alert);
+            if (i == null) { continue; }
+            i.GroupId = group.Id;
+            i.GroupName = group.Name;
+            i.UsersCount = group.Users.Count;
+            i.Hook = hook.Hook;
+            items.Add(i);
+        }
+
+        using var scope = serviceScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+        dbContext.MonitorAlerts.AddRange(items);
+        await dbContext.SaveChangesAsync();
     }
 
     private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
     {
         if (details == null) { return; }
         if (action.Id == 0) { return; }
+        if (details.JobId == null) { return; }
 
-        try
+        using var scope = serviceScopeFactory.CreateScope();
+        var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+        await bl.SaveMonitorCounter(action, details);
+    }
+
+    private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
+    {
+        if (info == null)
         {
-            if (details.JobId == null) { return; }
-
-            using var scope = serviceScopeFactory.CreateScope();
-            var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
-            await bl.SaveMonitorCounter(action, details);
+            _logger.LogWarning("MonitorSystemInfo is null in {MethodName}. Scan skipped", $"{nameof(MonitorService)}.{nameof(ScanInner)}");
+            return;
         }
-        catch (Exception ex)
+
+        // load items with RETRY policy to avoid transient errors
+        var items = await SafeLoadMonitorItems(@event, context: null);
+
+        foreach (var action in items)
         {
-            _logger.LogError(ex,
-                "fail to save monitor counter for monitor {Title} with event {Event}",
-                details?.MonitorTitle ?? nullText,
-                details?.EventTitle ?? nullText);
+            _ = SafeExecuteMonitor(action, @event, info, exception, cancellationToken);
         }
     }
 
-    #endregion Execute Monitor
+    private async Task ScanInner(MonitorEvents @event, IJobExecutionContext? context, Exception? exception = default, CancellationToken cancellationToken = default)
+    {
+        if (context == null)
+        {
+            _logger.LogWarning("IJobExecutionContext is null in {MethodName}. Scan skipped", $"{nameof(MonitorService)}.{nameof(ScanInner)}");
+            return;
+        }
+
+        if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+        {
+            return;
+        }
+
+        PlanarBrokerService.OnInterceptingMessage(@event, context, exception);
+
+        // load items with RETRY policy to avoid transient errors
+        var items = await SafeLoadMonitorItems(@event, context);
+
+        foreach (var action in items)
+        {
+            _ = SafeExecuteMonitor(action, @event, context, exception, cancellationToken);
+        }
+    }
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "fail to handle monitor item id: {Id}, title: {Title}"
+        )]
+    public static partial void LogGeneralMonitorError(ILogger logger, Exception ex, int id, string title);
+
+    private sealed record PrepareMonitorWrapper(MonitorDetails Details, IEnumerable<HookWrapper> HookInstances, string groupNames);
+    private sealed record PrepareSystemMonitorWrapper(MonitorSystemDetails Details, IEnumerable<HookWrapper> HookInstances, string GroupNames);
 }

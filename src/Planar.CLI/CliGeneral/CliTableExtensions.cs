@@ -271,7 +271,7 @@ internal static class CliTableExtensions
         foreach (var item in response.Data)
         {
             if (item == null) { continue; }
-            table.Table.AddRow(SafeCliString(item.Name), SafeCliString(item.Value));
+            table.Table.AddRow(SafeCliString(item.Name), LimitValue(item.Value, 200));
         }
 
         return table;
@@ -835,7 +835,7 @@ internal static class CliTableExtensions
         if (response == null || response.Data == null) { return table; }
         response.Data.ForEach(r => table.Table.AddRow(
             r.Key.EscapeMarkup(),
-            SafeCliString(LimitValue(r.Value)),
+            r.IsSecret ? CliFormat.FormattedSecret : SafeCliString(LimitValue(r.Value)),
             r.Type?.EscapeMarkup() ?? string.Empty,
             SafeCliString(LimitValue(r.SourceUrl)),
             CliTableFormat.GetBooleanYesNoMarkup(r.IsSecret),

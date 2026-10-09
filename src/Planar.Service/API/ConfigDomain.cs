@@ -25,7 +25,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     private const string c_source_url = "source url";
     private const string kind = "global config";
 
-    public async Task Add(GlobalConfigModelAddRequest request)
+    public async Task Add(GlobalConfigModelRequest request)
     {
         TrimConfigKey(request);
         var exists = await DataLayer.IsGlobalConfigExists(request.Key);
@@ -35,7 +35,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             throw new RestConflictException($"key {request.Key} already exists");
         }
 
-        await AddInner(request, withDelete: false);
+        await AddInner(request);
         _ = Flush();
     }
 
@@ -99,7 +99,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         string? message = null;
         foreach (var config in allConfigs)
         {
-            var request = new GlobalConfigModelAddRequest
+            var request = new GlobalConfigModelRequest
             {
                 Key = config.Key,
                 SourceUrl = config.SourceUrl,
@@ -118,7 +118,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
             if (config.Value != request.Value)
             {
-                var updatedConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
+                var updatedConfig = GlobalConfig.FromGlobalConfigModelRequest(request);
                 await DataLayer.UpdateGlobalConfig(updatedConfig);
                 if (Logger.IsEnabled(LogLevel.Information))
                 {
@@ -164,29 +164,28 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return data;
     }
 
-    public async Task<int> Update(GlobalConfigModelUpdateRequest request)
+    public async Task Update(GlobalConfigModelRequest request)
     {
+        // trim the key
         TrimConfigKey(request);
+
+        // get the exists config from database for update
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key) ?? throw new RestNotFoundException();
 
-        if (!string.IsNullOrWhiteSpace(exists.SourceUrl))
-        {
-            if (!string.IsNullOrWhiteSpace(request.Value)) { throw new RestValidationException(nameof(request.Value), $"config key '{request.Key}' has source url '{exists.SourceUrl}' and cannot be updated with value"); }
-            if (string.IsNullOrWhiteSpace(request.SourceUrl)) { throw new RestValidationException(nameof(request.SourceUrl), $"config key '{request.Key}' has source url '{exists.SourceUrl} and your update request must have source url value"); }
-            if (exists.SourceUrl == request.SourceUrl) { return 0; }
-            request.Value = await SafeGetSourceUrlContent(request.SourceUrl);
-            exists.SourceUrl = request.SourceUrl;
-            exists.Value = request.Value;
-        }
-        else
-        {
-            if (!string.IsNullOrWhiteSpace(request.SourceUrl)) { throw new RestValidationException(nameof(request.SourceUrl), $"config key '{request.Key}' has no source url and cannot be updated with new source url"); }
-            exists.Value = request.Value;
-            exists.SourceUrl = null;
-        }
+        // read content from source url if provided and set it to request.Value
+        await SetValueSourceUrlContent(request);
 
         // validate that the content matches the specified type (yml, json, string)
         ValidateContentMatchTheType(request, exists.Type);
+
+        // check if need to update the config, if not return
+        if (!NeedToUpdate(request, exists)) { return; }
+
+        // validate that the config is not secret and have source url at the same time
+        VaildateSecretWithUrl(request, exists);
+
+        // update the config with the new values
+        exists.Update(request);
 
         // encrypt the value if needed and get the secret key
         EncryptConfigValueIfNeeded(exists);
@@ -197,8 +196,16 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             AuditSecuritySafe($"config key '{request.Key}' was updated");
             _ = Flush();
         }
+    }
 
-        return count;
+    private static void VaildateSecretWithUrl(GlobalConfigModelRequest request, GlobalConfig exists)
+    {
+        var isSecret = request.IsSecret ?? exists.IsSecret;
+        var isSourceUrl = !string.IsNullOrWhiteSpace(request.SourceUrl) || string.IsNullOrWhiteSpace(request.SourceUrl);
+        if (isSecret && isSourceUrl)
+        {
+            throw new RestValidationException(nameof(request.IsSecret), $"global config '{request.Key}' cannot be secret and have source url at the same time");
+        }
     }
 
     internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
@@ -221,15 +228,9 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return response;
     }
 
-    private static string? EncryptConfigValueIfNeeded(GlobalConfigModelAddRequest request)
+    private static string? EncryptConfigValueIfNeeded(GlobalConfigModelRequest request)
     {
         if (request.IsSecret != true) { return null; }
-        return EncryptConfigValueIfNeeded(request, request.IsSecret);
-    }
-
-    private static string? EncryptConfigValueIfNeeded(GlobalConfigModelUpdateRequest request, bool? isSecret)
-    {
-        if (isSecret != true) { return null; }
         if (string.IsNullOrWhiteSpace(request.Value)) { return null; }
         var key = Aes256Cipher.GenerateKey();
         var aes = new Aes256Cipher(key);
@@ -239,7 +240,12 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     private static void EncryptConfigValueIfNeeded(GlobalConfig config)
     {
-        if (!config.IsSecret) { return; }
+        if (!config.IsSecret)
+        {
+            config.SecretKey = null;
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(config.Value)) { return; }
         var key = Aes256Cipher.GenerateKey();
         var aes = new Aes256Cipher(key);
@@ -277,24 +283,12 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return content;
     }
 
-    private static async Task<string> SafeGetSourceUrlContent(string sourceUrl)
-    {
-        try
-        {
-            return await GetSourceUrlContent(sourceUrl);
-        }
-        catch (Exception ex)
-        {
-            throw new RestValidationException(c_source_url, $"unable to get content from source url '{sourceUrl}'. message: {ex.Message}");
-        }
-    }
-
-    private static void SetDefaultConfigType(GlobalConfigModelAddRequest request)
+    private static void SetDefaultConfigType(GlobalConfigModelRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Type)) { request.Type = nameof(GlobalConfigTypes.String).ToLower(); }
     }
 
-    private static async Task SetValueSourceUrlContent(GlobalConfigModelAddRequest request)
+    private static async Task SetValueSourceUrlContent(GlobalConfigModelRequest request)
     {
         if (string.IsNullOrEmpty(request.SourceUrl)) { return; }
         try
@@ -308,12 +302,12 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    private static void TrimConfigKey(GlobalConfigModelUpdateRequest request)
+    private static void TrimConfigKey(GlobalConfigModelRequest request)
     {
         request.Key = request.Key.Trim();
     }
 
-    private static void ValidateContentMatchTheType(GlobalConfigModelUpdateRequest request, string? type)
+    private static void ValidateContentMatchTheType(GlobalConfigModelRequest request, string? type)
     {
         if (string.IsNullOrWhiteSpace(request.Value)) { return; }
 
@@ -331,38 +325,33 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    private async Task AddInner(GlobalConfigModelAddRequest request, bool withDelete)
+    private async Task AddInner(GlobalConfigModelRequest request)
     {
+        // trim the key
+        TrimConfigKey(request);
+
         // Set default type to string if not provided
         SetDefaultConfigType(request);
 
-        // read content from source url if provided and set it to request.Value
-        await SetValueSourceUrlContent(request);
-
         // validate that the content matches the specified type (yml, json, string)
         ValidateContentMatchTheType(request, request.Type);
+
+        // read content from source url if provided and set it to request.Value
+        await SetValueSourceUrlContent(request);
 
         // encrypt the value if needed and get the secret key
         var secretKey = EncryptConfigValueIfNeeded(request);
 
         // map the request to the GlobalConfig entity and set the secret key
-        var globalConfig = GlobalConfig.FromGlobalConfigModelAddRequest(request);
+        var globalConfig = GlobalConfig.FromGlobalConfigModelRequest(request);
         globalConfig.SecretKey = secretKey;
 
         // create data layer
         await using var scope = ServiceProvider.CreateAsyncScope();
         var dataLayer = scope.ServiceProvider.GetRequiredService<IConfigData>();
 
-        if (withDelete)
-        {
-            await dataLayer.AddGlobalConfigWithDelete(globalConfig);
-            AuditSecuritySafe($"config key '{request.Key}' was updated");
-        }
-        else
-        {
-            await dataLayer.AddGlobalConfig(globalConfig);
-            AuditSecuritySafe($"config key '{request.Key}' was added");
-        }
+        await dataLayer.AddGlobalConfig(globalConfig);
+        AuditSecuritySafe($"config key '{request.Key}' was added");
     }
 
     private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)
@@ -395,27 +384,44 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request)
     {
+        // trim the key
         TrimConfigKey(request);
+
+        // Set default type to string if not provided
         SetDefaultConfigType(request);
+
+        // read content from source url if provided and set it to request.Value
+        await SetValueSourceUrlContent(request);
+
+        // validate that the content matches the specified type (yml, json, string)
+        ValidateContentMatchTheType(request, request.Type);
+
+        // get the exists config from database for update
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key);
+
         if (exists == null)
         {
-            await AddInner(request, withDelete: false);
+            await AddInner(request);
             var message = $"global config '{request.Key}' was added";
             return new ApplyResponseItem(request.Key, ApplyAction.Add, message, Manifest.GlobalConfig, request.Source);
         }
         else
         {
             var count = 0;
-            if (await NeedToUpdate(request, exists))
-            {
-                if (exists.IsSecret && !request.IsSecret.GetValueOrDefault())
-                {
-                    throw new RestValidationException(nameof(request.IsSecret), $"global config '{request.Key}' is secret and cannot be updated to non-secret");
-                }
 
-                await AddInner(request, withDelete: true);
-                count = 1;
+            // check if need to update the config, if not return
+            if (NeedToUpdate(request, exists))
+            {
+                // validate that the config is not secret and have source url at the same time
+                VaildateSecretWithUrl(request, exists);
+
+                // update the config with the new values
+                exists.Update(request);
+
+                // encrypt the value if needed and get the secret key
+                EncryptConfigValueIfNeeded(exists);
+
+                count = await DataLayer.SaveChangesAsync();
             }
 
             var message = count > 0 ? $"global config '{request.Key}' was updated" : $"global config '{request.Key}' was not changed";
@@ -492,7 +498,9 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
     private async Task<Dictionary<string, string?>> LoadConfigFlat(bool decrypt, CancellationToken stoppingToken = default)
     {
-        var parameters = await DataLayer.GetAllGlobalConfig(stoppingToken);
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dal = scope.ServiceProvider.GetRequiredService<IConfigData>();
+        var parameters = await dal.GetAllGlobalConfig(stoppingToken);
         var final = new Dictionary<string, string?>();
         foreach (var p in parameters)
         {
@@ -521,11 +529,11 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return final;
     }
 
-    private async Task<bool> NeedToUpdate(GlobalConfigModelAddRequest request, GlobalConfig exists)
+    private bool NeedToUpdate(GlobalConfigModelRequest request, GlobalConfig exists)
     {
         if (exists.SourceUrl != request.SourceUrl) { return true; }
-        if (exists.IsSecret != request.IsSecret) { return true; }
-        if (exists.Type != request.Type) { return true; }
+        if (request.IsSecret.HasValue && exists.IsSecret != request.IsSecret) { return true; }
+        if (!string.IsNullOrWhiteSpace(request.Type) && exists.Type != request.Type) { return true; }
         if (exists.IsSecret)
         {
             var existsValue = GetGlobalConfigValue(exists, decrypt: true);

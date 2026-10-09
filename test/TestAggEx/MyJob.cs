@@ -41,7 +41,7 @@ namespace TestAggEx
                 }
             }
 
-            CheckAggragateException();
+            CheckAggregateException();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

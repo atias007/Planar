@@ -1,7 +1,6 @@
 ﻿using Spectre.Console;
 using System.Linq;
 using System.Text;
-using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -11,6 +10,8 @@ namespace Planar.CLI.CliGeneral
         internal const string OkColor = "green";
         internal const string ErrorColor = "Red";
         internal const string Suggestion = "turquoise2";
+        internal const string Secret = "*****";
+        internal const string FormattedSecret = "[blue]*****[/]";
 
         public static string GetWarningMarkup(string? message)
         {

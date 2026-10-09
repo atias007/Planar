@@ -47,7 +47,8 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
         var restRequest = new RestRequest("resource/{name}", Method.Get)
             .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
-        return await ExecuteEntity<ResourceDetails>(restRequest, cancellationToken);
+        var result = await RestProxy.Invoke<ResourceDetails>(restRequest, cancellationToken);
+        return new CliActionResponse(result, result.Data?.Value);
     }
 
     [Action("ls")]

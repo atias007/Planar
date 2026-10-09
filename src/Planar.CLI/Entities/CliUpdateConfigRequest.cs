@@ -2,11 +2,16 @@
 
 namespace Planar.CLI.Entities;
 
-public class CliUpdateConfigRequest : CliConfigKeyRequest
+public class CliUpdateValueConfigRequest : CliConfigKeyRequest
 {
-    [ActionProperty("v", "value", InputDisplay = "value")]
-    public string? Value { get; set; }
+    [ActionProperty(DefaultOrder = 1)]
+    [Required("value argument is required")]
+    public string? Value { get; set; } = string.Empty;
+}
 
-    [ActionProperty("u", "url", InputDisplay = "url")]
-    public string? SourceUrl { get; set; }
+public class CliUpdateUrlConfigRequest : CliConfigKeyRequest
+{
+    [ActionProperty(DefaultOrder = 1)]
+    [Required("url argument is required")]
+    public string? Url { get; set; } = string.Empty;
 }
