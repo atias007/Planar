@@ -36,7 +36,7 @@ internal partial class MonitorService(IServiceProvider serviceProvider, IService
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
 
     private readonly AsyncRetryPolicy _retryPolicy = Policy
-        .Handle<Exception>()
+        .Handle<Exception>(ex => ex is not OperationCanceledException)
         .WaitAndRetryAsync(3, c => TimeSpan.FromSeconds(Math.Pow(2, c)));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -461,9 +461,13 @@ internal partial class MonitorService(IServiceProvider serviceProvider, IService
         var details = GetMonitorDetails(action, context, exception);
 
         // Check for mute
-        if (await CheckForMutedMonitor(details, action.Id) && _logger.IsEnabled(LogLevel.Warning))
+        if (await CheckForMutedMonitor(details, action.Id))
         {
-            _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
+            if (_logger.IsEnabled(LogLevel.Warning))
+            {
+                _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
+            }
+
             return null;
         }
 
