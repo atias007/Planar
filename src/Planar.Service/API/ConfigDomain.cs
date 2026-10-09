@@ -168,17 +168,20 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         // trim the key
         TrimConfigKey(request);
 
-        // validate that the content matches the specified type (yml, json, string)
-        ValidateContentMatchTheType(request, request.Type);
-
         // get the exists config from database for update
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key) ?? throw new RestNotFoundException();
 
         // read content from source url if provided and set it to request.Value
         await SetValueSourceUrlContent(request);
 
+        // validate that the content matches the specified type (yml, json, string)
+        ValidateContentMatchTheType(request, exists.Type);
+
         // check if need to update the config, if not return
         if (!NeedToUpdate(request, exists)) { return; }
+
+        // validate that the config is not secret and have source url at the same time
+        VaildateSecretWithUrl(request, exists);
 
         // update the config with the new values
         exists.Update(request);
@@ -191,6 +194,16 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         {
             AuditSecuritySafe($"config key '{request.Key}' was updated");
             _ = Flush();
+        }
+    }
+
+    private static void VaildateSecretWithUrl(GlobalConfigModelRequest request, GlobalConfig exists)
+    {
+        var isSecret = request.IsSecret ?? exists.IsSecret;
+        var isSourceUrl = !string.IsNullOrWhiteSpace(request.SourceUrl) || string.IsNullOrWhiteSpace(request.SourceUrl);
+        if (isSecret && isSourceUrl)
+        {
+            throw new RestValidationException(nameof(request.IsSecret), $"global config '{request.Key}' cannot be secret and have source url at the same time");
         }
     }
 
@@ -376,14 +389,14 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         // Set default type to string if not provided
         SetDefaultConfigType(request);
 
+        // read content from source url if provided and set it to request.Value
+        await SetValueSourceUrlContent(request);
+
         // validate that the content matches the specified type (yml, json, string)
         ValidateContentMatchTheType(request, request.Type);
 
         // get the exists config from database for update
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key);
-
-        // read content from source url if provided and set it to request.Value
-        await SetValueSourceUrlContent(request);
 
         if (exists == null)
         {
@@ -398,6 +411,9 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             // check if need to update the config, if not return
             if (NeedToUpdate(request, exists))
             {
+                // validate that the config is not secret and have source url at the same time
+                VaildateSecretWithUrl(request, exists);
+
                 // update the config with the new values
                 exists.Update(request);
 
