@@ -62,6 +62,13 @@ public class JobData(PlanarContext context) : BaseDataLayer(context)
         return properties;
     }
 
+    public async Task<IEnumerable<string>> GetJobsGlobalConfigs()
+    {
+        return await _context.JobProperties
+            .Select(j => j.JobId)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<JobProperty>> GetAllProperties(string typeName)
     {
         var properties = await _context.JobProperties

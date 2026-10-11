@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using CommonJob;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
@@ -202,7 +203,7 @@ public partial class JobDomain
     private async Task<PlanarIdResponseWrapper> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
     {
         // Validation
-        await ValidateUpdateJob(request, options, metadata);
+        var properties = await ValidateUpdateJob(request, options, metadata);
         ValidateJobProperty(request);
 
         // Validate no changes
@@ -234,7 +235,7 @@ public partial class JobDomain
         // Sync Job Data
         UpdateJobData(request, options, metadata);
 
-        // Update the author
+        // Update the Author, CircuitBreaker, RetentionDays
         UpdateJobExtendedProperties(request, metadata);
 
         // Update Triggers
@@ -254,7 +255,7 @@ public partial class JobDomain
         await PauseTriggers(metadata.JobKey, metadata.PausedTriggers);
 
         // Update Properties
-        await UpdateJobProperties(request, metadata);
+        await UpdateJobProperties(request, metadata, properties);
 
         // Audit
         AuditJobSafe(metadata.JobKey, "job updated", new { request = cloneRequest, options });
@@ -279,17 +280,24 @@ public partial class JobDomain
         metadata.JobDetails = BuildJobDetails(request, metadata.JobKey);
     }
 
-    private async Task UpdateJobProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
+    private async Task UpdateJobProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata, object? properties)
     {
         var jobPropertiesYml = GetJopPropertiesYml(request);
         var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.JobDetails);
+        string? resourceNames = null;
+        if (properties is IResourceJobProperties resourceProperties)
+        {
+            resourceNames = YmlUtil.Serialize(resourceProperties.ResourceNames.OrderBy(r => r));
+        }
+
         var property = new JobProperty
         {
             JobId = metadata.JobId,
             Properties = jobPropertiesYml,
             GlobalConfigKeys = jobGlobalConfigKeysYml,
-            JobType = jobType
+            JobType = jobType,
+            ResourcesKeys = resourceNames
         };
 
         await using var scope = ServiceProvider.CreateAsyncScope();
@@ -317,11 +325,11 @@ public partial class JobDomain
         metadata.Triggers = BuildTriggers(request, metadata.JobId);
     }
 
-    private async Task ValidateUpdateJob(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+    private async Task<object?> ValidateUpdateJob(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
     {
         ValidateRequestNoNull(request);
         ValidateUpdateJobOptions(options);
-        await ValidateRequestProperties(request);
+        var properties = await ValidateRequestProperties(request);
         ValidateGlobalConfigKeys(request);
         var scheduler = await GetScheduler();
         metadata.JobKey = ValidateJobMetadata(request, scheduler);
@@ -330,5 +338,7 @@ public partial class JobDomain
         metadata.JobId =
             await JobKeyHelper.GetJobId(metadata.JobKey) ??
             throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
+
+        return properties;
     }
 }

@@ -16,6 +16,7 @@
     <EmbeddedResource Include="Scripts\Planar_0004 - config source.sql" />
     <EmbeddedResource Include="Scripts\Planar_0005 - quartz_ver_migration.sql" />
     <EmbeddedResource Include="Scripts\Planar_0006 - agents_table.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0011 - job_prop_res.sql" />
     <EmbeddedResource Include="Scripts\Planar_0007 - job_prop_params.sql" />
     <EmbeddedResource Include="Scripts\Planar_0010 - resource_table.sql" />
     <EmbeddedResource Include="Scripts\Planar_0009 - quartz_v4.sql" />
