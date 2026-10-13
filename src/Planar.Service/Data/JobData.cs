@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Planar.Common;
 using Planar.Service.Model;
 using Planar.Service.Reports;
@@ -12,6 +11,10 @@ namespace Planar.Service.Data;
 
 public interface IJobData : IJobPropertyDataLayer, IBaseDataLayer
 {
+    Task<IEnumerable<KeyValuePair<string, string>>> GetJobsGlobalConfigs();
+
+    Task<IEnumerable<KeyValuePair<string, string>>> GetJobResources();
+
     Task AddJobAudit(JobAudit jobAudit);
 
     Task AddJobProperty(JobProperty jobProperty);
@@ -62,10 +65,19 @@ public class JobData(PlanarContext context) : BaseDataLayer(context)
         return properties;
     }
 
-    public async Task<IEnumerable<string>> GetJobsGlobalConfigs()
+    public async Task<IEnumerable<KeyValuePair<string, string>>> GetJobsGlobalConfigs()
     {
         return await _context.JobProperties
-            .Select(j => j.JobId)
+            .Where(j => j.GlobalConfigKeys != null && j.GlobalConfigKeys != string.Empty)
+            .Select(j => new KeyValuePair<string, string>(j.JobId, j.GlobalConfigKeys!))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, string>>> GetJobResources()
+    {
+        return await _context.JobProperties
+            .Where(j => j.ResourcesKeys != null && j.ResourcesKeys != string.Empty)
+            .Select(j => new KeyValuePair<string, string>(j.JobId, j.ResourcesKeys!))
             .ToListAsync();
     }
 

@@ -33,6 +33,19 @@ public static class YmlUtil
         return YmlDeserializer.Deserialize<T>(yml);
     }
 
+    public static T? SafeDeserialize<T>(string yml)
+                    where T : class
+    {
+        try
+        {
+            return YmlDeserializer.Deserialize<T>(yml);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static string GetApplySource(string yml)
     {
         if (string.IsNullOrWhiteSpace(yml)) { return string.Empty; }
