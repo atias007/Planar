@@ -13,6 +13,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.Service.API;
 
@@ -77,6 +78,14 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         return items;
     }
 
+    public async Task<Dictionary<string, IEnumerable<string>>> GetAllNamesInUse()
+    {
+        var jobDomain = Resolve<JobDomain>();
+        var names = await DataLayer.GetAllResourceNames();
+        var items = await jobDomain.GetJobsUsingResource(names);
+        return items;
+    }
+
     public async Task Delete([FromRoute][Range(1, 100)] string name)
     {
         await ValidateResourceNotInUse(name);
@@ -93,7 +102,7 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         var jobs = (await jobDomain.GetJobsUsingResource(name)).ToList();
         if (jobs.Count > 0)
         {
-            var job_name = JobKeyHelper.GetJobKeyById(jobs[0]).ToString();
+            var job_name = await JobKeyHelper.GetJobKeyById(jobs[0]);
             var message = $"resource '{name}' is used by job '{job_name}'";
             if (jobs.Count > 1)
             {

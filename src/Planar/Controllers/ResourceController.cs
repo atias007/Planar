@@ -64,7 +64,7 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
     }
 
     [HttpGet]
-    [EditorAuthorize]
+    [ViewerAuthorize]
     [EndpointName("get_resource")]
     [EndpointDescription("Get all resources")]
     [EndpointSummary("Get All Resources")]
@@ -77,11 +77,13 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
     }
 
     [HttpGet("{name}")]
-    [EditorAuthorize]
+    [ViewerAuthorize]
     [EndpointName("get_resource_name")]
     [EndpointDescription("Get resource by name")]
     [EndpointSummary("Get Resource By Name")]
     [OkJsonResponse(typeof(ResourceModel))]
+    [BadRequestResponse]
+    [NotFoundResponse]
     public async Task<ActionResult<ResourceModel>> GetByName([FromRoute][Length(1, 100)] string name)
     {
         var result = await BusinesLayer.GetByName(name);
@@ -89,7 +91,7 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
     }
 
     [HttpGet("names")]
-    [EditorAuthorize]
+    [ViewerAuthorize]
     [EndpointName("get_resource_names")]
     [EndpointDescription("Get all resource names")]
     [EndpointSummary("Get All Resource Names")]
@@ -97,6 +99,18 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
     public async Task<ActionResult<IEnumerable<string>>> GetAllNames()
     {
         var result = await BusinesLayer.GetAllNames();
+        return Ok(result);
+    }
+
+    [HttpGet("in-use")]
+    [ViewerAuthorize]
+    [EndpointName("get_resource_names_in_use")]
+    [EndpointDescription("Get all resource names that are in use")]
+    [EndpointSummary("Get All Resource Names That Are In Use")]
+    [OkJsonResponse(typeof(Dictionary<string, IEnumerable<string>>))]
+    public async Task<ActionResult<Dictionary<string, IEnumerable<string>>>> GetAllNamesInUse()
+    {
+        var result = await BusinesLayer.GetAllNamesInUse();
         return Ok(result);
     }
 

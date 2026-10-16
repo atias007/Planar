@@ -5,6 +5,8 @@ using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -59,6 +61,14 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
             .AddQueryPagingParameter(request);
 
         return await ExecuteTable<PagingResponse<ResourceDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+    }
+
+    [Action("in-use")]
+    public static async Task<CliActionResponse> GetResources(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest($"{c_resource}/in-use", Method.Get);
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        return new CliActionResponse(result, result.Data);
     }
 
     [NullRequest]

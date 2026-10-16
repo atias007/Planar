@@ -1005,6 +1005,13 @@ public partial class JobDomain
             var duplicatesTitle = string.Join(',', duplicates);
             throw new RestValidationException(global_config_keys, $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
         }
+
+        var notExistsKeys = request.GlobalConfigKeys.Where(gc => !Global.GlobalConfig.ContainsKey(gc)).ToList();
+        if (notExistsKeys.Count > 0)
+        {
+            var notExistsKeysTitle = string.Join(',', notExistsKeys.Select(k => $"'{k}'"));
+            throw new RestValidationException(global_config_keys, $"global config key(s) {notExistsKeysTitle} do not exist");
+        }
     }
 
     private async Task<object?> ValidatePropertiesInner(SetJobDynamicRequest request)

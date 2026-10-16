@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Quartz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -24,7 +25,7 @@ public static class Global
         }
     }
 
-    public static Dictionary<string, string?> GlobalConfig { get; private set; } = [];
+    public static Dictionary<string, string?> GlobalConfig { get; private set; } = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
     public static LogLevel LogLevel { get; set; }
 

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Hooks.General;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -276,5 +277,31 @@ public partial class JobDomain
         }
 
         return result;
+    }
+
+    public async Task<IEnumerable<string>> GetJobsUsingResource(IEnumerable<string> resourceNames)
+    {
+        async Task<string> GetJobById(string id)
+        {
+            var key = await JobKeyHelper.GetJobKeyById(id);
+            return key?.ToString() ?? string.Empty;
+        }
+
+        var yamls = await DataLayer.GetJobResources();
+        var resources = new Dictionary<string, IEnumerable<string>>();
+
+        foreach (var item in yamls)
+        {
+            if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
+            var keys = YmlUtil.Deserialize<IEnumerable<string>>(item.Value);
+            if (keys.Contains(resourceNames, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(item.Key);
+            }
+
+            resources.Add(item.Key, keys);
+        }
+
+        return resources;
     }
 }

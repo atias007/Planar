@@ -234,7 +234,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         var jobs = (await jobDomain.GetJobsUsingGlobalConfig(key)).ToList();
         if (jobs.Count > 0)
         {
-            var job_name = JobKeyHelper.GetJobKeyById(jobs[0]).ToString();
+            var job_name = await JobKeyHelper.GetJobKeyById(jobs[0]);
             var message = $"global config '{key}' is used by job '{job_name}'";
             if (jobs.Count > 1)
             {

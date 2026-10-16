@@ -721,7 +721,7 @@ internal static class CliTableExtensions
 
         table.Table.AddRow("Data", dataMap.EscapeMarkup() ?? string.Empty);
         table.Table.AddRow(nameof(response.Properties), response.Properties.EscapeMarkup());
-        table.Table.AddRow(nameof(response.GlobalConfigKeys).SplitWords(), globalKeys.EscapeMarkup());
+        table.Table.AddRow(nameof(response.GlobalConfigKeys).SplitWords(), SafeCliString(globalKeys.Trim()));
 
         var response2 = new TriggerRowDetails
         {
