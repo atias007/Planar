@@ -248,11 +248,11 @@ where TProperties : class, IJobProperties, new()
     {
         if (properties.ResourceNames == null || !properties.ResourceNames.Any()) { return new Dictionary<string, string>(); }
 
-var resources = new Dictionary<string, string>(
-    await dal.Value.GetResources(properties.ResourceNames, ExecutionCancellationToken),
-    StringComparer.OrdinalIgnoreCase);
-var missing = properties.ResourceNames.Except(resources.Keys, StringComparer.OrdinalIgnoreCase).ToList();
-if (missing.Count == 0) { return resources; }
+        var resources = new Dictionary<string, string>(
+            await dal.Value.GetResources(properties.ResourceNames, ExecutionCancellationToken),
+            StringComparer.OrdinalIgnoreCase);
+        var missing = properties.ResourceNames.Except(resources.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+        if (missing.Count == 0) { return resources; }
 
         var message = $"job '{GetType().FullName}' has missing resources: {string.Join(", ", missing)}";
         throw new PlanarException(message);
@@ -287,7 +287,9 @@ if (missing.Count == 0) { return resources; }
 
     protected async Task Initialize(IJobExecutionContext context)
     {
-        await SetProperties(context);
+        await SetPropertiesAndGlobalConfig(context);
+
+        FireInstanceId = context.FireInstanceId;
 
         string? path = null;
         if (Properties is IPathJobProperties pathProperties)
@@ -399,7 +401,7 @@ if (missing.Count == 0) { return resources; }
         }
     }
 
-    private async Task SetProperties(IJobExecutionContext context)
+    private async Task SetPropertiesAndGlobalConfig(IJobExecutionContext context)
     {
         var jobId = JobHelper.GetJobId(context.JobDetail);
         if (jobId == null)
@@ -431,7 +433,5 @@ if (missing.Count == 0) { return resources; }
         {
             _globalConfigKeys = YmlUtil.Deserialize<IEnumerable<string>>(p.GlobalConfigKeys);
         }
-
-        FireInstanceId = context.FireInstanceId;
     }
 }

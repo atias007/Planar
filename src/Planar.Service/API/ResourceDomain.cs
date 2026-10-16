@@ -79,10 +79,28 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
 
     public async Task Delete([FromRoute][Range(1, 100)] string name)
     {
+        await ValidateResourceNotInUse(name);
         var count = await DataLayer.RemoveResource(name);
         if (count == 0)
         {
             throw new RestNotFoundException($"resource '{name}' not found");
+        }
+    }
+
+    private async Task ValidateResourceNotInUse(string name)
+    {
+        var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+        var jobs = (await jobDomain.GetJobsUsingResource(name)).ToList();
+        if (jobs.Count > 0)
+        {
+            var job_name = JobKeyHelper.GetJobKeyById(jobs[0]).ToString();
+            var message = $"resource '{name}' is used by job '{job_name}'";
+            if (jobs.Count > 1)
+            {
+                message += $" and {jobs.Count - 1} other job(s)";
+            }
+
+            throw new RestValidationException(nameof(name), message);
         }
     }
 

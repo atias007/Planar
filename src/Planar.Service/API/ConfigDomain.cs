@@ -49,6 +49,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     public async Task Delete(string key)
     {
         key = key.SafeTrim() ?? string.Empty;
+        await ValidateConfigNotInUse(key);
         var count = await DataLayer.RemoveGlobalConfig(key);
         if (count == 0)
         {
@@ -225,6 +226,23 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         await Flush(cancellationToken);
 
         return response;
+    }
+
+    private async Task ValidateConfigNotInUse(string key)
+    {
+        var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+        var jobs = (await jobDomain.GetJobsUsingGlobalConfig(key)).ToList();
+        if (jobs.Count > 0)
+        {
+            var job_name = JobKeyHelper.GetJobKeyById(jobs[0]).ToString();
+            var message = $"global config '{key}' is used by job '{job_name}'";
+            if (jobs.Count > 1)
+            {
+                message += $" and {jobs.Count - 1} other job(s)";
+            }
+
+            throw new RestValidationException(nameof(key), message);
+        }
     }
 
     private static string? EncryptConfigValueIfNeeded(GlobalConfigModelRequest request)

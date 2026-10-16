@@ -10,7 +10,6 @@ using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
-using Quartz.Util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -18,7 +17,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API;
 
@@ -114,7 +112,7 @@ public partial class JobDomain
         }
         catch (Exception ex)
         {
-            Logger.LogDebug(ex, "Fail to get avaliable job folder info");
+            Logger.LogDebug(ex, "Fail to get available job folder info");
         }
 
         return null;
@@ -242,5 +240,41 @@ public partial class JobDomain
         var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(scheduler, jobKey);
         if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
         return cancelAutoResume;
+    }
+
+    public async Task<IEnumerable<string>> GetJobsUsingGlobalConfig(string key)
+    {
+        var yamls = await DataLayer.GetJobsGlobalConfigs();
+        var result = new List<string>();
+        foreach (var item in yamls)
+        {
+            if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
+
+            var keys = YmlUtil.SafeDeserialize<IEnumerable<string>>(item.Value) ?? [];
+            if (keys.Contains(key, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(item.Key);
+            }
+        }
+
+        return result;
+    }
+
+    public async Task<IEnumerable<string>> GetJobsUsingResource(string resourceName)
+    {
+        var yamls = await DataLayer.GetJobResources();
+        var result = new List<string>();
+        foreach (var item in yamls)
+        {
+            if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
+
+            var keys = YmlUtil.Deserialize<IEnumerable<string>>(item.Value);
+            if (keys.Contains(resourceName, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(item.Key);
+            }
+        }
+
+        return result;
     }
 }
