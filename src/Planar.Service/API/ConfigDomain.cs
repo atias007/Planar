@@ -218,10 +218,17 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     private async Task ValidateConfigNotInUse(string key)
     {
         var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
-        var jobs = await jobDomain.GetJobsUsingGlobalConfig(key);
-        if (jobs.Any())
+        var jobs = (await jobDomain.GetJobsUsingGlobalConfig(key)).ToList();
+        if (jobs.Count > 0)
         {
-            throw new RestValidationException(nameof(key), $"global config '{key}' is used by job(s): {string.Join(", ", jobs)}");
+            var job_name = JobKeyHelper.GetJobKeyById(jobs[0]).ToString();
+            var message = $"global config '{key}' is used by job '{job_name}'";
+            if (jobs.Count > 1)
+            {
+                message += $" and {jobs.Count - 1} other job(s)";
+            }
+
+            throw new RestValidationException(nameof(key), message);
         }
     }
 
