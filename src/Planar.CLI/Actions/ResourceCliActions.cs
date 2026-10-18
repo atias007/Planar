@@ -63,14 +63,6 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
         return await ExecuteTable<PagingResponse<ResourceDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
     }
 
-    [Action("in-use")]
-    public static async Task<CliActionResponse> GetResources(CancellationToken cancellationToken = default)
-    {
-        var restRequest = new RestRequest($"{c_resource}/in-use", Method.Get);
-        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
-        return new CliActionResponse(result, result.Data);
-    }
-
     [NullRequest]
     [Action("remove")]
     [Action("delete")]

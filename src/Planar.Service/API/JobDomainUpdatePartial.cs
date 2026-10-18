@@ -49,7 +49,7 @@ public partial class JobDomain
         return result;
     }
 
-    private static IEnumerable<BaseTrigger> GetAllTriggers(SetJobRequest request)
+    private static List<BaseTrigger> GetAllTriggers(SetJobRequest request)
     {
         var allTriggers = new List<BaseTrigger>();
         if (request.SimpleTriggers != null)
@@ -149,19 +149,27 @@ public partial class JobDomain
         metadata.LogRetentionDays = JobHelper.GetLogRetentionDays(metadata.OldJobDetails);
     }
 
-    private async Task RollBack(JobUpdateMetadata metadata)
+    private async Task RollBack(JobUpdateMetadata metadata, object? properties)
     {
         if (metadata == null) { return; }
         if (metadata.OldJobDetails == null) { return; }
         if (!metadata.RollbackEnabled) { return; }
 
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.OldJobDetails);
+
+        string? resourceNames = null;
+        if (properties is IResourceJobProperties resourceProperties)
+        {
+            resourceNames = YmlUtil.Serialize(resourceProperties.ResourceNames.OrderBy(r => r));
+        }
+
         var property = new JobProperty
         {
             JobId = metadata.JobId,
             Properties = metadata.OldJobProperties,
             GlobalConfigKeys = metadata.GlobalConfigKeys,
-            JobType = jobType
+            JobType = jobType,
+            ResourcesKeys = resourceNames
         };
 
         var scheduler = await GetScheduler();
@@ -181,14 +189,15 @@ public partial class JobDomain
     private async Task<PlanarIdResponseWrapper> Update(SetJobDynamicRequest request, UpdateJobOptions options)
     {
         var metadata = new JobUpdateMetadata();
+        var properties = await ValidateUpdateJob(request, options, metadata);
 
         try
         {
-            return await UpdateInner(request, options, metadata);
+            return await UpdateInner(request, options, metadata, properties);
         }
         catch
         {
-            await RollBack(metadata);
+            await RollBack(metadata, properties);
             throw;
         }
     }
@@ -200,10 +209,13 @@ public partial class JobDomain
         return response;
     }
 
-    private async Task<PlanarIdResponseWrapper> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+    private async Task<PlanarIdResponseWrapper> UpdateInner(
+        SetJobDynamicRequest request,
+        UpdateJobOptions options,
+        JobUpdateMetadata metadata,
+        object? properties)
     {
         // Validation
-        var properties = await ValidateUpdateJob(request, options, metadata);
         ValidateJobProperty(request);
 
         // Validate no changes
@@ -285,6 +297,7 @@ public partial class JobDomain
         var jobPropertiesYml = GetJopPropertiesYml(request);
         var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
         var jobType = General.SchedulerUtil.GetJobTypeName(metadata.JobDetails);
+
         string? resourceNames = null;
         if (properties is IResourceJobProperties resourceProperties)
         {
