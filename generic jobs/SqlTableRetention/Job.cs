@@ -25,7 +25,7 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoTable(Table table);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<Table>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<Table>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -67,8 +67,8 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeOperation(tables, InvokeTableRerentionInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(tables.AsEnumerable());
-        Finalayze(details);
-        Finalayze();
+        Finalize(details);
+        Finalize();
     }
 
     protected override void BaseOnFail<T>(T entity, Exception ex, int? retryCount)

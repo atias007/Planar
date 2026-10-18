@@ -25,7 +25,7 @@ internal partial class Job : BaseCheckJob
 
     partial void FillConnectionStrings(Dictionary<string, string> connectionStrings, IConfiguration configuration, string environment);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<CheckQuery>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<CheckQuery>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -66,8 +66,8 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeCheck(queries, InvokeQueryCheckInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(queries.AsEnumerable());
-        Finalayze(details);
-        Finalayze();
+        Finalize(details);
+        Finalize();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

@@ -17,7 +17,7 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoHost(Host host);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<Service>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<Service>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -47,8 +47,8 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeOperation(services, InvokeServiceInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(services.AsEnumerable());
-        Finalayze(details);
-        Finalayze();
+        Finalize(details);
+        Finalize();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

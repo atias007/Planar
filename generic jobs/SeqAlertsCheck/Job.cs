@@ -18,7 +18,7 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoAlert(SeqAlert alert);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<SeqAlert>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<SeqAlert>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -59,8 +59,8 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeCheck(alerts, InvokeAlertCheckInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(alerts.AsEnumerable());
-        Finalayze(details);
-        Finalayze();
+        Finalize(details);
+        Finalize();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

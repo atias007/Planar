@@ -20,7 +20,7 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoKey(RedisKey key);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<RedisKey>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<RedisKey>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -60,8 +60,8 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeOperation(keys, InvokeKeyCheckInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(keys.AsEnumerable());
-        Finalayze(details);
-        Finalayze();
+        Finalize(details);
+        Finalize();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

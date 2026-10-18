@@ -25,13 +25,13 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoQueuesBundle(QueuesBundle bundle);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<Queue>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<Queue>> details);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<QueuesBundle>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<QueuesBundle>> details);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<Node>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<Node>> details);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<HealthCheck>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<HealthCheck>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -92,14 +92,14 @@ internal partial class Job : BaseCheckJob
         await Task.WhenAll(tasks);
 
         var hcDetails = GetFinalayzeDetails(checks.AsEnumerable());
-        Finalayze(hcDetails);
+        Finalize(hcDetails);
         var hcNodes = GetFinalayzeDetails(nodes.AsEnumerable());
-        Finalayze(hcNodes);
+        Finalize(hcNodes);
         var queueDetails = GetFinalayzeDetails(queues.AsEnumerable());
-        Finalayze(queueDetails);
+        Finalize(queueDetails);
         var bundleDetails = GetFinalayzeDetails(bundles.AsEnumerable());
-        Finalayze(bundleDetails);
-        Finalayze();
+        Finalize(bundleDetails);
+        Finalize();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
