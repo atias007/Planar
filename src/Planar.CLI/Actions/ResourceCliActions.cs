@@ -91,6 +91,15 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
         return await Execute(restRequest, cancellationToken);
     }
 
+    [Action("unused")]
+    public static async Task<CliActionResponse> GetUnusedResources(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest($"{c_resource}/unused", Method.Get);
+
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        return new CliActionResponse(result, result.Data);
+    }
+
     private static async Task<CliActionResponse> LoadResource(CliLoadResourceFileRequest request, CancellationToken cancellationToken)
     {
         ValidateFileExists(request.File);

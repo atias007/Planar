@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -11,6 +12,7 @@ using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
+using Quartz.Util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -279,29 +281,21 @@ public partial class JobDomain
         return result;
     }
 
-    public async Task<IEnumerable<string>> GetJobsUsingResource(IEnumerable<string> resourceNames)
+    public async Task<IEnumerable<string>> GetUnusedResources(IEnumerable<string> resourceNames)
     {
-        async Task<string> GetJobById(string id)
-        {
-            var key = await JobKeyHelper.GetJobKeyById(id);
-            return key?.ToString() ?? string.Empty;
-        }
-
         var yamls = await DataLayer.GetJobResources();
-        var resources = new Dictionary<string, IEnumerable<string>>();
+        var use = new List<string>();
 
         foreach (var item in yamls)
         {
             if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
-            var keys = YmlUtil.Deserialize<IEnumerable<string>>(item.Value);
-            if (keys.Contains(resourceNames, StringComparer.OrdinalIgnoreCase))
-            {
-                result.Add(item.Key);
-            }
-
-            resources.Add(item.Key, keys);
+            var keys = YmlUtil.Deserialize<List<string>>(item.Value) ?? [];
+            use.AddRange(keys);
         }
 
-        return resources;
+        return resourceNames
+            .Except(use, StringComparer.OrdinalIgnoreCase)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
     }
 }

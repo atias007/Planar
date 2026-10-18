@@ -182,7 +182,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         if (!NeedToUpdate(request, exists)) { return; }
 
         // validate that the config is not secret and have source url at the same time
-        VaildateSecretWithUrl(request, exists);
+        ValidateSecretWithUrl(request, exists);
 
         // update the config with the new values
         exists.Update(request);
@@ -198,7 +198,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    private static void VaildateSecretWithUrl(GlobalConfigModelRequest request, GlobalConfig exists)
+    private static void ValidateSecretWithUrl(GlobalConfigModelRequest request, GlobalConfig exists)
     {
         var isSecret = request.IsSecret ?? exists.IsSecret;
         var isSourceUrl = !string.IsNullOrWhiteSpace(request.SourceUrl) || string.IsNullOrWhiteSpace(request.SourceUrl);
@@ -430,7 +430,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             if (NeedToUpdate(request, exists))
             {
                 // validate that the config is not secret and have source url at the same time
-                VaildateSecretWithUrl(request, exists);
+                ValidateSecretWithUrl(request, exists);
 
                 // update the config with the new values
                 exists.Update(request);

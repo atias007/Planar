@@ -82,16 +82,14 @@ namespace Planar.Client
         {
             const string DateFormat = "s";
 
-            if (value is DateTime)
+            if (value is DateTime dateValue)
             {
-                var dateValue = (DateTime)value;
                 return dateValue.ToString(DateFormat);
             }
 
-            if (value is DateTimeOffset)
+            if (value is DateTimeOffset offsetDateValue)
             {
-                var dateValue = (DateTimeOffset)value;
-                return dateValue.ToString(DateFormat);
+                return offsetDateValue.ToString(DateFormat);
             }
 
             return Convert.ToString(value, CultureInfo.CurrentCulture);

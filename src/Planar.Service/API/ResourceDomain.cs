@@ -78,11 +78,11 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         return items;
     }
 
-    public async Task<Dictionary<string, IEnumerable<string>>> GetAllNamesInUse()
+    public async Task<IEnumerable<string>> GetUnusedResources()
     {
         var jobDomain = Resolve<JobDomain>();
         var names = await DataLayer.GetAllResourceNames();
-        var items = await jobDomain.GetJobsUsingResource(names);
+        var items = await jobDomain.GetUnusedResources(names);
         return items;
     }
 

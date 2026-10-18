@@ -102,15 +102,15 @@ public class ResourceController(ResourceDomain bl) : BaseController<ResourceDoma
         return Ok(result);
     }
 
-    [HttpGet("in-use")]
+    [HttpGet("unused")]
     [ViewerAuthorize]
-    [EndpointName("get_resource_names_in_use")]
-    [EndpointDescription("Get all resource names that are in use")]
-    [EndpointSummary("Get All Resource Names That Are In Use")]
-    [OkJsonResponse(typeof(Dictionary<string, IEnumerable<string>>))]
-    public async Task<ActionResult<Dictionary<string, IEnumerable<string>>>> GetAllNamesInUse()
+    [EndpointName("get_resource_unused")]
+    [EndpointDescription("Get all unused resource names")]
+    [EndpointSummary("Get All Unused Resource Names")]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetUnusedResources()
     {
-        var result = await BusinesLayer.GetAllNamesInUse();
+        var result = await BusinesLayer.GetUnusedResources();
         return Ok(result);
     }
 
