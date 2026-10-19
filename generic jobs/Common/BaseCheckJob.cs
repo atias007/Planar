@@ -281,16 +281,16 @@ public abstract partial class BaseCheckJob : BaseJob
         return entity.Veto;
     }
 
-    protected void Finalayze()
+    protected void Finalize()
     {
         CheckAggragateException();
         HandleCheckExceptions();
     }
 
-    protected FinalayzeDetails<T> GetFinalayzeDetails<T>(T data)
+    protected FinaliyzeDetails<T> GetFinalayzeDetails<T>(T data)
     {
         var success = ExceptionCount == 0 && _exceptions.IsEmpty;
-        var details = new FinalayzeDetails<T>(data, this, success);
+        var details = new FinaliyzeDetails<T>(data, this, success);
         return details;
     }
 

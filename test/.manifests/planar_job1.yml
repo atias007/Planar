@@ -1,22 +1,30 @@
+kind: global config
+key: gck1
+value: v1
+---
+kind: global config
+key: gck2
+value: v2
+---
 kind: Job
 version: 1.0.0
-# ------------------------------------------------------------------------------------------------------------------------
 job type: PlanarJob
 name: HelloWorld With Data
 group: Demo
 description: Demo Hello World Job With Data
 durable: true
 concurrent: false
-# ------------------------------------------------------------------------------------------------------------------------
 properties:
   invoke method: process
   process:
     filename: HelloWorldWithData\HelloWorldWithData.exe
-# ------------------------------------------------------------------------------------------------------------------------
+global config keys:
+  - gck1
+  - gck2
 simple triggers:
   - name: default_trigger
     interval: 00:10:00
-    misfire behaviour: FireNow
+    misfire behavior: FireNow
   - name: default_trigger2
     interval: 1.00:10:00
-    misfire behaviour: FireNow
+    misfire behavior: FireNow

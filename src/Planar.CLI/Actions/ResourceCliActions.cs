@@ -5,6 +5,8 @@ using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -79,6 +81,15 @@ public class ResourceCliActions : BaseCliAction<ResourceCliActions>
             .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
         return await Execute(restRequest, cancellationToken);
+    }
+
+    [Action("unused")]
+    public static async Task<CliActionResponse> GetUnusedResources(CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest($"{c_resource}/unused", Method.Get);
+
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        return new CliActionResponse(result, result.Data);
     }
 
     private static async Task<CliActionResponse> LoadResource(CliLoadResourceFileRequest request, CancellationToken cancellationToken)

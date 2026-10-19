@@ -3,7 +3,6 @@ PLAN FOR V 1.8.*
 ----------------
 *** apply to reports
 *** apply to hooks
-*** resource module
 
 cancel running: System.OperationCanceledException
 

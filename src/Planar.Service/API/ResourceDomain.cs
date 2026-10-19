@@ -13,6 +13,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.Service.API;
 
@@ -77,12 +78,38 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         return items;
     }
 
+    public async Task<IEnumerable<string>> GetUnusedResources()
+    {
+        var jobDomain = Resolve<JobDomain>();
+        var names = await DataLayer.GetAllResourceNames();
+        var items = await jobDomain.GetUnusedResources(names);
+        return items;
+    }
+
     public async Task Delete([FromRoute][Range(1, 100)] string name)
     {
+        await ValidateResourceNotInUse(name);
         var count = await DataLayer.RemoveResource(name);
         if (count == 0)
         {
             throw new RestNotFoundException($"resource '{name}' not found");
+        }
+    }
+
+    private async Task ValidateResourceNotInUse(string name)
+    {
+        var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+        var jobs = (await jobDomain.GetJobsUsingResource(name)).ToList();
+        if (jobs.Count > 0)
+        {
+            var job_name = await JobKeyHelper.GetJobKeyById(jobs[0]);
+            var message = $"resource '{name}' is used by job '{job_name}'";
+            if (jobs.Count > 1)
+            {
+                message += $" and {jobs.Count - 1} other job(s)";
+            }
+
+            throw new RestValidationException(nameof(name), message);
         }
     }
 

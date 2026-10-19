@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Quartz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -24,7 +25,7 @@ public static class Global
         }
     }
 
-    public static Dictionary<string, string?> GlobalConfig { get; private set; } = [];
+    public static Dictionary<string, string?> GlobalConfig { get; private set; } = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
     public static LogLevel LogLevel { get; set; }
 
@@ -32,12 +33,16 @@ public static class Global
 
     public static void SetGlobalConfig(Dictionary<string, string?> config)
     {
-        GlobalConfig = config;
+        Clear();
+        foreach (var item in config)
+        {
+            GlobalConfig.Add(item.Key, item.Value);
+        }
     }
 
     public static void Clear()
     {
-        GlobalConfig = [];
+        GlobalConfig.Clear();
     }
 
     public static SortedDictionary<string, string?> ConvertDataMapToDictionary(JobDataMap? map)

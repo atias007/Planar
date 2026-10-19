@@ -49,6 +49,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     public async Task Delete(string key)
     {
         key = key.SafeTrim() ?? string.Empty;
+        await ValidateConfigNotInUse(key);
         var count = await DataLayer.RemoveGlobalConfig(key);
         if (count == 0)
         {
@@ -182,7 +183,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         if (!NeedToUpdate(request, exists)) { return; }
 
         // validate that the config is not secret and have source url at the same time
-        VaildateSecretWithUrl(request, exists);
+        ValidateSecretWithUrl(request, exists);
 
         // update the config with the new values
         exists.Update(request);
@@ -198,7 +199,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    private static void VaildateSecretWithUrl(GlobalConfigModelRequest request, GlobalConfig exists)
+    private static void ValidateSecretWithUrl(GlobalConfigModelRequest request, GlobalConfig exists)
     {
         var isSecret = request.IsSecret ?? exists.IsSecret;
         var isSourceUrl = !string.IsNullOrWhiteSpace(request.SourceUrl) || string.IsNullOrWhiteSpace(request.SourceUrl);
@@ -226,6 +227,23 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         await Flush(cancellationToken);
 
         return response;
+    }
+
+    private async Task ValidateConfigNotInUse(string key)
+    {
+        var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
+        var jobs = (await jobDomain.GetJobsUsingGlobalConfig(key)).ToList();
+        if (jobs.Count > 0)
+        {
+            var job_name = await JobKeyHelper.GetJobKeyById(jobs[0]);
+            var message = $"global config '{key}' is used by job '{job_name}'";
+            if (jobs.Count > 1)
+            {
+                message += $" and {jobs.Count - 1} other job(s)";
+            }
+
+            throw new RestValidationException(nameof(key), message);
+        }
     }
 
     private static string? EncryptConfigValueIfNeeded(GlobalConfigModelRequest request)
@@ -413,7 +431,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
             if (NeedToUpdate(request, exists))
             {
                 // validate that the config is not secret and have source url at the same time
-                VaildateSecretWithUrl(request, exists);
+                ValidateSecretWithUrl(request, exists);
 
                 // update the config with the new values
                 exists.Update(request);

@@ -1,3 +1,9 @@
+kind: global config
+key: gck1
+value: v1
+---
+kind: Job
+version: 1.0.0
 job type: PlanarJob
 name: HelloWorld2
 group: Demo
@@ -5,9 +11,13 @@ description: Demo Hello World Job
 durable: true
 concurrent: false
 properties:
-  filename: HelloWorld\HelloWorld.exe
+  invoke method: process
+  process:
+    filename: HelloWorld\HelloWorld.exe
+global config keys:
+  - gck1
 simple triggers:
   - name: default_trigger1
     interval: 00:30:00
-    misfire behaviour: FireNow
+    misfire behavior: FireNow
     

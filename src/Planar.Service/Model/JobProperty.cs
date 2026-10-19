@@ -21,4 +21,6 @@ public partial class JobProperty
 
     [StringLength(2000)]
     public string? GlobalConfigKeys { get; set; }
+
+    public string? ResourcesKeys { get; set; }
 }

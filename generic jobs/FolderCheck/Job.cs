@@ -16,7 +16,7 @@ internal partial class Job : BaseCheckJob
 
     partial void VetoHost(Host host);
 
-    partial void Finalayze(FinalayzeDetails<IEnumerable<Folder>> details);
+    partial void Finalize(FinaliyzeDetails<IEnumerable<Folder>> details);
 
     partial void OnFail<T>(T entity, Exception ex, int? retryCount) where T : BaseDefault, ICheckElement;
 
@@ -46,8 +46,8 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeCheck(folders, InvokeFolderInner, context.TriggerDetails);
 
         var details = GetFinalayzeDetails(folders.AsEnumerable());
-        Finalayze(details);
-        Finalayze();
+        Finalize(details);
+        Finalize();
     }
 
     protected override void BaseOnFail<T>(T entity, Exception ex, int? retryCount)

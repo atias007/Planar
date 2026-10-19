@@ -799,7 +799,7 @@ public partial class JobDomain
     {
         // Validation
         ValidateRequestNoNull(request);
-        await ValidateRequestProperties(request);
+        var properties = await ValidateRequestProperties(request);
         ValidateGlobalConfigKeys(request);
         var scheduler = await GetScheduler();
         var jobKey = ValidateJobMetadata(request, scheduler);
@@ -823,22 +823,7 @@ public partial class JobDomain
         var triggers = BuildTriggers(request, id);
 
         // Save Job Properties
-        var jobPropertiesYml = GetJopPropertiesYml(request);
-        var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
-        var jobType = SchedulerUtil.GetJobTypeName(job);
-        var property = new JobProperty
-        {
-            JobId = id,
-            Properties = jobPropertiesYml,
-            GlobalConfigKeys = jobGlobalConfigKeysYml,
-            JobType = jobType
-        };
-
-        ValidateJobProperty(property);
-
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
-        await dataLayer.AddJobProperty(property);
+        await SaveJobProperty(request, job, id, properties);
 
         try
         {
@@ -848,10 +833,8 @@ public partial class JobDomain
         catch (Exception ex)
         {
             // roll back
-            await dataLayer.DeleteJobProperty(id);
-
+            await DeleteJobProperty(id);
             ValidateTriggerNeverFire(ex);
-
             throw;
         }
 
@@ -860,6 +843,40 @@ public partial class JobDomain
 
         // Return Id
         return new PlanarIdResponse { Id = id };
+    }
+
+    private async Task DeleteJobProperty(string id)
+    {
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+        await dataLayer.DeleteJobProperty(id);
+    }
+
+    private async Task SaveJobProperty(SetJobDynamicRequest request, IJobDetail job, string id, object? properties)
+    {
+        var jobPropertiesYml = GetJopPropertiesYml(request);
+        var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
+        var jobType = SchedulerUtil.GetJobTypeName(job);
+        string? resourceNames = null;
+        if (properties is IResourceJobProperties resourceProperties)
+        {
+            resourceNames = YmlUtil.Serialize(resourceProperties.ResourceNames.OrderBy(r => r));
+        }
+
+        var property = new JobProperty
+        {
+            JobId = id,
+            Properties = jobPropertiesYml,
+            GlobalConfigKeys = jobGlobalConfigKeysYml,
+            JobType = jobType,
+            ResourcesKeys = resourceNames
+        };
+
+        ValidateJobProperty(property);
+
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+        await dataLayer.AddJobProperty(property);
     }
 
     private static void ValidateJobProperty(JobProperty property)
@@ -928,7 +945,7 @@ public partial class JobDomain
         }
     }
 
-    private async Task ValidateJobProperties<TProperties>(string? yml)
+    private async Task<object?> ValidateJobProperties<TProperties>(string? yml)
         where TProperties : class
     {
         if (yml == null)
@@ -944,7 +961,7 @@ public partial class JobDomain
         if (validator == null)
         {
             Logger.LogWarning("Job properties of type {PropertyType} has no registered validation in DI. validation skipped", typeof(TProperties).FullName);
-            return;
+            return properties;
         }
 
         await validator.ValidateAndThrowAsync(properties);
@@ -956,6 +973,8 @@ public partial class JobDomain
                 await ValidateFileExists(item);
             }
         }
+
+        return properties;
     }
 
     private static void ValidateGlobalConfigKeysInner(SetJobDynamicRequest request)
@@ -986,42 +1005,51 @@ public partial class JobDomain
             var duplicatesTitle = string.Join(',', duplicates);
             throw new RestValidationException(global_config_keys, $"global config key(s) {duplicatesTitle} appear more than once. they are duplicates");
         }
+
+        var notExistsKeys = request.GlobalConfigKeys.Where(gc => !Global.GlobalConfig.ContainsKey(gc)).ToList();
+        if (notExistsKeys.Count > 0)
+        {
+            var notExistsKeysTitle = string.Join(',', notExistsKeys.Select(k => $"'{k}'"));
+            throw new RestValidationException(global_config_keys, $"global config key(s) {notExistsKeysTitle} do not exist");
+        }
     }
 
-    private async Task ValidatePropertiesInner(SetJobDynamicRequest request)
+    private async Task<object?> ValidatePropertiesInner(SetJobDynamicRequest request)
     {
         var yml = GetJopPropertiesYml(request);
-        if (yml == null) { return; }
+        if (yml == null) { return null; }
+
+        object? properties = null;
 
         switch (request.JobType)
         {
             case nameof(PlanarJob):
-                await ValidateJobProperties<PlanarJobProperties>(yml);
+                properties = await ValidateJobProperties<PlanarJobProperties>(yml);
                 ValidateUnmatched<PlanarJobProperties>(yml);
                 break;
 
             case nameof(ProcessJob):
-                await ValidateJobProperties<ProcessJobProperties>(yml);
+                properties = await ValidateJobProperties<ProcessJobProperties>(yml);
                 ValidateUnmatched<ProcessJobProperties>(yml);
                 break;
 
             case nameof(SqlJob):
-                await ValidateJobProperties<SqlJobProperties>(yml);
+                properties = await ValidateJobProperties<SqlJobProperties>(yml);
                 ValidateUnmatched<SqlJobProperties>(yml);
                 break;
 
             case nameof(RestJob):
-                await ValidateJobProperties<RestJobProperties>(yml);
+                properties = await ValidateJobProperties<RestJobProperties>(yml);
                 ValidateUnmatched<RestJobProperties>(yml);
                 break;
 
             case nameof(SqlTableReportJob):
-                await ValidateJobProperties<SqlTableReportJobProperties>(yml);
+                properties = await ValidateJobProperties<SqlTableReportJobProperties>(yml);
                 ValidateUnmatched<SqlTableReportJobProperties>(yml);
                 break;
 
             case nameof(SequenceJob):
-                await ValidateJobProperties<SequenceJobProperties>(yml);
+                properties = await ValidateJobProperties<SequenceJobProperties>(yml);
                 ValidateUnmatched<SequenceJobProperties>(yml);
                 break;
 
@@ -1029,13 +1057,15 @@ public partial class JobDomain
                 Logger.LogError("Missing validation for job type {JobType} at ValidatePropertiesInner", request.JobType);
                 break;
         }
+
+        return properties;
     }
 
-    private async Task ValidateRequestProperties(SetJobDynamicRequest request)
+    private async Task<object?> ValidateRequestProperties(SetJobDynamicRequest request)
     {
         try
         {
-            await ValidatePropertiesInner(request);
+            return await ValidatePropertiesInner(request);
         }
         catch (ValidationException)
         {
