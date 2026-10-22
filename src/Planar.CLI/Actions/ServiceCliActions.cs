@@ -75,7 +75,7 @@ public class ServiceCliActions : BaseCliAction<ServiceCliActions>
                      new (result.Data.Monitor){ Title=nameof(result.Data.Monitor) },
                      new (result.Data.Protection) { Title = nameof(result.Data.Protection)},
                      new (result.Data.Smtp){ Title = nameof(result.Data.Smtp) },
-                     new (result.Data.Hooks) { Title = nameof(result.Data.Hooks)},
+                     new (result.Data.Connectors) { Title = nameof(result.Data.Connectors)},
             };
 
         return new CliActionResponse(result, data);

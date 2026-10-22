@@ -33,7 +33,8 @@ To use different stream name per group, you can set one of the 'AdditionalField'
 
     private IEnumerable<string> GetStreamNames(IMonitor monitor)
     {
-        if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.StreamName))
+        var streamName = AppSettings.Connectors.Redis?.StreamName;
+        if (string.IsNullOrWhiteSpace(streamName))
         {
             LogError("Redis.Stream.Hook: stream name is null or empty");
             return [];
@@ -45,7 +46,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
             var stream = GetParameter("redis-stream-name", group);
             if (string.IsNullOrWhiteSpace(stream))
             {
-                stream = AppSettings.Hooks.Redis.StreamName;
+                stream = streamName;
             }
 
             if (!string.IsNullOrWhiteSpace(stream)) { streams.Add(stream); }
@@ -54,10 +55,10 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         return streams.Distinct();
     }
 
-    private async Task InvokeStream<T>(T detials)
+    private async Task InvokeStream<T>(T details)
         where T : IMonitor
     {
-        var streams = GetStreamNames(detials);
+        var streams = GetStreamNames(details);
         if (!streams.Any()) { return; }
 
         try
@@ -65,14 +66,14 @@ To use different stream name per group, you can set one of the 'AdditionalField'
             var entries = new NameValueEntry[]
             {
                 new("version", "1.0.0"),
-                new("environment", detials.Environment),
+                new("environment", details.Environment),
                 new("data-type", typeof(T).Name),
-                new("data", CoreSerializer.Serialize(detials)),
-                new("event-id", detials.EventId),
-                new("group", detials.Groups.First().Name),
+                new("data", CoreSerializer.Serialize(details)),
+                new("event-id", details.EventId),
+                new("group", details.Groups.First().Name),
             };
 
-            var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
+            var db = RedisFactory.Connection.GetDatabase(AppSettings.Connectors.Redis?.Database ?? 0);
 
             foreach (var streamName in streams)
             {
@@ -82,7 +83,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         }
         catch (Exception ex)
         {
-            throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
+            throw new PlanarHookException($"fail to invoke '{details.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
         }
     }
 
@@ -91,7 +92,7 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         var exists = await db.KeyExistsAsync(streamName);
         if (!exists)
         {
-            await db.StreamAddAsync(streamName, [new("version", "1.0.0")], maxLength: AppSettings.Hooks.Redis.StreamSize, useApproximateMaxLength: true);
+            await db.StreamAddAsync(streamName, [new("version", "1.0.0")], maxLength: AppSettings.Connectors.Redis?.StreamSize, useApproximateMaxLength: true);
 
             // clear all stream item
             var entries = await db.StreamRangeAsync(streamName);

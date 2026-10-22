@@ -67,7 +67,7 @@ smtp:
   html image mode: embedded            # how to implant images in email html templates. embedded (base64 inside html. default), internal (internal link to planar server and http/s port), external (link to external internet resource)
   html image internal base url: null   # the base url of this server (proxy serve, load balancer) for html internal images url. must be valid uri
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
-hooks:
+connectors:
   rest:
     default url: http://localhost:2306/api/hooks/rest
   # -------------------------------------------------- #

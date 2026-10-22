@@ -77,9 +77,9 @@ To use different settings per group, you can set one of the 'AdditionalField' of
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(AppSettings.Hooks.RabbitMq.Exchange))
+        if (!string.IsNullOrWhiteSpace(AppSettings.Connectors.RabbitMq?.Exchange))
         {
-            return AppSettings.Hooks.RabbitMq.Exchange;
+            return AppSettings.Connectors.RabbitMq.Exchange;
         }
 
         LogError($"RabbitMq.Hook: {name} is null or empty");

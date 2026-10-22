@@ -27,7 +27,7 @@ public sealed class RabbitMqFactory
     {
         _logger = logger;
         _cancellationToken = hostApplicationLifetime.ApplicationStopping;
-        _enabled = AppSettings.Hooks.RabbitMq.Endpoints != null && AppSettings.Hooks.RabbitMq.Endpoints.Any();
+        _enabled = AppSettings.Connectors.RabbitMq != null;
         InitializeConnectionFactory();
     }
 
@@ -179,7 +179,8 @@ public sealed class RabbitMqFactory
     private void InitializeConnectionFactory()
     {
         if (!_enabled) { return; }
-        var settings = AppSettings.Hooks.RabbitMq;
+        var settings = AppSettings.Connectors.RabbitMq;
+        if (settings == null) { return; }
 
         if (!string.IsNullOrEmpty(settings.Username)) { _connectionFactory.UserName = settings.Username; }
         if (!string.IsNullOrEmpty(settings.Password)) { _connectionFactory.Password = settings.Password; }

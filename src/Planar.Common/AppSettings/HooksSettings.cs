@@ -1,58 +1,124 @@
-﻿using Polly;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Planar.Common
 {
-    public class HooksSettings
+    public class ConnectorsSettings
     {
-        public RestHookSettings Rest { get; set; } = new();
-        public TeamsHookSettings Teams { get; set; } = new();
-        public TwilioSmsHookSettings TwilioSms { get; set; } = new();
-        public RedisSettings Redis { get; set; } = new();
-        public TelegramSettings Telegram { get; set; } = new();
-        public RabbitMqSettings RabbitMq { get; set; } = new();
+        public RestConnectorSettings? Rest { get; set; }
+        public TeamsConnectorSettings? Teams { get; set; }
+        public TwilioSmsConnectorSettings? TwilioSms { get; set; }
+        public RedisConnectorSettings? Redis { get; set; }
+        public TelegramConnectorSettings? Telegram { get; set; }
+        public RabbitMqConnectorSettings? RabbitMq { get; set; }
     }
 
-    public class RestHookSettings
+    public class RestConnectorSettings
     {
-        public string? DefaultUrl { get; set; }
+        private RestConnectorSettings(string defaultUrl)
+        {
+            DefaultUrl = defaultUrl;
+        }
+
+        public string DefaultUrl { get; set; }
+
+        public static RestConnectorSettings? GetInstance(string defaultUrl)
+        {
+            if (string.IsNullOrWhiteSpace(defaultUrl)) { return null; }
+            return new RestConnectorSettings(defaultUrl);
+        }
     }
 
-    public class TeamsHookSettings
+    public class TeamsConnectorSettings
     {
-        public string? DefaultUrl { get; set; }
+        private TeamsConnectorSettings(string defaultUrl)
+        {
+            DefaultUrl = defaultUrl;
+        }
+
+        public string DefaultUrl { get; private set; }
+
+        public static TeamsConnectorSettings? GetInstance(string defaultUrl)
+        {
+            if (string.IsNullOrWhiteSpace(defaultUrl)) { return null; }
+            return new TeamsConnectorSettings(defaultUrl);
+        }
     }
 
-    public class TwilioSmsHookSettings
+    public class TwilioSmsConnectorSettings
     {
-        public string? AccountSid { get; set; }
-        public string? AuthToken { get; set; }
-        public string? FromNumber { get; set; }
+        private TwilioSmsConnectorSettings(string accountSid, string authToken, string fromNumber)
+        {
+            AccountSid = accountSid;
+            AuthToken = authToken;
+            FromNumber = fromNumber;
+        }
+
+        public string AccountSid { get; private set; }
+        public string AuthToken { get; private set; }
+        public string FromNumber { get; private set; }
         public string? DefaultPhonePrefix { get; set; }
+
+        public static TwilioSmsConnectorSettings? GetInstance(string accountSid, string authToken, string fromNumber)
+        {
+            if (
+                string.IsNullOrWhiteSpace(accountSid) &&
+                string.IsNullOrWhiteSpace(authToken) &&
+                string.IsNullOrWhiteSpace(fromNumber)) { return null; }
+
+            return new TwilioSmsConnectorSettings(accountSid, authToken, fromNumber);
+        }
     }
 
-    public class RedisSettings
+    public class RedisConnectorSettings
     {
-        public List<string> Endpoints { get; set; } = [];
+        private RedisConnectorSettings(ReadOnlyCollection<string> endpoints)
+        {
+            Endpoints = endpoints;
+        }
+
+        public ReadOnlyCollection<string> Endpoints { get; }
         public string? Password { get; set; }
         public string? User { get; set; }
-        public ushort Database { get; set; }
+        public ushort Database { get; set; } = 0;
         public string? ServiceName { get; set; }
         public string? StreamName { get; set; }
-        public int StreamSize { get; set; }
+        public int StreamSize { get; set; } = 1000;
         public string? PubSubChannel { get; set; }
         public bool Ssl { get; set; }
+
+        public static RedisConnectorSettings? GetInstance(ReadOnlyCollection<string> endpoints)
+        {
+            if (endpoints == null || endpoints.Count == 0) { return null; }
+            return new RedisConnectorSettings(endpoints);
+        }
     }
 
-    public class RabbitMqSettings
+    public class RabbitMqConnectorSettings
     {
-        public string? Password { get; set; }
-        public string? Username { get; set; }
+        private RabbitMqConnectorSettings(
+            IReadOnlyCollection<RabbitMqEndpoint> endpoints,
+            string username,
+            string password)
+        {
+            Endpoints = endpoints;
+            Username = username;
+            Password = password;
+        }
+
+        public string Password { get; set; }
+        public string Username { get; set; }
         public string? VirtualHost { get; set; }
         public string? Exchange { get; set; }
         public string? RoutingKey { get; set; }
         public RabbitMqSslSettings? Ssl { get; set; }
-        public IEnumerable<RabbitMqEndpoint> Endpoints { get; set; } = [];
+        public IReadOnlyCollection<RabbitMqEndpoint> Endpoints { get; }
+
+        public static RabbitMqConnectorSettings? GetInstance(IReadOnlyCollection<RabbitMqEndpoint> endpoints, string username, string password)
+        {
+            if (endpoints == null || endpoints.Count == 0) { return null; }
+            return new RabbitMqConnectorSettings(endpoints, username, password);
+        }
     }
 
     public class RabbitMqSslSettings
@@ -69,9 +135,21 @@ namespace Planar.Common
         public int Port { get; set; }
     }
 
-    public class TelegramSettings
+    public class TelegramConnectorSettings
     {
-        public string? BotToken { get; set; }
-        public string? ChatId { get; set; }
+        private TelegramConnectorSettings(string botToken, string chatId)
+        {
+            BotToken = botToken;
+            ChatId = chatId;
+        }
+
+        public string BotToken { get; }
+        public string ChatId { get; }
+
+        public static TelegramConnectorSettings? GetInstance(string botToken, string chatId)
+        {
+            if (string.IsNullOrWhiteSpace(botToken) && string.IsNullOrWhiteSpace(chatId)) { return null; }
+            return new TelegramConnectorSettings(botToken, chatId);
+        }
     }
 }
