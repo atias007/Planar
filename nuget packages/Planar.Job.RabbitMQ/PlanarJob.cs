@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Job.RabbitMq;
@@ -40,7 +41,7 @@ namespace Planar.Job
 
             try
             {
-                GracefullShutdownSetup();
+                SetupGracefulShutdown();
                 FillProperties();
                 if (await Debug(properties, _mainCancellationTokenSource.Token)) { return; }
 
@@ -76,7 +77,7 @@ namespace Planar.Job
             // Start consuming messages
             await Task.WhenAll(
                 _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync),
-                properties.Host.StartAsync(_mainCancellationTokenSource.Token));
+                properties.Host.RunAsync(_mainCancellationTokenSource.Token));
         }
 
         private static async Task PrintLogo()

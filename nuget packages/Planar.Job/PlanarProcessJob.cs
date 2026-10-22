@@ -9,7 +9,7 @@ namespace Planar.Job
     {
         private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
-        static partial void GracefullShutdownSetup()
+        static partial void SetupGracefulShutdown()
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) =>
             {

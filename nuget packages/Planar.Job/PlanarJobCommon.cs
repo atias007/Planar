@@ -24,7 +24,7 @@ namespace Planar.Job
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
-        static partial void GracefullShutdownSetup();
+        static partial void SetupGracefulShutdown();
 
         private readonly static Timer _healthCheckTimer = new Timer(15 * 60_000);
 
@@ -140,6 +140,7 @@ namespace Planar.Job
 
         private static Argument GetArgument(string key)
 #else
+
         private static Argument? GetArgument(string key)
 #endif
         {
@@ -195,6 +196,7 @@ namespace Planar.Job
 
         private static void TimerElapsed(object sender, ElapsedEventArgs e)
 #else
+
         private static void TimerElapsed(object? sender, ElapsedEventArgs e)
 #endif
         {
@@ -272,6 +274,7 @@ namespace Planar.Job
 
         private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties hostedProperties, string json, CancellationToken cancellationToken)
 #else
+
         private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties? hostedProperties, string json, CancellationToken cancellationToken)
 #endif
         {

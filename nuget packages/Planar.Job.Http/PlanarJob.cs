@@ -30,7 +30,7 @@ namespace Planar.Job
 
             try
             {
-                GracefullShutdownSetup();
+                SetupGracefulShutdown();
                 FillProperties();
                 if (await Debug(properties, _mainCancellationTokenSource.Token)) { return; }
 

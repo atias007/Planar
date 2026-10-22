@@ -34,7 +34,7 @@ namespace Planar.Job
             Properties = properties;
 
             FillProperties();
-            GracefullShutdownSetup();
+            SetupGracefulShutdown();
 
             try
             {

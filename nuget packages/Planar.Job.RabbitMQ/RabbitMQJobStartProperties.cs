@@ -3,7 +3,9 @@ using Planar.Common;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 
 namespace Planar.Job.RabbitMq
 {
@@ -131,7 +133,7 @@ namespace Planar.Job.RabbitMq
 
             if (attribute == null)
             {
-                _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType) };
+                throw new InvalidOperationException($"Job type '{jobType.Name}' does not have a [JobQueueName] attribute");
             }
             else
             {

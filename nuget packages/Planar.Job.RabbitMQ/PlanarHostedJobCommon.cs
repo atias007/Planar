@@ -24,7 +24,7 @@ namespace Planar.Job
             }
         }
 
-        static partial void GracefullShutdownSetup()
+        static partial void SetupGracefulShutdown()
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) =>
             {
