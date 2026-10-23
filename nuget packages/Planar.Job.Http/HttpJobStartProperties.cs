@@ -3,7 +3,7 @@ using Planar.Common;
 
 namespace Planar.Job.Http
 {
-    public class HttpJobStartPropertiesBuilder
+    public class HttpJobStartPropertiesBuilder : BaseHostedJobStartPropertiesBuilder
     {
         private readonly HttpJobStartProperties _properties = new();
 
@@ -13,56 +13,45 @@ namespace Planar.Job.Http
 
         public HttpJobStartPropertiesBuilder WithEncryptionKey(string encryptionKey)
         {
-            if (string.IsNullOrWhiteSpace(encryptionKey)) { throw new ArgumentNullException(nameof(encryptionKey)); }
-            _properties.EncryptionKey = encryptionKey;
-            _properties.EncryptionKeyBytes = Convert.FromBase64String(encryptionKey);
-            if (_properties.EncryptionKeyBytes.Length != 32)
-            {
-                throw new ArgumentException($"Encryption key must be 32 bytes base64 encoding string. current length is {_properties.EncryptionKeyBytes.Length}", nameof(encryptionKey));
-            }
+            WithEncryptionKey(_properties, encryptionKey);
             return this;
         }
 
         public HttpJobStartPropertiesBuilder WithHost(WebApplication webApplication)
         {
-            _properties.Host = webApplication ?? throw new ArgumentNullException(nameof(webApplication));
+            WithHost(_properties, webApplication);
             return this;
         }
 
         public HttpJobStartPropertiesBuilder WithPlanarHostName(string hostName)
         {
-            if (string.IsNullOrWhiteSpace(hostName)) { throw new ArgumentNullException(nameof(hostName)); }
-            _properties.PlanarHostname = hostName;
+            WithPlanarHostName(_properties, hostName);
             return this;
         }
 
-        public HttpJobStartPropertiesBuilder WithPlanarPort(int port, int apiPort)
+        public HttpJobStartPropertiesBuilder WithPlanarPorts(
+            int port = PlanarHostedJobStartProperties.DefaultPlanarPort,
+            int apiPort = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
         {
-            if (port < 0 || port > 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
-            if (apiPort < 0 || apiPort > 65_535) { throw new ArgumentException($"API Port {apiPort} is invalid"); }
-            _properties.PlanarPort = port;
-            _properties.PlanarApiPort = apiPort;
+            WithPlanarPorts(_properties, port, apiPort);
             return this;
         }
 
         public HttpJobStartPropertiesBuilder WithLogFlushTimeoutSeconds(int seconds)
         {
-            if (seconds <= 0) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(seconds)); }
-            _properties.LogFlushTimeout = TimeSpan.FromSeconds(seconds);
+            WithLogFlushTimeoutSeconds(_properties, seconds);
             return this;
         }
 
         public HttpJobStartPropertiesBuilder WithLogFlushTimeoutMinutes(int minutes)
         {
-            if (minutes <= 0) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(minutes)); }
-            _properties.LogFlushTimeout = TimeSpan.FromMinutes(minutes);
+            WithLogFlushTimeoutMinutes(_properties, minutes);
             return this;
         }
 
         public HttpJobStartPropertiesBuilder WithLogFlushTimeout(TimeSpan timeout)
         {
-            if (timeout <= TimeSpan.Zero) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(timeout)); }
-            _properties.LogFlushTimeout = timeout;
+            WithLogFlushTimeout(_properties, timeout);
             return this;
         }
 
@@ -74,7 +63,24 @@ namespace Planar.Job.Http
         public HttpJobStartPropertiesBuilder AddHostSingletonType<T>() where T : notnull
 #endif
         {
-            _properties.AddHostSingletonType<T>();
+            AddHostSingletonType<T>(_properties);
+            return this;
+        }
+
+        public HttpJobStartPropertiesBuilder ApplyManifestFromFolder(string folderPath)
+        {
+            ApplyManifestFromFolder(_properties, folderPath);
+            return this;
+        }
+
+        public HttpJobStartPropertiesBuilder ApplyManifestFromAssembly<T>()
+        {
+            return ApplyManifestFromAssembly(typeof(T).Assembly);
+        }
+
+        public HttpJobStartPropertiesBuilder ApplyManifestFromAssembly(params System.Reflection.Assembly[] assemblies)
+        {
+            ApplyManifestFromAssembly(_properties, assemblies);
             return this;
         }
 

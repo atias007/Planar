@@ -60,10 +60,12 @@
 		<Compile Include="..\Planar.Common\JobInstanceInfo.cs" Link="JobInstanceInfo.cs" />
 		<Compile Include="..\Planar.Common\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\Planar.Job.RabbitMQ\AesGcmStringCipher.cs" Link="AesGcmStringCipher.cs" />
+		<Compile Include="..\Planar.Job.RabbitMQ\BaseHostedJobStartPropertiesBuilder.cs" Link="BaseHostedJobStartPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Job.RabbitMQ\PlanarHostedJobCommon.cs" Link="PlanarHostedJobCommon.cs" />
 		<Compile Include="..\Planar.Job\Argument.cs" Link="Argument.cs" />
 		<Compile Include="..\Planar.Job\BaseJob.cs" Link="BaseJob.cs" />
 		<Compile Include="..\Planar.Job\BaseJobFactory.cs" Link="BaseJobFactory.cs" />
+		<Compile Include="..\Planar.Job\BaseJobStartPropertiesBuilder.cs" Link="BaseJobStartPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Job\DataMapConvertor.cs" Link="DataMapConvertor.cs" />
 		<Compile Include="..\Planar.Job\Guards.cs" Link="Guards.cs" />
 		<Compile Include="..\Planar.Job\IBaseJob.cs" Link="IBaseJob.cs" />

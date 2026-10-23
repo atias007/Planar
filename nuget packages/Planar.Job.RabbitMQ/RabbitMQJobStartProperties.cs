@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Job.RabbitMq
 {
-    public class RabbitMqJobStartPropertiesBuilder
+    public class RabbitMqJobStartPropertiesBuilder : BaseHostedJobStartPropertiesBuilder
     {
         protected readonly RabbitMqJobStartProperties _properties = new RabbitMqJobStartProperties();
 
@@ -19,54 +19,45 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartPropertiesBuilder WithEncryptionKey(string encryptionKey)
         {
-            if (string.IsNullOrWhiteSpace(encryptionKey)) { throw new ArgumentNullException(nameof(encryptionKey)); }
-            _properties.EncryptionKey = encryptionKey;
-            _properties.EncryptionKeyBytes = Convert.FromBase64String(encryptionKey);
-            if (_properties.EncryptionKeyBytes.Length != 32)
-            {
-                throw new ArgumentException($"Encryption key must be 32 bytes base64 encoding string. current length is {_properties.EncryptionKeyBytes.Length}", nameof(encryptionKey));
-            }
+            WithEncryptionKey(_properties, encryptionKey);
             return this;
         }
 
         public RabbitMqJobStartPropertiesBuilder WithHost(IHost host)
         {
-            _properties.Host = host ?? throw new ArgumentNullException(nameof(host));
+            WithHost(_properties, host);
             return this;
         }
 
         public RabbitMqJobStartPropertiesBuilder WithPlanarHostName(string hostName)
         {
-            if (string.IsNullOrWhiteSpace(hostName)) { throw new ArgumentNullException(nameof(hostName)); }
-            _properties.PlanarHostname = hostName;
+            WithPlanarHostName(_properties, hostName);
             return this;
         }
 
-        public RabbitMqJobStartPropertiesBuilder WithPlanarPort(int port)
+        public RabbitMqJobStartPropertiesBuilder WithPlanarPorts(
+            int port = PlanarHostedJobStartProperties.DefaultPlanarPort,
+            int apiPort = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
         {
-            if (port < 0 || port > 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
-            _properties.PlanarPort = port;
+            WithPlanarPorts(_properties, port, apiPort);
             return this;
         }
 
         public RabbitMqJobStartPropertiesBuilder WithLogFlushTimeoutSeconds(int seconds)
         {
-            if (seconds <= 0) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(seconds)); }
-            _properties.LogFlushTimeout = TimeSpan.FromSeconds(seconds);
+            WithLogFlushTimeoutSeconds(_properties, seconds);
             return this;
         }
 
         public RabbitMqJobStartPropertiesBuilder WithLogFlushTimeoutMinutes(int minutes)
         {
-            if (minutes <= 0) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(minutes)); }
-            _properties.LogFlushTimeout = TimeSpan.FromMinutes(minutes);
+            WithLogFlushTimeoutMinutes(_properties, minutes);
             return this;
         }
 
         public RabbitMqJobStartPropertiesBuilder WithLogFlushTimeout(TimeSpan timeout)
         {
-            if (timeout <= TimeSpan.Zero) { throw new ArgumentException("Log flush timeout must be greater than zero", nameof(timeout)); }
-            _properties.LogFlushTimeout = timeout;
+            WithLogFlushTimeout(_properties, timeout);
             return this;
         }
 
@@ -77,7 +68,7 @@ namespace Planar.Job.RabbitMq
         public RabbitMqJobStartPropertiesBuilder AddHostSingletonType<T>() where T : notnull
 #endif
         {
-            _properties.AddHostSingletonType<T>();
+            AddHostSingletonType<T>(_properties);
             return this;
         }
 
@@ -156,20 +147,7 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartPropertiesBuilder ApplyManifestFromFolder(string folderPath)
         {
-            if (string.IsNullOrWhiteSpace(folderPath)) { throw new ArgumentNullException(nameof(folderPath)); }
-            if (!Directory.Exists(folderPath)) { throw new DirectoryNotFoundException($"Folder '{folderPath}' does not exist"); }
-            var files = Directory.GetFiles(folderPath, "*.yml", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(folderPath, "*.yaml", SearchOption.AllDirectories));
-
-#if NETSTANDARD2_0
-            var yamls = files.Select(file => File.ReadAllText(file));
-
-#else
-            var tasks = files.Select(file => File.ReadAllTextAsync(file));
-            var yamls = Task.WhenAll(tasks).GetAwaiter().GetResult();
-#endif
-
-            _properties.AddManifests(yamls);
+            ApplyManifestFromFolder(_properties, folderPath);
             return this;
         }
 
@@ -180,32 +158,7 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartPropertiesBuilder ApplyManifestFromAssembly(params System.Reflection.Assembly[] assemblies)
         {
-            if (assemblies == null) { throw new ArgumentNullException(nameof(assemblies)); }
-            var yamls = new List<string>();
-
-            foreach (var assembly in assemblies)
-            {
-                if (assembly == null) { continue; }
-
-                var resourceNames = assembly
-                    .GetManifestResourceNames()
-                    .Where(n => n.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) || n.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase));
-
-                foreach (var resourceName in resourceNames)
-                {
-                    using (var stream = assembly.GetManifestResourceStream(resourceName))
-                    {
-                        if (stream == null) { continue; }
-                        using (var reader = new StreamReader(stream))
-                        {
-                            var yaml = reader.ReadToEnd();
-                            yamls.Add(yaml);
-                        }
-                    }
-                }
-            }
-
-            _properties.AddManifests(yamls);
+            ApplyManifestFromAssembly(_properties, assemblies);
             return this;
         }
 

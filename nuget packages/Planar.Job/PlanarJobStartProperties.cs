@@ -11,21 +11,32 @@ namespace Planar.Job
         public static PlanarJobStartProperties Default => new PlanarJobStartProperties();
         public TimeSpan LogFlushTimeout { get; set; } = TimeSpan.FromSeconds(20);
         public string EncryptionKey { get; set; } = string.Empty;
+        internal byte[] EncryptionKeyBytes { get; set; } = Array.Empty<byte>();
     }
 
-    public class PlanarHostedJobStartProperties<TDefinition> : PlanarJobStartProperties, IHostedJobProperties
+    public class PlanarHostedJobStartProperties<TDefinition> : PlanarHostedJobStartProperties, IHostedJobProperties
         where TDefinition : IJobDefinition
     {
+        public IEnumerable<TDefinition> JobDefinitions { get; internal set; } = new List<TDefinition>();
+        public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
+    }
+
+    public class PlanarHostedJobStartProperties : PlanarJobStartProperties
+    {
+        public const string DefaultPlanarHostname = "localhost";
+        public const int DefaultPlanarPort = 206;
+        public const int DefaultPlanarApiPort = 2306;
+
         private readonly List<Type> _hostSingletonTypes = new List<Type>();
         private readonly List<string> _manifests = new List<string>();
 
         public IEnumerable<Type> HostSingletonTypes => _hostSingletonTypes;
 
-        public string PlanarHostname { get; internal set; } = string.Empty;
+        public string PlanarHostname { get; internal set; } = DefaultPlanarHostname;
 
-        public int PlanarPort { get; internal set; } = 206;
+        public int PlanarPort { get; internal set; } = DefaultPlanarPort;
 
-        public int PlanarApiPort { get; internal set; } = 2306;
+        public int PlanarApiPort { get; internal set; } = DefaultPlanarApiPort;
 
 #if NETSTANDARD2_0
 
@@ -34,14 +45,13 @@ namespace Planar.Job
         public IHost Host { get; internal set; } = null!;
 #endif
 
-        public IEnumerable<TDefinition> JobDefinitions { get; internal set; } = new List<TDefinition>();
-        public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
         public IEnumerable<string> Manifests => _manifests;
 
 #if NETSTANDARD2_0
 
         internal void AddHostSingletonType<T>()
 #else
+
         internal void AddHostSingletonType<T>() where T : notnull
 #endif
         {
@@ -51,8 +61,6 @@ namespace Planar.Job
                 _hostSingletonTypes.Add(singletonType);
             }
         }
-
-        internal byte[] EncryptionKeyBytes { get; set; } = Array.Empty<byte>();
 
         internal void AddManifests(IEnumerable<string> manifests)
         {
