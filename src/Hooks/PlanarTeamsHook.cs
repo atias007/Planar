@@ -14,7 +14,7 @@ public sealed class PlanarTeamsHook(ILogger<PlanarTeamsHook> logger) : BaseSyste
 
     public override string Description =>
     """
-This hook send message to Teams channel via microsoft Teams server.
+This hook send message to Teams channel via Microsoft Teams server.
 You can find the configuration of Teams server is in appsettings.yml (Data folder of Planar).
 The configuration also define the default channel address.
 To use different channel address per group, you can set one of the 'AdditionalField' of monitor group to the following value:
@@ -31,7 +31,14 @@ To send to multiple channels, you can set the following value (in appsettings.ym
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        var urls = GetTeamsUrls(monitorDetails);
+        var settings = AppSettings.Connectors.Teams;
+        if (settings == null)
+        {
+            LogError("Teams.Hook: Teams connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        var urls = GetTeamsUrls(monitorDetails, settings);
         var message = GetMessageText(monitorDetails);
         foreach (var url in urls)
         {
@@ -41,7 +48,14 @@ To send to multiple channels, you can set the following value (in appsettings.ym
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
-        var urls = GetTeamsUrls(monitorDetails);
+        var settings = AppSettings.Connectors.Teams;
+        if (settings == null)
+        {
+            LogError("Teams.Hook: Teams connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        var urls = GetTeamsUrls(monitorDetails, settings);
         var message = GetSystemMessageText(monitorDetails);
         foreach (var url in urls)
         {
@@ -174,9 +188,9 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         };
     }
 
-    private IEnumerable<string> GetTeamsUrls(IMonitor monitor)
+    private IEnumerable<string> GetTeamsUrls(IMonitor monitor, TeamsConnectorSettings settings)
     {
-        var fields = new List<string?> { AppSettings.Hooks.Teams.DefaultUrl };
+        var fields = new List<string?> { settings.DefaultUrl };
         foreach (var group in monitor.Groups)
         {
             fields.Add(group.AdditionalField1);

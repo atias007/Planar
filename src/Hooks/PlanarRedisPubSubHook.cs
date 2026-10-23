@@ -23,17 +23,31 @@ To use different stream name per group, you can set one of the 'AdditionalField'
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        await InvokeStream(monitorDetails);
+        var settings = AppSettings.Connectors.Redis;
+        if (settings == null)
+        {
+            LogError("Redis.Stream.Hook: Redis connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        await InvokeStream(monitorDetails, settings);
     }
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
-        await InvokeStream(monitorDetails);
+        var settings = AppSettings.Connectors.Redis;
+        if (settings == null)
+        {
+            LogError("Redis.Stream.Hook: Redis connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        await InvokeStream(monitorDetails, settings);
     }
 
-    private IEnumerable<string> GetStreamNames(IMonitor monitor)
+    private IEnumerable<string> GetStreamNames(IMonitor monitor, RedisConnectorSettings settings)
     {
-        var streamName = AppSettings.Connectors.Redis?.StreamName;
+        var streamName = settings.StreamName;
         if (string.IsNullOrWhiteSpace(streamName))
         {
             LogError("Redis.Stream.Hook: stream name is null or empty");
@@ -55,10 +69,10 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         return streams.Distinct();
     }
 
-    private async Task InvokeStream<T>(T details)
+    private async Task InvokeStream<T>(T details, RedisConnectorSettings settings)
         where T : IMonitor
     {
-        var streams = GetStreamNames(details);
+        var streams = GetStreamNames(details, settings);
         if (!streams.Any()) { return; }
 
         try
@@ -73,11 +87,12 @@ To use different stream name per group, you can set one of the 'AdditionalField'
                 new("group", details.Groups.First().Name),
             };
 
-            var db = RedisFactory.Connection.GetDatabase(AppSettings.Connectors.Redis?.Database ?? 0);
+            var connection = await RedisFactory.GetConnection(settings);
+            var db = connection.GetDatabase(settings.Database);
 
             foreach (var streamName in streams)
             {
-                await CreateRedisStreamIfNotExists(db, streamName);
+                await CreateRedisStreamIfNotExists(db, streamName, settings);
                 await db.StreamAddAsync(streamName, entries);
             }
         }
@@ -87,12 +102,12 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         }
     }
 
-    private static async Task CreateRedisStreamIfNotExists(IDatabase db, string streamName)
+    private static async Task CreateRedisStreamIfNotExists(IDatabase db, string streamName, RedisConnectorSettings settings)
     {
         var exists = await db.KeyExistsAsync(streamName);
         if (!exists)
         {
-            await db.StreamAddAsync(streamName, [new("version", "1.0.0")], maxLength: AppSettings.Connectors.Redis?.StreamSize, useApproximateMaxLength: true);
+            await db.StreamAddAsync(streamName, [new("version", "1.0.0")], maxLength: settings.StreamSize, useApproximateMaxLength: true);
 
             // clear all stream item
             var entries = await db.StreamRangeAsync(streamName);

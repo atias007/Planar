@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Threading.Tasks;
 
 namespace Planar.Job.RabbitMq
 {
@@ -151,6 +151,61 @@ namespace Planar.Job.RabbitMq
             ValidateQueueName(queueName);
 
             _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType, queueName) };
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder ApplyManifestFromFolder(string folderPath)
+        {
+            if (string.IsNullOrWhiteSpace(folderPath)) { throw new ArgumentNullException(nameof(folderPath)); }
+            if (!Directory.Exists(folderPath)) { throw new DirectoryNotFoundException($"Folder '{folderPath}' does not exist"); }
+            var files = Directory.GetFiles(folderPath, "*.yml", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(folderPath, "*.yaml", SearchOption.AllDirectories));
+
+#if NETSTANDARD2_0
+            var yamls = files.Select(file => File.ReadAllText(file));
+
+#else
+            var tasks = files.Select(file => File.ReadAllTextAsync(file));
+            var yamls = Task.WhenAll(tasks).GetAwaiter().GetResult();
+#endif
+
+            _properties.AddManifests(yamls);
+            return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder ApplyManifestFromAssembly<T>()
+        {
+            return ApplyManifestFromAssembly(typeof(T).Assembly);
+        }
+
+        public RabbitMqJobStartPropertiesBuilder ApplyManifestFromAssembly(params System.Reflection.Assembly[] assemblies)
+        {
+            if (assemblies == null) { throw new ArgumentNullException(nameof(assemblies)); }
+            var yamls = new List<string>();
+
+            foreach (var assembly in assemblies)
+            {
+                if (assembly == null) { continue; }
+
+                var resourceNames = assembly
+                    .GetManifestResourceNames()
+                    .Where(n => n.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) || n.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase));
+
+                foreach (var resourceName in resourceNames)
+                {
+                    using (var stream = assembly.GetManifestResourceStream(resourceName))
+                    {
+                        if (stream == null) { continue; }
+                        using (var reader = new StreamReader(stream))
+                        {
+                            var yaml = reader.ReadToEnd();
+                            yamls.Add(yaml);
+                        }
+                    }
+                }
+            }
+
+            _properties.AddManifests(yamls);
             return this;
         }
 

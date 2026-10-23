@@ -17,12 +17,15 @@ namespace Planar.Job
         where TDefinition : IJobDefinition
     {
         private readonly List<Type> _hostSingletonTypes = new List<Type>();
+        private readonly List<string> _manifests = new List<string>();
 
         public IEnumerable<Type> HostSingletonTypes => _hostSingletonTypes;
 
         public string PlanarHostname { get; internal set; } = string.Empty;
 
         public int PlanarPort { get; internal set; } = 206;
+
+        public int PlanarApiPort { get; internal set; } = 2306;
 
 #if NETSTANDARD2_0
 
@@ -33,6 +36,8 @@ namespace Planar.Job
 
         public IEnumerable<TDefinition> JobDefinitions { get; internal set; } = new List<TDefinition>();
         public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
+        public IEnumerable<string> Manifests => _manifests;
+
 #if NETSTANDARD2_0
 
         internal void AddHostSingletonType<T>()
@@ -48,5 +53,16 @@ namespace Planar.Job
         }
 
         internal byte[] EncryptionKeyBytes { get; set; } = Array.Empty<byte>();
+
+        internal void AddManifests(IEnumerable<string> manifests)
+        {
+            foreach (var manifest in manifests)
+            {
+                if (!_manifests.Contains(manifest))
+                {
+                    _manifests.Add(manifest);
+                }
+            }
+        }
     }
 }

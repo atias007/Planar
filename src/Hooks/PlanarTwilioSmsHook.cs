@@ -22,14 +22,28 @@ Hook will send the message to all valid phone numbers of the user.
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
+        var settings = AppSettings.Connectors.TwilioSms;
+        if (settings == null)
+        {
+            LogError("TwilioSms.Hook: TwilioSms connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
         var message = GetSmsMessage(monitorDetails);
-        await SendSms(message, monitorDetails);
+        await SendSms(message, monitorDetails, settings);
     }
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
+        var settings = AppSettings.Connectors.TwilioSms;
+        if (settings == null)
+        {
+            LogError("TwilioSms.Hook: TwilioSms connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
         var message = GetSmsMessage(monitorDetails);
-        await SendSms(message, monitorDetails);
+        await SendSms(message, monitorDetails, settings);
     }
 
     private static string GetSmsMessage(IMonitorDetails monitorDetails)
@@ -72,10 +86,8 @@ Message: {monitorDetails.Message}
         return template;
     }
 
-    private async Task SendSms(string message, IMonitor monitor)
+    private async Task SendSms(string message, IMonitor monitor, TwilioSmsConnectorSettings settings)
     {
-        var settings = AppSettings.Hooks.TwilioSms;
-
         if (string.IsNullOrWhiteSpace(settings.AccountSid))
         {
             LogError($"fail to get account sid for hook \"{Name}\"");

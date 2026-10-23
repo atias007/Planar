@@ -33,7 +33,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
         await InvokePubSub(monitorDetails);
     }
 
-    private List<string> GetChannels(IMonitor monitor)
+    private List<string> GetChannels(IMonitor monitor, RedisConnectorSettings settings)
     {
         var channels = new List<string>();
 
@@ -44,25 +44,35 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
             if (!string.IsNullOrWhiteSpace(channel)) { channels.Add(channel); }
         }
 
-        if (channels.Count == 0 && !string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.PubSubChannel))
+        if (channels.Count == 0 && !string.IsNullOrWhiteSpace(settings.PubSubChannel))
         {
-            channels.Add(AppSettings.Hooks.Redis.PubSubChannel);
+            channels.Add(settings.PubSubChannel);
         }
 
         if (channels.Count == 0)
         {
-            LogError("Redis.PubSub.Hook: no pub sub channel(s)");
             return [];
         }
 
         return [.. channels.Distinct()];
     }
 
-    private async Task InvokePubSub<T>(T detials)
+    private async Task InvokePubSub<T>(T details)
         where T : IMonitor
     {
-        var channels = GetChannels(detials);
-        if (channels.Count == 0) { return; }
+        var settings = AppSettings.Connectors.Redis;
+        if (settings == null)
+        {
+            LogError("Redis.PubSub.Hook: redis connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        var channels = GetChannels(details, settings);
+        if (channels.Count == 0)
+        {
+            LogError("Redis.PubSub.Hook: no pub sub channel(s)");
+            return;
+        }
 
         try
         {
@@ -72,7 +82,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
                 Id = Guid.NewGuid().ToString("N"),
                 Time = DateTimeOffset.Now,
                 Subject = Name,
-                Data = detials,
+                Data = details,
                 DataContentType = MediaTypeNames.Application.Json,
                 Source = new Uri("https://www.planar.me"),
                 Type = typeof(T).Name
@@ -81,7 +91,8 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
 
             body.SetAttributeFromString("version", "1.0.0");
             var json = CoreSerializer.SerializeCloudEvent(body);
-            var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
+            var connection = await RedisFactory.GetConnection(settings);
+            var db = connection.GetDatabase(settings.Database);
 
             foreach (var channelName in channels)
             {
@@ -91,7 +102,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
         }
         catch (Exception ex)
         {
-            throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
+            throw new PlanarHookException($"fail to invoke '{details.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
         }
     }
 }

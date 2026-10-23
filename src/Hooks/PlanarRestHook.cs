@@ -30,7 +30,14 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        var urls = GetUrls(monitorDetails);
+        var settings = AppSettings.Connectors.Rest;
+        if (settings == null)
+        {
+            LogError("Rest.Hook: Rest connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        var urls = GetUrls(monitorDetails, settings);
         foreach (var url in urls)
         {
             await InvokeRest(monitorDetails, url);
@@ -39,14 +46,21 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
-        var urls = GetUrls(monitorDetails);
+        var settings = AppSettings.Connectors.Rest;
+        if (settings == null)
+        {
+            LogError("Rest.Hook: Rest connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
+        var urls = GetUrls(monitorDetails, settings);
         foreach (var url in urls)
         {
             await InvokeRest(monitorDetails, url);
         }
     }
 
-    private List<string> GetUrls(IMonitor monitor)
+    private List<string> GetUrls(IMonitor monitor, RestConnectorSettings settings)
     {
         var urls = new List<string>();
         foreach (var group in monitor.Groups)
@@ -54,7 +68,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
             var url = GetParameter("rest-http-url", group);
             if (string.IsNullOrWhiteSpace(url))
             {
-                url = AppSettings.Hooks.Rest.DefaultUrl;
+                url = settings.DefaultUrl;
             }
 
             if (string.IsNullOrWhiteSpace(url))
@@ -75,7 +89,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
         return urls;
     }
 
-    private async Task InvokeRest<T>(T detials, string url)
+    private async Task InvokeRest<T>(T details, string url)
         where T : IMonitor
     {
         var body = new CloudEvent
@@ -83,7 +97,7 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
             Id = Guid.NewGuid().ToString("N"),
             Time = DateTimeOffset.Now,
             Subject = Name,
-            Data = detials,
+            Data = details,
             DataContentType = MediaTypeNames.Application.Json,
             Source = new Uri(url),
             Type = typeof(T).Name
@@ -109,12 +123,12 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
             else
             {
                 var message = GetErrorMessage(response);
-                throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {message}");
+                throw new PlanarHookException($"fail to invoke '{details.MonitorTitle}' with '{Name}' hook. message: {message}");
             }
         }
         catch (Exception ex)
         {
-            throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
+            throw new PlanarHookException($"fail to invoke '{details.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
         }
     }
 

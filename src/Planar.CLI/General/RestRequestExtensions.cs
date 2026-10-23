@@ -7,7 +7,10 @@ namespace RestSharp;
 
 public static class MyRestRequestExtensions
 {
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public static RestRequest AddEntityToQueryParameter<T>(this RestRequest request, T parameter, bool encode = true)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
         where T : class
     {
         var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
