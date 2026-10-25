@@ -17,23 +17,25 @@ namespace Planar.Job.Http
             return this;
         }
 
-        public HttpJobStartPropertiesBuilder WithHost(WebApplication webApplication)
+        public HttpJobStartPropertiesBuilder WithApplicationHost(WebApplication webApplication)
         {
-            WithHost(_properties, webApplication);
+            WithApplicationHost(_properties, webApplication);
             return this;
         }
 
-        public HttpJobStartPropertiesBuilder WithPlanarHostName(string hostName)
+        public HttpJobStartPropertiesBuilder WithPlanarHost(
+            string hostName = "localhost",
+            int port = PlanarHostedJobStartProperties.DefaultPlanarPort)
         {
-            WithPlanarHostName(_properties, hostName);
+            WithPlanarHost(_properties, hostName, port);
             return this;
         }
 
-        public HttpJobStartPropertiesBuilder WithPlanarPorts(
-            int port = PlanarHostedJobStartProperties.DefaultPlanarPort,
-            int apiPort = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
+        public HttpJobStartPropertiesBuilder WithPlanarApi(
+            HttpSchema schema = HttpSchema.Http,
+            int port = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
         {
-            WithPlanarPorts(_properties, port, apiPort);
+            WithPlanarApi(_properties, schema, port);
             return this;
         }
 

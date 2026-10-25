@@ -79,6 +79,7 @@
 		<Compile Include="..\Planar.Job\UnitTestResult.cs" Link="UnitTestResult.cs" />
 		<Compile Include="..\Planar.Job\YamlConfigurationFileParser.cs" Link="YamlConfigurationFileParser.cs" />
 		<Compile Include="..\Planar.Job\YamlConfigurationFileParserPartial.cs" Link="YamlConfigurationFileParserPartial.cs" />
+		<Compile Include="..\Planar.Job\YmlUtil.cs" Link="YmlUtil.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png" />

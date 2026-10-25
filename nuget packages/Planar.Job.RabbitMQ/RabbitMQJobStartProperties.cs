@@ -25,21 +25,23 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartPropertiesBuilder WithHost(IHost host)
         {
-            WithHost(_properties, host);
+            WithApplicationHost(_properties, host);
             return this;
         }
 
-        public RabbitMqJobStartPropertiesBuilder WithPlanarHostName(string hostName)
+        public RabbitMqJobStartPropertiesBuilder WithPlanarHost(
+            string hostName = "localhost",
+            int port = PlanarHostedJobStartProperties.DefaultPlanarPort)
         {
-            WithPlanarHostName(_properties, hostName);
+            WithPlanarHost(_properties, hostName, port);
             return this;
         }
 
-        public RabbitMqJobStartPropertiesBuilder WithPlanarPorts(
-            int port = PlanarHostedJobStartProperties.DefaultPlanarPort,
-            int apiPort = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
+        public RabbitMqJobStartPropertiesBuilder WithPlanarApi(
+            HttpSchema schema = HttpSchema.Http,
+            int port = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
         {
-            WithPlanarPorts(_properties, port, apiPort);
+            WithPlanarApi(_properties, schema, port);
             return this;
         }
 

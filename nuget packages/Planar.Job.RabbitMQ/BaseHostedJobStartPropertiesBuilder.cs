@@ -1,33 +1,41 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Planar.Common;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.Job
 {
     public abstract class BaseHostedJobStartPropertiesBuilder : BaseJobStartPropertiesBuilder
     {
-        public static void WithHost(PlanarHostedJobStartProperties properties, IHost host)
+        public static void WithApplicationHost(PlanarHostedJobStartProperties properties, IHost host)
         {
             properties.Host = host ?? throw new ArgumentNullException(nameof(host));
         }
 
-        public static void WithPlanarHostName(PlanarHostedJobStartProperties properties, string hostName)
+        public static void WithPlanarHost(
+            PlanarHostedJobStartProperties properties,
+            string hostName = "localhost",
+            int port = PlanarHostedJobStartProperties.DefaultPlanarPort)
         {
             if (string.IsNullOrWhiteSpace(hostName)) { throw new ArgumentNullException(nameof(hostName)); }
+            if (port < 0 || port > 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
+
+            properties.PlanarPort = port;
             properties.PlanarHostname = hostName;
         }
 
-        public static void WithPlanarPorts(PlanarHostedJobStartProperties properties,
-            int port = PlanarHostedJobStartProperties.DefaultPlanarPort,
-            int apiPort = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
+        public static void WithPlanarApi(PlanarHostedJobStartProperties properties,
+            HttpSchema schema = HttpSchema.Http,
+            int port = PlanarHostedJobStartProperties.DefaultPlanarApiPort)
         {
             if (port < 0 || port > 65_535) { throw new ArgumentException($"Port {port} is invalid"); }
-            if (apiPort < 0 || apiPort > 65_535) { throw new ArgumentException($"API Port {apiPort} is invalid"); }
-            properties.PlanarPort = port;
-            properties.PlanarApiPort = apiPort;
+            properties.PlanarApiPort = port;
+            properties.PlanarApiSchema = schema;
         }
 
 #if NETSTANDARD2_0
@@ -48,15 +56,16 @@ namespace Planar.Job
             var files = Directory.GetFiles(folderPath, "*.yml", SearchOption.AllDirectories)
                 .Concat(Directory.GetFiles(folderPath, "*.yaml", SearchOption.AllDirectories));
 
-#if NETSTANDARD2_0
-            var yamls = files.Select(file => File.ReadAllText(file));
+            var bag = new ConcurrentBag<Manifest>();
+            Parallel.ForEach(files, file =>
+            {
+                var content = File.ReadAllText(file);
+                var name = Path.Combine(folderPath, new FileInfo(file).Name);
+                var yml = YmlUtil.AddSourceFilenameToManifestYml(content, name);
+                bag.Add(new Manifest(name, yml));
+            });
 
-#else
-            var tasks = files.Select(file => File.ReadAllTextAsync(file));
-            var yamls = Task.WhenAll(tasks).GetAwaiter().GetResult();
-#endif
-
-            properties.AddManifests(yamls);
+            properties.AddManifests(bag);
         }
 
         public static void ApplyManifestFromAssembly<T>(PlanarHostedJobStartProperties properties)
@@ -67,7 +76,7 @@ namespace Planar.Job
         public static void ApplyManifestFromAssembly(PlanarHostedJobStartProperties properties, params System.Reflection.Assembly[] assemblies)
         {
             if (assemblies == null) { throw new ArgumentNullException(nameof(assemblies)); }
-            var yamls = new List<string>();
+            var yamls = new List<Manifest>();
 
             foreach (var assembly in assemblies)
             {
@@ -84,8 +93,10 @@ namespace Planar.Job
                         if (stream == null) { continue; }
                         using (var reader = new StreamReader(stream))
                         {
-                            var yaml = reader.ReadToEnd();
-                            yamls.Add(yaml);
+                            var content = reader.ReadToEnd();
+                            var yml = YmlUtil.AddSourceFilenameToManifestYml(content, resourceName);
+                            var manifest = new Manifest(resourceName, yml);
+                            yamls.Add(manifest);
                         }
                     }
                 }

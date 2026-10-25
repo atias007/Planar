@@ -6,6 +6,8 @@ using Planar.Job.RabbitMq;
 using RabbitMQ.Client.Events;
 using System;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,8 +73,10 @@ namespace Planar.Job
         private async static Task SafeStartAsync(RabbitMqJobStartProperties properties)
         {
             if (_logger == null) { throw new InvalidDataException("_logger is null"); }
-            Properties = properties;
+            Properties = properties ?? throw new ArgumentNullException(nameof(properties));
             _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, _mainCancellationTokenSource.Token);
+
+            await ManifestUtil.ApplyManifest(properties);
 
             // Start consuming messages
             await Task.WhenAll(

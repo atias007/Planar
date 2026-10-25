@@ -13,7 +13,7 @@ var app = builder.Build();
 
 #pragma warning disable S2068 // Credentials should not be hard-coded
 var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
-        .WithPlanarHostName("localhost")
+        .WithPlanarHost("localhost", 206)
         .WithHost(app)
         .AddHostSingletonType<DemoSignleton>()
         .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")

@@ -835,34 +835,6 @@ public abstract class BaseCliAction
             return (ex.Message, false);
         }
     }
-
-    private static string AddSourceFilenameToYmlContent(string ymlContent, string sourceFilename)
-    {
-        const string separator = "---";
-        const string source = "source: ";
-
-        var items = YmlUtil.SplitByKind(ymlContent);
-        var final = new StringBuilder();
-        foreach (var item in items)
-        {
-            var content = item.Value.Trim();
-            if (string.IsNullOrWhiteSpace(content)) { continue; }
-            if (content == separator) { continue; }
-            if (content.StartsWith(separator)) { content = content[separator.Length..]; }
-            if (content.EndsWith(separator)) { content = content[0..(content.Length - separator.Length)]; }
-            final.AppendLine($"{source}{sourceFilename}");
-            final.AppendLine(content.Trim());
-            final.AppendLine(separator);
-        }
-
-        var result = final.ToString().Trim();
-        if (result.EndsWith(separator))
-        {
-            result = result[0..(result.Length - separator.Length)];
-        }
-
-        return result;
-    }
 }
 
 public class BaseCliAction<T> : BaseCliAction
