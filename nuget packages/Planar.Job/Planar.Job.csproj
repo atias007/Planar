@@ -58,19 +58,19 @@
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.13" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
-		<PackageReference Include="System.Text.Json" Version="10.0.13" />
+		<PackageReference Include="System.Text.Json" Version="10.0.14" />
 		<PackageReference Include="YamlDotNet" Version="18.1.0" />
 	</ItemGroup>
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.13" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
-		<PackageReference Include="System.Text.Json" Version="10.0.13" />
+		<PackageReference Include="System.Text.Json" Version="10.0.14" />
 		<PackageReference Include="YamlDotNet" Version="18.1.0" />
 	</ItemGroup>
 	<ItemGroup>

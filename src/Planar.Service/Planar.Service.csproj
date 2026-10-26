@@ -91,14 +91,14 @@
 		<PackageReference Include="FluentValidation" Version="12.2.0" />
 		<PackageReference Include="Google.Protobuf" Version="3.36.2" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.84.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.84.0">
+		<PackageReference Include="Grpc.Tools" Version="2.85.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Mapster" Version="10.0.13" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
