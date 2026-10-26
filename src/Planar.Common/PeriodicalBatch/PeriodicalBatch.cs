@@ -3,7 +3,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Polly;
 using Polly.Retry;
 using System;
 using System.Collections.Concurrent;
@@ -17,27 +16,14 @@ namespace Planar.Common.PeriodicalBatch;
 
 public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider) : BackgroundService
     where TMessage : class
-
 {
     private int _locker;
     private readonly ConcurrentQueue<TMessage> _queue = new();
+    private readonly ConcurrentQueue<MessageWrapper> _errorQueue = new();
     private readonly Channel<TMessage> _channel = serviceProvider.GetRequiredService<Channel<TMessage>>();
     private readonly ILogger<PeriodicalBatch<TMessage>> _logger = serviceProvider.GetRequiredService<ILogger<PeriodicalBatch<TMessage>>>();
     private readonly PeriodicalBatchOptions<TMessage> _options = serviceProvider.GetRequiredService<PeriodicalBatchOptions<TMessage>>();
-    private AsyncRetryPolicy? _policy;
-
     protected IServiceProvider ServiceProvider => serviceProvider;
-
-    protected AsyncRetryPolicy RetryPolicy
-    {
-        get
-        {
-            _policy ??= Policy
-                .Handle<Exception>()
-                .WaitAndRetryAsync(_options.RetryCount, retryAttempt => TimeSpan.FromSeconds(0.5 + Math.Pow(2, retryAttempt - 1)));
-            return _policy;
-        }
-    }
 
     public async override Task StopAsync(CancellationToken cancellationToken)
     {
@@ -86,6 +72,7 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         while (await periodicTimer.WaitForNextTickAsync(stoppingToken))
         {
             await SafeHandleQueue().ConfigureAwait(false);
+            await SafeHandleErrorQueue().ConfigureAwait(false);
         }
     }
 
@@ -94,6 +81,7 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         if (_queue.Count >= _options.BatchSize)
         {
             await SafeHandleQueue().ConfigureAwait(false);
+            await SafeHandleErrorQueue().ConfigureAwait(false);
         }
     }
 
@@ -120,6 +108,29 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         }
     }
 
+    private async Task SafeHandleErrorQueue()
+    {
+        try
+        {
+            if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
+            do
+            {
+                await HandleErrorBatch().ConfigureAwait(false);
+            }
+
+            while (_errorQueue.Count > _options.BatchSize);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fail to handle PeriodicalBatch queue ({Name})", GetType().FullName);
+        }
+        finally
+        {
+            // Release the lock
+            Interlocked.Exchange(ref _locker, 0);
+        }
+    }
+
     private async Task FlushQueue()
     {
         if (_queue.IsEmpty)
@@ -131,7 +142,7 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         var chunk = _queue.ToList();
         try
         {
-            await HandleBatchInner(chunk).ConfigureAwait(false);
+            await HandleBatch(chunk).ConfigureAwait(false);
             _logger.LogDebug("Flush {Count} items from periodical batch queue ({Name})", chunk.Count, GetType().FullName);
         }
         catch (Exception ex)
@@ -160,22 +171,58 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
 
         try
         {
-            await HandleBatchInner(chunk).ConfigureAwait(false);
+            await HandleBatch(chunk).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Fail to handle PeriodicalBatch batch ({Name})", GetType().FullName);
-            EnqueueChunk(chunk);
+            if (_options.Retry)
+            {
+                EnqueueChunk(chunk, retryCount: 0);
+            }
         }
     }
 
-    private void EnqueueChunk(IEnumerable<TMessage> items)
+    private async Task HandleErrorBatch()
+    {
+        if (_errorQueue.IsEmpty)
+        {
+            return;
+        }
+
+        var chunk = new List<MessageWrapper>(_options.BatchSize);
+        for (var i = 0; i < _options.BatchSize; i++)
+        {
+            if (!_errorQueue.TryDequeue(out var item))
+            {
+                break;
+            }
+
+            chunk.Add(item);
+        }
+
+        try
+        {
+            var items = chunk.Select(x => x.Message).ToList();
+            await HandleBatch(items).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fail to handle PeriodicalBatch batch ({Name})", GetType().FullName);
+            if (_options.Retry)
+            {
+                EnqueueChunk(chunk);
+            }
+        }
+    }
+
+    private void EnqueueChunk(IEnumerable<TMessage> items, int retryCount)
     {
         foreach (var item in items)
         {
             try
             {
-                _queue.Enqueue(item);
+                _errorQueue.Enqueue(new MessageWrapper { Message = item, RetryCount = retryCount });
             }
             catch
             {
@@ -184,19 +231,33 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         }
     }
 
-    private async Task HandleBatchInner(IEnumerable<TMessage> items)
+    private void EnqueueChunk(IEnumerable<MessageWrapper> items)
     {
-        if (_options.Retry)
+        foreach (var item in items)
         {
-            await RetryPolicy.ExecuteAsync(() => HandleBatch(items)).ConfigureAwait(false);
-        }
-        else
-        {
-            await HandleBatch(items).ConfigureAwait(false);
+            try
+            {
+                if (item.RetryCount >= _options.RetryCount)
+                {
+                    continue;
+                }
+
+                _errorQueue.Enqueue(new MessageWrapper { Message = item.Message, RetryCount = item.RetryCount + 1 });
+            }
+            catch
+            {
+                // *** DO NOTHING ** //
+            }
         }
     }
 
     protected abstract Task HandleBatch(IEnumerable<TMessage> items);
 
     protected abstract Task HealthCheck();
+
+    private sealed class MessageWrapper
+    {
+        public TMessage Message { get; set; } = null!;
+        public int RetryCount { get; set; }
+    }
 }
