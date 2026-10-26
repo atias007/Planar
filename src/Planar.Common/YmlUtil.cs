@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
@@ -67,6 +68,34 @@ public static class YmlUtil
         }
 
         return string.Empty;
+    }
+
+    public static string AddSourceFilenameToManifestYml(string ymlContent, string sourceFilename)
+    {
+        const string separator = "---";
+        const string source = "source: ";
+
+        var items = SplitByKind(ymlContent);
+        var final = new StringBuilder();
+        foreach (var item in items)
+        {
+            var content = item.Value.Trim();
+            if (string.IsNullOrWhiteSpace(content)) { continue; }
+            if (content == separator) { continue; }
+            if (content.StartsWith(separator)) { content = content.Substring(separator.Length); }
+            if (content.EndsWith(separator)) { content = content.Substring(0, content.Length - separator.Length); }
+            final.AppendLine($"{source}{sourceFilename}");
+            final.AppendLine(content.Trim());
+            final.AppendLine(separator);
+        }
+
+        var result = final.ToString().Trim();
+        if (result.EndsWith(separator))
+        {
+            result = result.Substring(0, result.Length - separator.Length);
+        }
+
+        return result;
     }
 
     public static string GetUnmatchedMessage<T>(string yaml)

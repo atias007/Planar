@@ -9,8 +9,20 @@ namespace Planar.Job
     public class PlanarHostedJobStartProperties<TDefinition> : PlanarHostedJobStartProperties, IHostedJobProperties
     where TDefinition : IJobDefinition
     {
-        public IEnumerable<TDefinition> JobDefinitions { get; internal set; } = new List<TDefinition>();
+        private readonly Dictionary<Type, TDefinition> _jobDefinitions = new Dictionary<Type, TDefinition>();
+
+        public IEnumerable<TDefinition> JobDefinitions => _jobDefinitions.Values;
         public IEnumerable<Type> JobTypes => JobDefinitions.Select(jd => jd.JobType);
+
+        internal void AddJobDefinition(TDefinition jobDefinition)
+        {
+            if (_jobDefinitions.ContainsKey(jobDefinition.JobType))
+            {
+                throw new InvalidOperationException($"Job definition for job type '{jobDefinition.JobType.FullName}' already exists.");
+            }
+
+            _jobDefinitions.Add(jobDefinition.JobType, jobDefinition);
+        }
     }
 
     public class PlanarHostedJobStartProperties : PlanarJobStartProperties

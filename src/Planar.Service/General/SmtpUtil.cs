@@ -12,7 +12,11 @@ internal static class SmtpUtil
 {
     public static async Task<string> SendMessage(MimeMessage message, CancellationToken cancellationToken = default)
     {
-        var smtp = AppSettings.Smtp;
+        var smtp = AppSettings.Connectors.Smtp;
+        if (smtp == null)
+        {
+            throw new InvalidOperationException("SMTP connector settings are not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+        }
 
         if (message.From.Count == 0 && smtp.FromAddress != null)
         {

@@ -7,6 +7,10 @@ namespace Planar.Job
 {
     internal class ManifestUtil
     {
+        protected ManifestUtil()
+        {
+        }
+
         public static async Task ApplyManifest(PlanarHostedJobStartProperties properties)
         {
             if (!properties.Manifests.Any()) { return; }

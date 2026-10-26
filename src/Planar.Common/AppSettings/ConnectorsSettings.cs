@@ -5,12 +5,40 @@ namespace Planar.Common
 {
     public class ConnectorsSettings
     {
+        public SmtpConnectorSettings? Smtp { get; set; }
         public RestConnectorSettings? Rest { get; set; }
         public TeamsConnectorSettings? Teams { get; set; }
         public TwilioSmsConnectorSettings? TwilioSms { get; set; }
         public RedisConnectorSettings? Redis { get; set; }
         public TelegramConnectorSettings? Telegram { get; set; }
         public RabbitMqConnectorSettings? RabbitMq { get; set; }
+    }
+
+    public enum ImageMode
+    {
+        Embedded,
+        Internal,
+        External
+    }
+
+    public class SmtpConnectorSettings(string host)
+    {
+        public string? FromAddress { get; set; }
+        public string? FromName { get; set; }
+        public string Host { get; set; } = host;
+        public int Port { get; set; }
+        public bool UseSsl { get; set; }
+        public bool UseDefaultCredentials { get; set; }
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+        public ImageMode HtmlImageMode { get; set; }
+        public string? HtmlImageInternalBaseUrl { get; set; }
+
+        public static SmtpConnectorSettings? GetInstance(string host)
+        {
+            if (string.IsNullOrWhiteSpace(host)) { return null; }
+            return new SmtpConnectorSettings(host);
+        }
     }
 
     public class RestConnectorSettings

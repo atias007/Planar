@@ -3,9 +3,7 @@ using Planar.Common;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Planar.Job.RabbitMq
 {
@@ -81,6 +79,13 @@ namespace Planar.Job.RabbitMq
             return this;
         }
 
+        public RabbitMqJobStartPropertiesBuilder WithQueueName(string queueName)
+        {
+            if (string.IsNullOrWhiteSpace(queueName)) { throw new ArgumentNullException(nameof(queueName)); }
+            _properties.QueueName = queueName;
+            return this;
+        }
+
         public RabbitMqJobStartPropertiesBuilder WithDeadLetterExchange(string deadLetterExchange)
         {
             if (string.IsNullOrWhiteSpace(deadLetterExchange)) { throw new ArgumentNullException(nameof(deadLetterExchange)); }
@@ -126,24 +131,24 @@ namespace Planar.Job.RabbitMq
 
             if (attribute == null)
             {
-                throw new InvalidOperationException($"Job type '{jobType.Name}' does not have a [JobQueueName] attribute");
+                throw new InvalidOperationException($"Job type '{jobType.Name}' does not have a [JobRoutingKey] attribute");
             }
             else
             {
-                _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType, attribute.QueueName) };
+                _properties.AddJobDefinition(new JobDefinition(jobType, attribute.RoutingKey));
             }
 
             return this;
         }
 
-        public RabbitMqJobStartPropertiesBuilder AddJob<TJob>(string queueName) where TJob : BaseJob, new()
+        public RabbitMqJobStartPropertiesBuilder AddJob<TJob>(string routingKey) where TJob : BaseJob, new()
         {
-            if (string.IsNullOrWhiteSpace(queueName)) { throw new ArgumentNullException(nameof(queueName)); }
+            if (string.IsNullOrWhiteSpace(routingKey)) { throw new ArgumentNullException(nameof(routingKey)); }
             var jobType = typeof(TJob);
             ValidateJobType(jobType);
-            ValidateQueueName(queueName);
+            ValidateRoutingKey(routingKey);
 
-            _properties.JobDefinitions = new List<JobDefinition>(_properties.JobDefinitions) { new JobDefinition(jobType, queueName) };
+            _properties.AddJobDefinition(new JobDefinition(jobType, routingKey));
             return this;
         }
 
@@ -166,27 +171,23 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartProperties Build()
         {
+            Validate();
+            return _properties;
+        }
+
+        protected void Validate()
+        {
+            Validate(_properties);
+
             if (!_properties.JobDefinitions.Any())
             {
                 throw new InvalidOperationException("At least one job type must be added. Use AddJob<TJob>() or AddJob<TJob>(string queueName) to add a job type.");
-            }
-
-            if (string.IsNullOrWhiteSpace(_properties.PlanarHostname))
-            {
-                throw new InvalidOperationException("Planar hostname must be set. Use WithHostName(string hostName) to set the hostname.");
             }
 
             if (string.IsNullOrWhiteSpace(_properties.DeadLetterExchange) && !string.IsNullOrWhiteSpace(_properties.DeadLetterRoutingKey))
             {
                 throw new InvalidOperationException("Dead letter exchange must be set if dead letter routing key is specified. Use WithDeadLetterExchange(string deadLetterExchange) to set the dead letter exchange.");
             }
-
-            if (_properties.HostSingletonTypes.Any() && _properties.Host == null)
-            {
-                throw new InvalidOperationException("Host must be set if host singleton types are specified. Use WithHost(IHost host) to set the host.");
-            }
-
-            return _properties;
         }
 
         private void ValidateJobType(Type jobType)
@@ -197,45 +198,39 @@ namespace Planar.Job.RabbitMq
             }
         }
 
-        private void ValidateQueueName(string queueName)
+        private void ValidateRoutingKey(string routingKey)
         {
-            if (_properties.JobDefinitions.Any(d => string.Equals(d.QueueName, queueName, StringComparison.OrdinalIgnoreCase)))
+            if (_properties.JobDefinitions.Any(d => string.Equals(d.RoutingKey, routingKey, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new InvalidOperationException($"A job definition for queue name '{queueName}' already exists. Use AddJob<TJob>(string queueName) to specify a different queue name.");
+                throw new InvalidOperationException($"A job definition for routing key '{routingKey}' already exists. Use AddJob<TJob>(string routingKey) to specify a different routing key.");
             }
         }
 
 #if NETSTANDARD2_0
 
-        private static JobQueueNameAttribute ValidateJobQueueNameAttribute(Type jobType)
+        private static JobRoutingKeyAttribute ValidateJobQueueNameAttribute(Type jobType)
 #else
-        private static JobQueueNameAttribute? ValidateJobQueueNameAttribute(Type jobType)
+        private static JobRoutingKeyAttribute? ValidateJobQueueNameAttribute(Type jobType)
 #endif
         {
-            var attribute = Attribute.GetCustomAttribute(jobType, typeof(JobQueueNameAttribute));
+            var attribute = Attribute.GetCustomAttribute(jobType, typeof(JobRoutingKeyAttribute));
             if (attribute == null) { return null; }
-            return (JobQueueNameAttribute)attribute;
+            return (JobRoutingKeyAttribute)attribute;
         }
     }
 
     public class JobDefinition : IJobDefinition
     {
-        public JobDefinition(Type jobType)
+        public JobDefinition(Type jobType, string routingKey)
         {
-            JobType = jobType ?? throw new ArgumentNullException(nameof(jobType));
-            QueueName = jobType.Name ?? throw new ArgumentException("Job type must have a name", nameof(jobType));
-        }
-
-        public JobDefinition(Type jobType, string queueName)
-        {
-            if (string.IsNullOrWhiteSpace(queueName)) { throw new ArgumentException("Queue name cannot be empty or whitespace", nameof(queueName)); }
+            if (string.IsNullOrWhiteSpace(routingKey)) { throw new ArgumentException("Routing key cannot be empty or whitespace", nameof(routingKey)); }
 
             JobType = jobType ?? throw new ArgumentNullException(nameof(jobType));
-            QueueName = queueName;
+            RoutingKey = routingKey;
         }
 
         public Type JobType { get; private set; }
-        public string QueueName { get; private set; }
+        public string RoutingKey { get; private set; }
     }
 
     public class RabbitMqJobStartProperties : PlanarHostedJobStartProperties<JobDefinition>
@@ -245,6 +240,9 @@ namespace Planar.Job.RabbitMq
         public ConnectionFactory RabbitMQConnectionFactory { get; internal set; } = new ConnectionFactory();
 
         public string Exchange { get; internal set; } = DefaultExchange;
+
+        public string QueueName { get; internal set; } = DefaultExchange;
+
 #if NETSTANDARD2_0
 
         public string DeadLetterExchange { get; set; }
@@ -261,11 +259,11 @@ namespace Planar.Job.RabbitMq
 
         public IEnumerable<AmqpTcpEndpoint> RabbitMqEndpoints { get; internal set; } = new List<AmqpTcpEndpoint>();
 
-        internal JobDefinition GetJobDefinition(string name)
+        internal JobDefinition GetJobDefinition(string routingKey)
         {
-            var jobDefinition = JobDefinitions.FirstOrDefault(jd => jd.QueueName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var jobDefinition = JobDefinitions.FirstOrDefault(jd => jd.RoutingKey.Equals(routingKey, StringComparison.OrdinalIgnoreCase));
             return jobDefinition ??
-                throw new InvalidOperationException($"No job definition found for job type name '{name}'. Ensure that the job type has been added using AddJobType<TJob>() or AddJobType<TJob>(string queueName) in the RabbitMqJobStartPropertiesBuilder.");
+                throw new InvalidOperationException($"No job definition found with routing key '{routingKey}'. Ensure that the job type has been added using AddJobType<TJob>() or AddJobType<TJob>(string queueName) in the RabbitMqJobStartPropertiesBuilder.");
         }
     }
 }

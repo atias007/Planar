@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Org.BouncyCastle.Utilities;
 using Planar.Common;
 using System;
 using System.Collections.Concurrent;
@@ -6,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Planar.Job
 {
@@ -103,6 +103,19 @@ namespace Planar.Job
             }
 
             properties.AddManifests(yamls);
+        }
+
+        protected static void Validate(PlanarHostedJobStartProperties properties)
+        {
+            if (string.IsNullOrWhiteSpace(properties.PlanarHostname))
+            {
+                throw new InvalidOperationException("Planar hostname must be set. Use WithHostName(string hostName) to set the hostname.");
+            }
+
+            if (properties.HostSingletonTypes.Any() && properties.Host == null)
+            {
+                throw new InvalidOperationException("Host must be set if host singleton types are specified. Use WithHost(IHost host) to set the host.");
+            }
         }
     }
 }

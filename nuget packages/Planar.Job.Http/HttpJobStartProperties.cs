@@ -94,11 +94,11 @@ namespace Planar.Job.Http
 
             if (attribute == null)
             {
-                _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType)];
+                throw new InvalidOperationException($"Job type '{jobType.Name}' does not have a [JobRoute] attribute");
             }
             else
             {
-                _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType, attribute.Route)];
+                _properties.AddJobDefinition(new JobDefinition(jobType, attribute.Route));
             }
 
             return this;
@@ -111,7 +111,7 @@ namespace Planar.Job.Http
             ValidateJobType(jobType);
             ValidateRoute(route);
 
-            _properties.JobDefinitions = [.. _properties.JobDefinitions, new JobDefinition(jobType, route)];
+            _properties.AddJobDefinition(new JobDefinition(jobType, route));
             return this;
         }
 

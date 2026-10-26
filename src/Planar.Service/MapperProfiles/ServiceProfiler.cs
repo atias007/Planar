@@ -15,7 +15,6 @@ internal class ServiceProfiler : Profile
         CreateMap<DatabaseSettings, DatabaseSettingsInfo>();
         CreateMap<AuthenticationSettings, AuthenticationSettingsInfo>();
         CreateMap<ClusterSettings, ClusterSettingsInfo>();
-        CreateMap<SmtpSettings, SmtpSettingsInfo>();
         CreateMap<MonitorSettings, MonitorSettingsInfo>();
         CreateMap<RetentionSettings, RetentionSettingsInfo>();
         CreateMap<ProtectionSettings, ProtectionSettingsInfo>();

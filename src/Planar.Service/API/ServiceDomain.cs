@@ -134,7 +134,6 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             Authentication = Mapper.Map<AuthenticationSettingsInfo>(AppSettings.Authentication),
             Cluster = Mapper.Map<ClusterSettingsInfo>(AppSettings.Cluster),
             Retention = Mapper.Map<RetentionSettingsInfo>(AppSettings.Retention),
-            Smtp = Mapper.Map<SmtpSettingsInfo>(AppSettings.Smtp),
             Monitor = Mapper.Map<MonitorSettingsInfo>(AppSettings.Monitor),
             Protection = Mapper.Map<ProtectionSettingsInfo>(AppSettings.Protection),
         };
@@ -144,8 +143,6 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (UserRole != Roles.Administrator)
         {
             result.Database.ConnectionString = secret;
-            result.Smtp.Username = secret;
-            result.Smtp.Password = secret;
         }
 
         var currentProcess = Process.GetCurrentProcess();

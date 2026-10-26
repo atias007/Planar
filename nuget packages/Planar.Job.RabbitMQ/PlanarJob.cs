@@ -74,8 +74,14 @@ namespace Planar.Job
         {
             if (_logger == null) { throw new InvalidDataException("_logger is null"); }
             Properties = properties ?? throw new ArgumentNullException(nameof(properties));
+
+            // create rabbitmq factory instance and ensure connection
             _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, _mainCancellationTokenSource.Token);
 
+            // ensure queues, exchanges and bindings are created
+            await _rabbitMqFactory.EnsureDefinitions();
+
+            // apply manifest to ensure job definitions are up to date
             await ManifestUtil.ApplyManifest(properties);
 
             // Start consuming messages
