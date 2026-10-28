@@ -33,7 +33,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
         await InvokePubSub(monitorDetails);
     }
 
-    private List<string> GetChannels(IMonitor monitor, RedisConnectorSettings settings)
+    private static List<string> GetChannels(IMonitor monitor, RedisConnectorSettings settings)
     {
         var channels = new List<string>();
 

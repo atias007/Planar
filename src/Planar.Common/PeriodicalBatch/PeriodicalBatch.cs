@@ -87,9 +87,10 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
 
     private async Task SafeHandleQueue()
     {
+        if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
+
         try
         {
-            if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
             do
             {
                 await HandleBatch().ConfigureAwait(false);
@@ -110,9 +111,10 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
 
     private async Task SafeHandleErrorQueue()
     {
+        if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
+
         try
         {
-            if (0 != Interlocked.Exchange(ref _locker, 1)) { return; } // acquired the lock
             do
             {
                 await HandleErrorBatch().ConfigureAwait(false);
@@ -149,6 +151,17 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         {
             _logger.LogError(ex, "Fail to handle FlushQueue ({Name})", GetType().FullName);
         }
+
+        var error_chunk = _errorQueue.ToList();
+        try
+        {
+            await HandleBatch(error_chunk.Select(e => e.Message)).ConfigureAwait(false);
+            _logger.LogDebug("Flush {Count} items from periodical batch queue ({Name})", error_chunk.Count, GetType().FullName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fail to handle FlushQueue ({Name})", GetType().FullName);
+        }
     }
 
     private async Task HandleBatch()
@@ -176,9 +189,9 @@ public abstract class PeriodicalBatch<TMessage>(IServiceProvider serviceProvider
         catch (Exception ex)
         {
             _logger.LogError(ex, "Fail to handle PeriodicalBatch batch ({Name})", GetType().FullName);
-            if (_options.Retry)
+            if (_options.Retry && _options.RetryCount > 0)
             {
-                EnqueueChunk(chunk, retryCount: 0);
+                EnqueueChunk(chunk, retryCount: 1);
             }
         }
     }

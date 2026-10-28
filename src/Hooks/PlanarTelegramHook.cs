@@ -35,12 +35,6 @@ To use different bot token/chat id per group, you can set one of the 'Additional
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
         var settings = AppSettings.Connectors.Telegram;
-        if (settings == null)
-        {
-            LogError("Telegram.Hook: Telegram connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
-            return;
-        }
-
         var message = GetMessage(monitorDetails);
         var api_s = GetTelegramApiInfo(monitorDetails, settings);
         foreach (var api in api_s)
@@ -66,7 +60,7 @@ To use different bot token/chat id per group, you can set one of the 'Additional
         }
     }
 
-    private static List<TelegramApiInfo> GetTelegramApiInfo(IMonitor monitor, TelegramConnectorSettings settings)
+    private static List<TelegramApiInfo> GetTelegramApiInfo(IMonitor monitor, TelegramConnectorSettings? settings)
     {
         var result = new List<TelegramApiInfo>();
 
@@ -81,12 +75,12 @@ To use different bot token/chat id per group, you can set one of the 'Additional
         return result;
     }
 
-    private static string GetBotToken(IMonitorGroup monitorGroup, TelegramConnectorSettings settings)
+    private static string GetBotToken(IMonitorGroup monitorGroup, TelegramConnectorSettings? settings)
     {
         var token = GetParameter("telegram-bot-token", monitorGroup);
         if (string.IsNullOrWhiteSpace(token))
         {
-            token = settings.BotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
+            token = settings?.DefaultBotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
         }
 
         if (string.IsNullOrWhiteSpace(token))
@@ -97,12 +91,12 @@ To use different bot token/chat id per group, you can set one of the 'Additional
         return token;
     }
 
-    private static string GetChatId(IMonitorGroup monitorGroup, TelegramConnectorSettings settings)
+    private static string GetChatId(IMonitorGroup monitorGroup, TelegramConnectorSettings? settings)
     {
         var chat_id = GetParameter("telegram-chat-id", monitorGroup);
         if (string.IsNullOrWhiteSpace(chat_id))
         {
-            chat_id = settings.ChatId; // -1002028679199
+            chat_id = settings?.DefaultChatId; // -1002028679199
         }
 
         if (string.IsNullOrWhiteSpace(chat_id))

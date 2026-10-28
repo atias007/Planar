@@ -43,30 +43,29 @@ namespace Planar.Common
 
     public class RestConnectorSettings
     {
-        private RestConnectorSettings(string defaultUrl)
+        private RestConnectorSettings(string? defaultUrl)
         {
             DefaultUrl = defaultUrl;
         }
 
-        public string DefaultUrl { get; set; }
+        public string? DefaultUrl { get; set; }
 
-        public static RestConnectorSettings? GetInstance(string defaultUrl)
+        public static RestConnectorSettings? GetInstance(string? defaultUrl)
         {
-            if (string.IsNullOrWhiteSpace(defaultUrl)) { return null; }
             return new RestConnectorSettings(defaultUrl);
         }
     }
 
     public class TeamsConnectorSettings
     {
-        private TeamsConnectorSettings(string defaultUrl)
+        private TeamsConnectorSettings(string? defaultUrl)
         {
             DefaultUrl = defaultUrl;
         }
 
-        public string DefaultUrl { get; private set; }
+        public string? DefaultUrl { get; private set; }
 
-        public static TeamsConnectorSettings? GetInstance(string defaultUrl)
+        public static TeamsConnectorSettings? GetInstance(string? defaultUrl)
         {
             if (string.IsNullOrWhiteSpace(defaultUrl)) { return null; }
             return new TeamsConnectorSettings(defaultUrl);
@@ -117,8 +116,15 @@ namespace Planar.Common
 
         public static RedisConnectorSettings? GetInstance(ReadOnlyCollection<string> endpoints)
         {
-            if (endpoints == null || endpoints.Count == 0) { return null; }
-            return new RedisConnectorSettings(endpoints);
+            if (endpoints == null) { return null; }
+            var configuredEndpoints = new List<string>();
+            foreach (var endpoint in endpoints)
+            {
+                if (!string.IsNullOrWhiteSpace(endpoint)) { configuredEndpoints.Add(endpoint.Trim()); }
+            }
+
+            if (configuredEndpoints.Count == 0) { return null; }
+            return new RedisConnectorSettings(configuredEndpoints.AsReadOnly());
         }
     }
 
@@ -165,16 +171,16 @@ namespace Planar.Common
 
     public class TelegramConnectorSettings
     {
-        private TelegramConnectorSettings(string botToken, string chatId)
+        private TelegramConnectorSettings(string? botToken, string? chatId)
         {
-            BotToken = botToken;
-            ChatId = chatId;
+            DefaultBotToken = botToken;
+            DefaultChatId = chatId;
         }
 
-        public string BotToken { get; }
-        public string ChatId { get; }
+        public string? DefaultBotToken { get; }
+        public string? DefaultChatId { get; }
 
-        public static TelegramConnectorSettings? GetInstance(string botToken, string chatId)
+        public static TelegramConnectorSettings? GetInstance(string? botToken, string? chatId)
         {
             if (string.IsNullOrWhiteSpace(botToken) && string.IsNullOrWhiteSpace(chatId)) { return null; }
             return new TelegramConnectorSettings(botToken, chatId);

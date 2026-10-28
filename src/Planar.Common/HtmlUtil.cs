@@ -9,7 +9,7 @@ namespace Planar.Common
 
         public static string SetLogo(string html)
         {
-            if (AppSettings.Connectors.Smtp == null) { return string.Empty; }
+            if (AppSettings.Connectors.Smtp == null) { return Replace(html, "Logo", $"data:image/png;base64,{Logo175Content}"); }
 
 #pragma warning disable S1075 // URIs should not be hardcoded
             const string logoUrl = "https://github.com/atias007/Planar/blob/master/src/Planar/Content/logo2.png?raw=true";
