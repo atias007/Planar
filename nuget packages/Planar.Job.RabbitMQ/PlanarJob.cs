@@ -36,7 +36,7 @@ namespace Planar.Job
             PlanarJobCommon.Properties = properties;
 
             Console.OutputEncoding = Encoding.UTF8;
-            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly, nameof(RabbitMq);
+            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly, nameof(RabbitMq));
 
             _logger = GetLogger(properties);
             _ = PlanarJobCommon.StartHealthCheck(properties, _logger);

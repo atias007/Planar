@@ -38,6 +38,12 @@ namespace Planar.Job.Http
             return this;
         }
 
+        public HttpJobStartPropertiesBuilder WithPlanarApiAuthentication(string username, string password)
+        {
+            WithPlanarApiAuthentication(_properties, username, password);
+            return this;
+        }
+
         public HttpJobStartPropertiesBuilder WithLogFlushTimeoutSeconds(int seconds)
         {
             WithLogFlushTimeoutSeconds(_properties, seconds);

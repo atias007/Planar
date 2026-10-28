@@ -42,6 +42,12 @@ namespace Planar.Job.RabbitMq
             return this;
         }
 
+        public RabbitMqJobStartPropertiesBuilder WithPlanarApiAuthentication(string username, string password)
+        {
+            WithPlanarApiAuthentication(_properties, username, password);
+            return this;
+        }
+
         public RabbitMqJobStartPropertiesBuilder WithLogFlushTimeoutSeconds(int seconds)
         {
             WithLogFlushTimeoutSeconds(_properties, seconds);
