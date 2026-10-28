@@ -27,18 +27,19 @@
 
 	<ItemGroup>
 	  <Compile Remove="Attributes\**" />
+	  <Compile Remove="JobExecutionContext\**" />
 	  <Compile Remove="Jobs\**" />
 	  <EmbeddedResource Remove="Attributes\**" />
+	  <EmbeddedResource Remove="JobExecutionContext\**" />
 	  <EmbeddedResource Remove="Jobs\**" />
 	  <None Remove="Attributes\**" />
+	  <None Remove="JobExecutionContext\**" />
 	  <None Remove="Jobs\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueObject.cs" Link="KeyValueObject.cs" />
 		<Compile Include="..\..\src\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
-		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
-		<Compile Include="..\Planar.Job\ReflectionHelper.cs" Link="ReflectionHelper.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -63,10 +64,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Planar.Job\Planar.Job.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="JobExecutionContext\" />
 	</ItemGroup>
 
 </Project>

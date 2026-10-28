@@ -19,9 +19,11 @@ namespace Planar.Job
         private static string? FileIdentifier { get; set; }
 #endif
 
+        public static PlanarJobDebugger Debugger => PlanarJobCommon.Debugger;
+
         private static bool Encrypted { get; set; } = false;
 
-        internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
+        private static PlanarJobStartProperties _properties = PlanarJobStartProperties.Default;
 
         public static Task StartAsync<TJob>()
                     where TJob : BaseJob, new()
@@ -32,7 +34,7 @@ namespace Planar.Job
         public static async Task StartAsync<TJob>(PlanarJobStartProperties properties)
             where TJob : BaseJob, new()
         {
-            Properties = properties;
+            _properties = properties;
             PlanarJobCommon.Properties = properties;
 
             FillProperties();
@@ -157,7 +159,7 @@ namespace Planar.Job
 
         private static byte[] GetEncryptionKeyBytes()
         {
-            var key = Properties.EncryptionKey;
+            var key = _properties.EncryptionKey;
 
             var encryptionKeyBytes = Convert.FromBase64String(key);
             if (string.IsNullOrWhiteSpace(key) || encryptionKeyBytes.Length == 0)
@@ -193,6 +195,50 @@ namespace Planar.Job
             catch
             {
                 // *** Do nothing ***
+            }
+        }
+
+        private static void SetupGracefulShutdown()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (s, a) =>
+            {
+                try
+                {
+                    PlanarJobCommon._mainCancellationTokenSource.Cancel();
+                }
+                catch
+                {
+                    // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
+            };
+
+            Console.CancelKeyPress += (sender, args) =>
+            {
+                Console.WriteLine("\nCtrl+C detected! Performing cleanup...");
+
+                // Prevent the application from terminating immediately
+                args.Cancel = true;
+
+                try
+                {
+                    PlanarJobCommon._mainCancellationTokenSource.Cancel();
+                }
+                catch
+                {
+                    // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
+            };
+        }
+
+        private static void SafeDisposeCancellationTokenSource()
+        {
+            try
+            {
+                PlanarJobCommon._mainCancellationTokenSource.Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
             }
         }
     }

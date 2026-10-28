@@ -30,7 +30,6 @@
 
 	<ItemGroup>
 		<Compile Remove="ConsoleLogger.cs" />
-		<Compile Remove="JobInstanceInfo.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -49,7 +48,6 @@
 		<Compile Include="..\..\src\Jobs\PlanarJob\PlanarJobExecutionExceptionDto.cs" Link="PlanarJobExecutionExceptionDto.cs" />
 		<Compile Include="..\..\src\Planar.CLI\CliGeneral\CliFormatPartial.cs" Link="CliFormatPartial.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Job\ReflectionHelper.cs" Link="ReflectionHelper.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">
@@ -57,7 +55,6 @@
 			<Pack>True</Pack>
 		</None>
 		<None Include="ConsoleLogger.cs" />
-		<None Include="JobInstanceInfo.cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
@@ -75,6 +72,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
 	  <PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
 	  <PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
 	  <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />

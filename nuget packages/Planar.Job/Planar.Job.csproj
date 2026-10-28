@@ -27,13 +27,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="JobExecutionContext\**" />
 	  <Compile Remove="Properties\**" />
+	  <EmbeddedResource Remove="JobExecutionContext\**" />
 	  <EmbeddedResource Remove="Properties\**" />
+	  <None Remove="JobExecutionContext\**" />
 	  <None Remove="Properties\**" />
-	</ItemGroup>
-	<ItemGroup>
-		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
-		<Compile Include="..\Planar.Job.RabbitMQ\AesGcmStringCipher.cs" Link="AesGcmStringCipher.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -41,24 +40,10 @@
 	    <PackagePath>\</PackagePath>
 	  </None>
 	</ItemGroup>
-
-	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
-		<PackageReference Include="System.Text.Json" Version="10.0.14" />
-	</ItemGroup>
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
-		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
 		<PackageReference Include="System.Text.Json" Version="10.0.14" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Folder Include="JobExecutionContext\" />
-	</ItemGroup>
-	<ItemGroup>
-	  <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
-	  <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
 	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

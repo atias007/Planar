@@ -27,6 +27,8 @@ namespace Planar.Job
             PlanarJobCommon.Properties = properties;
 
             Console.OutputEncoding = Encoding.UTF8;
+            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly);
+
             InitWebApplication(properties);
 
             _logger = GetLogger(properties);
@@ -34,9 +36,9 @@ namespace Planar.Job
 
             try
             {
-                SetupGracefulShutdown();
+                PlanarHostedJobCommon.SetupGracefulShutdown(_logger);
                 FillProperties();
-                if (await PlanarJobCommon.Debug(properties, _mainCancellationTokenSource.Token)) { return; }
+                if (await PlanarJobCommon.Debug(properties)) { return; }
 
                 await SafeStartAsync(properties);
             }
@@ -46,7 +48,7 @@ namespace Planar.Job
             }
             finally
             {
-                SafeDisposeCancellationTokenSource();
+                PlanarHostedJobCommon.SafeDisposeCancellationTokenSource();
             }
         }
 
@@ -98,7 +100,7 @@ namespace Planar.Job
             {
                 jobDefinition = Properties.GetJobDefinition(route);
                 fid = GetFireInstanceIdHeader(httpContext);
-                var info = TrackInstance(fid);
+                var info = PlanarHostedJobCommon.TrackInstance(fid);
                 await Execute(httpContext, jobDefinition.JobType, info);
                 return Results.Accepted();
             }
@@ -126,7 +128,7 @@ namespace Planar.Job
             try
             {
                 fid = GetFireInstanceIdHeader(httpContext);
-                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return Results.NotFound(); }
+                if (!PlanarHostedJobCommon.TryGetInstanceInfo(fid, out jobInstanceInfo)) { return Results.NotFound(); }
 
                 jobInstanceInfo.Cancel();
                 if (_logger?.IsEnabled(LogLevel.Information) == true)
@@ -242,10 +244,10 @@ namespace Planar.Job
                 json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
             }
 
-            _ = Execute(jobType, Properties, json, jobInstanceInfo.CancellationToken)
+            _ = PlanarJobCommon.Execute(jobType, Properties, json, jobInstanceInfo.CancellationToken)
                 .ContinueWith(async t =>
                 {
-                    await UntrackInstance(jobInstanceInfo.FireInstanceId);
+                    await PlanarHostedJobCommon.UntrackInstance(jobInstanceInfo.FireInstanceId);
                 }, jobInstanceInfo.CancellationToken);
         }
 

@@ -6,6 +6,7 @@ using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Protocol;
 using Newtonsoft.Json;
+using Planar.Job;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -190,7 +191,7 @@ namespace Planar
             // mqtt
             if (_mqttClient != null)
             {
-                var defaultWaitSeconds = PlanarJob.Properties.LogFlushTimeout;
+                var defaultWaitSeconds = PlanarJobCommon.Properties.LogFlushTimeout;
                 var pendingBefore = _mqttClient.PendingApplicationMessagesCount;
                 SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, defaultWaitSeconds);
                 var pendingAfter = _mqttClient.PendingApplicationMessagesCount;

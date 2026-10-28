@@ -26,10 +26,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="Internals\PlanarConvert.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>

@@ -22,7 +22,7 @@ namespace Planar.Job
         internal static string Environment { get; set; } = null!;
 #endif
 
-        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
+        internal static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
         internal static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
@@ -234,11 +234,11 @@ namespace Planar.Job
             Console.ResetColor();
         }
 
-        public static async Task<bool> Debug(IHostedJobProperties properties, CancellationToken cancellationToken)
+        public static async Task<bool> Debug(IHostedJobProperties properties)
         {
             if (Mode != RunningMode.Debug) { return false; }
             var type = ShowJobMenu(properties);
-            return await Debug(type, cancellationToken);
+            return await Debug(type, _mainCancellationTokenSource.Token);
         }
 
         private static async Task<bool> Debug(Type jobType, CancellationToken cancellationToken)
@@ -273,10 +273,10 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties hostedProperties, string json, CancellationToken cancellationToken)
+        internal static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties hostedProperties, string json, CancellationToken cancellationToken)
 #else
 
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties? hostedProperties, string json, CancellationToken cancellationToken)
+        internal static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties? hostedProperties, string json, CancellationToken cancellationToken)
 #endif
         {
             var instance = GetInstance(jobType);

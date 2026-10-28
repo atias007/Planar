@@ -2,17 +2,18 @@
 using Planar.Common;
 using System;
 using System.Collections.Concurrent;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Job
 {
-    public static partial class PlanarJob
+    internal static partial class PlanarHostedJobCommon
     {
         private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
         private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
-        private static void SafeDisposeCancellationTokenSource()
+        internal static void SafeDisposeCancellationTokenSource()
         {
             try
             {
@@ -24,7 +25,12 @@ namespace Planar.Job
             }
         }
 
-        static void SetupGracefulShutdown()
+        internal static bool TryGetInstanceInfo(string fireInstanceId, out JobInstanceInfo info)
+        {
+            return _jobInstances.TryGetValue(fireInstanceId, out info);
+        }
+
+        internal static void SetupGracefulShutdown(ILogger logger)
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) =>
             {
@@ -40,7 +46,7 @@ namespace Planar.Job
 
             _mainCancellationTokenSource.Token.Register(async () =>
             {
-                _logger?.LogInformation("Start gracefull shutdown");
+                logger?.LogInformation("Start graceful shutdown");
 
                 foreach (var item in _jobInstances)
                 {
@@ -57,9 +63,9 @@ namespace Planar.Job
                 for (int i = 0; i < 30; i++)
                 {
                     if (_jobInstances.IsEmpty) { break; }
-                    if (_logger?.IsEnabled(LogLevel.Information) == true)
+                    if (logger?.IsEnabled(LogLevel.Information) == true)
                     {
-                        _logger.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
+                        logger.LogInformation("Wait for {Count} jobs to finish running", _jobInstances.Count);
                     }
 
 #pragma warning disable S8949 // The overload accepting a 'CancellationToken' should be used
@@ -69,7 +75,7 @@ namespace Planar.Job
 
                 if (!_jobInstances.IsEmpty)
                 {
-                    _logger?.LogError("{Count} jobs to is running after waiting 30 seconds", _jobInstances.Count);
+                    logger?.LogError("{Count} jobs to is running after waiting 30 seconds", _jobInstances.Count);
                 }
             });
 
@@ -91,7 +97,7 @@ namespace Planar.Job
             };
         }
 
-        private static JobInstanceInfo TrackInstance(string fireInstanceId)
+        internal static JobInstanceInfo TrackInstance(string fireInstanceId)
         {
             var info = new JobInstanceInfo(fireInstanceId);
 
@@ -103,7 +109,7 @@ namespace Planar.Job
             return info;
         }
 
-        private static async Task UntrackInstance(string fireInstanceId)
+        internal static async Task UntrackInstance(string fireInstanceId)
         {
             if (_jobInstances.TryRemove(fireInstanceId, out var info))
             {
@@ -131,6 +137,48 @@ namespace Planar.Job
                 }
                 await Task.Delay(50, CancellationToken.None);
             }
+        }
+
+        internal static async Task PrintLogo(Assembly assembly)
+        {
+            const string logo1 = @"  ____  _                              _       _         ";
+            const string logo2 = @" |  _ \| | __ _ _ __   __ _ _ __      | | ___ | |__  ___ ";
+            const string logo3 = @" | |_) | |/ _` | '_ \ / _` | '__|  _  | |/ _ \| '_ \/ __|";
+            const string logo4 = @" |  __/| | (_| | | | | (_| | |    | |_| | (_) | |_) \__ \";
+            const string logo5 = @" |_|   |_|\__,_|_| |_|\__,_|_|     \___/ \___/|_.__/|___/";
+
+            await Console.Out.WriteLineAsync(logo1);
+            await Console.Out.WriteLineAsync(logo2);
+            await Console.Out.WriteLineAsync(logo3);
+            await Console.Out.WriteLineAsync(logo4);
+            await Console.Out.WriteLineAsync(logo5);
+            await Console.Out.WriteLineAsync();
+            var version = SafeGetVersion(assembly);
+            PrintBoxed($"RabbitMQ Hosted Job [version: {version}]");
+            await Console.Out.WriteLineAsync();
+        }
+
+        private static string SafeGetVersion(Assembly assembly)
+        {
+            try
+            {
+                var version = assembly.GetName().Version;
+                return version?.ToString() ?? "Unknown";
+            }
+            catch
+            {
+                return "Unknown";
+            }
+        }
+
+        private static void PrintBoxed(string text)
+        {
+            int width = text.Length + 2; // one space padding each side
+            string horizontal = new string('-', width);
+
+            Console.WriteLine($"+{horizontal}+");
+            Console.WriteLine($"| {text} |");
+            Console.WriteLine($"+{horizontal}+");
         }
     }
 }
