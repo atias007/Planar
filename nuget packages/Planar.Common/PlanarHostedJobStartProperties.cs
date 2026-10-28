@@ -46,8 +46,12 @@ namespace Planar.Job
 #if NETSTANDARD2_0
 
         public IHost Host { get; internal set; }
+        public string PlanarApiUsername { get; internal set; }
+        public string PlanarApiPassword { get; internal set; }
 #else
         public IHost Host { get; internal set; } = null!;
+        public string? PlanarApiUsername { get; internal set; }
+        public string? PlanarApiPassword { get; internal set; }
 #endif
 
         public IEnumerable<Manifest> Manifests => _manifests;

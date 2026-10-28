@@ -292,6 +292,12 @@ namespace Planar.Job
             _healthCheckTimer.Start();
         }
 
+        public static void StopHealthCheck()
+        {
+            _healthCheckTimer.Stop();
+            _healthCheckTimer.Dispose();
+        }
+
         private async static Task ExecuteHealthCheck(IHostedJobProperties properties, ILogger logger)
         {
             try
@@ -314,7 +320,10 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
+                if (!MainCancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    logger.LogWarning(ex, "Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
+                }
             }
         }
 

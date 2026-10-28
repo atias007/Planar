@@ -36,9 +36,8 @@ namespace Planar.Job
             PlanarJobCommon.Properties = properties;
 
             Console.OutputEncoding = Encoding.UTF8;
-            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly);
+            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly, nameof(RabbitMq);
 
-            if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
             _logger = GetLogger(properties);
             _ = PlanarJobCommon.StartHealthCheck(properties, _logger);
 
@@ -57,6 +56,7 @@ namespace Planar.Job
             finally
             {
                 PlanarHostedJobCommon.SafeDisposeCancellationTokenSource();
+                PlanarJobCommon.StopHealthCheck();
             }
         }
 
@@ -101,16 +101,19 @@ namespace Planar.Job
         {
             _logger?.LogDebug("Received invoke message");
             string fid = string.Empty;
+
 #if NETSTANDARD2_0
             JobDefinition jobDefinition = null;
+            JobInstanceInfo info = null;
 #else
             JobDefinition? jobDefinition = null;
+            JobInstanceInfo? info = null;
 #endif
             try
             {
                 jobDefinition = Properties.GetJobDefinition(eventArgs.RoutingKey);
                 fid = GetFireInstanceIdHeader(eventArgs);
-                var info = PlanarHostedJobCommon.TrackInstance(fid);
+                info = PlanarHostedJobCommon.TrackInstance(fid);
                 await Execute(eventArgs, jobDefinition.JobType, info.CancellationToken);
             }
             catch (Exception ex)
@@ -119,7 +122,7 @@ namespace Planar.Job
             }
             finally
             {
-                await PlanarHostedJobCommon.UntrackInstance(fid);
+                if (info != null) { await PlanarHostedJobCommon.UntrackInstance(fid); }
             }
         }
 

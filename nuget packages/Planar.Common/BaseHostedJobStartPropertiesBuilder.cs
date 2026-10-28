@@ -38,6 +38,16 @@ namespace Planar.Job
             properties.PlanarApiSchema = schema;
         }
 
+        public static void WithPlanarApiAuthentication(PlanarHostedJobStartProperties properties,
+            string username,
+            string password)
+        {
+            if (string.IsNullOrWhiteSpace(username)) { throw new ArgumentNullException(nameof(username)); }
+            if (string.IsNullOrWhiteSpace(password)) { throw new ArgumentNullException(nameof(password)); }
+            properties.PlanarApiUsername = username;
+            properties.PlanarApiPassword = password;
+        }
+
 #if NETSTANDARD2_0
 
         public static void AddHostSingletonType<T>(PlanarHostedJobStartProperties properties)

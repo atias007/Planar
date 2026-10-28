@@ -161,8 +161,13 @@ namespace Planar.Job
         {
             var key = _properties.EncryptionKey;
 
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new PlanarJobException("Encryption key is not provided. Please provide a valid 32-byte Base64 string as the encryption key.");
+            }
+
             var encryptionKeyBytes = Convert.FromBase64String(key);
-            if (string.IsNullOrWhiteSpace(key) || encryptionKeyBytes.Length == 0)
+            if (encryptionKeyBytes.Length == 0)
             {
                 throw new PlanarJobException("Encryption key is not provided. Please provide a valid 32-byte Base64 string as the encryption key.");
             }

@@ -27,7 +27,7 @@ namespace Planar.Job
             PlanarJobCommon.Properties = properties;
 
             Console.OutputEncoding = Encoding.UTF8;
-            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly);
+            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly, nameof(Http));
 
             InitWebApplication(properties);
 
@@ -49,6 +49,7 @@ namespace Planar.Job
             finally
             {
                 PlanarHostedJobCommon.SafeDisposeCancellationTokenSource();
+                PlanarJobCommon.StopHealthCheck();
             }
         }
 
@@ -91,6 +92,7 @@ namespace Planar.Job
         {
             _logger?.LogDebug("Received invoke message");
             string fid = string.Empty;
+
 #if NETSTANDARD2_0
             JobDefinition jobDefinition = null;
 #else
@@ -244,11 +246,23 @@ namespace Planar.Job
                 json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
             }
 
-            _ = PlanarJobCommon.Execute(jobType, Properties, json, jobInstanceInfo.CancellationToken)
-                .ContinueWith(async t =>
-                {
-                    await PlanarHostedJobCommon.UntrackInstance(jobInstanceInfo.FireInstanceId);
-                }, jobInstanceInfo.CancellationToken);
+            _ = RunAndUntrackAsync(jobType, json, jobInstanceInfo.FireInstanceId, jobInstanceInfo.CancellationToken);
+        }
+
+        private static async Task RunAndUntrackAsync(Type jobType, string json, string fireInstanceId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await PlanarJobCommon.Execute(jobType, Properties, json, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Fail to execute {Name}", jobType.Name);
+            }
+            finally
+            {
+                await PlanarHostedJobCommon.UntrackInstance(fireInstanceId);
+            }
         }
 
         private static void FillProperties()

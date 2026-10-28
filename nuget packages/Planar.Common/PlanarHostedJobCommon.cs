@@ -138,7 +138,7 @@ namespace Planar.Job
             }
         }
 
-        internal static async Task PrintLogo(Assembly assembly)
+        internal static async Task PrintLogo(Assembly assembly, string name)
         {
             const string logo1 = @"  ____  _                              _       _         ";
             const string logo2 = @" |  _ \| | __ _ _ __   __ _ _ __      | | ___ | |__  ___ ";
@@ -153,7 +153,7 @@ namespace Planar.Job
             await Console.Out.WriteLineAsync(logo5);
             await Console.Out.WriteLineAsync();
             var version = SafeGetVersion(assembly);
-            PrintBoxed($"RabbitMQ Hosted Job [version: {version}]");
+            PrintBoxed($"{name} Hosted Job [version: {version}]");
             await Console.Out.WriteLineAsync();
         }
 
