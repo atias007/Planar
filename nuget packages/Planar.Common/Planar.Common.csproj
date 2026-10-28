@@ -29,10 +29,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Remove="ConsoleLogger.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="JobExecutionContext\ExceptionDto.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IDataMap.cs" Link="JobExecutionContext\IDataMap.cs" />
@@ -54,7 +50,6 @@
 			<PackagePath>\</PackagePath>
 			<Pack>True</Pack>
 		</None>
-		<None Include="ConsoleLogger.cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">

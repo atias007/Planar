@@ -77,7 +77,7 @@ namespace Planar.Job
             Properties = properties ?? throw new ArgumentNullException(nameof(properties));
 
             // create rabbitmq factory instance and ensure connection
-            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, PlanarJobCommon._mainCancellationTokenSource.Token);
+            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, PlanarJobCommon.MainCancellationTokenSource.Token);
 
             // ensure queues, exchanges and bindings are created
             await _rabbitMqFactory.EnsureDefinitions();
@@ -88,7 +88,7 @@ namespace Planar.Job
             // Start consuming messages
             await Task.WhenAll(
                 _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync),
-                properties.Host.RunAsync(PlanarJobCommon._mainCancellationTokenSource.Token));
+                properties.Host.RunAsync(PlanarJobCommon.MainCancellationTokenSource.Token));
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace Planar.Job
 
         private static void FillProperties()
         {
-            PlanarJobCommon.FillArguments();
+            PlanarJobCommon.InitArguments();
             if (PlanarJobCommon.HasArgument("--debug"))
             {
                 PlanarJobCommon.Mode = RunningMode.Debug;

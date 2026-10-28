@@ -119,7 +119,7 @@ namespace Planar.Job
 
         private static void FillProperties()
         {
-            PlanarJobCommon.FillArguments();
+            PlanarJobCommon.InitArguments();
             if (PlanarJobCommon.HasArgument("--planar-service-mode"))
             {
                 PlanarJobCommon.Mode = RunningMode.Release;
@@ -204,7 +204,7 @@ namespace Planar.Job
             {
                 try
                 {
-                    PlanarJobCommon._mainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
                 }
                 catch
                 {
@@ -221,7 +221,7 @@ namespace Planar.Job
 
                 try
                 {
-                    PlanarJobCommon._mainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
                 }
                 catch
                 {
@@ -234,7 +234,7 @@ namespace Planar.Job
         {
             try
             {
-                PlanarJobCommon._mainCancellationTokenSource.Dispose();
+                PlanarJobCommon.MainCancellationTokenSource.Dispose();
             }
             catch
             {

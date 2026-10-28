@@ -44,24 +44,12 @@
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
-		<PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
-		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
-		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
-		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-
-		<PackageReference Include="YamlDotNet" Version="18.1.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
-	</ItemGroup>
-	<ItemGroup>
-		<Compile Include="..\Planar.Common\ConsoleLogger.cs" Link="ConsoleLogger.cs" />
-		<Compile Include="..\Planar.Job.RabbitMQ\BaseHostedJobStartPropertiesBuilder.cs" Link="BaseHostedJobStartPropertiesBuilder.cs" />
-		<Compile Include="..\Planar.Job.RabbitMQ\ManifestUtil.cs" Link="ManifestUtil.cs" />
 	</ItemGroup>
 </Project>

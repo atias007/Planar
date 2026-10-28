@@ -11,13 +11,12 @@ namespace Planar.Job
     internal static partial class PlanarHostedJobCommon
     {
         private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
-        private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
 
         internal static void SafeDisposeCancellationTokenSource()
         {
             try
             {
-                _mainCancellationTokenSource.Dispose();
+                PlanarJobCommon.MainCancellationTokenSource.Dispose();
             }
             catch
             {
@@ -36,7 +35,7 @@ namespace Planar.Job
             {
                 try
                 {
-                    _mainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
                 }
                 catch
                 {
@@ -44,7 +43,7 @@ namespace Planar.Job
                 }
             };
 
-            _mainCancellationTokenSource.Token.Register(async () =>
+            PlanarJobCommon.MainCancellationTokenSource.Token.Register(async () =>
             {
                 logger?.LogInformation("Start graceful shutdown");
 
@@ -88,7 +87,7 @@ namespace Planar.Job
 
                 try
                 {
-                    _mainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
                 }
                 catch
                 {

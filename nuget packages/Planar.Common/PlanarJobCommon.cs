@@ -14,7 +14,7 @@ namespace Planar.Job
 {
     public static class PlanarJobCommon
     {
-        internal static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
+        internal static CancellationTokenSource MainCancellationTokenSource { get; } = new CancellationTokenSource();
 
 #if NETSTANDARD2_0
         internal static string Environment { get; set; }
@@ -113,7 +113,7 @@ namespace Planar.Job
             return json;
         }
 
-        internal static void FillArguments()
+        internal static void InitArguments()
         {
             var source = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < source.Length; i++)
@@ -238,7 +238,7 @@ namespace Planar.Job
         {
             if (Mode != RunningMode.Debug) { return false; }
             var type = ShowJobMenu(properties);
-            return await Debug(type, _mainCancellationTokenSource.Token);
+            return await Debug(type, MainCancellationTokenSource.Token);
         }
 
         private static async Task<bool> Debug(Type jobType, CancellationToken cancellationToken)
@@ -285,7 +285,7 @@ namespace Planar.Job
 
         public async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
         {
-            await Task.Delay(5_000, _mainCancellationTokenSource.Token);
+            await Task.Delay(5_000, MainCancellationTokenSource.Token);
             if (Mode == RunningMode.Debug) { return; }
             await ExecuteHealthCheck(properties, logger);
             _healthCheckTimer.Elapsed += async (s, e) => await ExecuteHealthCheck(properties, logger);
@@ -299,7 +299,7 @@ namespace Planar.Job
                 if (!MqttClient.IsConnected)
                 {
                     await MqttClient.StartAsync(properties.PlanarHostname, properties.PlanarPort);
-                    await Task.Delay(4_000, _mainCancellationTokenSource.Token);
+                    await Task.Delay(4_000, MainCancellationTokenSource.Token);
                 }
                 await MqttClient.PingAsync();
 

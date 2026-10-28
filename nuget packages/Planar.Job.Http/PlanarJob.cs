@@ -253,7 +253,7 @@ namespace Planar.Job
 
         private static void FillProperties()
         {
-            PlanarJobCommon.FillArguments();
+            PlanarJobCommon.InitArguments();
             if (PlanarJobCommon.HasArgument("--debug"))
             {
                 PlanarJobCommon.Mode = RunningMode.Debug;
