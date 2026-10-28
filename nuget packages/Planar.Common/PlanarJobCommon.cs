@@ -12,20 +12,21 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
-    public static partial class PlanarJob
+    public static class PlanarJobCommon
     {
+        internal static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
+
 #if NETSTANDARD2_0
-        internal static string Environment { get; private set; }
+        internal static string Environment { get; set; }
 #else
-        internal static string Environment { get; private set; } = null!;
+        internal static string Environment { get; set; } = null!;
 #endif
 
         public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
-        private static List<Argument> Arguments { get; set; } = new List<Argument>();
+        internal static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
-        static partial void SetupGracefulShutdown();
-
+        internal static PlanarJobStartProperties Properties { get; set; } = PlanarJobStartProperties.Default;
         private readonly static Timer _healthCheckTimer = new Timer(15 * 60_000);
 
         private static Type ShowJobMenu(IHostedJobProperties properties)
@@ -57,7 +58,7 @@ namespace Planar.Job
             }
         }
 
-        private static string ShowDebugMenu(Type JobType)
+        internal static string ShowDebugMenu(Type JobType)
         {
             int? selectedIndex;
 
@@ -112,7 +113,7 @@ namespace Planar.Job
             return json;
         }
 
-        private static void FillArguments()
+        internal static void FillArguments()
         {
             var source = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < source.Length; i++)
@@ -138,10 +139,10 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static Argument GetArgument(string key)
+        internal static Argument GetArgument(string key)
 #else
 
-        private static Argument? GetArgument(string key)
+        internal static Argument? GetArgument(string key)
 #endif
         {
             return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
@@ -194,10 +195,10 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static void TimerElapsed(object sender, ElapsedEventArgs e)
+        internal static void TimerElapsed(object sender, ElapsedEventArgs e)
 #else
 
-        private static void TimerElapsed(object? sender, ElapsedEventArgs e)
+        internal static void TimerElapsed(object? sender, ElapsedEventArgs e)
 #endif
         {
             Console.BackgroundColor = ConsoleColor.Red;
@@ -206,7 +207,7 @@ namespace Planar.Job
             System.Environment.Exit(-1);
         }
 
-        private static bool HasArgument(string key)
+        internal static bool HasArgument(string key)
         {
             return Arguments.Exists(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
@@ -298,7 +299,7 @@ namespace Planar.Job
                 if (!MqttClient.IsConnected)
                 {
                     await MqttClient.StartAsync(properties.PlanarHostname, properties.PlanarPort);
-                    await Task.Delay(4_000);
+                    await Task.Delay(4_000, _mainCancellationTokenSource.Token);
                 }
                 await MqttClient.PingAsync();
 

@@ -89,7 +89,7 @@ namespace Planar.Job
 
                 if (_exceptions.Count >= maxItems)
                 {
-                    var topEx = new PlanarJobAggragateException($"Aggregate exception items exceeded maximum limit of {maxItems:N0} exceptions");
+                    var topEx = new PlanarJobAggregateException($"Aggregate exception items exceeded maximum limit of {maxItems:N0} exceptions");
                     _exceptions.Insert(0, topEx);
                     CheckAggregateException();
                 }
@@ -114,7 +114,7 @@ namespace Planar.Job
                     throw _exceptions[0];
                 }
 
-                throw new PlanarJobAggragateException($"There is {_exceptions.Count} aggregate exception", _exceptions);
+                throw new PlanarJobAggregateException($"There is {_exceptions.Count} aggregate exception", _exceptions);
             }
         }
 

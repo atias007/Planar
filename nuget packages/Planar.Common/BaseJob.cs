@@ -196,7 +196,7 @@ namespace Planar.Job
 
         internal async Task PrintDebugSummary(bool success)
         {
-            if (PlanarJob.Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 var status = success ? "Success" : "Fail";
                 await Console.Out.WriteLineAsync("---------------------------------------");
@@ -214,7 +214,7 @@ namespace Planar.Job
 
         internal async Task PrintMergedData()
         {
-            if (PlanarJob.Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 await Console.Out.WriteLineAsync(">> Merged Data");
@@ -248,7 +248,7 @@ namespace Planar.Job
         private async Task OpenMqttConnection()
 #endif
         {
-            if (PlanarJob.Mode != RunningMode.Release) { return; }
+            if (PlanarJobCommon.Mode != RunningMode.Release) { return; }
             if (MqttClient.IsConnected) { return; }
 
             var connectTimeout = TimeSpan.FromSeconds(4);
@@ -617,7 +617,7 @@ namespace Planar.Job
         private async Task HandleException(Exception ex)
         {
             var text = await _baseJobFactory.ReportException(ex);
-            if (PlanarJob.Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 await Console.Error.WriteLineAsync(text);
@@ -652,7 +652,7 @@ namespace Planar.Job
                 FilterJobData(ctx.TriggerDetails.TriggerDataMap);
 
                 // Debug mode need to manually read settings file/s
-                if (PlanarJob.Mode == RunningMode.Debug)
+                if (PlanarJobCommon.Mode == RunningMode.Debug)
                 {
                     var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
                     ctx.JobSettings = ctx.JobSettings.Merge(settings);

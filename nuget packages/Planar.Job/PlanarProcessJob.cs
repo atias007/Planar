@@ -1,21 +1,17 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Planar.Job
 {
     public static partial class PlanarJob
     {
-        private static readonly CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
-
-        static partial void SetupGracefulShutdown()
+        public static void SetupGracefulShutdown()
         {
             AppDomain.CurrentDomain.ProcessExit += (s, a) =>
             {
                 try
                 {
-                    _mainCancellationTokenSource.Cancel();
+                    PlanarJobCommon._mainCancellationTokenSource.Cancel();
                 }
                 catch
                 {
@@ -32,7 +28,7 @@ namespace Planar.Job
 
                 try
                 {
-                    _mainCancellationTokenSource.Cancel();
+                    PlanarJobCommon._mainCancellationTokenSource.Cancel();
                 }
                 catch
                 {
@@ -45,7 +41,7 @@ namespace Planar.Job
         {
             try
             {
-                _mainCancellationTokenSource.Dispose();
+                PlanarJobCommon._mainCancellationTokenSource.Dispose();
             }
             catch
             {

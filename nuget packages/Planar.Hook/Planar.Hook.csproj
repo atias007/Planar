@@ -26,11 +26,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="Internals\PlanarConvert.cs" />
-	  <Compile Include="..\Planar.Job\Argument.cs" Link="Internals\Argument.cs" />
-	  <Compile Include="..\Planar.Job\RunningMode.cs" Link="Internals\RunningMode.cs" />
-	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="Internals\TypeMappingConverter.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -45,6 +41,9 @@
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="System.Text.Json" Version="10.0.14" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>
 
 </Project>

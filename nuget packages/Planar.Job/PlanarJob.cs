@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using System;
 using System.IO;
 using System.Text;
@@ -32,6 +33,7 @@ namespace Planar.Job
             where TJob : BaseJob, new()
         {
             Properties = properties;
+            PlanarJobCommon.Properties = properties;
 
             FillProperties();
             SetupGracefulShutdown();
@@ -75,21 +77,21 @@ namespace Planar.Job
                      where TJob : BaseJob, new()
         {
             string json;
-            if (Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
-                json = ShowDebugMenu(typeof(TJob));
+                json = PlanarJobCommon.ShowDebugMenu(typeof(TJob));
             }
             else
             {
                 json = GetJsonFromArgs();
             }
 
-            if (Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 await Console.Out.WriteAsync(">> Environment: ");
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                await Console.Out.WriteLineAsync(Environment);
+                await Console.Out.WriteLineAsync(PlanarJobCommon.Environment);
                 Console.ResetColor();
                 await Console.Out.WriteLineAsync("---------------------------------------");
             }
@@ -97,7 +99,7 @@ namespace Planar.Job
             var instance = Activator.CreateInstance<TJob>();
             var success = await instance.Execute(json, hostedProperties: null, CancellationToken.None);
 
-            if (Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 await instance.PrintDebugSummary(success);
                 await Console.Out.WriteLineAsync("---------------------------------------");
@@ -105,7 +107,7 @@ namespace Planar.Job
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 using (var timer = new Timer(60_000))
                 {
-                    timer.Elapsed += TimerElapsed;
+                    timer.Elapsed += PlanarJobCommon.TimerElapsed;
                     timer.Start();
                     Console.ReadKey(true);
                     timer.Stop();
@@ -115,20 +117,20 @@ namespace Planar.Job
 
         private static void FillProperties()
         {
-            FillArguments();
-            if (HasArgument("--planar-service-mode"))
+            PlanarJobCommon.FillArguments();
+            if (PlanarJobCommon.HasArgument("--planar-service-mode"))
             {
-                Mode = RunningMode.Release;
+                PlanarJobCommon.Mode = RunningMode.Release;
             }
             else
             {
-                Mode = RunningMode.Debug;
+                PlanarJobCommon.Mode = RunningMode.Debug;
             }
 
-            ContextBase64 = GetArgument("--context")?.Value;
-            Environment = GetArgument("--environment")?.Value ?? "Development";
-            Encrypted = HasArgument("--encrypted");
-            FileIdentifier = GetArgument("--file-identifier")?.Value;
+            ContextBase64 = PlanarJobCommon.GetArgument("--context")?.Value;
+            PlanarJobCommon.Environment = PlanarJobCommon.GetArgument("--environment")?.Value ?? "Development";
+            Encrypted = PlanarJobCommon.HasArgument("--encrypted");
+            FileIdentifier = PlanarJobCommon.GetArgument("--file-identifier")?.Value;
         }
 
         private static string GetJsonFromArgs()

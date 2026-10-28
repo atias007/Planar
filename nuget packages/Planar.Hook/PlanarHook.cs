@@ -1,4 +1,5 @@
 ﻿using Planar.Hook.Internals;
+using Planar;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,7 +44,7 @@ namespace Planar.Hook
             }
             catch (Exception ex)
             {
-                var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {typeof(THook).Name}" };
+                var log = new HookLogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {typeof(THook).Name}" };
                 await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
                 await Console.Error.WriteLineAsync(log.ToString());

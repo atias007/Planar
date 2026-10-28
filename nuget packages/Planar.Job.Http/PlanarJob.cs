@@ -24,15 +24,19 @@ namespace Planar.Job
         public async static Task StartAsync(HttpJobStartProperties properties)
         {
             ArgumentNullException.ThrowIfNull(properties);
+            PlanarJobCommon.Properties = properties;
+
+            Console.OutputEncoding = Encoding.UTF8;
             InitWebApplication(properties);
+
             _logger = GetLogger(properties);
-            _ = StartHealthCheck(properties, _logger);
+            _ = PlanarJobCommon.StartHealthCheck(properties, _logger);
 
             try
             {
                 SetupGracefulShutdown();
                 FillProperties();
-                if (await Debug(properties, _mainCancellationTokenSource.Token)) { return; }
+                if (await PlanarJobCommon.Debug(properties, _mainCancellationTokenSource.Token)) { return; }
 
                 await SafeStartAsync(properties);
             }
@@ -247,17 +251,17 @@ namespace Planar.Job
 
         private static void FillProperties()
         {
-            FillArguments();
-            if (HasArgument("--debug"))
+            PlanarJobCommon.FillArguments();
+            if (PlanarJobCommon.HasArgument("--debug"))
             {
-                Mode = RunningMode.Debug;
+                PlanarJobCommon.Mode = RunningMode.Debug;
             }
             else
             {
-                Mode = RunningMode.Release;
+                PlanarJobCommon.Mode = RunningMode.Release;
             }
 
-            Environment = GetArgument("--environment")?.Value ?? "Development";
+            PlanarJobCommon.Environment = PlanarJobCommon.GetArgument("--environment")?.Value ?? "Development";
         }
     }
 }
