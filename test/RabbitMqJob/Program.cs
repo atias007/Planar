@@ -13,7 +13,7 @@ var app = builder.Build();
 
 #pragma warning disable S2068 // Credentials should not be hard-coded
 var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
-        .WithPlanarHostName("localhost")
+        .WithPlanarHost("localhost", 206)
         .WithHost(app)
         .AddHostSingletonType<DemoSignleton>()
         .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")
@@ -28,7 +28,7 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
             Port = 5672
         })
         .AddJob<JobA>()
-        .AddJob<JobB>()
+        .AddJob<JobB>("Common.JobB")
         .Build();
 #pragma warning restore S2068 // Credentials should not be hard-coded
 

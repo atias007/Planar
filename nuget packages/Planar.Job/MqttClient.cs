@@ -68,7 +68,15 @@ namespace Planar
                 }
                 catch
                 {
-                    // DO NOTHING, just try to ping failover proxy if mqtt ping failed
+                    try
+                    {
+                        await RestartAsync();
+                        await _mqttClient.PingAsync();
+                    }
+                    catch (Exception)
+                    {
+                        // DO NOTHING, just try to ping failover proxy if mqtt ping failed
+                    }
                 }
             }
         }

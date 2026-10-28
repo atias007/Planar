@@ -9,10 +9,12 @@ namespace Planar.Common
 
         public static string SetLogo(string html)
         {
+            if (AppSettings.Connectors.Smtp == null) { return Replace(html, "Logo", $"data:image/png;base64,{Logo175Content}"); }
+
 #pragma warning disable S1075 // URIs should not be hardcoded
             const string logoUrl = "https://github.com/atias007/Planar/blob/master/src/Planar/Content/logo2.png?raw=true";
 #pragma warning restore S1075 // URIs should not be hardcoded
-            switch (AppSettings.Smtp.HtmlImageMode)
+            switch (AppSettings.Connectors.Smtp.HtmlImageMode)
             {
                 case ImageMode.Embedded:
                     html = Replace(html, "Logo", $"data:image/png;base64,{Logo175Content}");
@@ -23,7 +25,7 @@ namespace Planar.Common
                     break;
 
                 case ImageMode.Internal:
-                    if (Uri.TryCreate(AppSettings.Smtp.HtmlImageInternalBaseUrl, UriKind.Absolute, out var url))
+                    if (Uri.TryCreate(AppSettings.Connectors.Smtp.HtmlImageInternalBaseUrl, UriKind.Absolute, out var url))
                     {
                         var imageUrl = new Uri(url, "/content/email-logo.png").ToString();
                         html = Replace(html, "Logo", imageUrl);

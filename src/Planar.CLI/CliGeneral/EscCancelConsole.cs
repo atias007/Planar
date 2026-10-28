@@ -12,8 +12,8 @@ internal sealed class EscCancelInput(IAnsiConsoleInput inner) : IAnsiConsoleInpu
 
     public ConsoleKeyInfo? ReadKey(bool intercept) => Check(inner.ReadKey(intercept));
 
-    public async Task<ConsoleKeyInfo?> ReadKeyAsync(bool intercept, CancellationToken ct)
-        => Check(await inner.ReadKeyAsync(intercept, ct));
+    public async Task<ConsoleKeyInfo?> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
+        => Check(await inner.ReadKeyAsync(intercept, cancellationToken));
 
     private static ConsoleKeyInfo? Check(ConsoleKeyInfo? key)
         => key?.Key == ConsoleKey.Escape ? throw new OperationCanceledException() : key;

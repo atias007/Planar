@@ -55,19 +55,20 @@ protection:
   wait before restart: 00:05:00        # the time span to wait before restarting the service. default is 5 minutes. minimum value 1 minute
   regular restart expression: null     # cron expression for timing regular restart. the time is estimated. restart will occur when no jobs is currently running. set to null for no regular restart. the default null
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
-smtp: 
-  from address: admin@planar.me
-  from name: Planar [Do Not Reply]
-  host: smtp.server-name.com
-  port: 25
-  use ssl: false
-  username: null
-  password: null
-  default credentials: true
-  html image mode: embedded            # how to implant images in email html templates. embedded (base64 inside html. default), internal (internal link to planar server and http/s port), external (link to external internet resource)
-  html image internal base url: null   # the base url of this server (proxy serve, load balancer) for html internal images url. must be valid uri
-# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
-hooks:
+connectors:
+  # -------------------------------------------------- #
+  smtp: 
+    from address: admin@planar.me
+    from name: Planar [Do Not Reply]
+    host: smtp.server-name.com
+    port: 25
+    use ssl: false
+    username: null
+    password: null
+    default credentials: true
+    html image mode: embedded            # how to implant images in email html templates. embedded (base64 inside html. default), internal (internal link to planar server and http/s port), external (link to external internet resource)
+    html image internal base url: null   # the base url of this server (proxy serve, load balancer) for html internal images url. must be valid uri
+  # -------------------------------------------------- #
   rest:
     default url: http://localhost:2306/api/hooks/rest
   # -------------------------------------------------- #

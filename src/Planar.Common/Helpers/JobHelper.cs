@@ -117,7 +117,10 @@ public static class JobHelper
         return title;
     }
 
+#pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
+
     public static async Task<JobActiveMembers> GetJobActiveMode(IScheduler scheduler, JobKey jobKey)
+#pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
         var triggers = await scheduler.GetTriggersOfJob(jobKey);
         if (triggers == null || triggers.Count == 0) { return JobActiveMembers.NoTrigger; }

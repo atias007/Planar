@@ -34,9 +34,10 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
+        var settings = AppSettings.Connectors.Telegram;
         var message = GetMessage(monitorDetails);
-        var apis = GetTelegramApiInfos(monitorDetails);
-        foreach (var api in apis)
+        var api_s = GetTelegramApiInfo(monitorDetails, settings);
+        foreach (var api in api_s)
         {
             await SendMessage(api, message);
         }
@@ -44,35 +45,42 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 
     public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
     {
+        var settings = AppSettings.Connectors.Telegram;
+        if (settings == null)
+        {
+            LogError("Telegram.Hook: Telegram connector is not configured. set the configuration in appsettings.yml (Data folder of Planar)");
+            return;
+        }
+
         var message = GetMessage(monitorDetails);
-        var apis = GetTelegramApiInfos(monitorDetails);
-        foreach (var api in apis)
+        var api_s = GetTelegramApiInfo(monitorDetails, settings);
+        foreach (var api in api_s)
         {
             await SendMessage(api, message);
         }
     }
 
-    private static List<TelegramApiInfo> GetTelegramApiInfos(IMonitor monitor)
+    private static List<TelegramApiInfo> GetTelegramApiInfo(IMonitor monitor, TelegramConnectorSettings? settings)
     {
         var result = new List<TelegramApiInfo>();
 
         foreach (var group in monitor.Groups)
         {
-            var token = GetBotToken(group);
-            var chatid = GetChatId(group);
-            var info = new TelegramApiInfo(chatid, token);
+            var token = GetBotToken(group, settings);
+            var chat_id = GetChatId(group, settings);
+            var info = new TelegramApiInfo(chat_id, token);
             result.Add(info);
         }
 
         return result;
     }
 
-    private static string GetBotToken(IMonitorGroup monitorGroup)
+    private static string GetBotToken(IMonitorGroup monitorGroup, TelegramConnectorSettings? settings)
     {
         var token = GetParameter("telegram-bot-token", monitorGroup);
         if (string.IsNullOrWhiteSpace(token))
         {
-            token = AppSettings.Hooks.Telegram.BotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
+            token = settings?.DefaultBotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
         }
 
         if (string.IsNullOrWhiteSpace(token))
@@ -83,20 +91,20 @@ To use different bot token/chat id per group, you can set one of the 'Additional
         return token;
     }
 
-    private static string GetChatId(IMonitorGroup monitorGroup)
+    private static string GetChatId(IMonitorGroup monitorGroup, TelegramConnectorSettings? settings)
     {
-        var chatid = GetParameter("telegram-chat-id", monitorGroup);
-        if (string.IsNullOrWhiteSpace(chatid))
+        var chat_id = GetParameter("telegram-chat-id", monitorGroup);
+        if (string.IsNullOrWhiteSpace(chat_id))
         {
-            chatid = AppSettings.Hooks.Telegram.ChatId; // -1002028679199
+            chat_id = settings?.DefaultChatId; // -1002028679199
         }
 
-        if (string.IsNullOrWhiteSpace(chatid))
+        if (string.IsNullOrWhiteSpace(chat_id))
         {
             throw new PlanarHookException("Telegram chat id is not defined.");
         }
 
-        return chatid;
+        return chat_id;
     }
 
     private async Task SendMessage(TelegramApiInfo apiInfo, string message)
@@ -134,15 +142,15 @@ To use different bot token/chat id per group, you can set one of the 'Additional
         using var client = new HttpClient();
         using var response = await client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
-        var jtoken = JToken.Parse(body);
-        var ok = jtoken.Value<bool>("ok");
+        var j_token = JToken.Parse(body);
+        var ok = j_token.Value<bool>("ok");
         if (ok)
         {
-            LogInformation($"Telegram response Ok with message id {jtoken["result"]?["message_id"]}");
+            LogInformation($"Telegram response Ok with message id {j_token["result"]?["message_id"]}");
         }
         else
         {
-            LogError($"Telegram response error: {jtoken["description"]}");
+            LogError($"Telegram response error: {j_token["description"]}");
         }
     }
 

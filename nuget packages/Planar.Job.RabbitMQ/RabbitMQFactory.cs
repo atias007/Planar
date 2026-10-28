@@ -18,7 +18,6 @@ namespace Planar.Job.RabbitMq
         private readonly IConnectionFactory connectionFactory;
         private readonly RabbitMqJobStartProperties properties;
         private readonly CancellationToken cancellationToken;
-        private readonly Dictionary<string, AsyncEventingBasicConsumer> _consumers = new Dictionary<string, AsyncEventingBasicConsumer>();
         private static readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
         private int healthCheckCounter = 0;
 
@@ -28,6 +27,7 @@ namespace Planar.Job.RabbitMq
         private IConnection _connection;
         private static RabbitMqFactory _instance;
         private Func<BasicDeliverEventArgs, Task> _messageHandler;
+
 #else
         private IConnection? _connection;
         private IChannel? _channel;
@@ -48,7 +48,6 @@ namespace Planar.Job.RabbitMq
                 if (_instance != null) { return _instance; }
                 _logger = logger;
                 _instance = new RabbitMqFactory(properties.RabbitMQConnectionFactory, properties, cancellationToken);
-                await _instance.EnsureDefinitions();
                 return _instance;
             }
             finally
@@ -61,15 +60,15 @@ namespace Planar.Job.RabbitMq
         {
             foreach (var def in properties.JobDefinitions)
             {
-                await EnsureDefinition(queueName: def.QueueName, logSuccess: logSuccess);
+                await EnsureDefinition(queueName: properties.QueueName, routingKey: def.RoutingKey, logSuccess: logSuccess);
             }
         }
 
-        private async Task EnsureDefinition(string queueName, bool logSuccess = true)
+        private async Task EnsureDefinition(string queueName, string routingKey, bool logSuccess = true)
         {
             try
             {
-                await EnsureDefinitionInner(queueName, logSuccess);
+                await EnsureDefinitionInner(queueName, routingKey, logSuccess);
             }
             catch (OperationInterruptedException ex)
             {
@@ -90,7 +89,7 @@ namespace Planar.Job.RabbitMq
                     arguments: null,
                     cancellationToken);
 
-                await EnsureDefinitionInner(queueName);
+                await EnsureDefinitionInner(queueName, routingKey);
             }
         }
 
@@ -115,12 +114,8 @@ namespace Planar.Job.RabbitMq
 
                     _logger?.LogInformation("Started consuming messages from RabbitMQ");
 
-                    foreach (var def in properties.JobDefinitions)
-                    {
-                        var consumer = await CreateConsumer(def.QueueName);
-                        _consumers.Add(def.QueueName, consumer);
-                        _logger?.LogInformation("Consume from queue '{QueueName}' for job: {FullName}", def.QueueName, def.JobType.FullName);
-                    }
+                    await InitConsumer(properties.QueueName);
+                    _logger?.LogInformation("Consume from queue '{QueueName}'", properties.QueueName);
 
                     await Task.Delay(Timeout.Infinite, cancellationToken);
                 }
@@ -141,7 +136,7 @@ namespace Planar.Job.RabbitMq
             await CloseConnectionAsync();
         }
 
-        private async Task<AsyncEventingBasicConsumer> CreateConsumer(string queueName)
+        private async Task InitConsumer(string queueName)
         {
             if (_channel == null) { throw new InvalidOperationException("Channel is not established"); }
             if (_messageHandler == null) { throw new InvalidOperationException("Message handler is not set"); }
@@ -155,11 +150,9 @@ namespace Planar.Job.RabbitMq
             await _channel.BasicConsumeAsync(
                 queue: queueName,
                 autoAck: true,
-                consumerTag: $"Planar:{queueName}",
+                consumerTag: $"Planar:{Environment.MachineName}",
                 consumer: consumer,
                 cancellationToken: cancellationToken);
-
-            return consumer;
         }
 
         private RabbitMqFactory(IConnectionFactory connectionFactory,
@@ -248,11 +241,7 @@ namespace Planar.Job.RabbitMq
         private async Task EnsureConsumers()
         {
             await EnsureConnectionAsync();
-
-            foreach (var consumer in _consumers)
-            {
-                await EnsureConsumer(consumer.Key);
-            }
+            await EnsureConsumer(properties.QueueName);
         }
 
         private async Task EnsureConsumer(string queueName)
@@ -265,8 +254,7 @@ namespace Planar.Job.RabbitMq
             total = await _channel.MessageCountAsync(queueName, cancellationToken);
             if (total == 0) { return; }
 
-            var consumer = await CreateConsumer(queueName);
-            _consumers[queueName] = consumer;
+            await InitConsumer(queueName);
         }
 
         /// <summary>
@@ -363,7 +351,7 @@ namespace Planar.Job.RabbitMq
             }
         }
 
-        private async Task EnsureDefinitionInner(string queueName, bool logSuccess = true)
+        private async Task EnsureDefinitionInner(string queueName, string routingKey, bool logSuccess = true)
         {
             await EnsureConnectionAsync();
             if (_channel == null) { return; }
@@ -374,19 +362,19 @@ namespace Planar.Job.RabbitMq
                 string.IsNullOrWhiteSpace(properties.DeadLetterExchange) ?
                 null :
                 new Dictionary<string, object>
-            {
-                { "x-dead-letter-exchange", properties.DeadLetterExchange },
-                { "x-dead-letter-routing-key", properties.DeadLetterRoutingKey }
-            };
+                {
+                    { "x-dead-letter-exchange", properties.DeadLetterExchange },
+                    { "x-dead-letter-routing-key", properties.DeadLetterRoutingKey }
+                };
 #else
             var queueArguments =
                 string.IsNullOrWhiteSpace(properties.DeadLetterExchange) ?
                 null :
                 new Dictionary<string, object?>
-            {
-                { "x-dead-letter-exchange", properties.DeadLetterExchange },
-                { "x-dead-letter-routing-key", properties.DeadLetterRoutingKey }
-            };
+                {
+                    { "x-dead-letter-exchange", properties.DeadLetterExchange },
+                    { "x-dead-letter-routing-key", properties.DeadLetterRoutingKey }
+                };
 #endif
 
             await _channel.ExchangeDeclareAsync(
@@ -408,7 +396,7 @@ namespace Planar.Job.RabbitMq
             await _channel.QueueBindAsync(
                 queue: queueName,
                 exchange: properties.Exchange,
-                routingKey: queueName,
+                routingKey: routingKey,
                 arguments: null,
                 cancellationToken: cancellationToken);
 

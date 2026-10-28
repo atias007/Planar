@@ -16,8 +16,7 @@ var app = builder.Build();
 app.UseSerilogRequestLogging();
 
 var properties = new HttpJobStartPropertiesBuilder()
-        .WithPlanarHostName("localhost")
-        .WithHost(app)
+        .WithApplicationHost(app)
         .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")
         .AddJob<SomeJob>()
         .Build();

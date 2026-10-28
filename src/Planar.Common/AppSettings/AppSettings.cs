@@ -28,8 +28,6 @@ public static class AppSettings
 
     public static GeneralSettings General { get; private set; } = new();
 
-    public static SmtpSettings Smtp { get; private set; } = new();
-
     public static AuthenticationSettings Authentication { get; private set; } = new();
 
     public static ClusterSettings Cluster { get; private set; } = new();
@@ -40,7 +38,7 @@ public static class AppSettings
 
     public static MonitorSettings Monitor { get; private set; } = new();
 
-    public static HooksSettings Hooks { get; private set; } = new();
+    public static ConnectorsSettings Connectors { get; private set; } = new();
 
     public static ProtectionSettings Protection { get; private set; } = new();
 
@@ -53,14 +51,13 @@ public static class AppSettings
         InitializeEnvironment(configuration);
         InitializeConnectionString(configuration);
         InitializeMaxConcurrency(configuration);
-        InitializePersistanceSpan(configuration);
+        InitializePersistenceSpan(configuration);
         InitializePorts(configuration);
         InitializeLogLevel(configuration);
         InitializeAuthentication(configuration);
-        InitializeSmtp(configuration);
         InitializeMonitor(configuration);
         InitializeProtection(configuration);
-        InitializeHooks(configuration);
+        InitializeConnectors(configuration);
 
         // Database
         const string database = "database";
@@ -137,36 +134,6 @@ public static class AppSettings
             Console.WriteLine($"ATTENTION: Planar is running in {Consts.ProductionEnvironment} mode");
             Console.WriteLine(string.Empty.PadLeft(40, '*'));
             Console.ResetColor();
-        }
-    }
-
-    private static void InitializeSmtp(IConfiguration configuration)
-    {
-        const string smtp = "smtp";
-        Smtp.Host = GetSettings(configuration, EC.SmtpHost, smtp, "host", string.Empty);
-        Smtp.Port = GetSettings(configuration, EC.SmtpPort, smtp, "port", 25);
-        Smtp.FromAddress = GetSettings(configuration, EC.SmtpFromAddress, smtp, "from address", string.Empty);
-        Smtp.FromName = GetSettings(configuration, EC.SmtpFromName, smtp, "from name", string.Empty);
-        Smtp.Username = GetSettings(configuration, EC.SmtpUsername, smtp, "username", string.Empty);
-        Smtp.Password = GetSettings(configuration, EC.SmtpPassword, smtp, "password", string.Empty);
-        Smtp.UseDefaultCredentials = GetSettings(configuration, EC.UseSmtpDefaultCredentials, smtp, "default credentials", false);
-        Smtp.HtmlImageInternalBaseUrl = GetSettings(configuration, EC.SmtpHtmlImageInternalBaseUrl, smtp, "html image internal base url", string.Empty);
-
-        var imageMode = GetSettings(configuration, EC.SmtpHtmlImageMode, smtp, "html image mode", "embedded");
-        ValidateRequired(imageMode, "html image mode");
-        var result = ValidateEnum<ImageMode>(imageMode, "html image mode");
-        ValidateMaxLength(Smtp.HtmlImageInternalBaseUrl, maxLength: 1000, "html image internal base url");
-        Smtp.HtmlImageMode = result;
-
-        if (Smtp.HtmlImageMode == ImageMode.Internal)
-        {
-            ValidateUri(Smtp.HtmlImageInternalBaseUrl, "html image internal base url");
-        }
-
-        if (!Smtp.UseDefaultCredentials)
-        {
-            ValidateRequired(Smtp.Username, "smtp username", "use default credentials is false");
-            ValidateRequired(Smtp.Password, "smtp password", "use default credentials is false");
         }
     }
 
@@ -283,73 +250,108 @@ public static class AppSettings
         }
     }
 
-    private static void InitializeHooks(IConfiguration configuration)
+    private static void InitializeConnectors(IConfiguration configuration)
     {
-        const string hooks_redis = "hooks:redis";
-        const string hooks_twilio_sms = "hooks:twilio sms";
-        const string hooks_rabbitmq = "hooks:rabbitmq";
+        const string connectors_redis = "connectors:redis";
+        const string connectors_twilio_sms = "connectors:twilio sms";
+        const string connectors_rabbitmq = "connectors:rabbitmq";
+        const string connectors_smtp = "connectors:smtp";
         const string endpoints_have_value = "rabbitmq endpoints have value";
         const string ssl_has_value = "rabbitmq ssl has value";
 
-        Hooks.Rest.DefaultUrl = GetSettings(configuration, string.Empty, "hooks:rest", "default url", string.Empty);
+        Connectors.Rest = RestConnectorSettings.GetInstance(GetSettings(configuration, string.Empty, "connectors:rest", "default url", string.Empty));
+        Connectors.Teams = TeamsConnectorSettings.GetInstance(GetSettings(configuration, string.Empty, "connectors:teams", "default url", string.Empty));
 
-        Hooks.Teams.DefaultUrl = GetSettings(configuration, string.Empty, "hooks:teams", "default url", string.Empty);
+        Connectors.TwilioSms = TwilioSmsConnectorSettings.GetInstance(
+            GetSettings(configuration, string.Empty, connectors_twilio_sms, "account sid", string.Empty),
+            GetSettings(configuration, string.Empty, connectors_twilio_sms, "auth token", string.Empty),
+            GetSettings(configuration, string.Empty, connectors_twilio_sms, "from number", string.Empty)
+        );
 
-        Hooks.TwilioSms.AccountSid = GetSettings(configuration, string.Empty, hooks_twilio_sms, "account sid", string.Empty);
-        Hooks.TwilioSms.AuthToken = GetSettings(configuration, string.Empty, hooks_twilio_sms, "auth token", string.Empty);
-        Hooks.TwilioSms.FromNumber = GetSettings(configuration, string.Empty, hooks_twilio_sms, "from number", string.Empty);
-        Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, string.Empty, hooks_twilio_sms, "default phone prefix", string.Empty);
+        Connectors.TwilioSms?.DefaultPhonePrefix = GetSettings(configuration, string.Empty, connectors_twilio_sms, "default phone prefix", string.Empty);
 
-        Hooks.Redis.Endpoints = [.. GetSettings(configuration, string.Empty, hooks_redis, "endpoints", string.Empty).Split(',')];
-        Hooks.Redis.Password = GetSettings(configuration, string.Empty, hooks_redis, "password", string.Empty);
-        Hooks.Redis.User = GetSettings(configuration, string.Empty, hooks_redis, "user", string.Empty);
-        Hooks.Redis.Database = GetSettings(configuration, string.Empty, hooks_redis, "db", (ushort)0);
-        Hooks.Redis.StreamName = GetSettings(configuration, string.Empty, hooks_redis, "stream name", string.Empty);
-        Hooks.Redis.StreamSize = GetSettings(configuration, string.Empty, hooks_redis, "stream size", 1000);
-        Hooks.Redis.PubSubChannel = GetSettings(configuration, string.Empty, hooks_redis, "pub sub channel", string.Empty);
-        Hooks.Redis.Ssl = GetSettings(configuration, string.Empty, hooks_redis, "ssl", false);
-        Hooks.Redis.ServiceName = GetSettings(configuration, string.Empty, hooks_redis, "service name", string.Empty);
-        if (string.IsNullOrWhiteSpace(Hooks.Redis.StreamName)) { Hooks.Redis.StreamName = null; }
-        ValidateMinimumValue(Hooks.Redis.StreamSize, minimum: 50, "redis stream size");
+        Connectors.Redis = RedisConnectorSettings.GetInstance([.. GetSettings(configuration, string.Empty, connectors_redis, "endpoints", string.Empty).Split(',')]);
+        Connectors.Redis?.Password = GetSettings(configuration, string.Empty, connectors_redis, "password", string.Empty);
+        Connectors.Redis?.User = GetSettings(configuration, string.Empty, connectors_redis, "user", string.Empty);
+        Connectors.Redis?.Database = GetSettings(configuration, string.Empty, connectors_redis, "db", (ushort)0);
+        Connectors.Redis?.StreamName = GetSettings(configuration, string.Empty, connectors_redis, "stream name", string.Empty);
+        Connectors.Redis?.StreamSize = GetSettings(configuration, string.Empty, connectors_redis, "stream size", 1000);
+        Connectors.Redis?.PubSubChannel = GetSettings(configuration, string.Empty, connectors_redis, "pub sub channel", string.Empty);
+        Connectors.Redis?.Ssl = GetSettings(configuration, string.Empty, connectors_redis, "ssl", false);
+        Connectors.Redis?.ServiceName = GetSettings(configuration, string.Empty, connectors_redis, "service name", string.Empty);
+        if (string.IsNullOrWhiteSpace(Connectors.Redis?.StreamName)) { Connectors.Redis?.StreamName = null; }
+        ValidateMinimumValue(Connectors.Redis?.StreamSize, minimum: 50, "redis stream size");
 
-        Hooks.RabbitMq.VirtualHost = GetSettings(configuration, string.Empty, hooks_rabbitmq, "virtual host", "/");
-        Hooks.RabbitMq.Username = GetSettings(configuration, string.Empty, hooks_rabbitmq, "username", string.Empty);
-        Hooks.RabbitMq.Password = GetSettings(configuration, string.Empty, hooks_rabbitmq, "password", string.Empty);
-        Hooks.RabbitMq.Exchange = GetSettings(configuration, string.Empty, hooks_rabbitmq, "exchange", string.Empty);
-        Hooks.RabbitMq.RoutingKey = GetSettings(configuration, string.Empty, hooks_rabbitmq, "routing key", string.Empty);
-        var ssl = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:enable", false);
+        Connectors.RabbitMq = RabbitMqConnectorSettings.GetInstance(
+            configuration.GetSection($"{connectors_rabbitmq}:endpoints").Get<List<RabbitMqEndpoint>>() ?? [],
+            GetSettings(configuration, string.Empty, connectors_rabbitmq, "username", string.Empty),
+            GetSettings(configuration, string.Empty, connectors_rabbitmq, "password", string.Empty));
+
+        Connectors.RabbitMq?.VirtualHost = GetSettings(configuration, string.Empty, connectors_rabbitmq, "virtual host", "/");
+        Connectors.RabbitMq?.Exchange = GetSettings(configuration, string.Empty, connectors_rabbitmq, "exchange", string.Empty);
+        Connectors.RabbitMq?.RoutingKey = GetSettings(configuration, string.Empty, connectors_rabbitmq, "routing key", string.Empty);
+        var ssl = GetSettings(configuration, string.Empty, connectors_rabbitmq, "ssl:enable", false);
         if (ssl)
         {
-            Hooks.RabbitMq.Ssl = new RabbitMqSslSettings
+            Connectors.RabbitMq?.Ssl = new RabbitMqSslSettings
             {
                 Enable = ssl,
-                PolicyErrors = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:policy errors", "none"),
-                CertPassphrase = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:cert passphrase", string.Empty),
-                CertPath = GetSettings(configuration, string.Empty, hooks_rabbitmq, "ssl:cert path", string.Empty)
+                PolicyErrors = GetSettings(configuration, string.Empty, connectors_rabbitmq, "ssl:policy errors", "none"),
+                CertPassphrase = GetSettings(configuration, string.Empty, connectors_rabbitmq, "ssl:cert passphrase", string.Empty),
+                CertPath = GetSettings(configuration, string.Empty, connectors_rabbitmq, "ssl:cert path", string.Empty)
             };
         }
-        Hooks.RabbitMq.Endpoints = configuration.GetSection("hooks:rabbitmq:endpoints").Get<List<RabbitMqEndpoint>>() ?? [];
 
-        if (Hooks.RabbitMq.Ssl != null)
+        if (Connectors.RabbitMq?.Ssl != null)
         {
-            ValidateRequired(Hooks.RabbitMq.Ssl.CertPassphrase, "rabbitmq -> ssl -> cert passphrase", ssl_has_value);
-            ValidateRequired(Hooks.RabbitMq.Ssl.CertPath, "rabbitmq -> ssl -> cert path", ssl_has_value);
-            ValidateEnum<SslPolicyErrors>(Hooks.RabbitMq.Ssl.PolicyErrors, "rabbitmq -> ssl -> policy errors");
+            ValidateRequired(Connectors.RabbitMq.Ssl.CertPassphrase, "rabbitmq -> ssl -> cert passphrase", ssl_has_value);
+            ValidateRequired(Connectors.RabbitMq.Ssl.CertPath, "rabbitmq -> ssl -> cert path", ssl_has_value);
+            ValidateEnum<SslPolicyErrors>(Connectors.RabbitMq.Ssl.PolicyErrors, "rabbitmq -> ssl -> policy errors");
         }
 
-        if (Hooks.RabbitMq.Endpoints.Any())
+        if (Connectors.RabbitMq?.Endpoints.Count > 0)
         {
-            ValidateRequired(Hooks.RabbitMq.Username, "rabbitmq -> username", endpoints_have_value);
-            ValidateRequired(Hooks.RabbitMq.Password, "rabbitmq -> password", endpoints_have_value);
-            ValidateRequired(Hooks.RabbitMq.Exchange, "rabbitmq -> exchange", endpoints_have_value);
-            ValidateRequired(Hooks.RabbitMq.RoutingKey, "rabbitmq -> routing key", endpoints_have_value);
+            ValidateRequired(Connectors.RabbitMq.Username, "rabbitmq -> username", endpoints_have_value);
+            ValidateRequired(Connectors.RabbitMq.Password, "rabbitmq -> password", endpoints_have_value);
+            ValidateRequired(Connectors.RabbitMq.Exchange, "rabbitmq -> exchange", endpoints_have_value);
+            ValidateRequired(Connectors.RabbitMq.RoutingKey, "rabbitmq -> routing key", endpoints_have_value);
         }
 
-        Hooks.Telegram.BotToken = GetSettings(configuration, string.Empty, "hooks:telegram", "bot token", string.Empty);
-        Hooks.Telegram.ChatId = GetSettings(configuration, string.Empty, "hooks:telegram", "chat id", string.Empty);
+        Connectors.Telegram = TelegramConnectorSettings.GetInstance(
+            GetSettings(configuration, string.Empty, "connectors:telegram", "bot token", string.Empty),
+            GetSettings(configuration, string.Empty, "connectors:telegram", "chat id", string.Empty)
+            );
+
+        Connectors.Smtp = SmtpConnectorSettings.GetInstance(GetSettings(configuration, EC.SmtpHost, connectors_smtp, "host", string.Empty));
+        Connectors.Smtp?.Port = GetSettings(configuration, EC.SmtpPort, connectors_smtp, "port", 25);
+        Connectors.Smtp?.FromAddress = GetSettings(configuration, EC.SmtpFromAddress, connectors_smtp, "from address", string.Empty);
+        Connectors.Smtp?.FromName = GetSettings(configuration, EC.SmtpFromName, connectors_smtp, "from name", string.Empty);
+        Connectors.Smtp?.Username = GetSettings(configuration, EC.SmtpUsername, connectors_smtp, "username", string.Empty);
+        Connectors.Smtp?.Password = GetSettings(configuration, EC.SmtpPassword, connectors_smtp, "password", string.Empty);
+        Connectors.Smtp?.UseDefaultCredentials = GetSettings(configuration, EC.UseSmtpDefaultCredentials, connectors_smtp, "default credentials", false);
+        Connectors.Smtp?.HtmlImageInternalBaseUrl = GetSettings(configuration, EC.SmtpHtmlImageInternalBaseUrl, connectors_smtp, "html image internal base url", string.Empty);
+        if (Connectors.Smtp != null)
+        {
+            var imageMode = GetSettings(configuration, EC.SmtpHtmlImageMode, connectors_smtp, "html image mode", "embedded");
+            ValidateRequired(imageMode, "html image mode");
+            var result = ValidateEnum<ImageMode>(imageMode, "html image mode");
+            ValidateMaxLength(Connectors.Smtp.HtmlImageInternalBaseUrl, maxLength: 1000, "html image internal base url");
+            Connectors.Smtp.HtmlImageMode = result;
+
+            if (Connectors.Smtp.HtmlImageMode == ImageMode.Internal)
+            {
+                ValidateUri(Connectors.Smtp.HtmlImageInternalBaseUrl, "html image internal base url");
+            }
+
+            if (!Connectors.Smtp.UseDefaultCredentials)
+            {
+                ValidateRequired(Connectors.Smtp.Username, "smtp username", "use default credentials is false");
+                ValidateRequired(Connectors.Smtp.Password, "smtp password", "use default credentials is false");
+            }
+        }
     }
 
-    private static void InitializePersistanceSpan(IConfiguration configuration)
+    private static void InitializePersistenceSpan(IConfiguration configuration)
     {
         General.PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, EC.PersistRunningJobsSpanVariableKey, general, "persist running jobs span");
 
@@ -461,12 +463,12 @@ public static class AppSettings
 
         if (Authentication.Secret.Length < 65)
         {
-            throw new AppSettingsException($"authentication secret must have minimum length of 65 charecters. Current length is {Authentication.Secret.Length}");
+            throw new AppSettingsException($"authentication secret must have minimum length of 65 characters. Current length is {Authentication.Secret.Length}");
         }
 
         if (Authentication.Secret.Length > 256)
         {
-            throw new AppSettingsException($"authentication secret must have maximum length of 256 charecters. Current length is {Authentication.Secret.Length}");
+            throw new AppSettingsException($"authentication secret must have maximum length of 256 characters. Current length is {Authentication.Secret.Length}");
         }
 
         if (Authentication.TokenExpire.TotalMinutes < 1)

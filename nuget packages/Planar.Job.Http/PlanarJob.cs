@@ -76,6 +76,8 @@ namespace Planar.Job
 
             webApp.MapGet("/planar/health-check", () => Results.Text("Healthy"));
 
+            await ManifestUtil.ApplyManifest(properties);
+
             await webApp.RunAsync();
         }
 

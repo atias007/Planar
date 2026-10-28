@@ -34,7 +34,7 @@ namespace Planar.Startup
                 var encrypt = AppSettings.GetSettings(config, EnvironmentVariableConsts.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
                 if (!encrypt) { return; }
 
-                Console.WriteLine("[x] Encrypt all aettings files");
+                Console.WriteLine("[x] Encrypt all settings files");
                 var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings);
                 var files = Directory.GetFiles(path, "*.yml");
 

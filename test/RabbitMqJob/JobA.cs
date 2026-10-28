@@ -5,7 +5,7 @@ using Planar.Job;
 
 namespace RabbitMQJob;
 
-[JobQueueName("JobA")]
+[JobRoutingKey("JobA")]
 internal class JobA : BaseJob
 {
     // DEMO

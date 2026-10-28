@@ -37,6 +37,7 @@
 		<Compile Include="..\Planar.Job\Argument.cs" Link="Argument.cs" />
 		<Compile Include="..\Planar.Job\BaseJob.cs" Link="BaseJob.cs" />
 		<Compile Include="..\Planar.Job\BaseJobFactory.cs" Link="BaseJobFactory.cs" />
+		<Compile Include="..\Planar.Job\BaseJobStartPropertiesBuilder.cs" Link="BaseJobStartPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Job\DataMapConvertor.cs" Link="DataMapConvertor.cs" />
 		<Compile Include="..\Planar.Job\Guards.cs" Link="Guards.cs" />
 		<Compile Include="..\Planar.Job\IBaseJob.cs" Link="IBaseJob.cs" />
@@ -78,6 +79,7 @@
 		<Compile Include="..\Planar.Job\UnitTestResult.cs" Link="UnitTestResult.cs" />
 		<Compile Include="..\Planar.Job\YamlConfigurationFileParser.cs" Link="YamlConfigurationFileParser.cs" />
 		<Compile Include="..\Planar.Job\YamlConfigurationFileParserPartial.cs" Link="YamlConfigurationFileParserPartial.cs" />
+		<Compile Include="..\Planar.Job\YmlUtil.cs" Link="YmlUtil.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png" />
@@ -86,9 +88,9 @@
 		<PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
 		<PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
 		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.13" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
 		<PackageReference Include="RabbitMQ.Client" Version="7.2.2" />
