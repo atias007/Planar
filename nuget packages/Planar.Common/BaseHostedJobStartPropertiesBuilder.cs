@@ -75,7 +75,11 @@ namespace Planar.Job
                 bag.Add(new Manifest(name, yml));
             });
 
-            properties.AddManifests(bag);
+            if (!bag.IsEmpty)
+            {
+                properties.AddManifests(bag);
+                properties.ApplyManifest = true;
+            }
         }
 
         public static void ApplyManifestFromAssembly<T>(PlanarHostedJobStartProperties properties)
@@ -112,7 +116,11 @@ namespace Planar.Job
                 }
             }
 
-            properties.AddManifests(yamls);
+            if (yamls.Count > 0)
+            {
+                properties.AddManifests(yamls);
+                properties.ApplyManifest = true;
+            }
         }
 
         protected static void Validate(PlanarHostedJobStartProperties properties)

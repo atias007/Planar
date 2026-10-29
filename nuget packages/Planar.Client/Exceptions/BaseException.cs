@@ -4,7 +4,7 @@ namespace Planar.Client.Exceptions
 {
     public abstract class BaseException : Exception
     {
-        protected BaseException(RestResponse response) : base($"Planar service return status code {response.StatusCode}")
+        protected BaseException(IRestResponse response) : base($"Planar service return status code {response.StatusCode}")
         {
         }
 

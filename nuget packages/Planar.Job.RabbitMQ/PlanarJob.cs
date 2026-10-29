@@ -55,8 +55,7 @@ namespace Planar.Job
             }
             finally
             {
-                PlanarHostedJobCommon.SafeDisposeCancellationTokenSource();
-                PlanarJobCommon.StopHealthCheck();
+                PlanarJobCommon.SafeDispose();
             }
         }
 
@@ -77,18 +76,18 @@ namespace Planar.Job
             Properties = properties ?? throw new ArgumentNullException(nameof(properties));
 
             // create rabbitmq factory instance and ensure connection
-            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, PlanarJobCommon.MainCancellationTokenSource.Token);
+            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, PlanarJobCommon.MainCancellationToken);
 
             // ensure queues, exchanges and bindings are created
             await _rabbitMqFactory.EnsureDefinitions();
 
             // apply manifest to ensure job definitions are up to date
-            await ManifestUtil.ApplyManifest(properties);
+            await ManifestUtil.ApplyManifest(properties, PlanarJobCommon.MainCancellationToken);
 
             // Start consuming messages
             await Task.WhenAll(
                 _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync),
-                properties.Host.RunAsync(PlanarJobCommon.MainCancellationTokenSource.Token));
+                properties.Host.RunAsync(PlanarJobCommon.MainCancellationToken));
         }
 
         /// <summary>

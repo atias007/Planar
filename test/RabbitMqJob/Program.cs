@@ -19,6 +19,7 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
         .WithEncryptionKey("tyZZrOD1R21YfCmu9cZRUyuqnKew7ikYJfA5NKTWsc4=")
         .WithDeadLetterExchange("DLX")
         .WithDeadLetterRoutingKey("Errors")
+        .ApplyManifestFromAssembly(typeof(Program).Assembly)
         .WithRabbitMqConnectionFactory(new RabbitMQ.Client.ConnectionFactory
         {
             HostName = "localhost",

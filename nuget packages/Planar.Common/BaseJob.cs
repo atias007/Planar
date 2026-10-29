@@ -6,6 +6,7 @@ using Planar.Job.Logger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -712,6 +713,21 @@ namespace Planar.Job
                 var environmentSettingsFilename = $"JobSettings.{context.Environment}.yml";
                 builder.AddYamlFile(settingsFilename, optional: true, reloadOnChange: false);
                 builder.AddYamlFile(environmentSettingsFilename, optional: true, reloadOnChange: false);
+
+                var attribute = GetConfigAttribute();
+                if (attribute != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(attribute.Filename))
+                    {
+                        builder.AddYamlFile(attribute.Filename, optional: false, reloadOnChange: false);
+                    }
+
+                    var filename = attribute.GetEnvironmentFilename(context.Environment);
+                    if (!string.IsNullOrWhiteSpace(filename))
+                    {
+                        builder.AddYamlFile(filename, optional: false, reloadOnChange: false);
+                    }
+                }
             }
 
             try
@@ -727,6 +743,17 @@ namespace Planar.Job
                 _inConfiguration = false;
                 _configuration = builder.Build();
             }
+        }
+
+#if NETSTANDARD2_0
+
+        private JobConfigAttribute GetConfigAttribute()
+#else
+        private JobConfigAttribute? GetConfigAttribute()
+#endif
+        {
+            var attribute = GetType().GetCustomAttribute<JobConfigAttribute>(inherit: true);
+            return attribute;
         }
 
         private void InitializeDependencyInjection(JobExecutionContext context, BaseJobFactory baseJobFactory, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)

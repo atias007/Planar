@@ -53,7 +53,7 @@ namespace Planar.Job
             }
             finally
             {
-                SafeDisposeCancellationTokenSource();
+                PlanarJobCommon.SafeDispose();
             }
         }
 
@@ -209,7 +209,7 @@ namespace Planar.Job
             {
                 try
                 {
-                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.Cancel();
                 }
                 catch
                 {
@@ -226,25 +226,13 @@ namespace Planar.Job
 
                 try
                 {
-                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.Cancel();
                 }
                 catch
                 {
                     // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
                 }
             };
-        }
-
-        private static void SafeDisposeCancellationTokenSource()
-        {
-            try
-            {
-                PlanarJobCommon.MainCancellationTokenSource.Dispose();
-            }
-            catch
-            {
-                // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
-            }
         }
     }
 }

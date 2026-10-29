@@ -48,8 +48,7 @@ namespace Planar.Job
             }
             finally
             {
-                PlanarHostedJobCommon.SafeDisposeCancellationTokenSource();
-                PlanarJobCommon.StopHealthCheck();
+                PlanarJobCommon.SafeDispose();
             }
         }
 
@@ -83,7 +82,7 @@ namespace Planar.Job
 
             webApp.MapGet("/planar/health-check", () => Results.Text("Healthy"));
 
-            await ManifestUtil.ApplyManifest(properties);
+            await ManifestUtil.ApplyManifest(properties, PlanarJobCommon.MainCancellationToken);
 
             await webApp.RunAsync();
         }

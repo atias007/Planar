@@ -12,18 +12,6 @@ namespace Planar.Job
     {
         private static readonly ConcurrentDictionary<string, JobInstanceInfo> _jobInstances = new ConcurrentDictionary<string, JobInstanceInfo>();
 
-        internal static void SafeDisposeCancellationTokenSource()
-        {
-            try
-            {
-                PlanarJobCommon.MainCancellationTokenSource.Dispose();
-            }
-            catch
-            {
-                // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
-            }
-        }
-
         internal static bool TryGetInstanceInfo(string fireInstanceId, out JobInstanceInfo info)
         {
             return _jobInstances.TryGetValue(fireInstanceId, out info);
@@ -35,7 +23,7 @@ namespace Planar.Job
             {
                 try
                 {
-                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.Cancel();
                 }
                 catch
                 {
@@ -43,7 +31,7 @@ namespace Planar.Job
                 }
             };
 
-            PlanarJobCommon.MainCancellationTokenSource.Token.Register(async () =>
+            PlanarJobCommon.MainCancellationToken.Register(async () =>
             {
                 logger?.LogInformation("Start graceful shutdown");
 
@@ -87,7 +75,7 @@ namespace Planar.Job
 
                 try
                 {
-                    PlanarJobCommon.MainCancellationTokenSource.Cancel();
+                    PlanarJobCommon.Cancel();
                 }
                 catch
                 {

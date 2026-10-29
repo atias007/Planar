@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Client
 {
-    public class RestResponse<T> : RestResponse
+    internal class RestResponse<T> : RestResponse
         where T : class
     {
 #if NETSTANDARD2_0
@@ -28,7 +28,7 @@ namespace Planar.Client
 #endif
     }
 
-    public class RestResponse
+    internal class RestResponse : IRestResponse
     {
         private readonly HttpResponseMessage _response;
         private readonly SemaphoreSlim _lock1 = new SemaphoreSlim(1, 1);

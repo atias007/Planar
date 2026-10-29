@@ -14,7 +14,8 @@ namespace Planar.Job
 {
     public static class PlanarJobCommon
     {
-        internal static CancellationTokenSource MainCancellationTokenSource { get; } = new CancellationTokenSource();
+        private readonly static CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
+        internal static CancellationToken MainCancellationToken => _mainCancellationTokenSource.Token;
 
 #if NETSTANDARD2_0
         internal static string Environment { get; set; }
@@ -55,6 +56,29 @@ namespace Planar.Job
                 Console.WriteLine();
 
                 return jobTypes[selectedIndex.Value - 1];
+            }
+        }
+
+        private static void Dispose()
+        {
+            _mainCancellationTokenSource.Dispose();
+            _healthCheckTimer.Dispose();
+        }
+
+        internal static void Cancel()
+        {
+            _mainCancellationTokenSource.Cancel();
+        }
+
+        internal static void SafeDispose()
+        {
+            try
+            {
+                Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
             }
         }
 
@@ -238,7 +262,7 @@ namespace Planar.Job
         {
             if (Mode != RunningMode.Debug) { return false; }
             var type = ShowJobMenu(properties);
-            return await Debug(type, MainCancellationTokenSource.Token);
+            return await Debug(type, _mainCancellationTokenSource.Token);
         }
 
         private static async Task<bool> Debug(Type jobType, CancellationToken cancellationToken)
@@ -285,17 +309,11 @@ namespace Planar.Job
 
         public async static Task StartHealthCheck(IHostedJobProperties properties, ILogger logger)
         {
-            await Task.Delay(5_000, MainCancellationTokenSource.Token);
+            await Task.Delay(5_000, _mainCancellationTokenSource.Token);
             if (Mode == RunningMode.Debug) { return; }
             await ExecuteHealthCheck(properties, logger);
             _healthCheckTimer.Elapsed += async (s, e) => await ExecuteHealthCheck(properties, logger);
             _healthCheckTimer.Start();
-        }
-
-        public static void StopHealthCheck()
-        {
-            _healthCheckTimer.Stop();
-            _healthCheckTimer.Dispose();
         }
 
         private async static Task ExecuteHealthCheck(IHostedJobProperties properties, ILogger logger)
@@ -305,7 +323,7 @@ namespace Planar.Job
                 if (!MqttClient.IsConnected)
                 {
                     await MqttClient.StartAsync(properties.PlanarHostname, properties.PlanarPort);
-                    await Task.Delay(4_000, MainCancellationTokenSource.Token);
+                    await Task.Delay(4_000, _mainCancellationTokenSource.Token);
                 }
                 await MqttClient.PingAsync();
 
@@ -320,7 +338,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                if (!MainCancellationTokenSource.Token.IsCancellationRequested)
+                if (!_mainCancellationTokenSource.Token.IsCancellationRequested)
                 {
                     logger.LogWarning(ex, "Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
                 }

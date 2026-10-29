@@ -8,6 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="JobFile_JobA.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="JobFile_JobA.yml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -16,12 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\nuget packages\Planar.Job.RabbitMQ\Planar.Job.RabbitMQ.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="JobFile_JobA.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

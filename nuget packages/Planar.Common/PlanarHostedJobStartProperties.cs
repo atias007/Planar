@@ -41,6 +41,9 @@ namespace Planar.Job
         public int PlanarPort { get; internal set; } = DefaultPlanarPort;
 
         public int PlanarApiPort { get; internal set; } = DefaultPlanarApiPort;
+
+        public bool ApplyManifest { get; set; }
+
         public HttpSchema PlanarApiSchema { get; internal set; } = HttpSchema.Http;
 
 #if NETSTANDARD2_0
