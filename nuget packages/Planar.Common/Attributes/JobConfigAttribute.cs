@@ -2,7 +2,7 @@
 
 namespace Planar.Job
 {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class JobConfigAttribute : DataAttribute
     {
         public JobConfigAttribute(string filename)

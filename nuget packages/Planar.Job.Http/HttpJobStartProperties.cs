@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Planar.Common;
-
-namespace Planar.Job.Http
+﻿namespace Planar.Job.Http
 {
     public class HttpJobStartProperties : PlanarHostedJobStartProperties<JobDefinition>
     {

@@ -6,6 +6,7 @@ using Planar.Job;
 namespace RabbitMQJob;
 
 [JobRoutingKey("JobA")]
+[JobConfig("job_a.yml")]
 internal class JobA : BaseJob
 {
     // DEMO
@@ -75,7 +76,11 @@ internal class JobA : BaseJob
 
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
+        Logger.LogInformation(Configuration["x"]);
+        Logger.LogInformation(Configuration["y"]);
+
         var s = ServiceProvider.GetRequiredService<DemoSignleton>();
+
         Logger.LogWarning("{CreateDate}", s.CreateDate);
         Logger.LogWarning("{HashCode}", s.GetHashCode());
         Logger.LogWarning("------------------------------");
