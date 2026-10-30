@@ -376,7 +376,7 @@ namespace Planar.Client
                 restRequest.AddBody(body);
 
                 var request = restRequest.GetRequest();
-                var response = await Client.SendAsync(request, cancellationToken);
+                var response = await client.SendAsync(request, cancellationToken);
                 var result = new RestResponse(response);
                 if (result.StatusCode == HttpStatusCode.Conflict)
                 {

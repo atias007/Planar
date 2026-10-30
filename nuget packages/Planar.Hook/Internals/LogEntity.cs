@@ -2,13 +2,13 @@
 
 namespace Planar.Hook.Internals
 {
-    internal sealed class LogEntity
+    internal sealed class HookLogEntity
     {
-        public LogEntity()
+        public HookLogEntity()
         {
         }
 
-        public LogEntity(LogLevel level, string message)
+        public HookLogEntity(LogLevel level, string message)
         {
             Level = level;
             Message = message;

@@ -1,10 +1,10 @@
 ﻿using NetEscapades.Configuration.Yaml;
+using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Planar.Common;
 
 namespace Planar.Job
 {
@@ -12,7 +12,7 @@ namespace Planar.Job
     {
         private const string SettingsFilename = "JobSettings.yml";
         private const string EnvironmentPlaceholder = "{environment}";
-        private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
+        private static readonly string EnvironmentSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
 
 #if NETSTANDARD2_0
 
@@ -34,9 +34,8 @@ namespace Planar.Job
 #endif
 
             // Merge settings yml file
-            var fullpath = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
-            if (fullpath == null) { throw new InvalidDataException("fullpath is null"); }
-            var location = new DirectoryInfo(fullpath);
+            var full_path = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName ?? throw new InvalidDataException("full path is null");
+            var location = new DirectoryInfo(full_path);
             if (!location.Exists) { return final; }
 
             var jobSettings = LoadJobSettingsFiles(location.FullName);
@@ -77,7 +76,7 @@ namespace Planar.Job
             }
 
             // JobSettings.{environment}.yml
-            var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, PlanarJob.Environment);
+            var filename = EnvironmentSettingsFilename.Replace(EnvironmentPlaceholder, PlanarJobCommon.Environment);
             files = GetFiles(path, filename);
 
             foreach (var f in files)

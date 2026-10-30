@@ -6,8 +6,6 @@ using Planar.Job.RabbitMq;
 using RabbitMQ.Client.Events;
 using System;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,22 +28,24 @@ namespace Planar.Job
         private static ILogger? _logger;
 
 #endif
+        public static PlanarJobDebugger Debugger => PlanarJobCommon.Debugger;
 
         public async static Task StartAsync(RabbitMqJobStartProperties properties)
         {
-            Console.OutputEncoding = Encoding.UTF8;
-
-            await PrintLogo();
-
             if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
+            PlanarJobCommon.Properties = properties;
+
+            Console.OutputEncoding = Encoding.UTF8;
+            await PlanarHostedJobCommon.PrintLogo(typeof(PlanarJob).Assembly, nameof(RabbitMq));
+
             _logger = GetLogger(properties);
-            _ = StartHealthCheck(properties, _logger);
+            _ = PlanarJobCommon.StartHealthCheck(properties, _logger);
 
             try
             {
-                SetupGracefulShutdown();
+                PlanarHostedJobCommon.SetupGracefulShutdown(_logger);
                 FillProperties();
-                if (await Debug(properties, _mainCancellationTokenSource.Token)) { return; }
+                if (await PlanarJobCommon.Debug(properties)) { return; }
 
                 await SafeStartAsync(properties);
             }
@@ -55,7 +55,7 @@ namespace Planar.Job
             }
             finally
             {
-                SafeDisposeCancellationTokenSource();
+                PlanarJobCommon.SafeDispose();
             }
         }
 
@@ -76,61 +76,18 @@ namespace Planar.Job
             Properties = properties ?? throw new ArgumentNullException(nameof(properties));
 
             // create rabbitmq factory instance and ensure connection
-            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, _mainCancellationTokenSource.Token);
+            _rabbitMqFactory = await RabbitMqFactory.GetInstance(_logger, properties, PlanarJobCommon.MainCancellationToken);
 
             // ensure queues, exchanges and bindings are created
             await _rabbitMqFactory.EnsureDefinitions();
 
             // apply manifest to ensure job definitions are up to date
-            await ManifestUtil.ApplyManifest(properties);
+            await ManifestUtil.ApplyManifest(properties, PlanarJobCommon.MainCancellationToken);
 
             // Start consuming messages
             await Task.WhenAll(
                 _rabbitMqFactory.StartConsumeAsync(messageHandler: RouteMessageAsync),
-                properties.Host.RunAsync(_mainCancellationTokenSource.Token));
-        }
-
-        private static async Task PrintLogo()
-        {
-            const string logo1 = @"  ____  _                              _       _         ";
-            const string logo2 = @" |  _ \| | __ _ _ __   __ _ _ __      | | ___ | |__  ___ ";
-            const string logo3 = @" | |_) | |/ _` | '_ \ / _` | '__|  _  | |/ _ \| '_ \/ __|";
-            const string logo4 = @" |  __/| | (_| | | | | (_| | |    | |_| | (_) | |_) \__ \";
-            const string logo5 = @" |_|   |_|\__,_|_| |_|\__,_|_|     \___/ \___/|_.__/|___/";
-
-            await Console.Out.WriteLineAsync(logo1);
-            await Console.Out.WriteLineAsync(logo2);
-            await Console.Out.WriteLineAsync(logo3);
-            await Console.Out.WriteLineAsync(logo4);
-            await Console.Out.WriteLineAsync(logo5);
-            await Console.Out.WriteLineAsync();
-            var version = SafeGetVersion();
-            PrintBoxed($"RabbitMQ Hosted Job [version: {version}]");
-            await Console.Out.WriteLineAsync();
-        }
-
-        private static string SafeGetVersion()
-        {
-            try
-            {
-                var assembly = typeof(PlanarJob).Assembly;
-                var version = assembly.GetName().Version;
-                return version?.ToString() ?? "Unknown";
-            }
-            catch
-            {
-                return "Unknown";
-            }
-        }
-
-        private static void PrintBoxed(string text)
-        {
-            int width = text.Length + 2; // one space padding each side
-            string horizontal = new string('-', width);
-
-            Console.WriteLine($"+{horizontal}+");
-            Console.WriteLine($"| {text} |");
-            Console.WriteLine($"+{horizontal}+");
+                properties.Host.RunAsync(PlanarJobCommon.MainCancellationToken));
         }
 
         /// <summary>
@@ -143,16 +100,19 @@ namespace Planar.Job
         {
             _logger?.LogDebug("Received invoke message");
             string fid = string.Empty;
+
 #if NETSTANDARD2_0
             JobDefinition jobDefinition = null;
+            JobInstanceInfo info = null;
 #else
             JobDefinition? jobDefinition = null;
+            JobInstanceInfo? info = null;
 #endif
             try
             {
                 jobDefinition = Properties.GetJobDefinition(eventArgs.RoutingKey);
                 fid = GetFireInstanceIdHeader(eventArgs);
-                var info = TrackInstance(fid);
+                info = PlanarHostedJobCommon.TrackInstance(fid);
                 await Execute(eventArgs, jobDefinition.JobType, info.CancellationToken);
             }
             catch (Exception ex)
@@ -161,7 +121,7 @@ namespace Planar.Job
             }
             finally
             {
-                await UntrackInstance(fid);
+                if (info != null) { await PlanarHostedJobCommon.UntrackInstance(fid); }
             }
         }
 
@@ -177,7 +137,7 @@ namespace Planar.Job
             try
             {
                 fid = GetFireInstanceIdHeader(eventArgs);
-                if (!_jobInstances.TryGetValue(fid, out jobInstanceInfo)) { return; }
+                if (!PlanarHostedJobCommon.TryGetInstanceInfo(fid, out jobInstanceInfo)) { return; }
 
                 jobInstanceInfo.Cancel();
                 _logger?.LogInformation("Job with FireInstanceId {FireInstanceId} has been cancelled", fid);
@@ -280,22 +240,22 @@ namespace Planar.Job
                 json = AesGcmStringCipher.Decrypt(json, Properties.EncryptionKeyBytes);
             }
 
-            await Execute(jobType, Properties, json, cancellationToken);
+            await PlanarJobCommon.Execute(jobType, Properties, json, cancellationToken);
         }
 
         private static void FillProperties()
         {
-            FillArguments();
-            if (HasArgument("--debug"))
+            PlanarJobCommon.InitArguments();
+            if (PlanarJobCommon.HasArgument("--debug"))
             {
-                Mode = RunningMode.Debug;
+                PlanarJobCommon.Mode = RunningMode.Debug;
             }
             else
             {
-                Mode = RunningMode.Release;
+                PlanarJobCommon.Mode = RunningMode.Release;
             }
 
-            Environment = GetArgument("--environment")?.Value ?? "Development";
+            PlanarJobCommon.Environment = PlanarJobCommon.GetArgument("--environment")?.Value ?? "Development";
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Planar
     using Microsoft.Extensions.Logging;
     using System.Linq;
 
-    public sealed class CustomConsoleLogger : ILogger
+    internal sealed class CustomConsoleLogger : ILogger
     {
         private readonly string _categoryName;
         private readonly LogLevel _minLevel;
@@ -78,9 +78,9 @@ namespace Planar
                     color = ConsoleColor.White;
                     break;
             }
-            
+
 #else
-  var color = logLevel switch
+            var color = logLevel switch
             {
                 LogLevel.Trace => ConsoleColor.Gray,
                 LogLevel.Debug => ConsoleColor.Cyan,
@@ -125,7 +125,7 @@ namespace Planar
                     break;
             }
 #else
-  var level = logLevel switch
+            var level = logLevel switch
             {
                 LogLevel.Trace => "TRC",
                 LogLevel.Debug => "DBG",

@@ -172,8 +172,7 @@ namespace Planar
                 _timer = new System.Timers.Timer(delaySeconds * 1_000);
                 _timer.Elapsed += async (s, e) =>
                 {
-                    var timer = s as System.Timers.Timer;
-                    if (timer == null) { return; }
+                    if (!(s is System.Timers.Timer timer)) { return; }
                     timer.Stop();
                     timer.Dispose();
                     _timer = null;
@@ -192,18 +191,18 @@ namespace Planar
             // mqtt
             if (_mqttClient != null)
             {
-                var defaultWaitSecondes = PlanarJob.Properties.LogFlushTimeout;
+                var defaultWaitSeconds = PlanarJobCommon.Properties.LogFlushTimeout;
                 var pendingBefore = _mqttClient.PendingApplicationMessagesCount;
-                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, defaultWaitSecondes);
+                SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, defaultWaitSeconds);
                 var pendingAfter = _mqttClient.PendingApplicationMessagesCount;
 
                 await SafeCloseMqttClient();
 
-                await SafeWarnLostOfLogs(fireInstanceId, defaultWaitSecondes.TotalSeconds, pendingBefore, pendingAfter);
+                await SafeWarnLostOfLogs(fireInstanceId, defaultWaitSeconds.TotalSeconds, pendingBefore, pendingAfter);
             }
         }
 
-        private static async Task SafeWarnLostOfLogs(string fireInstanceId, double defaultWaitSecondes, int pendingBefore, int pendingAfter)
+        private static async Task SafeWarnLostOfLogs(string fireInstanceId, double defaultWaitSeconds, int pendingBefore, int pendingAfter)
         {
             try
             {
@@ -215,9 +214,9 @@ namespace Planar
 
                 var messages = new string[] {
                         "there are many logs in MQTT outgoing queue. some of them will not be saved.",
-                        $"for {defaultWaitSecondes:N0} seconds, after job finish to run, the job flushes {delta:N0} log item.",
+                        $"for {defaultWaitSeconds:N0} seconds, after job finish to run, the job flushes {delta:N0} log item.",
                         $"{pendingAfter:N0} log messages remains in queue and will not be saved.",
-                        $"you can increase the flush default timeout of {defaultWaitSecondes:N0} seconds by settings the LogFlushTimeout property of PlanarJobStartProperties class which you can pass to Start/StartAsync startup method of PlanarJob"
+                        $"you can increase the flush default timeout of {defaultWaitSeconds:N0} seconds by settings the LogFlushTimeout property of PlanarJobStartProperties class which you can pass to Start/StartAsync startup method of PlanarJob"
                     };
 
                 foreach (var message in messages)

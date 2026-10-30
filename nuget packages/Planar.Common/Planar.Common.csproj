@@ -29,13 +29,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Remove="ConsoleLogger.cs" />
-		<Compile Remove="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
-		<Compile Remove="JobInstanceInfo.cs" />
-		<Compile Remove="LogEntity.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="JobExecutionContext\ExceptionDto.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IDataMap.cs" Link="JobExecutionContext\IDataMap.cs" />
@@ -43,34 +36,49 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IJobExecutionContext.cs" Link="JobExecutionContext\IJobExecutionContext.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IKey.cs" Link="JobExecutionContext\IKey.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\ITriggerDetail.cs" Link="JobExecutionContext\ITriggerDetail.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="JobExecutionContext\JobDetail.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="JobExecutionContext\JobExecutionContext.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="JobExecutionContext\TriggerDetail.cs" />
+		<Compile Include="..\..\src\Jobs\PlanarJob\MessageBrokerChannels.cs" Link="MessageBrokerChannels.cs" />
+		<Compile Include="..\..\src\Jobs\PlanarJob\PlanarJobExecutionExceptionDto.cs" Link="PlanarJobExecutionExceptionDto.cs" />
+		<Compile Include="..\..\src\Planar.CLI\CliGeneral\CliFormatPartial.cs" Link="CliFormatPartial.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Job\ReflectionHelper.cs" Link="ReflectionHelper.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">
 			<PackagePath>\</PackagePath>
 			<Pack>True</Pack>
 		</None>
-		<None Include="ConsoleLogger.cs" />
-		<None Include="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
-		<None Include="JobInstanceInfo.cs" />
-		<None Include="LogEntity.cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="System.Text.Json" Version="10.0.14" />
+		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
+		<PackageReference Include="YamlDotNet" Version="18.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
 	</ItemGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
 		<PackageReference Include="System.Text.Json" Version="10.0.14" />
+		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
+		<PackageReference Include="YamlDotNet" Version="18.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
+	  <PackageReference Include="CloudNative.CloudEvents" Version="2.9.0" />
+	  <PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.9.0" />
+	  <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
 	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14" />
+	  <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
+	  <PackageReference Include="Spectre.Console" Version="0.57.2" />
 	</ItemGroup>
 </Project>

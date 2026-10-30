@@ -12,20 +12,22 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
-    public static partial class PlanarJob
+    public static class PlanarJobCommon
     {
+        private readonly static CancellationTokenSource _mainCancellationTokenSource = new CancellationTokenSource();
+        internal static CancellationToken MainCancellationToken => _mainCancellationTokenSource.Token;
+
 #if NETSTANDARD2_0
-        internal static string Environment { get; private set; }
+        internal static string Environment { get; set; }
 #else
-        internal static string Environment { get; private set; } = null!;
+        internal static string Environment { get; set; } = null!;
 #endif
 
-        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
-        private static List<Argument> Arguments { get; set; } = new List<Argument>();
+        internal static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
+        internal static List<Argument> Arguments { get; set; } = new List<Argument>();
         internal static RunningMode Mode { get; set; } = RunningMode.Release;
 
-        static partial void SetupGracefulShutdown();
-
+        internal static PlanarJobStartProperties Properties { get; set; } = PlanarJobStartProperties.Default;
         private readonly static Timer _healthCheckTimer = new Timer(15 * 60_000);
 
         private static Type ShowJobMenu(IHostedJobProperties properties)
@@ -57,7 +59,30 @@ namespace Planar.Job
             }
         }
 
-        private static string ShowDebugMenu(Type JobType)
+        private static void Dispose()
+        {
+            _mainCancellationTokenSource.Dispose();
+            _healthCheckTimer.Dispose();
+        }
+
+        internal static void Cancel()
+        {
+            _mainCancellationTokenSource.Cancel();
+        }
+
+        internal static void SafeDispose()
+        {
+            try
+            {
+                Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+            }
+        }
+
+        internal static string ShowDebugMenu(Type JobType)
         {
             int? selectedIndex;
 
@@ -112,7 +137,7 @@ namespace Planar.Job
             return json;
         }
 
-        private static void FillArguments()
+        internal static void InitArguments()
         {
             var source = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < source.Length; i++)
@@ -138,10 +163,10 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static Argument GetArgument(string key)
+        internal static Argument GetArgument(string key)
 #else
 
-        private static Argument? GetArgument(string key)
+        internal static Argument? GetArgument(string key)
 #endif
         {
             return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
@@ -194,10 +219,10 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static void TimerElapsed(object sender, ElapsedEventArgs e)
+        internal static void TimerElapsed(object sender, ElapsedEventArgs e)
 #else
 
-        private static void TimerElapsed(object? sender, ElapsedEventArgs e)
+        internal static void TimerElapsed(object? sender, ElapsedEventArgs e)
 #endif
         {
             Console.BackgroundColor = ConsoleColor.Red;
@@ -206,7 +231,7 @@ namespace Planar.Job
             System.Environment.Exit(-1);
         }
 
-        private static bool HasArgument(string key)
+        internal static bool HasArgument(string key)
         {
             return Arguments.Exists(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
@@ -233,11 +258,11 @@ namespace Planar.Job
             Console.ResetColor();
         }
 
-        public static async Task<bool> Debug(IHostedJobProperties properties, CancellationToken cancellationToken)
+        public static async Task<bool> Debug(IHostedJobProperties properties)
         {
             if (Mode != RunningMode.Debug) { return false; }
             var type = ShowJobMenu(properties);
-            return await Debug(type, cancellationToken);
+            return await Debug(type, _mainCancellationTokenSource.Token);
         }
 
         private static async Task<bool> Debug(Type jobType, CancellationToken cancellationToken)
@@ -272,10 +297,10 @@ namespace Planar.Job
 
 #if NETSTANDARD2_0
 
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties hostedProperties, string json, CancellationToken cancellationToken)
+        internal static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties hostedProperties, string json, CancellationToken cancellationToken)
 #else
 
-        private static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties? hostedProperties, string json, CancellationToken cancellationToken)
+        internal static async Task<(bool Success, BaseJob Instance)> Execute(Type jobType, IHostedJobProperties? hostedProperties, string json, CancellationToken cancellationToken)
 #endif
         {
             var instance = GetInstance(jobType);
@@ -298,7 +323,7 @@ namespace Planar.Job
                 if (!MqttClient.IsConnected)
                 {
                     await MqttClient.StartAsync(properties.PlanarHostname, properties.PlanarPort);
-                    await Task.Delay(4_000);
+                    await Task.Delay(4_000, _mainCancellationTokenSource.Token);
                 }
                 await MqttClient.PingAsync();
 
@@ -313,7 +338,10 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
+                if (!_mainCancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    logger.LogWarning(ex, "Failed to ping Planar server ({Hostname}:{Port}). Will retry in 15 minutes", properties.PlanarHostname, properties.PlanarPort);
+                }
             }
         }
 

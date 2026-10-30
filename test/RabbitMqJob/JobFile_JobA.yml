@@ -1,3 +1,4 @@
+kind: job
 job type: PlanarJob
 name: RabbitMqTest
 group: Demo
@@ -17,5 +18,5 @@ properties:
 simple triggers:
   - name: every-hour-trigger
     interval: 01:00:00
-    misfire behaviour: auto
+    misfire behavior: auto
     timeout: 00:05:00

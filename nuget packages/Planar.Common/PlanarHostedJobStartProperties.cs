@@ -41,13 +41,18 @@ namespace Planar.Job
         public int PlanarPort { get; internal set; } = DefaultPlanarPort;
 
         public int PlanarApiPort { get; internal set; } = DefaultPlanarApiPort;
+
         public HttpSchema PlanarApiSchema { get; internal set; } = HttpSchema.Http;
 
 #if NETSTANDARD2_0
 
         public IHost Host { get; internal set; }
+        public string PlanarApiUsername { get; internal set; }
+        public string PlanarApiPassword { get; internal set; }
 #else
         public IHost Host { get; internal set; } = null!;
+        public string? PlanarApiUsername { get; internal set; }
+        public string? PlanarApiPassword { get; internal set; }
 #endif
 
         public IEnumerable<Manifest> Manifests => _manifests;

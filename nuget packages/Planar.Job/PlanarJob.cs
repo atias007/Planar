@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using System;
 using System.IO;
 using System.Text;
@@ -18,9 +19,11 @@ namespace Planar.Job
         private static string? FileIdentifier { get; set; }
 #endif
 
+        public static PlanarJobDebugger Debugger => PlanarJobCommon.Debugger;
+
         private static bool Encrypted { get; set; } = false;
 
-        internal static PlanarJobStartProperties Properties { get; private set; } = PlanarJobStartProperties.Default;
+        private static PlanarJobStartProperties _properties = PlanarJobStartProperties.Default;
 
         public static Task StartAsync<TJob>()
                     where TJob : BaseJob, new()
@@ -31,7 +34,8 @@ namespace Planar.Job
         public static async Task StartAsync<TJob>(PlanarJobStartProperties properties)
             where TJob : BaseJob, new()
         {
-            Properties = properties;
+            _properties = properties;
+            PlanarJobCommon.Properties = properties;
 
             FillProperties();
             SetupGracefulShutdown();
@@ -49,7 +53,7 @@ namespace Planar.Job
             }
             finally
             {
-                SafeDisposeCancellationTokenSource();
+                PlanarJobCommon.SafeDispose();
             }
         }
 
@@ -75,21 +79,21 @@ namespace Planar.Job
                      where TJob : BaseJob, new()
         {
             string json;
-            if (Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
-                json = ShowDebugMenu(typeof(TJob));
+                json = PlanarJobCommon.ShowDebugMenu(typeof(TJob));
             }
             else
             {
                 json = GetJsonFromArgs();
             }
 
-            if (Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 await Console.Out.WriteAsync(">> Environment: ");
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                await Console.Out.WriteLineAsync(Environment);
+                await Console.Out.WriteLineAsync(PlanarJobCommon.Environment);
                 Console.ResetColor();
                 await Console.Out.WriteLineAsync("---------------------------------------");
             }
@@ -97,7 +101,7 @@ namespace Planar.Job
             var instance = Activator.CreateInstance<TJob>();
             var success = await instance.Execute(json, hostedProperties: null, CancellationToken.None);
 
-            if (Mode == RunningMode.Debug)
+            if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
                 await instance.PrintDebugSummary(success);
                 await Console.Out.WriteLineAsync("---------------------------------------");
@@ -105,7 +109,7 @@ namespace Planar.Job
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 using (var timer = new Timer(60_000))
                 {
-                    timer.Elapsed += TimerElapsed;
+                    timer.Elapsed += PlanarJobCommon.TimerElapsed;
                     timer.Start();
                     Console.ReadKey(true);
                     timer.Stop();
@@ -115,20 +119,20 @@ namespace Planar.Job
 
         private static void FillProperties()
         {
-            FillArguments();
-            if (HasArgument("--planar-service-mode"))
+            PlanarJobCommon.InitArguments();
+            if (PlanarJobCommon.HasArgument("--planar-service-mode"))
             {
-                Mode = RunningMode.Release;
+                PlanarJobCommon.Mode = RunningMode.Release;
             }
             else
             {
-                Mode = RunningMode.Debug;
+                PlanarJobCommon.Mode = RunningMode.Debug;
             }
 
-            ContextBase64 = GetArgument("--context")?.Value;
-            Environment = GetArgument("--environment")?.Value ?? "Development";
-            Encrypted = HasArgument("--encrypted");
-            FileIdentifier = GetArgument("--file-identifier")?.Value;
+            ContextBase64 = PlanarJobCommon.GetArgument("--context")?.Value;
+            PlanarJobCommon.Environment = PlanarJobCommon.GetArgument("--environment")?.Value ?? "Development";
+            Encrypted = PlanarJobCommon.HasArgument("--encrypted");
+            FileIdentifier = PlanarJobCommon.GetArgument("--file-identifier")?.Value;
         }
 
         private static string GetJsonFromArgs()
@@ -155,10 +159,15 @@ namespace Planar.Job
 
         private static byte[] GetEncryptionKeyBytes()
         {
-            var key = Properties.EncryptionKey;
+            var key = _properties.EncryptionKey;
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new PlanarJobException("Encryption key is not provided. Please provide a valid 32-byte Base64 string as the encryption key.");
+            }
 
             var encryptionKeyBytes = Convert.FromBase64String(key);
-            if (string.IsNullOrWhiteSpace(key) || encryptionKeyBytes.Length == 0)
+            if (encryptionKeyBytes.Length == 0)
             {
                 throw new PlanarJobException("Encryption key is not provided. Please provide a valid 32-byte Base64 string as the encryption key.");
             }
@@ -192,6 +201,38 @@ namespace Planar.Job
             {
                 // *** Do nothing ***
             }
+        }
+
+        private static void SetupGracefulShutdown()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (s, a) =>
+            {
+                try
+                {
+                    PlanarJobCommon.Cancel();
+                }
+                catch
+                {
+                    // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
+            };
+
+            Console.CancelKeyPress += (sender, args) =>
+            {
+                Console.WriteLine("\nCtrl+C detected! Performing cleanup...");
+
+                // Prevent the application from terminating immediately
+                args.Cancel = true;
+
+                try
+                {
+                    PlanarJobCommon.Cancel();
+                }
+                catch
+                {
+                    // *** DO NOTHING, we are shutting down anyway, just try best effort to cancel running jobs *** //
+                }
+            };
         }
     }
 }

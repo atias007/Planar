@@ -215,14 +215,16 @@ namespace Planar.Job.RabbitMq
                 _healthCheckTimer.Stop();
                 await EnsureConsumers();
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return; // don't restart
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to ensure that RabbitMQ connection is alive: {Message}", ex.Message);
             }
-            finally
-            {
-                _healthCheckTimer.Start();
-            }
+
+            _healthCheckTimer.Start();
 
             try
             {
