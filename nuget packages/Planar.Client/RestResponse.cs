@@ -28,7 +28,10 @@ namespace Planar.Client
 #endif
     }
 
+#pragma warning disable S3881 // "IDisposable" should be implemented correctly
+
     internal class RestResponse : IRestResponse
+#pragma warning restore S3881 // "IDisposable" should be implemented correctly
     {
         private readonly HttpResponseMessage _response;
         private readonly SemaphoreSlim _lock1 = new SemaphoreSlim(1, 1);
@@ -59,6 +62,11 @@ namespace Planar.Client
         public HttpStatusCode StatusCode => _response.StatusCode;
         public bool IsSuccess => _response.IsSuccessStatusCode;
 
+        public void Dispose()
+        {
+            _response?.Dispose();
+        }
+
 #if NETSTANDARD2_0
 
         public async Task<TResponse> GetData<TResponse>() where TResponse : class
@@ -73,9 +81,9 @@ namespace Planar.Client
             try
             {
                 if (_isDataRead) { return _data as TResponse; }
-                _isDataRead = true;
                 var content = await GetStringContent();
                 _data = CoreSerializer.Deserialize<TResponse>(content);
+                _isDataRead = true;
                 return _data as TResponse;
             }
             finally

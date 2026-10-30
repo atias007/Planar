@@ -78,7 +78,6 @@ namespace Planar.Job
             if (!bag.IsEmpty)
             {
                 properties.AddManifests(bag);
-                properties.ApplyManifest = true;
             }
         }
 
@@ -119,7 +118,6 @@ namespace Planar.Job
             if (yamls.Count > 0)
             {
                 properties.AddManifests(yamls);
-                properties.ApplyManifest = true;
             }
         }
 

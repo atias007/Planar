@@ -46,6 +46,7 @@ namespace Planar.Job
             }
 
             var request = new RestRequest("service/apply", HttpMethod.Post)
+                .SetTimeoutSeconds(30)
                 .AddYamlStringBody(body);
 
             var response = await proxy.InvokeAsync<ApplyResponse>(request, cancellationToken);

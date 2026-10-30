@@ -219,10 +219,6 @@ namespace Planar.Job.RabbitMq
             {
                 return; // don't restart
             }
-            catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                return; // don't restart
-            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to ensure that RabbitMQ connection is alive: {Message}", ex.Message);

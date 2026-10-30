@@ -107,6 +107,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
+                await PlanarHostedJobCommon.UntrackInstance(fid);
                 _logger?.LogError(ex, "Fail to execute {Name}", jobDefinition?.JobType.Name);
 
                 if (ex is PlanarJobConflictException) { return Results.Conflict(ex.Message); }

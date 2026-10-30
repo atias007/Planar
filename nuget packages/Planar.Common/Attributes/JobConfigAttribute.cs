@@ -3,7 +3,7 @@
 namespace Planar.Job
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public class JobConfigAttribute : DataAttribute
+    public class JobConfigAttribute : Attribute
     {
         public JobConfigAttribute(string filename)
         {

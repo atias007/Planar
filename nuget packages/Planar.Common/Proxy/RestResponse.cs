@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +29,10 @@ namespace Planar.Common.Proxy
 #endif
     }
 
-    internal class RestResponse
+#pragma warning disable S3881 // "IDisposable" should be implemented correctly
+
+    internal class RestResponse : IDisposable
+#pragma warning restore S3881 // "IDisposable" should be implemented correctly
     {
         private readonly HttpResponseMessage _response;
         private readonly SemaphoreSlim _lock1 = new SemaphoreSlim(1, 1);
@@ -59,6 +63,11 @@ namespace Planar.Common.Proxy
         public HttpStatusCode StatusCode => _response.StatusCode;
         public bool IsSuccess => _response.IsSuccessStatusCode;
 
+        public void Dispose()
+        {
+            _response?.Dispose();
+        }
+
 #if NETSTANDARD2_0
 
         public async Task<TResponse> GetData<TResponse>() where TResponse : class
@@ -73,9 +82,9 @@ namespace Planar.Common.Proxy
             try
             {
                 if (_isDataRead) { return _data as TResponse; }
-                _isDataRead = true;
                 var content = await GetStringContent();
                 _data = CoreSerializer.Deserialize<TResponse>(content);
+                _isDataRead = true;
                 return _data as TResponse;
             }
             finally
