@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.Job;
+using Planar.Job.Attributes;
 
 namespace CircuitBreakerTester
 {
