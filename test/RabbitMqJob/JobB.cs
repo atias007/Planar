@@ -2,9 +2,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using Planar.Job.Attributes;
 
 namespace RabbitMQJob;
 
+[JobRoutingKey("job-b")]
 internal class JobB : BaseJob
 {
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)

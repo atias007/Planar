@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Job.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -39,7 +41,8 @@ namespace Planar.Job
             var index = 1;
             foreach (var jobType in jobTypes)
             {
-                PrintMenuItem(jobType.Name, index.ToString());
+                var name = GetJobTypeName(jobType);
+                PrintMenuItem(name, index.ToString());
                 index++;
             }
             Console.WriteLine();
@@ -57,6 +60,18 @@ namespace Planar.Job
 
                 return jobTypes[selectedIndex.Value - 1];
             }
+        }
+
+        private static string GetJobTypeName(Type jobType)
+        {
+            var jobNameAttribute = jobType.GetCustomAttribute<JobNameAttribute>(inherit: true);
+            var name = jobNameAttribute?.Name;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = jobType.FullName;
+            }
+
+            return name;
         }
 
         private static void Dispose()
@@ -82,7 +97,7 @@ namespace Planar.Job
             }
         }
 
-        internal static string ShowDebugMenu(Type JobType)
+        internal static string ShowProfilesMenu(Type JobType)
         {
             int? selectedIndex;
 
@@ -98,7 +113,8 @@ namespace Planar.Job
             }
 
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.Write($"{JobType.Name} ");
+            var name = GetJobTypeName(JobType);
+            Console.Write(name);
             Console.ResetColor();
             Console.WriteLine();
             Console.WriteLine();
@@ -205,7 +221,7 @@ namespace Planar.Job
                     }
                     else if (index > maxIndex || index <= 0)
                     {
-                        ShowErrorMenu($"Selected value '{index}' is not exists");
+                        ShowErrorMenu($"Selected value '{index}' does not exist");
                     }
                     else
                     {
@@ -269,7 +285,7 @@ namespace Planar.Job
         {
             if (Mode != RunningMode.Debug) { return false; }
 
-            var json = ShowDebugMenu(jobType);
+            var json = ShowProfilesMenu(jobType);
 
             await Console.Out.WriteLineAsync("---------------------------------------");
             await Console.Out.WriteAsync(">> Environment: ");

@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Planar.Job.Attributes;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Planar.Job.RabbitMq
 {
@@ -131,30 +133,54 @@ namespace Planar.Job.RabbitMq
         public RabbitMqJobStartPropertiesBuilder AddJob<TJob>() where TJob : BaseJob, new()
         {
             var jobType = typeof(TJob);
-            ValidateJobType(jobType);
-            var attribute = ValidateJobQueueNameAttribute(jobType);
+            return AddJob(jobType);
+        }
+
+        public RabbitMqJobStartPropertiesBuilder AddJob(Type type)
+        {
+            ValidateJobType(type);
+            var attribute = ValidateJobQueueNameAttribute(type);
 
             if (attribute == null)
             {
-                throw new InvalidOperationException($"Job type '{jobType.Name}' does not have a [JobRoutingKey] attribute");
+                throw new InvalidOperationException($"Job type '{type.FullName}' does not have a [JobRoutingKey] attribute");
             }
             else
             {
-                _properties.AddJobDefinition(new JobDefinition(jobType, attribute.RoutingKey));
+                _properties.AddJobDefinition(new JobDefinition(type, attribute.RoutingKey));
             }
 
             return this;
         }
 
-        public RabbitMqJobStartPropertiesBuilder AddJob<TJob>(string routingKey) where TJob : BaseJob, new()
+        public RabbitMqJobStartPropertiesBuilder AddJobsFromAssembly(params Assembly[] assemblies)
         {
-            if (string.IsNullOrWhiteSpace(routingKey)) { throw new ArgumentNullException(nameof(routingKey)); }
-            var jobType = typeof(TJob);
-            ValidateJobType(jobType);
-            ValidateRoutingKey(routingKey);
+            foreach (var assembly in assemblies)
+            {
+                // get all types that are subclass of BaseJob in assembly
+                var jobTypes = assembly.GetTypes().Where(t =>
+                    typeof(BaseJob).IsAssignableFrom(t) &&
+                    t.GetConstructor(Type.EmptyTypes) != null);
 
-            _properties.AddJobDefinition(new JobDefinition(jobType, routingKey));
+                foreach (var item in jobTypes)
+                {
+                    AddJob(item);
+                }
+            }
+
             return this;
+        }
+
+        public RabbitMqJobStartPropertiesBuilder AddJobsFromAssembly(Type type)
+        {
+            var assembly = type.Assembly;
+            return AddJobsFromAssembly(assembly);
+        }
+
+        public RabbitMqJobStartPropertiesBuilder AddJobsFromAssembly<T>() where T : class
+        {
+            var assembly = typeof(T).Assembly;
+            return AddJobsFromAssembly(assembly);
         }
 
         public RabbitMqJobStartPropertiesBuilder ApplyManifestFromFolder(string folderPath)
@@ -200,14 +226,6 @@ namespace Planar.Job.RabbitMq
             if (_properties.JobDefinitions.Any(d => d.JobType == jobType))
             {
                 throw new InvalidOperationException($"A job definition for job type '{jobType.Name}' already exists. Use AddJob<TJob>() to specify a different job type.");
-            }
-        }
-
-        private void ValidateRoutingKey(string routingKey)
-        {
-            if (_properties.JobDefinitions.Any(d => string.Equals(d.RoutingKey, routingKey, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException($"A job definition for routing key '{routingKey}' already exists. Use AddJob<TJob>(string routingKey) to specify a different routing key.");
             }
         }
 

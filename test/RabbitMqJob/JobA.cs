@@ -2,11 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using Planar.Job.Attributes;
 
 namespace RabbitMQJob;
 
 [JobRoutingKey("JobA")]
 [JobConfig("job_a.yml")]
+[JobName("HelloWorld2")]
 internal class JobA : BaseJob
 {
     // DEMO

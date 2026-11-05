@@ -81,7 +81,7 @@ namespace Planar.Job
             string json;
             if (PlanarJobCommon.Mode == RunningMode.Debug)
             {
-                json = PlanarJobCommon.ShowDebugMenu(typeof(TJob));
+                json = PlanarJobCommon.ShowProfilesMenu(typeof(TJob));
             }
             else
             {
