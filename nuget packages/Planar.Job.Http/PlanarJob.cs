@@ -36,9 +36,9 @@ namespace Planar.Job
 
             try
             {
-                PlanarHostedJobCommon.SetupGracefulShutdown(_logger);
                 FillProperties();
                 if (await PlanarJobCommon.Debug(properties)) { return; }
+                PlanarHostedJobCommon.SetupGracefulShutdown(_logger);
 
                 await SafeStartAsync(properties);
             }

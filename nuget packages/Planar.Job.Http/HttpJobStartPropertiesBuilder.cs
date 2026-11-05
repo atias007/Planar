@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using System.Reflection;
 
 namespace Planar.Job.Http
 {
@@ -94,30 +95,67 @@ namespace Planar.Job.Http
         public HttpJobStartPropertiesBuilder AddJob<TJob>() where TJob : BaseJob, new()
         {
             var jobType = typeof(TJob);
-            ValidateJobType(jobType);
-            var attribute = ValidateJobRouteAttribute(jobType);
+            return AddJob(jobType);
+        }
+
+        public HttpJobStartPropertiesBuilder AddJob(Type type)
+        {
+            // validate that type is a subclass of BaseJob & validate that ih has parameterless constructor
+            if (!typeof(BaseJob).IsAssignableFrom(type))
+            {
+                throw new InvalidOperationException($"Type '{type.FullName}' is not a subclass of {nameof(BaseJob)}");
+            }
+
+            if (type.IsAbstract || type.ContainsGenericParameters || type.GetConstructor(Type.EmptyTypes) == null)
+            {
+                throw new InvalidOperationException($"Type '{type.FullName}' must be concrete and closed with a public parameterless constructor");
+            }
+
+            ValidateJobType(type);
+            var attribute = ValidateJobRouteAttribute(type);
 
             if (attribute == null)
             {
-                throw new InvalidOperationException($"Job type '{jobType.Name}' does not have a [JobRoute] attribute");
+                throw new InvalidOperationException($"Job type '{type.FullName}' does not have a [JobRoute] attribute");
             }
             else
             {
-                _properties.AddJobDefinition(new JobDefinition(jobType, attribute.Route));
+                _properties.AddJobDefinition(new JobDefinition(type, attribute.Route));
             }
 
             return this;
         }
 
-        public HttpJobStartPropertiesBuilder AddJob<TJob>(string route) where TJob : BaseJob, new()
+        public HttpJobStartPropertiesBuilder AddJobsFromAssembly(params Assembly[] assemblies)
         {
-            if (string.IsNullOrWhiteSpace(route)) { throw new ArgumentNullException(nameof(route)); }
-            var jobType = typeof(TJob);
-            ValidateJobType(jobType);
-            ValidateRoute(route);
+            foreach (var assembly in assemblies)
+            {
+                // get all types that are subclass of BaseJob in assembly
+                var jobTypes = assembly.GetTypes().Where(t =>
+                    typeof(BaseJob).IsAssignableFrom(t) &&
+                    !t.IsAbstract &&
+                    !t.ContainsGenericParameters &&
+                    t.GetConstructor(Type.EmptyTypes) != null);
 
-            _properties.AddJobDefinition(new JobDefinition(jobType, route));
+                foreach (var item in jobTypes)
+                {
+                    AddJob(item);
+                }
+            }
+
             return this;
+        }
+
+        public HttpJobStartPropertiesBuilder AddJobsFromAssembly(Type type)
+        {
+            var assembly = type.Assembly;
+            return AddJobsFromAssembly(assembly);
+        }
+
+        public HttpJobStartPropertiesBuilder AddJobsFromAssembly<T>() where T : class
+        {
+            var assembly = typeof(T).Assembly;
+            return AddJobsFromAssembly(assembly);
         }
 
         public HttpJobStartProperties Build()
@@ -140,19 +178,6 @@ namespace Planar.Job.Http
             if (_properties.JobDefinitions.Any(d => d.JobType == jobType))
             {
                 throw new InvalidOperationException($"A job definition for job type '{jobType.Name}' already exists. Use AddJob<TJob>() to specify a different job type.");
-            }
-        }
-
-        private void ValidateRoute(string route)
-        {
-            if (!IsValidRouteSegment(route))
-            {
-                throw new InvalidOperationException("Invalid route segment. Route segments must be non-empty, cannot start or end with a dot, and can only contain letters, digits, hyphens, underscores, and dots. Additionally, route segments cannot exceed 256 characters in length.");
-            }
-
-            if (_properties.JobDefinitions.Any(d => string.Equals(d.Route, route, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException($"A job definition for route '{route}' already exists. Use AddJob<TJob>(string route) to specify a different route.");
             }
         }
 

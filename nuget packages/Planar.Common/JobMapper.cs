@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Job;
+using Planar.Job.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;

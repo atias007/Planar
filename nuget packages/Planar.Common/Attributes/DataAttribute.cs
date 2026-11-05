@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Planar.Job
+namespace Planar.Job.Attributes
 {
     public abstract class DataAttribute : Attribute
     {

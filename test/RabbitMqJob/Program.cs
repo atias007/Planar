@@ -29,7 +29,7 @@ var connectionInfo = new RabbitMqJobStartPropertiesBuilder()
             Port = 5672
         })
         .AddJob<JobA>()
-        .AddJob<JobB>("Common.JobB")
+        .AddJob<JobB>()
         .Build();
 #pragma warning restore S2068 // Credentials should not be hard-coded
 

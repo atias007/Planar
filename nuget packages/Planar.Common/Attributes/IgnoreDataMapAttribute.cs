@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Planar.Job
+namespace Planar.Job.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
     public class IgnoreDataMapAttribute : Attribute
