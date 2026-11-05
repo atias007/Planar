@@ -139,12 +139,16 @@ namespace Planar.Job.RabbitMq
         public RabbitMqJobStartPropertiesBuilder AddJob(Type type)
         {
             if (type == null) { throw new ArgumentNullException(nameof(type)); }
-            if (!typeof(BaseJob).IsAssignableFrom(type) ||
-                type.IsAbstract ||
-                type.ContainsGenericParameters ||
-                type.GetConstructor(Type.EmptyTypes) == null)
+
+            // validate that type is a subclass of BaseJob & validate that ih has parameterless constructor
+            if (!typeof(BaseJob).IsAssignableFrom(type))
             {
-                throw new InvalidOperationException($"Type '{type.FullName}' must be a concrete, closed {nameof(BaseJob)} with a public parameterless constructor");
+                throw new InvalidOperationException($"Type '{type.FullName}' is not a subclass of {nameof(BaseJob)}");
+            }
+
+            if (type.IsAbstract || type.ContainsGenericParameters || type.GetConstructor(Type.EmptyTypes) == null)
+            {
+                throw new InvalidOperationException($"Type '{type.FullName}' must be concrete and closed with a public parameterless constructor");
             }
 
             ValidateJobType(type);
