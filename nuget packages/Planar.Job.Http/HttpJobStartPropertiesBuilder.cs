@@ -106,9 +106,9 @@ namespace Planar.Job.Http
                 throw new InvalidOperationException($"Type '{type.FullName}' is not a subclass of {nameof(BaseJob)}");
             }
 
-            if (type.GetConstructor(Type.EmptyTypes) == null)
+            if (type.IsAbstract || type.ContainsGenericParameters || type.GetConstructor(Type.EmptyTypes) == null)
             {
-                throw new InvalidOperationException($"Type '{type.FullName}' does not have a parameterless constructor");
+                throw new InvalidOperationException($"Type '{type.FullName}' must be concrete and closed with a public parameterless constructor");
             }
 
             ValidateJobType(type);
@@ -133,6 +133,8 @@ namespace Planar.Job.Http
                 // get all types that are subclass of BaseJob in assembly
                 var jobTypes = assembly.GetTypes().Where(t =>
                     typeof(BaseJob).IsAssignableFrom(t) &&
+                    !t.IsAbstract &&
+                    !t.ContainsGenericParameters &&
                     t.GetConstructor(Type.EmptyTypes) != null);
 
                 foreach (var item in jobTypes)

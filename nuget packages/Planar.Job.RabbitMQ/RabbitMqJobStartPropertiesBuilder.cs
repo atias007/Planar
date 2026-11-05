@@ -138,6 +138,15 @@ namespace Planar.Job.RabbitMq
 
         public RabbitMqJobStartPropertiesBuilder AddJob(Type type)
         {
+            if (type == null) { throw new ArgumentNullException(nameof(type)); }
+            if (!typeof(BaseJob).IsAssignableFrom(type) ||
+                type.IsAbstract ||
+                type.ContainsGenericParameters ||
+                type.GetConstructor(Type.EmptyTypes) == null)
+            {
+                throw new InvalidOperationException($"Type '{type.FullName}' must be a concrete, closed {nameof(BaseJob)} with a public parameterless constructor");
+            }
+
             ValidateJobType(type);
             var attribute = ValidateJobQueueNameAttribute(type);
 
@@ -160,6 +169,8 @@ namespace Planar.Job.RabbitMq
                 // get all types that are subclass of BaseJob in assembly
                 var jobTypes = assembly.GetTypes().Where(t =>
                     typeof(BaseJob).IsAssignableFrom(t) &&
+                    !t.IsAbstract &&
+                    !t.ContainsGenericParameters &&
                     t.GetConstructor(Type.EmptyTypes) != null);
 
                 foreach (var item in jobTypes)
