@@ -118,10 +118,13 @@ namespace Planar.Job.Http
             {
                 throw new InvalidOperationException($"Job type '{type.FullName}' does not have a [JobRoute] attribute");
             }
-            else
+
+            if (IsValidRouteSegment(attribute.Route))
             {
-                _properties.AddJobDefinition(new JobDefinition(type, attribute.Route));
+                throw new InvalidOperationException($"Route '{attribute.Route}' from [JobRoute] attribute is invalid");
             }
+
+            _properties.AddJobDefinition(new JobDefinition(type, attribute.Route));
 
             return this;
         }
