@@ -391,6 +391,15 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
         throw new RestValidationException("yaml", unmatched);
     }
 
+    protected static async Task ValidateEntityCount(IEntityCount entityCount, string entityName, int max)
+    {
+        var count = await entityCount.Count();
+        if (count >= max)
+        {
+            throw new RestValidationException("entity count", $"Maximum number of '{entityName}' entities is reached. Current count: {count}, maximum allowed: {max}");
+        }
+    }
+
     private static void ValidateKind(List<string>? kinds, string key)
     {
         if (string.IsNullOrWhiteSpace(key))

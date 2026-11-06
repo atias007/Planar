@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
-public interface IConfigData : IBaseDataLayer
+public interface IConfigData : IBaseDataLayer, IEntityCount
 {
     Task AddGlobalConfig(GlobalConfig config);
 
@@ -42,6 +42,12 @@ public class ConfigDataSqlServer(PlanarContext context) : ConfigData(context), I
 
 public class ConfigData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<int> Count()
+    {
+        var result = await _context.GlobalConfigs.CountAsync();
+        return result;
+    }
+
     public async Task<GlobalConfig?> GetGlobalConfig(string key)
     {
         var result = await _context.GlobalConfigs

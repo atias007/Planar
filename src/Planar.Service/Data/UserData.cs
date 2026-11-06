@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
-public interface IUserData : IBaseDataLayer
+public interface IUserData : IBaseDataLayer, IEntityCount
 {
     Task<User> AddUser(User user);
 
@@ -49,6 +49,11 @@ public class UserDataSqlServer(PlanarContext context) : UserData(context), IUser
 
 public class UserData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<int> Count()
+    {
+        return await _context.Users.AsNoTracking().CountAsync();
+    }
+
     public async Task<User> AddUser(User user)
     {
         var result = _context.Users.Add(user);

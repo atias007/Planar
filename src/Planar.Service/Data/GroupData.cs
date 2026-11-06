@@ -10,7 +10,7 @@ using Group = Planar.Service.Model.Group;
 
 namespace Planar.Service.Data;
 
-public interface IGroupData : IGroupDataLayer, IBaseDataLayer
+public interface IGroupData : IGroupDataLayer, IBaseDataLayer, IEntityCount
 {
     Task AddGroup(Group group);
 
@@ -61,6 +61,11 @@ public class GroupDataSqlServer(PlanarContext context) : GroupData(context), IGr
 
 public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDataLayer
 {
+    public async Task<int> Count()
+    {
+        return await _context.Groups.AsNoTracking().CountAsync();
+    }
+
     public async Task<string?> GetGroupName(int id)
     {
         return await _context.Groups

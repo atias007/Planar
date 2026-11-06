@@ -33,6 +33,7 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         var resource = Mapper.Map<Resource>(request);
         try
         {
+            await ValidateEntityCount(DataLayer, "resource", 2_000);
             await DataLayer.AddResource(resource);
         }
         catch (DbUpdateException ex) when (DataLayer.IsDuplicateKey(ex))
@@ -169,6 +170,7 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         if (exists == null)
         {
             var resource = Mapper.Map<Resource>(request);
+            await ValidateEntityCount(dataLayer, "resource", 2_000);
             await dataLayer.AddResource(resource);
             return new ApplyResponseItem(request.Name, ApplyAction.Add, $"resource '{request.Name}' was added", Manifest.Resource, request.Source);
         }

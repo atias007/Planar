@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
-public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
+public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer, IEntityCount
 {
     Task AddMonitor(MonitorAction monitor, int groupId, string hookName);
 
@@ -129,6 +129,11 @@ public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context),
 
 public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<int> Count()
+    {
+        return await _context.MonitorActions.AsNoTracking().CountAsync();
+    }
+
     public async Task AddMonitor(MonitorAction monitor, int groupId, string hookName)
     {
         var group = new Group { Id = groupId };

@@ -66,6 +66,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
     {
         try
         {
+            await ValidateEntityCount(dataLayer, "group", 1_000);
             await dataLayer.AddGroup(group);
         }
         catch (DbUpdateException)

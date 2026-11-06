@@ -47,6 +47,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         user.Password = hash.Hash;
         user.Salt = hash.Salt;
 
+        await ValidateEntityCount(userData, "user", 1_000);
         _ = await userData.AddUser(user);
 
         AuditSecuritySafe($"user '{user.Username}' was created");

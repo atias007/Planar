@@ -83,6 +83,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
 
         var requestHook = GetRequestHookName(request.Hook);
+        await ValidateEntityCount(DataLayer, "monitor", 1_000);
         await DataLayer.AddMonitor(monitor, groupId, requestHook);
 
         _ = Resolve<MonitorDurationCache>().Flush();
@@ -815,6 +816,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         if (currentMonitor == null)
         {
             var groupIds = requestGroups.Select(g => g.Id);
+            await ValidateEntityCount(monitorDal, "monitor", 1_000);
             monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
 
             await monitorDal.SaveChangesAsync();

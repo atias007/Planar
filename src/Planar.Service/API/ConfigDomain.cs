@@ -368,6 +368,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         await using var scope = ServiceProvider.CreateAsyncScope();
         var dataLayer = scope.ServiceProvider.GetRequiredService<IConfigData>();
 
+        await ValidateEntityCount(dataLayer, "global config", 2_000);
         await dataLayer.AddGlobalConfig(globalConfig);
         AuditSecuritySafe($"config key '{request.Key}' was added");
     }

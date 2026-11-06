@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
-public interface IResourceData : IBaseDataLayer, IJobResourceDataLayer
+public interface IResourceData : IBaseDataLayer, IJobResourceDataLayer, IEntityCount
 {
     Task AddResource(Resource resource);
 
@@ -37,6 +37,11 @@ public class ResourceDataSqlServer(PlanarContext context) : ResourceData(context
 
 public class ResourceData(PlanarContext context) : BaseDataLayer(context), IResourceData
 {
+    public async Task<int> Count()
+    {
+        return await _context.Resources.CountAsync();
+    }
+
     public async Task AddResource(Resource resource)
     {
         _context.Resources.Add(resource);
