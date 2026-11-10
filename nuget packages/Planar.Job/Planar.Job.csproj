@@ -41,7 +41,7 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
-		<PackageReference Include="System.Text.Json" Version="10.0.14" />
+		<PackageReference Include="System.Text.Json" Version="10.0.15" />
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
