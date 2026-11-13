@@ -26,7 +26,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
     public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
         var yamls = await GetApplyYamls(httpContext, kind, kind_pass);
-        var result = await Apply(yamls, httpContext.RequestAborted);
+        var result = await Apply(yamls, httpContext);
         return result;
     }
 
@@ -182,35 +182,35 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         return count;
     }
 
-    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, HttpContext httpContext)
     {
         var user_yaml = yamls.Where(y => y.Key == kind);
         var pass_yaml = yamls.Where(y => y.Key == kind_pass);
 
         // Convert to list of ApplyUserRequest & ApplyPasswordRequest
-        var user_requests = await GetApplyEntities<ApplyUserRequest>(user_yaml, kind, cancellationToken, withValidation: true);
-        var password_requests = await GetApplyEntities<ApplyPasswordRequest>(pass_yaml, kind_pass, cancellationToken, withValidation: true);
+        var user_requests = await GetApplyEntities<ApplyUserRequest>(user_yaml, kind, httpContext.RequestAborted, withValidation: true);
+        var password_requests = await GetApplyEntities<ApplyPasswordRequest>(pass_yaml, kind_pass, httpContext.RequestAborted, withValidation: true);
 
         // Validation
         ValidateDuplicateApplyRequests(user_requests, r => r.Username, kind, "username");
         ValidateDuplicateApplyRequests(password_requests, r => r.Username, kind_pass, "username");
 
         // Apply changes
-        var user_response = await ApplyChanges(user_requests);
-        var password_response = await ApplyChanges(password_requests);
+        var user_response = await ApplyChanges(user_requests, httpContext);
+        var password_response = await ApplyChanges(password_requests, httpContext);
 
         var response = ApplyResponse.Merge(user_response, password_response);
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyUserRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyUserRequest> requests, HttpContext httpContext)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request);
+            var result = await ApplyInner(request, httpContext);
             response.AddItem(result);
             return response;
         }
@@ -219,7 +219,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         {
             try
             {
-                var result = await ApplyInner(request);
+                var result = await ApplyInner(request, httpContext);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -231,14 +231,14 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyPasswordRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyPasswordRequest> requests, HttpContext httpContext)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request);
+            var result = await ApplyInner(request, httpContext);
             response.AddItem(result);
             return response;
         }
@@ -247,7 +247,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         {
             try
             {
-                var result = await ApplyInner(request);
+                var result = await ApplyInner(request, httpContext);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -259,12 +259,19 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyUserRequest request)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyUserRequest request, HttpContext httpContext)
     {
         request.Username = request.Username?.Trim();
         if (string.IsNullOrWhiteSpace(request.Username))
         {
             throw new RestValidationException("invalid request", "username is required");
+        }
+
+        // check for dry run, if dry run return the response without applying the changes
+        var dryResponse = GetDryRunResponse(httpContext, request.Username, Manifest.User, request.Source);
+        if (dryResponse != null)
+        {
+            return dryResponse;
         }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
@@ -285,12 +292,19 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         }
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyPasswordRequest request)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyPasswordRequest request, HttpContext httpContext)
     {
         request.Username = request.Username?.Trim();
         if (string.IsNullOrWhiteSpace(request.Username))
         {
             throw new RestValidationException("invalid request", "username is required");
+        }
+
+        // check for dry run, if dry run return the response without applying the changes
+        var dryResponse = GetDryRunResponse(httpContext, request.Username, Manifest.UserPassword, request.Source);
+        if (dryResponse != null)
+        {
+            return dryResponse;
         }
 
         await using var scope = ServiceProvider.CreateAsyncScope();

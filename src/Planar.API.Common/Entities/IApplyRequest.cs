@@ -2,9 +2,9 @@
 
 public interface IApplyRequest
 {
-    string Kind { get; set; }
     string Source { get; set; }
     string Version { get; set; }
+    string Key { get; set; }
 }
 
 ////// ===== APPLY REQUEST PROPERTIES ===== ////

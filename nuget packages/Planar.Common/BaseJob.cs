@@ -725,7 +725,7 @@ namespace Planar.Job
                     var filename = attribute.GetEnvironmentFilename(context.Environment);
                     if (!string.IsNullOrWhiteSpace(filename))
                     {
-                        builder.AddYamlFile(filename, optional: false, reloadOnChange: false);
+                        builder.AddYamlFile(filename, optional: true, reloadOnChange: false);
                     }
                 }
             }

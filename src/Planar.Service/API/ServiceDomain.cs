@@ -46,7 +46,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (resources != null)
         {
             var resourceDomain = ServiceProvider.GetRequiredService<ResourceDomain>();
-            var response = await resourceDomain.Apply([.. resources], httpContext.RequestAborted);
+            var response = await resourceDomain.Apply([.. resources], httpContext);
             responses.Add(response);
         }
 
@@ -55,7 +55,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (globalConfig != null)
         {
             var configDomain = ServiceProvider.GetRequiredService<ConfigDomain>();
-            var response = await configDomain.Apply([.. globalConfig], httpContext.RequestAborted);
+            var response = await configDomain.Apply([.. globalConfig], httpContext);
             responses.Add(response);
         }
 
@@ -64,7 +64,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (users != null)
         {
             var userDomain = ServiceProvider.GetRequiredService<UserDomain>();
-            var response = await userDomain.Apply([.. users], httpContext.RequestAborted);
+            var response = await userDomain.Apply([.. users], httpContext);
             responses.Add(response);
         }
 
@@ -73,7 +73,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (user_passwords != null)
         {
             var userDomain = ServiceProvider.GetRequiredService<UserDomain>();
-            var response = await userDomain.Apply([.. user_passwords], httpContext.RequestAborted);
+            var response = await userDomain.Apply([.. user_passwords], httpContext);
             responses.Add(response);
         }
 
@@ -82,7 +82,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (groups != null)
         {
             var groupDomain = ServiceProvider.GetRequiredService<GroupDomain>();
-            var response = await groupDomain.Apply([.. groups], httpContext.RequestAborted);
+            var response = await groupDomain.Apply([.. groups], httpContext);
             responses.Add(response);
         }
 
@@ -109,7 +109,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (monitors != null)
         {
             var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
-            var monitorResponse = await monitorDomain.Apply([.. monitors], httpContext.RequestAborted);
+            var monitorResponse = await monitorDomain.Apply([.. monitors], httpContext);
             responses.Add(monitorResponse);
         }
 
