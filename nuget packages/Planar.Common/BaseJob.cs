@@ -741,7 +741,14 @@ namespace Planar.Job
             finally
             {
                 _inConfiguration = false;
-                _configuration = builder.Build();
+                try
+                {
+                    _configuration = builder.Build();
+                }
+                finally
+                {
+                    if (_configuration == null) { _configuration = new ConfigurationBuilder().Build(); }
+                }
             }
         }
 
