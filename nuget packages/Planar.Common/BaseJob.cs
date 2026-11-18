@@ -5,13 +5,11 @@ using Planar.Common;
 using Planar.Job.Logger;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using Timer = System.Timers.Timer;
 
 namespace Planar.Job
@@ -654,18 +652,18 @@ namespace Planar.Job
                 FilterJobData(ctx.JobDetails.JobDataMap);
                 FilterJobData(ctx.TriggerDetails.TriggerDataMap);
 
-                ////                // Debug mode need to manually read settings file/s
-                ////                if (PlanarJobCommon.Mode == RunningMode.Debug)
-                ////                {
-                ////                    var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
-                ////                    ctx.JobSettings = ctx.JobSettings.Merge(settings);
+                // Debug mode need to manually read settings file/s
+                if (PlanarJobCommon.Mode == RunningMode.Debug)
+                {
+                    var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
+                    ctx.JobSettings = ctx.JobSettings.Merge(settings);
 
-                ////#if NETSTANDARD2_0
-                ////                    ctx.JobSettings = new Dictionary<string, string>(settings);
-                ////#else
-                ////                    ctx.JobSettings = new Dictionary<string, string?>(settings);
-                ////#endif
-                ////                }
+#if NETSTANDARD2_0
+                    ctx.JobSettings = new Dictionary<string, string>(settings);
+#else
+                    ctx.JobSettings = new Dictionary<string, string?>(settings);
+#endif
+                }
 
                 _context = ctx;
             }
@@ -706,28 +704,31 @@ namespace Planar.Job
         private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
         {
             _inConfiguration = true;
-
-            try
-            {
-                InitializeConfigurationInner(context, configureAction);
-            }
-            finally
-            {
-                if (_configuration == null) { _configuration = new ConfigurationBuilder().Build(); }
-                _inConfiguration = false;
-            }
-        }
-
-        private void InitializeConfigurationInner(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
-        {
             var builder = new ConfigurationBuilder();
+            builder.AddInMemoryCollection(context.JobSettings);
 
-            if (context.JobSettings.Count > 0)
+            if (_isHosted) // load configuration from job settings.yml file in hosted mode
             {
-                builder.AddInMemoryCollection(context.JobSettings);
-            }
+                const string settingsFilename = "JobSettings.yml";
+                var environmentSettingsFilename = $"JobSettings.{context.Environment}.yml";
+                builder.AddYamlFile(settingsFilename, optional: true, reloadOnChange: false);
+                builder.AddYamlFile(environmentSettingsFilename, optional: true, reloadOnChange: false);
 
-            LoadYmlConfigFiles(context, builder);
+                var attribute = GetConfigAttribute();
+                if (attribute != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(attribute.Filename))
+                    {
+                        builder.AddYamlFile(attribute.Filename, optional: false, reloadOnChange: false);
+                    }
+
+                    var filename = attribute.GetEnvironmentFilename(context.Environment);
+                    if (!string.IsNullOrWhiteSpace(filename))
+                    {
+                        builder.AddYamlFile(filename, optional: true, reloadOnChange: false);
+                    }
+                }
+            }
 
             try
             {
@@ -737,37 +738,10 @@ namespace Planar.Job
             {
                 throw new PlanarJobException($"Fail to initialize job at {nameof(Configure)}(...) method implementation", ex);
             }
-
-            try
+            finally
             {
+                _inConfiguration = false;
                 _configuration = builder.Build();
-            }
-            catch (FileNotFoundException ex)
-            {
-                throw new PlanarJobException(ex.Message);
-            }
-        }
-
-        private void LoadYmlConfigFiles(JobExecutionContext context, ConfigurationBuilder builder)
-        {
-            const string settingsFilename = "JobSettings.yml";
-            var environmentSettingsFilename = $"JobSettings.{context.Environment}.yml";
-            builder.AddYamlFile(settingsFilename, optional: true, reloadOnChange: false);
-            builder.AddYamlFile(environmentSettingsFilename, optional: true, reloadOnChange: false);
-
-            var attribute = GetConfigAttribute();
-            if (attribute != null)
-            {
-                if (!string.IsNullOrWhiteSpace(attribute.Filename))
-                {
-                    builder.AddYamlFile(attribute.Filename, optional: false, reloadOnChange: false);
-                }
-
-                var filename = attribute.GetEnvironmentFilename(context.Environment);
-                if (!string.IsNullOrWhiteSpace(filename))
-                {
-                    builder.AddYamlFile(filename, optional: true, reloadOnChange: false);
-                }
             }
         }
 

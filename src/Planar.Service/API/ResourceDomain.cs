@@ -11,9 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Planar.Service.API;
 
@@ -24,7 +22,7 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
     public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
         var yamls = await GetApplyYamls(httpContext, kind);
-        var result = await Apply(yamls, httpContext.RequestAborted);
+        var result = await Apply(yamls, httpContext);
         return result;
     }
 
@@ -113,28 +111,28 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         }
     }
 
-    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, HttpContext httpContext)
     {
         // Convert to list of ApplyUserRequest & ApplyPasswordRequest
-        var requests = await GetApplyEntities<ApplyResourceRequest>(yamls, kind, cancellationToken, withValidation: true);
+        var requests = await GetApplyEntities<ApplyResourceRequest>(yamls, kind, httpContext.RequestAborted, withValidation: true);
 
         // Validation
         ValidateDuplicateApplyRequests(requests, r => r.Name, kind, "name");
 
         // Apply changes
-        var response = await ApplyChanges(requests);
+        var response = await ApplyChanges(requests, httpContext);
 
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyResourceRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyResourceRequest> requests, HttpContext httpContext)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request);
+            var result = await ApplyInner(request, httpContext);
             response.AddItem(result);
             return response;
         }
@@ -143,7 +141,7 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         {
             try
             {
-                var result = await ApplyInner(request);
+                var result = await ApplyInner(request, httpContext);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -155,13 +153,16 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyResourceRequest request)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyResourceRequest request, HttpContext httpContext)
     {
         request.Name = request.Name?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             throw new RestValidationException("invalid request", "name is required");
         }
+
+        var dryResponse = GetDryRunResponse(httpContext, request.Name, Manifest.Resource, request.Source);
+        if (dryResponse != null) { return dryResponse; }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
         var dataLayer = scope.ServiceProvider.GetRequiredService<IResourceData>();

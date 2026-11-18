@@ -48,7 +48,7 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
 
     public async Task<string> HealthCheck()
     {
-        var serviceUnavaliable = false;
+        var serviceUnavailable = false;
         var result = new StringBuilder();
 
         if (AppSettings.Cluster.Clustering)
@@ -62,7 +62,7 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
             }
             else
             {
-                serviceUnavaliable = true;
+                serviceUnavailable = true;
                 result.AppendLine("cluster: unhealthy");
             }
         }
@@ -72,7 +72,7 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
         }
 
         var message = result.ToString().Trim();
-        if (serviceUnavaliable)
+        if (serviceUnavailable)
         {
             throw new RestServiceUnavailableException(message);
         }

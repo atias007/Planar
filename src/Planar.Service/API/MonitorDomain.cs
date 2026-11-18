@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -177,10 +178,10 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         _ = SetMonitorActionsCache(clusterReload: true);
     }
 
-    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, HttpContext httpContext)
     {
         // Convert to list of ApplyMonitorRequest
-        var requests = await GetApplyEntities<ApplyMonitorRequest>(yamls, kind, cancellationToken);
+        var requests = await GetApplyEntities<ApplyMonitorRequest>(yamls, kind, httpContext.RequestAborted);
 
         // Validation
         ValidateDuplicateRequests(requests);
@@ -189,7 +190,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         ValidateHooksExists(requests);
 
         // Apply changes
-        var response = await ApplyChanges(requests);
+        var response = await ApplyChanges(requests, httpContext);
 
         // Clear cache
         _ = Resolve<MonitorDurationCache>().Flush();
@@ -201,7 +202,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
         var yamls = await GetApplyYamls(httpContext, kind);
-        var result = await Apply(yamls, httpContext.RequestAborted);
+        var result = await Apply(yamls, httpContext);
         return result;
     }
 
@@ -772,14 +773,14 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyMonitorRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyMonitorRequest> requests, HttpContext httpContext)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request);
+            var result = await ApplyInner(request, httpContext);
             response.AddItem(result);
             return response;
         }
@@ -788,7 +789,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         {
             try
             {
-                var result = await ApplyInner(request);
+                var result = await ApplyInner(request, httpContext);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -802,12 +803,19 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyMonitorRequest request)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyMonitorRequest request, HttpContext httpContext)
     {
         var groupData = Resolve<IGroupData>();
         var requestGroups = await groupData.GetGroups(request.DistributionGroups);
         var requestHooks = GetRequestHookNames(request.Hooks);
         var requestMonitor = MonitorProfile.ToMonitorAction(request);
+
+        // check for dry run, if dry run return the response without applying the changes
+        var dryResponse = GetDryRunResponse(httpContext, GetMonitorKey(requestMonitor), Manifest.Monitor, request.Source);
+        if (dryResponse != null)
+        {
+            return dryResponse;
+        }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
         var monitorDal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
