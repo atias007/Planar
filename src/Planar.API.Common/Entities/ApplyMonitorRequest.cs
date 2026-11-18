@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Planar.Common;
+using System.Collections.Generic;
+using System.Threading;
 using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities;
@@ -13,6 +15,8 @@ public class ApplyMonitorRequest : MonitorRequest, IApplyRequest
 
     [YamlMember(Alias = "active")]
     public bool Active { get; set; }
+
+    public string Key => $"{Event}-{JobGroup}-{JobName}";
 
     //// ===== APPLY REQUEST PROPERTIES ===== ////
 

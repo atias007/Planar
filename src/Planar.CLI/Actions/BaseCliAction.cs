@@ -381,7 +381,10 @@ public abstract class BaseCliAction
         }
     }
 
+#pragma warning disable S107 // Methods should not have too many parameters
+
     private static (bool, string?, PropertyInfo) CollectText<T>(T entity, string propertyName, bool required, int minLength, int maxLength, string? defaultValue, bool secret, Func<string, ValidationResult>? validation = null)
+#pragma warning restore S107 // Methods should not have too many parameters
     where T : class
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);

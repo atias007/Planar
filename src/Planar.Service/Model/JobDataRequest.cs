@@ -36,6 +36,8 @@ internal class JobDataRequest : IApplyRequest
     [YamlIgnore]
     internal IReadOnlyCollection<ITrigger> Triggers { get; set; } = null!;
 
+    public string Key => $"{JobGroup}.{JobName}";
+
     public ITrigger? GetTrigger(string name)
     {
         return Triggers.FirstOrDefault(tr => string.Equals(tr.Key.Name, name, StringComparison.OrdinalIgnoreCase));

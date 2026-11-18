@@ -8,6 +8,8 @@ public class ApplyGroupRequest : AddGroupRequest, IApplyRequest
     [YamlMember(Alias = "users")]
     public List<string> Users { get; set; } = [];
 
+    public string Key => Name;
+
     // ===== APPLY REQUEST PROPERTIES ===== ////
 
     [YamlMember(Alias = "source")]

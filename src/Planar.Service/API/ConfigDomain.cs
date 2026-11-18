@@ -42,7 +42,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
     public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
         var yamls = await GetApplyYamls(httpContext, kind);
-        var result = await Apply(yamls, httpContext.RequestAborted);
+        var result = await Apply(yamls, httpContext);
         return result;
     }
 
@@ -209,22 +209,22 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         }
     }
 
-    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    internal async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, HttpContext httpContext)
     {
         // Convert to list of GlobalConfigApplyRequest
-        var requests = await GetApplyEntities<GlobalConfigApplyRequest>(yamls, kind, cancellationToken);
+        var requests = await GetApplyEntities<GlobalConfigApplyRequest>(yamls, kind, httpContext.RequestAborted);
 
         // Validation
         ValidateDuplicateApplyRequests(requests, r => r.Key, kind, "key");
 
         // Apply changes
-        var response = await ApplyChanges(requests);
+        var response = await ApplyChanges(requests, httpContext);
 
         // Save changes
         await DataLayer.SaveChangesAsync();
 
         // Clear cache
-        await Flush(cancellationToken);
+        await Flush(httpContext.RequestAborted);
 
         return response;
     }
@@ -373,14 +373,14 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         AuditSecuritySafe($"config key '{request.Key}' was added");
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests, HttpContext httpContext)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request);
+            var result = await ApplyInner(request, httpContext);
             response.AddItem(result);
             return response;
         }
@@ -389,7 +389,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         {
             try
             {
-                var result = await ApplyInner(request);
+                var result = await ApplyInner(request, httpContext);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -401,7 +401,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request)
+    private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request, HttpContext httpContext)
     {
         // trim the key
         TrimConfigKey(request);
@@ -414,6 +414,10 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
         // validate that the content matches the specified type (yml, json, string)
         ValidateContentMatchTheType(request, request.Type);
+
+        // check for dry run, if dry run return the response without applying the changes
+        var dryResponse = GetDryRunResponse(httpContext, request.Key, Manifest.GlobalConfig, request.Source);
+        if (dryResponse != null) { return dryResponse; }
 
         // get the exists config from database for update
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key);
