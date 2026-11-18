@@ -14,6 +14,8 @@ public class ResourceModel
 
 public class ApplyResourceRequest : ResourceModel, IApplyRequest
 {
+    public string Key => Name;
+
     // ===== APPLY REQUEST PROPERTIES ===== ////
 
     [YamlMember(Alias = "source")]

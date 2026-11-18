@@ -4,6 +4,8 @@ namespace Planar.API.Common.Entities;
 
 public class ApplyUserRequest : AddUserRequest, IApplyRequest
 {
+    public string Key => Username ?? string.Empty;
+
     // ===== APPLY REQUEST PROPERTIES ===== ////
 
     [YamlMember(Alias = "source")]

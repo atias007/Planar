@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -286,10 +287,10 @@ public partial class JobDomain(
     public async Task<ApplyResponse> Apply(HttpContext httpContext)
     {
         var yamls = await GetApplyYamls(httpContext, kind1, kind2);
-        return await Apply(yamls, httpContext.RequestAborted);
+        return await Apply(yamls, httpContext);
     }
 
-    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, CancellationToken cancellationToken)
+    public async Task<ApplyResponse> Apply(IEnumerable<KeyValuePair<string, string>> yamls, HttpContext httpContext)
     {
         // split yaml to 2 kinds
         var jobYamls = yamls.Where(y => string.Equals(y.Key, kind1, StringComparison.OrdinalIgnoreCase));
@@ -300,18 +301,18 @@ public partial class JobDomain(
         ValidateDuplicateApplyRequests(jobRequests, r => new JobKey(r.Name, r.Group), kind1, "key");
 
         // build & validate request for kind: job data
-        var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, cancellationToken);
+        var dataRequests = await GetApplyEntities<JobDataRequest>(jobDataYamls, kind2, httpContext.RequestAborted);
         ValidateDuplicateApplyRequests(dataRequests, r => new JobKey(r.JobName, r.JobGroup), kind2, "job group/name");
         ValidateJobDataRequest(dataRequests);
-        await FillDetails(dataRequests, cancellationToken);
+        await FillDetails(dataRequests, httpContext.RequestAborted);
 
         // apply jobs
         var response = new ApplyResponse();
         foreach (var item in jobRequests)
         {
-            var result = await SafeApply(item);
+            var result = await SafeApply(item, httpContext);
             if (result != null) { response.AddItem(result); }
-            cancellationToken.ThrowIfCancellationRequested();
+            httpContext.RequestAborted.ThrowIfCancellationRequested();
         }
 
         // apply job data
@@ -319,7 +320,7 @@ public partial class JobDomain(
         {
             var result = await SafeApplyData(item);
             if (result != null) { response.AddItem(result); }
-            cancellationToken.ThrowIfCancellationRequested();
+            httpContext.RequestAborted.ThrowIfCancellationRequested();
         }
 
         return response;
@@ -397,14 +398,14 @@ public partial class JobDomain(
         }
     }
 
-    private async Task<ApplyResponseItem?> SafeApply(SetJobDynamicRequest dynamicRequest)
+    private async Task<ApplyResponseItem?> SafeApply(SetJobDynamicRequest dynamicRequest, HttpContext httpContext)
     {
         var jobKey = JobKeyHelper.GetJobKey(dynamicRequest);
         if (jobKey == null) { return null; }
 
         try
         {
-            return await Apply(dynamicRequest, jobKey);
+            return await Apply(dynamicRequest, jobKey, httpContext);
         }
         catch (Exception ex)
         {
@@ -412,11 +413,19 @@ public partial class JobDomain(
         }
     }
 
-    private async Task<ApplyResponseItem?> Apply(SetJobDynamicRequest dynamicRequest, JobKey jobKey)
+    private async Task<ApplyResponseItem?> Apply(SetJobDynamicRequest dynamicRequest, JobKey jobKey, HttpContext httpContext)
     {
-        try
+        var exists = await JobKeyHelper.IsJobExists(jobKey);
+        if (exists)
         {
-            _ = await JobKeyHelper.ValidateJobExists(jobKey);
+            // check for dry run, if dry run return the response without applying the changes
+            var dryResponse = GetDryRunResponse(httpContext, jobKey.ToString(), Manifest.Group, dynamicRequest.Source);
+            if (dryResponse != null)
+            {
+                await DryUpdate(dynamicRequest, UpdateJobOptions.Default);
+                return dryResponse;
+            }
+
             var wrapper = await Update(dynamicRequest, UpdateJobOptions.Default);
             var response =
                 wrapper.Unchanged ?
@@ -430,8 +439,16 @@ public partial class JobDomain(
 
             return response;
         }
-        catch (RestNotFoundException)
+        else
         {
+            // check for dry run, if dry run return the response without applying the changes
+            var dryResponse = GetDryRunResponse(httpContext, jobKey.ToString(), Manifest.Group, dynamicRequest.Source);
+            if (dryResponse != null)
+            {
+                await Add(dynamicRequest, dryRun: true);
+                return dryResponse;
+            }
+
             var response = await Add(dynamicRequest);
             var applyResponse = new ApplyResponseItem(response.Id, ApplyAction.Add, $"job '{jobKey}' added", Manifest.Job, dynamicRequest.Source);
             AuditJobSafe(jobKey, "job was applied (add)", applyResponse.Description);

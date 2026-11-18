@@ -795,7 +795,7 @@ public partial class JobDomain
         return await Add(dynamicRequest);
     }
 
-    private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request)
+    private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request, bool dryRun = false)
     {
         // Validation
         ValidateRequestNoNull(request);
@@ -804,6 +804,8 @@ public partial class JobDomain
         var scheduler = await GetScheduler();
         var jobKey = ValidateJobMetadata(request, scheduler);
         await ValidateJobNotExists(jobKey);
+
+        if (dryRun) { return new PlanarIdResponse(); }
 
         // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
         var job = BuildJobDetails(request, jobKey);

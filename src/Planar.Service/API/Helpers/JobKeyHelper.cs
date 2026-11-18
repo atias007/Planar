@@ -112,6 +112,14 @@ public class JobKeyHelper(ISchedulerFactory schedulerFactory)
         return exists ?? throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
     }
 
+    public async Task<bool> IsJobExists(JobKey jobKey)
+    {
+        if (jobKey == null) { return false; }
+        var scheduler = await schedulerFactory.GetScheduler();
+        var exists = await scheduler.GetJobDetail(jobKey);
+        return exists != null;
+    }
+
     public static bool IsSystemJobKey(JobKey jobKey)
     {
         return IsSystemJobGroup(jobKey.Group);

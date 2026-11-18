@@ -186,6 +186,12 @@ public partial class JobDomain
         return await Update(dynamicRequest, UpdateJobOptions.Default);
     }
 
+    private async Task DryUpdate(SetJobDynamicRequest request, UpdateJobOptions options)
+    {
+        var metadata = new JobUpdateMetadata();
+        _ = await ValidateUpdateJob(request, options, metadata);
+    }
+
     private async Task<PlanarIdResponseWrapper> Update(SetJobDynamicRequest request, UpdateJobOptions options)
     {
         var metadata = new JobUpdateMetadata();
@@ -215,9 +221,6 @@ public partial class JobDomain
         JobUpdateMetadata metadata,
         object? properties)
     {
-        // Validation
-        ValidateJobProperty(request);
-
         // Validate no changes
         var hasChanges = await HasChanges(request, options);
         if (!hasChanges) { return new PlanarIdResponseWrapper(metadata.JobId, unchanged: true); }
@@ -351,6 +354,9 @@ public partial class JobDomain
         metadata.JobId =
             await JobKeyHelper.GetJobId(metadata.JobKey) ??
             throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
+
+        // Validation
+        ValidateJobProperty(request);
 
         return properties;
     }

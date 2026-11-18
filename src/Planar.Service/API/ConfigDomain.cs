@@ -218,7 +218,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         ValidateDuplicateApplyRequests(requests, r => r.Key, kind, "key");
 
         // Apply changes
-        var response = await ApplyChanges(requests);
+        var response = await ApplyChanges(requests, httpContext);
 
         // Save changes
         await DataLayer.SaveChangesAsync();

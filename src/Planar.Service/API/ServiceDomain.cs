@@ -91,7 +91,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (jobs != null)
         {
             var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
-            var response = await jobDomain.Apply([.. jobs], httpContext.RequestAborted);
+            var response = await jobDomain.Apply([.. jobs], httpContext);
             responses.Add(response);
         }
 
@@ -100,7 +100,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         if (jobData != null)
         {
             var jobDomain = ServiceProvider.GetRequiredService<JobDomain>();
-            var response = await jobDomain.Apply([.. jobData], httpContext.RequestAborted);
+            var response = await jobDomain.Apply([.. jobData], httpContext);
             responses.Add(response);
         }
 

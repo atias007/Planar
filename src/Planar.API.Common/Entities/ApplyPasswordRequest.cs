@@ -7,6 +7,8 @@ public class ApplyPasswordRequest : SetPasswordRequest, IApplyRequest
     [YamlMember(Alias = "username")]
     public string? Username { get; set; }
 
+    public string Key => Username ?? string.Empty;
+
     // ===== APPLY REQUEST PROPERTIES ===== ////
 
     [YamlMember(Alias = "source")]

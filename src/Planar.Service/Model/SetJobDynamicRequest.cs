@@ -7,6 +7,8 @@ internal class SetJobDynamicRequest : SetJobRequest, IApplyRequest
 {
     public virtual dynamic? Properties { get; set; }
 
+    public string Key => $"{Group}.{Name}";
+
     //// ===== APPLY REQUEST PROPERTIES ===== ////
 
     [YamlMember(Alias = "source")]
