@@ -160,6 +160,11 @@ namespace Planar.Job.RabbitMq
             }
             else
             {
+                if (_properties.JobDefinitions.Any(d => d.RoutingKey == attribute.RoutingKey))
+                {
+                    throw new InvalidOperationException($"A job definition with routing key '{attribute.RoutingKey}' already exists. Routing keys must be unique");
+                }
+
                 _properties.AddJobDefinition(new JobDefinition(type, attribute.RoutingKey));
             }
 
@@ -224,6 +229,21 @@ namespace Planar.Job.RabbitMq
         protected void Validate()
         {
             Validate(_properties);
+
+            if (string.IsNullOrWhiteSpace(_properties.QueueName))
+            {
+                throw new InvalidOperationException("Queue name must be set. Use WithQueueName(string queueName) to set the queue name.");
+            }
+
+            if (_properties.Host == null)
+            {
+                throw new InvalidOperationException("Host must be set. Use WithHost(IHost host) to set the host.");
+            }
+
+            if (_properties.PlanarHostname == null)
+            {
+                throw new InvalidOperationException("Planar hostname must be set. Use WithPlanarHost(string hostName, int port) to set the planar hostname.");
+            }
 
             if (!_properties.JobDefinitions.Any())
             {

@@ -404,7 +404,7 @@ namespace Planar.Job.RabbitMq
 
             if (logSuccess)
             {
-                _logger?.LogInformation("Ensure definition for exchange '{ExchangeName}' and queue '{QueueName}' successfully", properties.Exchange, queueName);
+                _logger?.LogInformation("Ensure definition for exchange '{ExchangeName}', routing key: {RoutingKey} queue '{QueueName}' successfully", properties.Exchange, routingKey, queueName);
             }
         }
     }
