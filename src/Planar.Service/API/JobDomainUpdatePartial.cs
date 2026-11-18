@@ -180,16 +180,16 @@ public partial class JobDomain
         await dataLayer.UpdateJobProperty(property);
     }
 
-    private async Task<PlanarIdResponseWrapper> Update(string yml)
-    {
-        var dynamicRequest = GetDynamicRequest(yml);
-        return await Update(dynamicRequest, UpdateJobOptions.Default);
-    }
-
     private async Task DryUpdate(SetJobDynamicRequest request, UpdateJobOptions options)
     {
         var metadata = new JobUpdateMetadata();
         _ = await ValidateUpdateJob(request, options, metadata);
+    }
+
+    private async Task<PlanarIdResponseWrapper> Update(string yml)
+    {
+        var dynamicRequest = GetDynamicRequest(yml);
+        return await Update(dynamicRequest, UpdateJobOptions.Default);
     }
 
     private async Task<PlanarIdResponseWrapper> Update(SetJobDynamicRequest request, UpdateJobOptions options)

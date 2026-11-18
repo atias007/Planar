@@ -805,8 +805,6 @@ public partial class JobDomain
         var jobKey = ValidateJobMetadata(request, scheduler);
         await ValidateJobNotExists(jobKey);
 
-        if (dryRun) { return new PlanarIdResponse(); }
-
         // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
         var job = BuildJobDetails(request, jobKey);
 
@@ -824,8 +822,10 @@ public partial class JobDomain
         // Build Triggers
         var triggers = BuildTriggers(request, id);
 
-        // Save Job Properties
-        await SaveJobProperty(request, job, id, properties);
+        // Create Job Properties
+        var prop = await GetAndValidateJobProperty(request, job, id, properties);
+        if (dryRun) { return new PlanarIdResponse(); }
+        await SaveJobProperty(prop);
 
         try
         {
@@ -854,7 +854,21 @@ public partial class JobDomain
         await dataLayer.DeleteJobProperty(id);
     }
 
-    private async Task SaveJobProperty(SetJobDynamicRequest request, IJobDetail job, string id, object? properties)
+    private static async Task<JobProperty> GetAndValidateJobProperty(SetJobDynamicRequest request, IJobDetail job, string id, object? properties)
+    {
+        var property = await GetJobProperty(request, job, id, properties);
+        ValidateJobProperty(property);
+        return property;
+    }
+
+    private async Task SaveJobProperty(JobProperty property)
+    {
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
+        await dataLayer.AddJobProperty(property);
+    }
+
+    private static async Task<JobProperty> GetJobProperty(SetJobDynamicRequest request, IJobDetail job, string id, object? properties)
     {
         var jobPropertiesYml = GetJopPropertiesYml(request);
         var jobGlobalConfigKeysYml = GetJobGlobalConfigKeysYml(request);
@@ -874,11 +888,7 @@ public partial class JobDomain
             ResourcesKeys = resourceNames
         };
 
-        ValidateJobProperty(property);
-
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var dataLayer = scope.ServiceProvider.GetRequiredService<IJobData>();
-        await dataLayer.AddJobProperty(property);
+        return property;
     }
 
     private static void ValidateJobProperty(JobProperty property)

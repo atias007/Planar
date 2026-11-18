@@ -318,7 +318,7 @@ public partial class JobDomain(
         // apply job data
         foreach (var item in dataRequests)
         {
-            var result = await SafeApplyData(item);
+            var result = await SafeApplyData(item, httpContext);
             if (result != null) { response.AddItem(result); }
             httpContext.RequestAborted.ThrowIfCancellationRequested();
         }
@@ -385,10 +385,16 @@ public partial class JobDomain(
         }
     }
 
-    private async Task<ApplyResponseItem?> SafeApplyData(JobDataRequest request)
+    private async Task<ApplyResponseItem?> SafeApplyData(JobDataRequest request, HttpContext httpContext)
     {
         try
         {
+            var dryResponse = GetDryRunResponse(httpContext, request.Key, Manifest.JobData, request.Source);
+            if (dryResponse != null)
+            {
+                return dryResponse;
+            }
+
             return await ApplyData(request);
         }
         catch (Exception ex)
@@ -419,7 +425,7 @@ public partial class JobDomain(
         if (exists)
         {
             // check for dry run, if dry run return the response without applying the changes
-            var dryResponse = GetDryRunResponse(httpContext, jobKey.ToString(), Manifest.Group, dynamicRequest.Source);
+            var dryResponse = GetDryRunResponse(httpContext, jobKey.ToString(), Manifest.Job, dynamicRequest.Source);
             if (dryResponse != null)
             {
                 await DryUpdate(dynamicRequest, UpdateJobOptions.Default);
@@ -442,7 +448,7 @@ public partial class JobDomain(
         else
         {
             // check for dry run, if dry run return the response without applying the changes
-            var dryResponse = GetDryRunResponse(httpContext, jobKey.ToString(), Manifest.Group, dynamicRequest.Source);
+            var dryResponse = GetDryRunResponse(httpContext, jobKey.ToString(), Manifest.Job, dynamicRequest.Source);
             if (dryResponse != null)
             {
                 await Add(dynamicRequest, dryRun: true);
