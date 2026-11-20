@@ -16,7 +16,7 @@ kind: resource
 name: demo_sql.step3
 value: SELECT TOP (1) [Description] FROM [dbo].[JobAudit]
 ---
-kind: Job
+kind: job
 version: 1.0.0
 job type: SqlJob
 name: DemoSqlJob

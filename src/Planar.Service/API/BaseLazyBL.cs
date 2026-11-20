@@ -16,7 +16,7 @@ public abstract class BaseLazyBL<TBusinessLayer, TDataLayer>(IServiceProvider se
 
     protected static ApplyResponseItem? GetDryRunResponse(HttpContext httpContext, string name, string resource, string source)
     {
-        var dryRun = httpContext.Request.Query.ContainsKey("dryRun");
+        var dryRun = httpContext.Request.Query.ContainsKey("dry-run");
         if (dryRun)
         {
             return new ApplyResponseItem(name, ApplyAction.Skipped, $"resource '{name}' was not applied due to dry run", resource, source);

@@ -1,7 +1,3 @@
-kind: global config
-key: gck1
-value: v1
----
 kind: Job
 version: 1.0.0
 job type: PlanarJob

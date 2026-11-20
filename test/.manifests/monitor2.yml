@@ -1,4 +1,4 @@
-kkind: monitor
+kind: monitor
 title: some monitor title2
 event: execution fail
 job name: BankOfIsraelCurrency

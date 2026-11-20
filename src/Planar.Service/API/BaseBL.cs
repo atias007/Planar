@@ -328,7 +328,7 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
         }
         catch (Exception ex)
         {
-            var source = YmlUtil.GetApplySource(content);
+            var source = YmlUtil.GetApplySource(currentYaml.Value);
             if (string.IsNullOrWhiteSpace(source))
             {
                 throw new RestValidationException("yaml", $"fail to map yaml to apply request\r\n{ex.Message}");
