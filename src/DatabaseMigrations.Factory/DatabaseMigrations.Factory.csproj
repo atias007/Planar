@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>1.8.2.0</Version>
-    <RootNamespace>DatabaseMigrations.Factory</RootNamespace>
+    <RootNamespace>DatabaseMigrations</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;NU1803</NoWarn>
