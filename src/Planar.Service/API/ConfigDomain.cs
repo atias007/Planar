@@ -218,7 +218,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         ValidateDuplicateApplyRequests(requests, r => r.Key, kind, "key");
 
         // Apply changes
-        var response = await ApplyChanges(requests, httpContext);
+        var response = await ApplyChanges(requests);
 
         // Save changes
         await DataLayer.SaveChangesAsync();
@@ -373,14 +373,14 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         AuditSecuritySafe($"config key '{request.Key}' was added");
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests, HttpContext httpContext)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<GlobalConfigApplyRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request, httpContext);
+            var result = await ApplyInner(request);
             response.AddItem(result);
             return response;
         }
@@ -389,7 +389,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         {
             try
             {
-                var result = await ApplyInner(request, httpContext);
+                var result = await ApplyInner(request);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -401,7 +401,7 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request, HttpContext httpContext)
+    private async Task<ApplyResponseItem> ApplyInner(GlobalConfigApplyRequest request)
     {
         // trim the key
         TrimConfigKey(request);
@@ -414,10 +414,6 @@ public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigD
 
         // validate that the content matches the specified type (yml, json, string)
         ValidateContentMatchTheType(request, request.Type);
-
-        // check for dry run, if dry run return the response without applying the changes
-        var dryResponse = GetDryRunResponse(httpContext, request.Key, Manifest.GlobalConfig, request.Source);
-        if (dryResponse != null) { return dryResponse; }
 
         // get the exists config from database for update
         var exists = await DataLayer.GetGlobalConfigForUpdate(request.Key);

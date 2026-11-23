@@ -121,19 +121,19 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         ValidateDuplicateApplyRequests(requests, r => r.Name, kind, "name");
 
         // Apply changes
-        var response = await ApplyChanges(requests, httpContext);
+        var response = await ApplyChanges(requests);
 
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyResourceRequest> requests, HttpContext httpContext)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyResourceRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request, httpContext);
+            var result = await ApplyInner(request);
             response.AddItem(result);
             return response;
         }
@@ -142,7 +142,7 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         {
             try
             {
-                var result = await ApplyInner(request, httpContext);
+                var result = await ApplyInner(request);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -154,16 +154,13 @@ public class ResourceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Resou
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyResourceRequest request, HttpContext httpContext)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyResourceRequest request)
     {
         request.Name = request.Name?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             throw new RestValidationException("invalid request", "name is required");
         }
-
-        var dryResponse = GetDryRunResponse(httpContext, request.Name, Manifest.Resource, request.Source);
-        if (dryResponse != null) { return dryResponse; }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
         var dataLayer = scope.ServiceProvider.GetRequiredService<IResourceData>();

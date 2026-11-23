@@ -795,7 +795,7 @@ public partial class JobDomain
         return await Add(dynamicRequest);
     }
 
-    private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request, bool dryRun = false)
+    private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request)
     {
         // Validation
         ValidateRequestNoNull(request);
@@ -824,7 +824,6 @@ public partial class JobDomain
 
         // Create Job Properties
         var prop = await GetAndValidateJobProperty(request, job, id, properties);
-        if (dryRun) { return new PlanarIdResponse(); }
         await SaveJobProperty(prop);
 
         try

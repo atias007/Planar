@@ -283,19 +283,19 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         ValidateDuplicateUsers(requests);
 
         // Apply changes
-        var response = await ApplyChanges(requests, httpContext);
+        var response = await ApplyChanges(requests);
 
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyGroupRequest> requests, HttpContext httpContext)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyGroupRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request, httpContext);
+            var result = await ApplyInner(request);
             response.AddItem(result);
             return response;
         }
@@ -304,7 +304,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         {
             try
             {
-                var result = await ApplyInner(request, httpContext);
+                var result = await ApplyInner(request);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -318,16 +318,9 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
 #pragma warning disable S3776 // Cognitive Complexity of methods should not be too high
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyGroupRequest request, HttpContext httpContext)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyGroupRequest request)
 #pragma warning restore S3776 // Cognitive Complexity of methods should not be too high
     {
-        // check for dry run, if dry run return the response without applying the changes
-        var dryResponse = GetDryRunResponse(httpContext, request.Name, Manifest.Group, request.Source);
-        if (dryResponse != null)
-        {
-            return dryResponse;
-        }
-
         var all_audits = new List<SecurityMessage>();
         request.Role = request.Role?.ToLower();
         await using var scope = ServiceProvider.CreateAsyncScope();

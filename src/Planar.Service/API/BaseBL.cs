@@ -10,7 +10,6 @@ using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
-using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -20,7 +19,6 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Twilio.TwiML.Messaging;
 
 namespace Planar.Service.API;
 
@@ -309,7 +307,7 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("yaml", $"fail to convert content to yaml document(s)\r\n{ex.Message}");
+            throw new RestValidationException("yaml", $"fail to convert the content to yaml format\r\n{ex.Message}");
         }
 
         // Convert YAML documents to key-value pairs and validate kind
@@ -351,11 +349,13 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
     {
         var validator = withValidation ? ResolveOptionally<IValidator<T>>() : null;
         var entities = new List<T>();
+        var currentResource = string.Empty;
 
         try
         {
             foreach (var y in yamls)
             {
+                currentResource = YmlUtil.GetApplySource(y.Value);
                 var entity = YmlUtil.Deserialize<T>(y.Value);
                 if (entity == null) { continue; }
                 if (validator != null)
@@ -368,20 +368,61 @@ public abstract class BaseBL<TBusinessLayer>(IServiceProvider serviceProvider)
                 entities.Add(entity);
             }
         }
-        catch (RestValidationException)
+        catch (RestValidationException rv_ex)
         {
-            throw;
+            throw CreateValidationException(rv_ex, currentResource, kind);
         }
-        catch (ValidationException)
+        catch (ValidationException v_ex)
         {
-            throw;
+            throw CreateValidationException(v_ex, currentResource, kind);
         }
         catch (Exception ex)
         {
-            throw new RestValidationException("yaml", $"Fail to map yaml body to '{kind}'  request\r\n{ex.Message}");
+            if (string.IsNullOrWhiteSpace(currentResource))
+            {
+                throw new RestValidationException("yaml", $"Fail to map yaml to '{kind}' request\r\n{ex.Message}");
+            }
+
+            throw new RestValidationException("yaml", $"Fail to map resource '{currentResource}' to '{kind}' request\r\n{ex.Message}");
         }
 
         return entities;
+    }
+
+    private static RestValidationException CreateValidationException(RestValidationException ex, string? resource, string kind)
+    {
+        if (string.IsNullOrWhiteSpace(resource)) { return ex; }
+        if (ex.TotalErrors == 0 && string.IsNullOrWhiteSpace(ex.Message)) { return ex; }
+
+        var title = $"Fail to validate resource '{resource}' to '{kind}' request";
+        if (ex.TotalErrors == 0 && !string.IsNullOrWhiteSpace(ex.Message))
+        {
+            return new RestValidationException("yaml", $"{title}\r\n{ex.Message}");
+        }
+
+        var errors = ex.Errors.Select(e => e.Detail.SelectMany(d => d)).ToList();
+        errors.Insert(0, title);
+        var details = string.Join(Environment.NewLine, errors);
+
+        return new RestValidationException("yaml", details);
+    }
+
+    private static RestValidationException CreateValidationException(ValidationException ex, string? resource, string kind)
+    {
+        if (string.IsNullOrWhiteSpace(resource)) { throw ex; }
+        if (!ex.Errors.Any() && string.IsNullOrWhiteSpace(ex.Message)) { throw ex; }
+
+        var title = $"Fail to validate resource '{resource}' to '{kind}' request";
+        if (!ex.Errors.Any() && !string.IsNullOrWhiteSpace(ex.Message))
+        {
+            return new RestValidationException("yaml", $"{title}\r\n{ex.Message}");
+        }
+
+        var errors = ex.Errors.Select(e => e.ErrorMessage).ToList();
+        errors.Insert(0, title);
+        var details = string.Join(Environment.NewLine, errors);
+
+        return new RestValidationException("yaml", details);
     }
 
     protected static void ValidateUnmatched<T>(string yaml)

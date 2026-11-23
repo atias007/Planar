@@ -84,7 +84,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
 
         var requestHook = GetRequestHookName(request.Hook);
-        await ValidateEntityCount(DataLayer, "monitor", 1_000);
+        await ValidateEntityCount(DataLayer, kind, 1_000);
         await DataLayer.AddMonitor(monitor, groupId, requestHook);
 
         _ = Resolve<MonitorDurationCache>().Flush();
@@ -191,7 +191,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         ValidateHooksExists(requests);
 
         // Apply changes
-        var response = await ApplyChanges(requests, httpContext);
+        var response = await ApplyChanges(requests);
 
         // Clear cache
         _ = Resolve<MonitorDurationCache>().Flush();
@@ -268,7 +268,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     public async Task<MonitorItem> GetMonitorActionById(int id)
     {
         var item = await DataLayer.GetMonitorAction(id);
-        var monitor = ValidateExistingEntity(item, "monitor");
+        var monitor = ValidateExistingEntity(item, kind);
         var result = MonitorProfile.ToMonitorItem(monitor);
         return result;
     }
@@ -358,7 +358,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     {
         TrimPropertyName(request);
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
-        var monitor = ValidateExistingEntity(dbMonitor, "monitor");
+        var monitor = ValidateExistingEntity(dbMonitor, kind);
         ForbiddenPartialUpdateProperties(request, "EventId", "Groups", "Hook");
         var updateMonitor = MonitorProfile.ToUpdateMonitorRequest(monitor);
         var validator = Resolve<IValidator<UpdateMonitorRequest>>();
@@ -774,14 +774,14 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyMonitorRequest> requests, HttpContext httpContext)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyMonitorRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request, httpContext);
+            var result = await ApplyInner(request);
             response.AddItem(result);
             return response;
         }
@@ -790,7 +790,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         {
             try
             {
-                var result = await ApplyInner(request, httpContext);
+                var result = await ApplyInner(request);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -804,19 +804,12 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyMonitorRequest request, HttpContext httpContext)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyMonitorRequest request)
     {
         var groupData = Resolve<IGroupData>();
         var requestGroups = await groupData.GetGroups(request.DistributionGroups);
         var requestHooks = GetRequestHookNames(request.Hooks);
         var requestMonitor = MonitorProfile.ToMonitorAction(request);
-
-        // check for dry run, if dry run return the response without applying the changes
-        var dryResponse = GetDryRunResponse(httpContext, GetMonitorKey(requestMonitor), Manifest.Monitor, request.Source);
-        if (dryResponse != null)
-        {
-            return dryResponse;
-        }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
         var monitorDal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
@@ -824,7 +817,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         if (currentMonitor == null)
         {
             var groupIds = requestGroups.Select(g => g.Id);
-            await ValidateEntityCount(monitorDal, "monitor", 1_000);
+            await ValidateEntityCount(monitorDal, kind, 1_000);
             monitorDal.AddMonitorWithoutSaveChanges(requestMonitor, groupIds, requestHooks);
 
             await monitorDal.SaveChangesAsync();

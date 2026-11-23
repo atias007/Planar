@@ -13,7 +13,6 @@ using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API;
@@ -197,21 +196,21 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         ValidateDuplicateApplyRequests(password_requests, r => r.Username, kind_pass, "username");
 
         // Apply changes
-        var user_response = await ApplyChanges(user_requests, httpContext);
-        var password_response = await ApplyChanges(password_requests, httpContext);
+        var user_response = await ApplyChanges(user_requests);
+        var password_response = await ApplyChanges(password_requests);
 
         var response = ApplyResponse.Merge(user_response, password_response);
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyUserRequest> requests, HttpContext httpContext)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyUserRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request, httpContext);
+            var result = await ApplyInner(request);
             response.AddItem(result);
             return response;
         }
@@ -220,7 +219,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         {
             try
             {
-                var result = await ApplyInner(request, httpContext);
+                var result = await ApplyInner(request);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -232,14 +231,14 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         return response;
     }
 
-    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyPasswordRequest> requests, HttpContext httpContext)
+    private async Task<ApplyResponse> ApplyChanges(IReadOnlyCollection<ApplyPasswordRequest> requests)
     {
         var response = new ApplyResponse();
         if (requests.Count == 0) { return response; }
         if (requests.Count == 1)
         {
             var request = requests.First();
-            var result = await ApplyInner(request, httpContext);
+            var result = await ApplyInner(request);
             response.AddItem(result);
             return response;
         }
@@ -248,7 +247,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         {
             try
             {
-                var result = await ApplyInner(request, httpContext);
+                var result = await ApplyInner(request);
                 response.AddItem(result);
             }
             catch (Exception ex)
@@ -260,19 +259,12 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         return response;
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyUserRequest request, HttpContext httpContext)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyUserRequest request)
     {
         request.Username = request.Username?.Trim();
         if (string.IsNullOrWhiteSpace(request.Username))
         {
             throw new RestValidationException("invalid request", "username is required");
-        }
-
-        // check for dry run, if dry run return the response without applying the changes
-        var dryResponse = GetDryRunResponse(httpContext, request.Username, Manifest.User, request.Source);
-        if (dryResponse != null)
-        {
-            return dryResponse;
         }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
@@ -293,19 +285,12 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         }
     }
 
-    private async Task<ApplyResponseItem> ApplyInner(ApplyPasswordRequest request, HttpContext httpContext)
+    private async Task<ApplyResponseItem> ApplyInner(ApplyPasswordRequest request)
     {
         request.Username = request.Username?.Trim();
         if (string.IsNullOrWhiteSpace(request.Username))
         {
             throw new RestValidationException("invalid request", "username is required");
-        }
-
-        // check for dry run, if dry run return the response without applying the changes
-        var dryResponse = GetDryRunResponse(httpContext, request.Username, Manifest.UserPassword, request.Source);
-        if (dryResponse != null)
-        {
-            return dryResponse;
         }
 
         await using var scope = ServiceProvider.CreateAsyncScope();
