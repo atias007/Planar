@@ -33,6 +33,7 @@ internal static class PathAnalyzer
         var isFolder =
             input.EndsWith(Path.DirectorySeparatorChar) ||
             input.EndsWith(Path.AltDirectorySeparatorChar) ||
+            Directory.Exists(input) ||
             (string.IsNullOrEmpty(Path.GetExtension(input)) && !string.IsNullOrEmpty(input));
 
         return new PathInfo(IsFolder: isFolder, Pattern: pattern, IsAbsolute: isAbsolute, Path: input);
