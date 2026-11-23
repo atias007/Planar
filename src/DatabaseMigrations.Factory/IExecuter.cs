@@ -1,7 +1,6 @@
 ﻿using DbUp.Engine;
-using System.Collections.Generic;
 
-namespace DbUp;
+namespace DatabaseMigrations.Factory;
 
 public interface IExecuter
 {

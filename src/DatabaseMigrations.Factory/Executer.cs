@@ -3,7 +3,7 @@ using DbUp.Engine;
 using System.Data;
 using System.Reflection;
 
-namespace DatabaseMigrations.SqlServer;
+namespace DatabaseMigrations.Factory;
 
 public class Executer : IExecuter
 {

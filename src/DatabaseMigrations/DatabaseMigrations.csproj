@@ -20,7 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
-    <ProjectReference Include="..\DbUp\dbup-core\dbup-core.csproj" />
   </ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>

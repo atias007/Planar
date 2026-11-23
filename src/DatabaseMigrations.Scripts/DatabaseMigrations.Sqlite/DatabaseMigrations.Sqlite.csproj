@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
-    <ProjectReference Include="..\..\DbUp\dbup-sqlite\dbup-sqlite.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
-﻿using DbUp;
+﻿using DatabaseMigrations.Factory;
+using DbUp;
 using Microsoft.Data.Sqlite;
 using Planar.Common;
 using Serilog;
@@ -23,7 +24,7 @@ internal static class DbFactory
         ////}
     }
 
-    public static bool IsSupportOdata()
+    public static bool IsSupportOData()
     {
         switch (AppSettings.Database.ProviderName)
         {
@@ -44,7 +45,7 @@ internal static class DbFactory
         return provider switch
         {
             DbProviders.Sqlite => new DatabaseMigrations.Sqlite.Executer(),
-            DbProviders.SqlServer => new DatabaseMigrations.SqlServer.Executer(),
+            DbProviders.SqlServer => new Executer(),
             _ => throw new NotSupportedException($"Provider '{provider}' is not supported"),
         };
     }

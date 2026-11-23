@@ -18,7 +18,7 @@ public class TraceDataController(IServiceProvider serviceProvider) : ControllerB
     [EnableQuery]
     public IActionResult Get()
     {
-        if (!DbFactory.IsSupportOdata())
+        if (!DbFactory.IsSupportOData())
         {
             throw new RestConflictException("Trace OData is not supported on the current database provider");
         }
@@ -30,7 +30,7 @@ public class TraceDataController(IServiceProvider serviceProvider) : ControllerB
     [EnableQuery]
     public IActionResult Get([FromODataUri] int key)
     {
-        if (!DbFactory.IsSupportOdata())
+        if (!DbFactory.IsSupportOData())
         {
             throw new RestConflictException("Trace OData is not supported on the current database provider");
         }

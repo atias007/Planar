@@ -1,4 +1,5 @@
-﻿using DbUp;
+﻿using DatabaseMigrations.Factory;
+using DbUp;
 using DbUp.Engine;
 using System.Data;
 using System.Reflection;
@@ -18,7 +19,7 @@ public class Executer : IExecuter
     {
         var builder =
            DeployChanges.To
-               .SQLiteDatabase(connectionString)
+               .SqliteDatabase(connectionString)
                .WithScriptsEmbeddedInAssembly(ScriptAssembly)
                .LogToConsole()
                .LogScriptOutput()
@@ -33,7 +34,7 @@ public class Executer : IExecuter
     {
         var builder =
            DeployChanges.To
-               .SQLiteDatabase(connectionString)
+               .SqliteDatabase(connectionString)
                .WithScriptsEmbeddedInAssembly(ScriptAssembly)
                .LogToConsole()
                .LogScriptOutput()
@@ -48,7 +49,7 @@ public class Executer : IExecuter
     {
         var builder =
             DeployChanges.To
-                .SQLiteDatabase(connectionString)
+                .SqliteDatabase(connectionString)
                 .WithScriptsEmbeddedInAssembly(ScriptAssembly)
                 .LogToConsole()
                 .LogScriptOutput();

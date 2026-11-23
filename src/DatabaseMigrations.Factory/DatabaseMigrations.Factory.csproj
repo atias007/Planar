@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>1.8.2.0</Version>
-    <RootNamespace>DatabaseMigrations</RootNamespace>
+    <RootNamespace>DatabaseMigrations.Factory</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;NU1803</NoWarn>
@@ -171,6 +171,7 @@
     <EmbeddedResource Include="Scripts\Planar_0076 - quartz_v4.sql" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />
+    <PackageReference Include="dbup-sqlite" Version="6.0.4" />
+    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
   </ItemGroup>
 </Project>

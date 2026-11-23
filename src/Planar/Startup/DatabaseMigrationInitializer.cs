@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-using DbUp;
+using DatabaseMigrations.Factory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
@@ -136,7 +136,7 @@ public static class DatabaseMigrationInitializer
         try
         {
             Console.WriteLine("[x] Run database migration");
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(AppSettings.Database.ConnectionString);
             _executer.EnsureDatabaseExists(AppSettings.Database.ConnectionString);
 
             var count = CountScriptsToExecute();
@@ -169,6 +169,7 @@ public static class DatabaseMigrationInitializer
 
     private static int CountScriptsToExecute()
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(AppSettings.Database.ConnectionString);
         var list = _executer.GetScripts(AppSettings.Database.ConnectionString);
         return list.Count();
     }

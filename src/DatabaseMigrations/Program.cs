@@ -1,5 +1,5 @@
 ﻿using DatabaseMigrations;
-using DatabaseMigrations.SqlServer;
+using DatabaseMigrations.Factory;
 using DbUp.Engine;
 using Microsoft.Extensions.Configuration;
 using Spectre.Console;
